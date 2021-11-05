@@ -47,33 +47,60 @@ def continuous(element):
 
 class material:
     def __init__(self,elements_list):
+        """
+        Purpose: Initialize the material class
+        :param elements_list: A list of strings that contain the element symbols for all elements in the material
+        """
         # Creates a dictionary with all the elements in the list
-        element_dict = dict()
-        profile_dict = dict()
+        element_dict = dict()  # dictionary that contains the element and layer information
+        profile_dict = dict()  # contain the continuous depth profile of each element
 
         for el in elements_list:
-            element_dict[el] = self.layer()
+            element_dict[el] = self.layer()  # for each element create a layer class type
             profile_dict[el] = list()
 
         self.elements = element_dict
         self.profile = profile_dict
 
     def addbulk(self,element, thickness, density, roughness):
+        """
+        Purpose: Add a bulk layer to the layer class for a specified element
+        :param element: The element symbol
+        :param thickness: Thickness of the layer (Angstrom)
+        :param density: Density of the layer (mol/cm^3)
+        :param roughness: Roughness at the layers surface (Angstrom)
+        """
         self.elements[element].layers[0] = [thickness,density, roughness]
 
     def addlayer(self, element, thickness, density, roughness):
+        """
+        Purpose: Add a layer on the surface for a specified material
+        :param element: Element symbol
+        :param thickness: Layer thickness (Angstrom)
+        :param density: Layer density (mol/cm^3)
+        :param roughness: Layer roughness (Angstrom)
+        :return:
+        """
         self.elements[element].layers.append([thickness,density,roughness])
         self.elements[element].num_layers = self.elements[element].num_layers + 1
 
     def create_element_profile(self,element):
-        layer_profile = self.elements[element].layers
-        thickness, density = continuous(self.elements[element].layers)
+        """
+        Purpose: Creates the continuous density profile of an element
+        :param element: Element symbol
+        """
+        layer_profile = self.elements[element].layers  # gets all the layers of the element
+        thickness, density = continuous(self.elements[element].layers)  # creates the continuous profile from the layers
 
+        #  Plotting the results
         plt.figure()
         plt.plot(thickness,density)
         plt.show()
 
     def create_material_profile(self):
+        """
+        Purpose: Show the material density profile for all elements
+        """
         plt.figure()
         for element in list(self.elements.keys()):
             thickness, density = continuous(self.elements[element].layers)
@@ -85,6 +112,10 @@ class material:
 
 
     def print_element(self,element):
+        """
+        Purpose: Prints out the depth profile parameters (thickness, density, roughness)
+        :param element: The desired elements symbol
+        """
         my_layers = self.elements[element].layers
         t = PrettyTable(["Layer","Thickness (A)","Density (mol/cm^3)","Roughness (A)"])
         idx = 0
@@ -98,6 +129,9 @@ class material:
         print(t)
 
     def print_elements(self):
+        """
+        Purpose: Prints the depth profile parameters of all elements
+        """
         elements = list(self.elements.keys())
         for element in elements:
             self.print_element(element)
@@ -112,17 +146,22 @@ class material:
 
 
 if __name__ == "__main__":
-    elements = ['Fe','O','La']
-    mat = material(elements)
 
-    mat.addbulk('Fe',0,10,10)
-    mat.addlayer('Fe', 15,15,15)
-    mat.addlayer('Fe',7,7,7)
+    # Example Material
+    elements = ['Fe','O','La']  # Input all the elements in the material in a list
+    mat = material(elements)  # create the material class
 
+    # Input the layer parameters (thickness, density, roughness)
+    mat.addbulk('Fe',0,10,10)  # In general the bulk will not have a thickness
+    mat.addlayer('Fe', 15,15,15)  # Layer on top of bulk
+    mat.addlayer('Fe',7,7,7)  # Layer on top of previous layer
+
+    # Input the layer parameters
     mat.addbulk('O', 0, 11, 10)
     mat.addlayer('O', 5, 16, 15)
     mat.addlayer('O', 7, 4, 7)
 
+    # Input the layer parameters
     mat.addbulk('La', 0, 4, 10)
     mat.addlayer('La', 16, 6, 15)
     mat.addlayer('La', 6, 9, 7)
