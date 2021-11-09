@@ -39,7 +39,7 @@ def form_factor(f,E):
         f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)
         f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)
 
-    return complex(f_real, -f_imag)
+    return complex(f_real, f_imag)
 
 def find_form_factor(element, E):
     """
@@ -96,7 +96,6 @@ if __name__ == "__main__":
 
 
     E = 799.82 # Xray Energy
-
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e18  # Speed of light in vacuum [A/s]
 
