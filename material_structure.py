@@ -13,7 +13,7 @@ class material:
         # Creates a dictionary with all the elements in the list
         element_dict = dict()
         profile_dict = dict()
-        print('hello')
+        print('helloIniti')
 
         for el in elements_list:
             element_dict[el] = self.layer()
