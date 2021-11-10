@@ -35,10 +35,10 @@ class material:
     def print_element(self,element):
         my_layers = self.elements[element].layers
         t = PrettyTable(["Layer","Thickness (A)","Density (mol/cm^3)","Roughness (A)"])
-        idx = 1
-        for layer in my_layers:
+        idx = len(my_layers)
+        for layer in reversed(my_layers):
             t.add_row(["Layer " + str(idx), layer[0], layer[1], layer[2]])
-            idx = idx + 1
+            idx = idx - 1
 
         bul = self.elements[element].bulk
         t.add_row(["Bulk", bul[0], bul[1], bul[2]])
@@ -64,8 +64,16 @@ if __name__ == "__main__":
     elements = ['Fe','O','La']
     mat = material(elements)
 
-    mat.addbulk('Fe',10,10,10)
-    mat.addlayer('Fe', 15,15,15)
-    mat.addlayer('Fe',2,3,4)
+    mat.addbulk('Fe',0,0.028,2)
+    mat.addlayer('Fe', 15,0.03,2)
+    mat.addlayer('Fe',2,0.01,2)
+
+    mat.addbulk('O', 0, 0, 2)
+    mat.addlayer('O', 30, 0.05, 2)
+    mat.addlayer('O', 2, 0.05, 2)
+
+    mat.addbulk('La', 0, 0, 0)
+    mat.addlayer('La', 10, 0.028, 2)
+    mat.addlayer('La', 7, 0.028, 2)
     mat.print_elements()
 
