@@ -26,32 +26,87 @@ class element:
         self.sf = name
         self.relations = None  # May not need
 
+
 def getElements(formula):
-    # Finds all the elements in the chemical formula
-    myelement = re.findall(r'[A-Z][a-z]*|\d+', re.sub('[A-Z][a-z]*(?![\da-z])', r'\g<0>1', formula))
-
-    # Find the ions in the formula which are identified with parentheses.
-    ions = re.findall('[A-Z][a-z]?\d*|\([^()]*(?:\(.*\))?[^()]*\)\d+', formula)
-
-    print(myelement)
-
-
     """
-    # Separate the ions into their appropriate element symbol
-    for ion in range(len(ions)):
-        ions[ion] = re.findall('[A-Z][a-z]', ions[ion])
+    Purpose: The purpose of this function is to identify all information from an inputted string.
 
-    stoich = dict()
-    n = len(myelement)
-    for idx in range(0,n,2):
-        stoich[myelement[idx]] = element(myelement[idx],myelement[idx+1])
+    :param formula: The inputted string
+                    has the form of a chemical formula with some extra notation. The element symbols identifies which
+                    elements scattering factor you want to use, but can later be adjusted to use a function later.
+                    Capability to use your own scattering factor textfile will also be provided, but how this will be
+                    done has not yet been determined. The notation to describe the string is shown below:
+                        U     - Uppercase letter
+                        l     - Lowercase letter
+                        N     - Number of atoms
+                        (...) - Brackets is the notation we use to denote ions.
+                        X     - Dummy variable that states if there is a linked roughness
 
-    for ionset in ions:
-        for e in ionset:
-            m = stoich[e].stoich
-            print(m)
+                    Example:
+                                formula = "AlMnO3"      ---> UlUlUN
+                                formula = "La(MnFe)O3"  ---> Ul(UlUl)UN
+
+                    Further description of notation.
+                        Ions: The brackets state a single element with multiple ions,  where sum(ion density) = element density.
+                            The elements in the inside corresponds to the scattering factor that best represents the ion. The
+                            format of the ions is shown below:
+
+                                                        (A_1N_1 A_2N_2 ... A_mN_m)
+
+                            N_i - represents the ratio of the total density that is the ion A_i, for i = 1,2,...,m
+
+    :return: A dictionary that contains all the information
     """
-    return ions
+
+
+    ele = None
+    digit = 0
+    n = len(formula)  # number of characters is 'formula'
+
+    while n > 0:
+        if n <= 2:  # Base Case
+            if n == 2:  #  Case for Ul or UN
+                if formula[1].isdigit():
+                    ele = formula[0]
+                    digit = formula[1]
+                else:
+                    ele = formula
+                    digit = 1
+
+                formula = ''
+            else:
+                ele = formula
+                digit = 1
+                formula = ''
+            print(ele, digit)
+        elif formula[0].isupper():
+            if formula[1].islower():
+                if formula[2].isdigit():
+                    ele = formula[0:2]
+                    digit = formula[2]
+                    formula = formula[3:]
+                    print(ele, digit)
+                else:
+                    ele = formula[0:2]
+                    digit = 1
+                    formula = formula[2:]
+                    print(ele, digit)
+            elif formula[1].isdigit():
+                ele = formula[0]
+                digit = formula[1]
+                formula = formula[2:]
+                print(ele, digit)
+            else:
+                ele = formula[0]
+                digit = 1
+                formula = formula[1:]
+                print(ele, digit)
+        else:
+            raise NameError(formula)
+
+        n = len(formula)
+    return formula
+
 
 
 
@@ -168,7 +223,7 @@ if __name__ == "__main__":
     sample.addIon('Mn','Mn','Fe')  # Create ions for Manganese
     sample.showprofile()  # Showing the density profile
     """
-    molecule = 'La(Mn2Fe3)O3'
+    molecule = 'LaMn2Fe3O3'
     result = getElements(molecule)
-    print(result)
+    #print(result)
 
