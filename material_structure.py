@@ -8,24 +8,76 @@ from tabulate import tabulate
 from prettytable import PrettyTable
 
 class element:
-    def __init__(self, name, stoich, ion=None):
+    def __init__(self, name, stoich, ion=None, ionratio=1):
         """
-        Purpose: Keep track of element properties in slab layer
-        :param name: Element symbol
-        :param thickness: Thickness of the slab (Angstrom)
-        :param density: Density of the A/B-Site [Oxygen = 3X(A/B-Site)] mol/cm^3
-        :param roughness: Roughness of the surface layer
-        :param relation: N/A
+        Purpose: Class that keeps track of elemental properties
+        :param name: Elemental symbol
+        :param stoich: Stoichiometry of each element
+        :param ion:
+        :param ionratio: Amount of ion that makes of element ---> (ion density) = (ionratio)*(element)
         """
-        self.name = name
-        self.stoich = stoich
-        self.density = 0
-        self.thickness = 0
-        self.roughness = 0
-        self.ion = ion
-        self.sf = name
-        self.relations = None  # May not need
+        self.name = name  # Elemental Symbol
+        self.density = 0  # Density of the molecule (mol/cm^3)
+        self.thickness = 0  # Thickness of the layer (Angstrom)
+        self.roughness = 0  # Roughness of the surface (Angstrom)
+        self.stoich = stoich  # Stoichiometry of the element
+        self.ionratio = ionratio  # Ion Ratio
+        self.ion = ion  # The different ions of the same element
+        self.sf = name  # The scattering factor name. This parameter will allow us to implement 'scattering functions'
+        self.relations = None  # Can set relations if need be
 
+def checkstring(formula):
+    """
+    Purpose: This function identifies the elements and their stoichiometric relations
+    :param formula: A string that represents the chemical formula. It is required that the chemical formula always
+                    starts with a capital letter. Refer below for documentation description:
+                        U - Uppercase letter
+                        L - Lowercase letter
+                        N - Digit
+
+    :return: Returns a list that contains the chemical formula and it's stoichiometry [symbol, stoich]
+    """
+    info = []  # list to store the element symbol and it's stoichiometry
+    n = len(formula)  # Get's the number of characters in the list
+
+    if n <= 2:  # Base Case
+        if n == 2:  # Case for UL or UN
+            if formula[1].isdigit():  # Case UN
+                info.append(formula[0])
+                info.append(int(formula[1]))
+            else:  # Case UL
+                info.append(formula)
+                info.append(1)
+
+            formula = ''  # Sets formula for end case
+        else:  # Case U
+            info[0].append(formula)
+            info[1].append(1)
+
+    elif formula[0].isupper():  # All other cases
+        if formula[1].islower():
+            if formula[2].isdigit():  # Case ULD
+                info.append(formula[0:2])
+                info.append(int(formula[2]))
+                formula = formula[3:]
+            else:  # Case UL
+                info.append(formula[0:2])
+                info.append(1)
+                formula = formula[2:]
+
+        elif formula[1].isdigit():  # Case UD
+            info.append(formula[0])
+            info.append(int(formula[1]))
+            formula = formula[2:]
+
+        else:  # Case U
+            info.append(formula[0])
+            info.append(1)
+            formula = formula[1:]
+    else:  # Raises error if unexpected symbol
+        raise NameError(formula)
+
+    return formula, info
 
 def getElements(formula):
     """
@@ -55,57 +107,52 @@ def getElements(formula):
 
                             N_i - represents the ratio of the total density that is the ion A_i, for i = 1,2,...,m
 
-    :return: A dictionary that contains all the information
+    :return: A dictionary that has the element symbol as the key and the element class as the value {Symbol: element}
     """
-
-
-    ele = None
-    digit = 0
+    bracket = False  # Boolean that determines if dealing with bracket case
+    mydict = dict()  # Dictionary [Symbol: element]
+    ion_list = list()  # Keeps track of the ions in an element and their info
+    myions = list()  # Keeps track of the ions in an element
+    total_ion = 0  # total ion value
     n = len(formula)  # number of characters is 'formula'
 
     while n > 0:
-        if n <= 2:  # Base Case
-            if n == 2:  #  Case for Ul or UN
-                if formula[1].isdigit():
-                    ele = formula[0]
-                    digit = formula[1]
-                else:
-                    ele = formula
-                    digit = 1
 
-                formula = ''
-            else:
-                ele = formula
-                digit = 1
-                formula = ''
-            print(ele, digit)
-        elif formula[0].isupper():
-            if formula[1].islower():
-                if formula[2].isdigit():
-                    ele = formula[0:2]
-                    digit = formula[2]
-                    formula = formula[3:]
-                    print(ele, digit)
-                else:
-                    ele = formula[0:2]
+        if formula[0] == '(':
+            formula = formula[1:]
+            ion_list = list()
+            myions = list()
+            bracket = True
+
+        if bracket:
+            if formula[0] == ')':
+                if len(formula) == 1:
                     digit = 1
-                    formula = formula[2:]
-                    print(ele, digit)
-            elif formula[1].isdigit():
-                ele = formula[0]
-                digit = formula[1]
-                formula = formula[2:]
-                print(ele, digit)
+                    formula = ''
+                else:
+                    if formula[1].isdigit():
+                        digit = formula[1]
+                        formula = formula[2:]
+                    else:
+                        digit = 1
+                        formula = formula[1:]
+
+                for ele in ion_list:
+                    mydict[ele[0]] = element(ele[0], digit, ion=myions, ionratio=ele[1]/total_ion)
+
+                bracket = False
             else:
-                ele = formula[0]
-                digit = 1
-                formula = formula[1:]
-                print(ele, digit)
+                formula, info = checkstring(formula)
+                ion_list.append(info)
+                myions.append(info[0])
+                total_ion = total_ion + info[1]
+
         else:
-            raise NameError(formula)
+            formula, info = checkstring(formula)
+            mydict[info[0]] = element(info[0],info[1])
 
         n = len(formula)
-    return formula
+    return mydict
 
 
 
@@ -223,7 +270,13 @@ if __name__ == "__main__":
     sample.addIon('Mn','Mn','Fe')  # Create ions for Manganese
     sample.showprofile()  # Showing the density profile
     """
-    molecule = 'LaMn2Fe3O3'
+    molecule = 'La(MnFe)7O3'
     result = getElements(molecule)
-    #print(result)
+
+    e = 'Fe'
+    print('Name: ', result[e].name)
+    print('Scattering Factor: ', result[e].sf)
+    print('Stoichiometry: ',result[e].stoich)
+    print('Ion: ',result[e].ion)
+    print('Ion Ratio: ', result[e].ionratio)
 
