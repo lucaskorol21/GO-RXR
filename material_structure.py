@@ -118,36 +118,39 @@ def getElements(formula):
 
     while n > 0:
 
-        if formula[0] == '(':
-            formula = formula[1:]
-            ion_list = list()
-            myions = list()
-            bracket = True
+        if formula[0] == '(' and formula[1] == ')':  # Error Check
+            raise NameError('Element symbol must be found inside parentheses')
 
-        if bracket:
-            if formula[0] == ')':
-                if len(formula) == 1:
-                    digit = 1
+        if formula[0] == '(':  # Checks for the start of parenthesis
+            formula = formula[1:]  # Removes '(' from the list.
+            ion_list = list()  # temporary list that contains the ion properties
+            myions = list()  # List that contains all the related ions
+            bracket = True  # Booleans that determines if the bracket is still open
+
+        if bracket:  # Bracket is open
+            if formula[0] == ')':  # Checks for a close bracket
+                if len(formula) == 1:  # Case closed bracket is last character
+                    digit = 1  # sets ion stoichiometry
                     formula = ''
-                else:
-                    if formula[1].isdigit():
+                else:  # Case closed bracket in middle of string
+                    if formula[1].isdigit():  # Checks stoichiometry of ion
                         digit = formula[1]
                         formula = formula[2:]
-                    else:
+                    else:  # Stocihiometry is 1
                         digit = 1
                         formula = formula[1:]
 
-                for ele in ion_list:
+                for ele in ion_list:  # Loops through all the ions and sets their properties to element class
                     mydict[ele[0]] = element(ele[0], digit, ion=myions, ionratio=ele[1]/total_ion)
 
-                bracket = False
-            else:
-                formula, info = checkstring(formula)
+                bracket = False  # closes bracket
+            else:  # Bracket still open
+                formula, info = checkstring(formula)  # Retrieves info
                 ion_list.append(info)
                 myions.append(info[0])
                 total_ion = total_ion + info[1]
 
-        else:
+        else:  # None bracket case
             formula, info = checkstring(formula)
             mydict[info[0]] = element(info[0],info[1])
 
@@ -158,50 +161,30 @@ def getElements(formula):
 
 
 
-"""
+
 class slab:
     def __init__(self, num_layers):
        
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
         self.myelements = []  # Keeps track of the elements in the material
 
-    def addlayer(self, num_layer, layer_info):
+    def addlayer(self, num_layer, formula, thickness, density, roughness=0):
         
 
         # Retrieve the element info
-        elements = get_elements(layer_info[0])
-        thickness = layer_info[1]
-        density = layer_info[2]
+        elements = getElements(formula)
 
-        # set the layer properties
-        info = dict()
         for key in list(elements.keys()):
-            info[key] = element(key,thickness, density*float(elements[key]))
-            if not(key in self.myelements):
+
+            if key not in self.myelements:  # Adds element to my element list if not already there
                 self.myelements.append(key)
 
-        self.structure[num_layer] = info
-
-    def addIon(self, identifier, ion1, ion2, roughness=None, relation=None):
+            elements[key].density = density  # sets density  (mol/cm^3)
+            elements[key].thickness = thickness  # sets thickness  (Angstrom)
+            elements[key].roughness = roughness  # Order of Angstrom
         
-
-        for layer in self.structure:
-            if identifier in layer:  # determine if ion is found in the layer
-                density = layer[identifier].density
-                thickness = layer[identifier].thickness
-                rough = layer[identifier].roughness
-                layer.pop(identifier)  # remove identifier from layer
-                if relation == None:
-                    layer[ion1] = element(ion1,thickness,density*0.5,roughness=rough)  # add ion1 to layer
-                    layer[ion2] = element(ion2, thickness, density*0.5, roughness=rough)  # add ion2 to layer
-                else:
-                    layer[ion1] = element(ion1, thickness, density * relation, roughness=rough)  # add ion1 to layer
-                    layer[ion2] = element(ion2, thickness, density * (1-relation), roughness=rough)  # add ion2 to layer
-
-        self.myelements.pop(self.myelements.index(identifier))  # remove identifier from list containing elements in material
-        self.myelements.append(ion1)  # add ion1 to list
-        self.myelements.append(ion2)  # add ion2 to list
-
+        self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
+        
     def setsigma(self, el, lay, rough):
        
         self.structure[lay][el].roughness = rough
@@ -234,7 +217,7 @@ class slab:
                 first_layer = False
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in substrate layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoich*layer[ele].ionratio))
                     else:  # Element in film layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
             else:  # Film Layers
@@ -246,7 +229,7 @@ class slab:
                 last = last + layer[first_element].thickness  # Update start of next layer
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in current layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoich*layer[ele].ionratio))
                     else:  # Element not found in current layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
 
@@ -254,24 +237,27 @@ class slab:
         mydense = np.transpose(list(dense.values()))
         plt.figure()
         plt.plot(thick, mydense)
+        plt.xlabel('Thickness (Angstrom)')
+        plt.ylabel('Density (mol/cm^3)')
+        plt.suptitle('Density Profile')
         plt.show()
 
-"""
 
 
 if __name__ == "__main__":
 
-    """
+
     # Example showing how to create slab model of sample
     sample = slab(3)  # Initializing three layers
-    sample.addlayer(0, ['SrTiO3', 50, 0.028])  # substrate layer
-    sample.addlayer(1, ['LaMnO3', 25, 0.005])  # Film 1 on top of substrate
-    sample.addlayer(2, ['LaMnO3', 16, 0.02])   # Film 2 on top film 1
-    sample.addIon('Mn','Mn','Fe')  # Create ions for Manganese
+    sample.addlayer(0, 'SrTiO3', 50, 0.028)  # substrate layer
+    sample.addlayer(1, 'La(MnFe)O3', 25, 0.01)  # Film 1 on top of substrate
+    sample.addlayer(2, 'La(MnFe)O3', 16, 0.02)   # Film 2 on top film 1
+
     sample.showprofile()  # Showing the density profile
-    """
+
     molecule = 'La(MnFe)7O3'
     result = getElements(molecule)
+
 
     e = 'Fe'
     print('Name: ', result[e].name)
@@ -279,4 +265,5 @@ if __name__ == "__main__":
     print('Stoichiometry: ',result[e].stoich)
     print('Ion: ',result[e].ion)
     print('Ion Ratio: ', result[e].ionratio)
+    
 
