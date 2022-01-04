@@ -250,14 +250,14 @@ if __name__ == "__main__":
     # Example showing how to create slab model of sample
     sample = slab(3)  # Initializing three layers
     sample.addlayer(0, 'SrTiO3', 50, 0.028)  # substrate layer
-    sample.addlayer(1, 'La(MnFe)O3', 25, 0.01)  # Film 1 on top of substrate
-    sample.addlayer(2, 'La(MnFe)O3', 16, 0.02)   # Film 2 on top film 1
+    sample.addlayer(1, 'La(MnFe3)O3', 25, 0.01)  # Film 1 on top of substrate
+    sample.addlayer(2, 'La(Mn3Fe)O3', 16, 0.02)   # Film 2 on top film 1
 
     sample.showprofile()  # Showing the density profile
 
-    molecule = 'La(MnFe)7O3'
+    molecule = 'La(MnFe)O3'
     result = getElements(molecule)
-
+    print(result)
 
     e = 'Fe'
     print('Name: ', result[e].name)
