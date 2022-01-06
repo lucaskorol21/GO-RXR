@@ -19,7 +19,7 @@ class element:
         self.roughness = 0  # Roughness of the surface (Angstrom)
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # Ratio of the total density that this polymorphous form makes up of the total element.
-        self.polymorph = 0  # A list that contains the various forms (e.g. ions)
+        self.polymorph = []  # A list that contains the various forms (e.g. ions)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
 
 def get_number(string):
@@ -103,6 +103,11 @@ def checkstring(formula):
     return formula, info
 
 def find_stoichiometry(formula):
+    """
+    Purpose: Determine the stoichiometry of the formula inputted
+    :param formula: String that represents a chemical formula
+    :return: dictionary that contains element symbol as key and element class as value
+    """
     mydict = dict()
     while len(formula) > 0:
         formula, info = checkstring(formula)
@@ -111,6 +116,11 @@ def find_stoichiometry(formula):
     return mydict
 
 def perovskite_density(formula):
+    """
+    Purpose: Retrieves the density (g/cm^3) for common perovskite materials
+    :param formula: Chemical formula of perovskite materials
+    :return: Density of perovskite material (g/cm^3)
+    """
     density = None
     file = open("Perovskite_Density.txt", "r")
     lines = file.readlines()
@@ -125,6 +135,11 @@ def perovskite_density(formula):
     return float(density)
 
 def atomic_mass(atom):
+    """
+    Purpose: Returns the molar mass of elements in the periodic table
+    :param atom: Element symbol
+    :return: Molar mass (g/mol)
+    """
     mass = None
     file = open("Atomic_Mass.txt", "r")
     lines = file.readlines()
@@ -147,10 +162,27 @@ class slab:
         self.myelements = []  # Keeps track of the elements in the material
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, A_site=True, B_site=True):
+        """
+        Purpose: Add layer to sample material
+        :param num_layer: Layer number (0 indicates substrate layer)
+        :param formula: Perovskite chemical formula
+        :param thickness: Thickness of the material in Angstrom 10^(-10)m
+        :param density: Density of the perovskite material (g/cm^3). No input indicates user wants to use density found in database
+        :param roughness: Rougness of at the interface
+        :param A_site: Boolean value
+                        True - Indicates roughness of A-site from current layer is linked to roughness of A-site in next layer
+                        False - Indicates roughness of A-site from current layer is NOT linked to roughness of A-site in next layer
+        :param B_site: Boolean value
+                        True - Indicates roughness of B-site from current layer is linked to roughness of B-site in next layer
+                        False - Indicates roughness of B-site from current layer is NOT linked to roughness of B-site in next layer
+        """
+
 
         # Retrieve the element info
         elements = find_stoichiometry(formula)
         molar_mass = 0
+
+        # Computes the total molar mass of perovskite material
         for key in list(elements.keys()):
             molar_mass = molar_mass + atomic_mass(key)*elements[key].stoichiometry
 
@@ -165,14 +197,24 @@ class slab:
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
             elements[key].roughness = roughness  # Order of Angstrom
-            elements[key].molar_mass = molar_mass
+            elements[key].molar_mass = molar_mass  # Molar mass of perovskite material
 
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
+        # Determines if A/B site is linked to the A/B site on the next layer
         if not(A_site):
             self.link[num_layer][0] = False
         if not(B_site):
             self.link[num_layer][1] = False
+
+    def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
+        self.structure[lay][ele].polymorph = polymorph
+        self.structure[lay][ele].poly_ratio = poly_ratio
+        if sf == None:
+            self.structure[lay][ele].scattering_factor = polymorph
+        else:
+            self.structure[lay][ele].scattering_factor = sf
+
 
     def setsigma(self, el, lay, rough):
        
@@ -206,7 +248,7 @@ class slab:
                 first_layer = False
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in substrate layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio/layer[ele].molar_mass))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry/layer[ele].molar_mass))
                     else:  # Element in film layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
             else:  # Film Layers
@@ -218,7 +260,7 @@ class slab:
                 last = last + layer[first_element].thickness  # Update start of next layer
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in current layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio/layer[ele].molar_mass))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry/layer[ele].molar_mass))
                     else:  # Element not found in current layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
 
@@ -238,7 +280,10 @@ if __name__ == "__main__":
     # Example: Simple sample creation
     sample = slab(3)  # Initializing three layers
     sample.addlayer(0, 'SrTiO3', 50)  # substrate layer
+
     sample.addlayer(1, 'LaMnO3', 25)  # Film 1 on top of substrate
+    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])
+
     sample.addlayer(2, 'LaMnO3', 16)   # Film 2 on top film 1
 
     sample.showprofile()  # Showing the density profile
