@@ -20,8 +20,6 @@ class element:
         self.poly_ratio = 1  # Ratio of the total density that this polymorphous form makes up of the total element.
         self.polymorph = 0  # A list that contains the various forms (e.g. ions)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-        self.A_site = False  # Boolean used to determine if current A site roughness is linked to next layer A site roughness
-        self.B_site = False  # Boolean used to determine if current B site roughness is linked to next layer B site rougness
 
 def get_number(string):
     """
@@ -131,7 +129,7 @@ def atomic_mass(atom):
     lines = file.readlines()
     for line in lines:
         if line.split()[0] == atom:
-            mass = line.split[1]
+            mass = line.split()[1]
     file.close()
 
     if mass == None:
@@ -144,13 +142,18 @@ class slab:
     def __init__(self, num_layers):
 
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
+        self.molar_mass = [0.0 for i in range(num_layers)]  # Keeps track of molar mass for each layer
+        self.link = [[True, True] for i in range(num_layers)]  # [A-site, B-site]]
         self.myelements = []  # Keeps track of the elements in the material
 
-    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0):
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, A_site=True, B_site=True):
 
         # Retrieve the element info
         elements = find_stoichiometry(formula)
-        print(elements)
+        molar_mass = 0
+        for key in list(elements.keys()):
+            molar_mass = molar_mass + atomic_mass(key)*elements[key].stoichiometry
+
         for key in list(elements.keys()):
 
             if key not in self.myelements:  # Adds element to my element list if not already there
@@ -162,9 +165,14 @@ class slab:
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
             elements[key].roughness = roughness  # Order of Angstrom
-        
+
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
-        
+        self.molar_mass[num_layer] = molar_mass
+        if not(A_site):
+            self.link[num_layer][0] = False
+        if not(B_site):
+            self.link[num_layer][1] = False
+
     def setsigma(self, el, lay, rough):
        
         self.structure[lay][el].roughness = rough
@@ -228,16 +236,20 @@ if __name__ == "__main__":
 
     # Example showing how to create slab model of sample
     sample = slab(3)  # Initializing three layers
-    sample.addlayer(0, 'SrTiO3', 50)  # substrate layer
-    sample.addlayer(1, 'LaMnO3', 25)  # Film 1 on top of substrate
+    sample.addlayer(0, 'SrTiO3', 50, A_site=False)  # substrate layer
+    sample.addlayer(1, 'LaMnO3', 25, B_site=False)  # Film 1 on top of substrate
     sample.addlayer(2, 'LaMnO3', 16)   # Film 2 on top film 1
 
-    sample.showprofile()  # Showing the density profile
+    #sample.showprofile()  # Showing the density profile
+
     result = sample.structure[1]
-    e = 'O'
+    e = 'La'
     print('Name: ', result[e].name)
     print('Scattering Factor: ', result[e].scattering_factor)
     print('Stoichiometry: ',result[e].stoichiometry)
     print('Polymorph: ',result[e].polymorph)
     print('Polymorph Ratio : ', result[e].poly_ratio)
-    
+
+
+
+

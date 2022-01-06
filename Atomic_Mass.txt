@@ -109,5 +109,4 @@ Hs 255
 Mt 256
 Ds 269
 Rg 272
-
 Source: https://www.angelo.edu/faculty/kboudrea/periodic/structure_numbers.htm
