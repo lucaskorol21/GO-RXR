@@ -13,6 +13,7 @@ class element:
         :param poly_ratio: Amount of ion that makes of element ---> (ion density) = (ionratio)*(element)
         """
         self.name = name  # Elemental Symbol
+        self.molar_mass = 0
         self.density = 0  # Density of the molecule (g/cm^3)
         self.thickness = 0  # Thickness of the layer (Angstrom)
         self.roughness = 0  # Roughness of the surface (Angstrom)
@@ -142,7 +143,6 @@ class slab:
     def __init__(self, num_layers):
 
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
-        self.molar_mass = [0.0 for i in range(num_layers)]  # Keeps track of molar mass for each layer
         self.link = [[True, True] for i in range(num_layers)]  # [A-site, B-site]]
         self.myelements = []  # Keeps track of the elements in the material
 
@@ -165,9 +165,10 @@ class slab:
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
             elements[key].roughness = roughness  # Order of Angstrom
+            elements[key].molar_mass = molar_mass
 
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
-        self.molar_mass[num_layer] = molar_mass
+
         if not(A_site):
             self.link[num_layer][0] = False
         if not(B_site):
@@ -205,7 +206,7 @@ class slab:
                 first_layer = False
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in substrate layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio/layer[ele].molar_mass))
                     else:  # Element in film layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
             else:  # Film Layers
@@ -217,7 +218,7 @@ class slab:
                 last = last + layer[first_element].thickness  # Update start of next layer
                 for ele in self.myelements:  # Create density array for each element
                     if ele in mykeys:  # Element in current layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio))
+                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry*layer[ele].poly_ratio/layer[ele].molar_mass))
                     else:  # Element not found in current layer
                         dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
 
@@ -234,13 +235,13 @@ class slab:
 
 if __name__ == "__main__":
 
-    # Example showing how to create slab model of sample
+    # Example: Simple sample creation
     sample = slab(3)  # Initializing three layers
-    sample.addlayer(0, 'SrTiO3', 50, A_site=False)  # substrate layer
-    sample.addlayer(1, 'LaMnO3', 25, B_site=False)  # Film 1 on top of substrate
+    sample.addlayer(0, 'SrTiO3', 50)  # substrate layer
+    sample.addlayer(1, 'LaMnO3', 25)  # Film 1 on top of substrate
     sample.addlayer(2, 'LaMnO3', 16)   # Film 2 on top film 1
 
-    #sample.showprofile()  # Showing the density profile
+    sample.showprofile()  # Showing the density profile
 
     result = sample.structure[1]
     e = 'La'
