@@ -23,16 +23,27 @@ class element:
         self.linked = True  # Boolean that determines if the element's roughness is linked to the next positional element's roughness (e.g. A-sites of ABO3)
 
 def get_number(string):
-    n = len(string)
-    finish = True
-    mynumbers = list()
+    """
+    Purpose: Strip successive digits from a string
+    Input:
+     string - A string containing letters and digits
+    Output:
+     num - The stripped numbers in integer form
+     string - The same string with the successive digits removed
+
+    """
+
+    finish = True  # Boolean used to determine if end of successive digits
+    mynumbers = list()  # Stores the successive digits to be joined later
     while len(string)>0 and finish:
+       # Determines if left most character is a digit
        if string[0].isdigit():
-           mynumbers.append(string[0])
-           string = string[1:]
+           mynumbers.append(string[0])  # appends digit to character list
+           string = string[1:]  # removes digit from string
        else:
            finish = False
-    num = int(''.join(mynumbers))
+    num = int(''.join(mynumbers))  # joins digits into integer type
+
     return string, num
 
 
