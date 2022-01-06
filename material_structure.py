@@ -4,7 +4,7 @@ import cmath
 from KK_And_Merge import *
 
 class element:
-    def __init__(self, name, stoichiometry, polymorph=None, poly_ratio=1):
+    def __init__(self, name, stoichiometry):
         """
         Purpose: Class that keeps track of elemental properties
         :param name: Elemental symbol
@@ -17,10 +17,11 @@ class element:
         self.thickness = 0  # Thickness of the layer (Angstrom)
         self.roughness = 0  # Roughness of the surface (Angstrom)
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
-        self.poly_ratio = poly_ratio  # Ratio of the total density that this polymorphous form makes up of the total element.
-        self.polymorph = polymorph  # A list that contains the various forms (e.g. ions)
+        self.poly_ratio = 1  # Ratio of the total density that this polymorphous form makes up of the total element.
+        self.polymorph = 0  # A list that contains the various forms (e.g. ions)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-        self.linked = True  # Boolean that determines if the element's roughness is linked to the next positional element's roughness (e.g. A-sites of ABO3)
+        self.A_site = False  # Boolean used to determine if current A site roughness is linked to next layer A site roughness
+        self.B_site = False  # Boolean used to determine if current B site roughness is linked to next layer B site rougness
 
 def get_number(string):
     """
@@ -106,36 +107,59 @@ def find_stoichiometry(formula):
     mydict = dict()
     while len(formula) > 0:
         formula, info = checkstring(formula)
-        mydict[info[0]] = info[1]
+        mydict[info[0]] = element(info[0], info[1])
 
     return mydict
 
+def perovskite_density(formula):
+    density = None
+    file = open("Perovskite_Density.txt", "r")
+    lines = file.readlines()
+    for line in lines:
+        if line.split()[0] == formula:
+            density = line.split()[1]
+    file.close()
 
+    if density == None:
+        raise NameError("Inputted formula not found in perovskite density database")
 
+    return float(density)
 
+def atomic_mass(atom):
+    mass = None
+    file = open("Atomic_Mass.txt", "r")
+    lines = file.readlines()
+    for line in lines:
+        if line.split()[0] == atom:
+            mass = line.split[1]
+    file.close()
 
+    if mass == None:
+        raise NameError("Inputted formula not found in perovskite density database")
 
+    return float(mass)
 
-"""
 
 class slab:
     def __init__(self, num_layers):
-       
+
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
         self.myelements = []  # Keeps track of the elements in the material
 
-    def addlayer(self, num_layer, formula, thickness, density, roughness=0):
-        
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0):
 
         # Retrieve the element info
-        elements = getElements(formula)
-
+        elements = find_stoichiometry(formula)
+        print(elements)
         for key in list(elements.keys()):
 
             if key not in self.myelements:  # Adds element to my element list if not already there
                 self.myelements.append(key)
 
-            elements[key].density = density  # sets density  (mol/cm^3)
+            if density == None:
+                density = perovskite_density(formula)
+
+            elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
             elements[key].roughness = roughness  # Order of Angstrom
         
@@ -199,33 +223,21 @@ class slab:
         plt.show()
 
 
-"""
+
 if __name__ == "__main__":
 
-    formula = 'LaMnO3'
-
-    print(find_stoichiometry(formula))
-
-    
-
-    """
     # Example showing how to create slab model of sample
     sample = slab(3)  # Initializing three layers
-    sample.addlayer(0, 'SrTiO3', 50, 0.028)  # substrate layer
-    sample.addlayer(1, 'La(MnFe3)O3', 25, 0.01)  # Film 1 on top of substrate
-    sample.addlayer(2, 'La(Mn3Fe)O3', 16, 0.02)   # Film 2 on top film 1
+    sample.addlayer(0, 'SrTiO3', 50)  # substrate layer
+    sample.addlayer(1, 'LaMnO3', 25)  # Film 1 on top of substrate
+    sample.addlayer(2, 'LaMnO3', 16)   # Film 2 on top film 1
 
     sample.showprofile()  # Showing the density profile
-
-    molecule = 'La(MnFe)O3'
-    result = getElements(molecule)
-    print(result)
-
-    e = 'Fe'
+    result = sample.structure[1]
+    e = 'O'
     print('Name: ', result[e].name)
     print('Scattering Factor: ', result[e].scattering_factor)
     print('Stoichiometry: ',result[e].stoichiometry)
-    print('Ion: ',result[e].polymorph)
-    print('Ion Ratio: ', result[e].poly_ratio)
+    print('Polymorph: ',result[e].polymorph)
+    print('Polymorph Ratio : ', result[e].poly_ratio)
     
-    """
