@@ -279,12 +279,16 @@ if __name__ == "__main__":
 
     # Example: Simple sample creation
     sample = slab(3)  # Initializing three layers
-    sample.addlayer(0, 'SrTiO3', 50)  # substrate layer
 
-    sample.addlayer(1, 'LaMnO3', 25)  # Film 1 on top of substrate
-    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])
+    # Sr roughness not linked to La
+    sample.addlayer(0, 'SrTiO3', 50, A_site=False)  # substrate layer
 
-    sample.addlayer(2, 'LaMnO3', 16)   # Film 2 on top film 1
+    # Mn roughness not linked to Al
+    sample.addlayer(1, 'LaMnO3', 25, B_site=False)  # Film 1 on top of substrate
+    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # [Layer, Element, Polymorph Symbols, Ratios, Scattering Factor]
+
+    # Showing other layer properties
+    sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2)   # Film 2 on top film 1
 
     sample.showprofile()  # Showing the density profile
 
