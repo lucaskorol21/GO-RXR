@@ -158,10 +158,10 @@ class slab:
     def __init__(self, num_layers):
 
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
-        self.link = [[True, True] for i in range(num_layers)]  # [A-site, B-site]]
+        self.link = []
         self.myelements = []  # Keeps track of the elements in the material
 
-    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, A_site=True, B_site=True):
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
         Purpose: Add layer to sample material
         :param num_layer: Layer number (0 indicates substrate layer)
@@ -202,10 +202,12 @@ class slab:
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
         # Determines if A/B site is linked to the A/B site on the next layer
-        if not(A_site):
-            self.link[num_layer][0] = False
-        if not(B_site):
-            self.link[num_layer][1] = False
+        n = len(elements)
+        if link == None:
+            mylink = [True for i in range(n)]
+            self.link.append(mylink)
+        else:
+            self.link.append(link)
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
         self.structure[lay][ele].polymorph = polymorph
@@ -281,25 +283,25 @@ if __name__ == "__main__":
     sample = slab(3)  # Initializing three layers
 
     # Sr roughness not linked to La
-    sample.addlayer(0, 'SrTiO3', 50, A_site=False)  # substrate layer
+    sample.addlayer(0, 'SrTiO3', 50, link=[False,False,True])  # substrate layer
 
     # Mn roughness not linked to Al
-    sample.addlayer(1, 'LaMnO3', 25, B_site=False)  # Film 1 on top of substrate
+    sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
     sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # [Layer, Element, Polymorph Symbols, Ratios, Scattering Factor]
 
     # Showing other layer properties
+
     sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2)   # Film 2 on top film 1
 
-    sample.showprofile()  # Showing the density profile
+    #sample.showprofile()  # Showing the density profile
 
     result = sample.structure[1]
+
     e = 'La'
     print('Name: ', result[e].name)
     print('Scattering Factor: ', result[e].scattering_factor)
     print('Stoichiometry: ',result[e].stoichiometry)
     print('Polymorph: ',result[e].polymorph)
     print('Polymorph Ratio : ', result[e].poly_ratio)
-
-
-
+    print('Link: ', sample.link)
 
