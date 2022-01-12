@@ -22,6 +22,7 @@ class element:
         self.polymorph = []  # A list that contains the various forms (e.g. ions)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
 
+
 def get_number(string):
     """
     Purpose: Strip successive digits from a string
@@ -287,10 +288,9 @@ if __name__ == "__main__":
 
     # Mn roughness not linked to Al
     sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
-    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # [Layer, Element, Polymorph Symbols, Ratios, Scattering Factor]
+    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
 
     # Showing other layer properties
-
     sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2)   # Film 2 on top film 1
 
     #sample.showprofile()  # Showing the density profile
