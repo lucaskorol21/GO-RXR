@@ -159,6 +159,7 @@ class slab:
     def __init__(self, num_layers):
 
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
+        self.magnetization = []
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
 
@@ -166,16 +167,11 @@ class slab:
         """
         Purpose: Add layer to sample material
         :param num_layer: Layer number (0 indicates substrate layer)
-        :param formula: Perovskite chemical formula
+        :param formula: Chemical formula
         :param thickness: Thickness of the material in Angstrom 10^(-10)m
         :param density: Density of the perovskite material (g/cm^3). No input indicates user wants to use density found in database
-        :param roughness: Rougness of at the interface
-        :param A_site: Boolean value
-                        True - Indicates roughness of A-site from current layer is linked to roughness of A-site in next layer
-                        False - Indicates roughness of A-site from current layer is NOT linked to roughness of A-site in next layer
-        :param B_site: Boolean value
-                        True - Indicates roughness of B-site from current layer is linked to roughness of B-site in next layer
-                        False - Indicates roughness of B-site from current layer is NOT linked to roughness of B-site in next layer
+        :param roughness: Rougness at the interface
+        :param link: Determines if roughness between two of the same sites are linked
         """
 
 
@@ -217,8 +213,14 @@ class slab:
             self.structure[lay][ele].scattering_factor = polymorph
         else:
             self.structure[lay][ele].scattering_factor = sf
-
-
+    def set_mag(self, ele, scat, density=None, num_layer=0):
+        # This function will determine the corresponding elements with magnetic scattering factors
+        # Determine if the layers are related or not
+        print('hello')
+    def set_mag_layer(self):
+        # This function will create the magnetic layers
+        #
+        print('bye')
     def setsigma(self, el, lay, rough):
        
         self.structure[lay][el].roughness = rough
@@ -284,6 +286,7 @@ if __name__ == "__main__":
     sample = slab(3)  # Initializing three layers
 
     # Sr roughness not linked to La
+    # Ti roughness not linked to Mn
     sample.addlayer(0, 'SrTiO3', 50, link=[False,False,True])  # substrate layer
 
     # Mn roughness not linked to Al
