@@ -20,8 +20,10 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # Ratio of the total density that this polymorphous form makes up of the total element.
         self.polymorph = []  # A list that contains the various forms (e.g. ions)
+        self.mag_type = None
+        self.mag_density = None
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-
+        self.mag_scattering_factor = None
 
 def get_number(string):
     """
@@ -69,14 +71,19 @@ def checkstring(formula):
             if formula[1].isdigit():  # Case UN
                 info.append(formula[0])
                 info.append(int(formula[1]))
-            else:  # Case UL
+                formula = ''  # Sets formula for end case
+            elif formula[1].islower():  # Case UL
                 info.append(formula)
                 info.append(1)
-
-            formula = ''  # Sets formula for end case
+                formula = ''  # Sets formula for end case
+            elif formula[1].isupper():
+                info.append(formula[0])
+                info.append(1)
+                formula = formula[1]
         else:  # Case U
-            info[0].append(formula)
-            info[1].append(1)
+            info.append(formula)
+            info.append(1)
+            formula = ''
 
     elif formula[0].isupper():  # All other cases
         if formula[1].islower():
@@ -109,12 +116,14 @@ def find_stoichiometry(formula):
     :param formula: String that represents a chemical formula
     :return: dictionary that contains element symbol as key and element class as value
     """
+    num_elements = 0  # keeps track of the number of elements in the chemical formula
     mydict = dict()
     while len(formula) > 0:
         formula, info = checkstring(formula)
         mydict[info[0]] = element(info[0], info[1])
+        num_elements = num_elements + 1
 
-    return mydict
+    return mydict, num_elements
 
 def perovskite_density(formula):
     """
@@ -159,7 +168,6 @@ class slab:
     def __init__(self, num_layers):
 
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
-        self.magnetization = []
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
 
@@ -173,12 +181,9 @@ class slab:
         :param roughness: Rougness at the interface
         :param link: Determines if roughness between two of the same sites are linked
         """
-
-
         # Retrieve the element info
-        elements = find_stoichiometry(formula)
+        elements, num_elements = find_stoichiometry(formula)
         molar_mass = 0
-
         # Computes the total molar mass of perovskite material
         for key in list(elements.keys()):
             molar_mass = molar_mass + atomic_mass(key)*elements[key].stoichiometry
@@ -201,7 +206,7 @@ class slab:
         # Determines if A/B site is linked to the A/B site on the next layer
         n = len(elements)
         if link == None:
-            mylink = [True for i in range(n)]
+            mylink = [True for i in range(num_elements)]
             self.link.append(mylink)
         else:
             self.link.append(link)
@@ -213,14 +218,20 @@ class slab:
             self.structure[lay][ele].scattering_factor = polymorph
         else:
             self.structure[lay][ele].scattering_factor = sf
-    def set_mag(self, ele, scat, density=None, num_layer=0):
-        # This function will determine the corresponding elements with magnetic scattering factors
-        # Determine if the layers are related or not
-        print('hello')
-    def set_mag_layer(self):
-        # This function will create the magnetic layers
-        #
-        print('bye')
+    def magnetization(self, lay, identifier, density, sf, mag_type='isotropic'):
+        layer = self.structure[lay]
+        if type(identifier) == list:
+            for key in list(layer.keys()):
+                if set(layer[key].polymorph) == set(identifier):
+                    self.structure[lay][key].mag_scattering_factor = sf
+                    self.structure[lay][key].mag_density = density
+                    self.structure[lay][key].mag_type = mag_type
+        else:
+            self.structure[lay][identifier].mag_scattering_factor = sf
+            self.structure[lay][identifier].mag_density = density
+            self.structure[lay][identifier].mag_type = mag_type
+
+
     def setsigma(self, el, lay, rough):
        
         self.structure[lay][el].roughness = rough
@@ -283,28 +294,38 @@ class slab:
 if __name__ == "__main__":
 
     # Example: Simple sample creation
-    sample = slab(3)  # Initializing three layers
+    sample = slab(4)  # Initializing four layers
 
-    # Sr roughness not linked to La
-    # Ti roughness not linked to Mn
-    sample.addlayer(0, 'SrTiO3', 50, link=[False,False,True])  # substrate layer
+    # Substrate Layer
+    # Link: Ti-->Mn and O-->O
+    sample.addlayer(0, 'SrTiO3', 50, link=[False,True,True])  # substrate layer
 
-    # Mn roughness not linked to Al
+    # First Layer
+    # Link: La-->La and O-->O
     sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
     sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(1, ['Mn3+', 'Mn2+'] , 100, sf=['Co', 'Ni'])  # (Layer, Polymorph/Element, density, Scattering Factor)
 
-    # Showing other layer properties
-    sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2)   # Film 2 on top film 1
+    # Second Layer
+    # Link: La-->C and O-->C
+    sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2, link=[True, False,True])   # Film 2 on top film 1
 
-    #sample.showprofile()  # Showing the density profile
+    # Impurity on surface
+    # Impurity takes the form 'CCC'
+    sample.addlayer(3, 'CCC', 5) #  Density initialized to 5g/cm^3 ()
+
 
     result = sample.structure[1]
 
-    e = 'La'
+    e = 'Mn'
+    print('STRUCTURE')
     print('Name: ', result[e].name)
     print('Scattering Factor: ', result[e].scattering_factor)
     print('Stoichiometry: ',result[e].stoichiometry)
     print('Polymorph: ',result[e].polymorph)
     print('Polymorph Ratio : ', result[e].poly_ratio)
     print('Link: ', sample.link)
-
+    print('')
+    print('MAGNETIZATION')
+    print('Density: ', result[e].mag_density)
+    print('Type: ', result[e].mag_type)

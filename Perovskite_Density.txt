@@ -6,3 +6,4 @@ LaYbO3 8.08
 LaMnO3 6.50
 AlYO3 5.35 
 LaAlO3 6.42
+CCC 5
