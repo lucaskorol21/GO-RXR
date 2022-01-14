@@ -302,13 +302,15 @@ if __name__ == "__main__":
 
     # First Layer
     # Link: La-->La and O-->O
+    # * denotes optional parameter
     sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
     sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(1, ['Mn3+', 'Mn2+'] , 100, sf=['Co', 'Ni'])  # (Layer, Polymorph/Element, density, Scattering Factor)
+    sample.magnetization(1, ['Mn3+', 'Mn2+'], 100, ['Co', 'Ni'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
     # Second Layer
     # Link: La-->C and O-->C
     sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2, link=[True, False,True])   # Film 2 on top film 1
+    sample.magnetization(2,'Al', 5, 'Co', mag_type='anisotropic') # mag_type is preset to 'isotropic
 
     # Impurity on surface
     # Impurity takes the form 'CCC'
