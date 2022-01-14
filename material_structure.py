@@ -223,9 +223,20 @@ class slab:
         if type(identifier) == list:
             for key in list(layer.keys()):
                 if set(layer[key].polymorph) == set(identifier):
-                    self.structure[lay][key].mag_scattering_factor = sf
-                    self.structure[lay][key].mag_density = density
-                    self.structure[lay][key].mag_type = mag_type
+                    if layer[key].polymorph == identifier:
+                        self.structure[lay][key].mag_scattering_factor = sf
+                        self.structure[lay][key].mag_density = density
+                        self.structure[lay][key].mag_type = mag_type
+                    else:
+                        temp_sf = ['X' for i in range(len(layer[key].polymorph))]
+                        temp_density = [0 for i in range(len(layer[key].polymorph))]
+                        for n in range(len(layer[key].polymorph)):
+                            idx = identifier.index(layer[key].polymorph[n])
+                            temp_sf[idx] = sf[n]
+                            temp_density[idx] = density[n]
+                        self.structure[lay][key].mag_scattering_factor = temp_sf
+                        self.structure[lay][key].mag_density = temp_density
+                        self.structure[lay][key].mag_type = mag_type
         else:
             self.structure[lay][identifier].mag_scattering_factor = sf
             self.structure[lay][identifier].mag_density = density
@@ -305,7 +316,7 @@ if __name__ == "__main__":
     # * denotes optional parameter
     sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
     sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(1, ['Mn3+', 'Mn2+'], 100, ['Co', 'Ni'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.magnetization(1, ['Mn3+', 'Mn2+'], [5,50], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
     # Second Layer
     # Link: La-->C and O-->C
@@ -314,6 +325,7 @@ if __name__ == "__main__":
 
     # Impurity on surface
     # Impurity takes the form 'CCC'
+    # The exact implementation of this has not quite been determined yet
     sample.addlayer(3, 'CCC', 5) #  Density initialized to 5g/cm^3 ()
 
 
@@ -329,5 +341,6 @@ if __name__ == "__main__":
     print('Link: ', sample.link)
     print('')
     print('MAGNETIZATION')
+    print('Scattering Factors: ', result[e].mag_scattering_factor)
     print('Density: ', result[e].mag_density)
     print('Type: ', result[e].mag_type)
