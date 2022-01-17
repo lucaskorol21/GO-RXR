@@ -170,6 +170,8 @@ class slab:
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
+        self.poly_elements = []
+        self.mag_elements = []
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
@@ -212,15 +214,26 @@ class slab:
             self.link.append(link)
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
+
+        for poly in polymorph:  # add polymorphous element to list
+            if poly not in self.poly_elements:
+                self.poly_elements.append(poly)
+
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = poly_ratio
         if sf == None:
             self.structure[lay][ele].scattering_factor = polymorph
         else:
             self.structure[lay][ele].scattering_factor = sf
+
     def magnetization(self, lay, identifier, density, sf, mag_type='isotropic'):
         layer = self.structure[lay]
         if type(identifier) == list:
+
+            for mag_ele in identifier:  # add magnetic element to list
+                if mag_ele not in self.mag_elements:
+                    self.mag_elements.append(mag_ele)
+
             for key in list(layer.keys()):
                 if set(layer[key].polymorph) == set(identifier):
                     if layer[key].polymorph == identifier:
@@ -238,6 +251,9 @@ class slab:
                         self.structure[lay][key].mag_density = temp_density
                         self.structure[lay][key].mag_type = mag_type
         else:
+            if identifier not in self.mag_elements:  # add magnetic element to list
+                self.mag_elements.append(identifier)
+
             self.structure[lay][identifier].mag_scattering_factor = sf
             self.structure[lay][identifier].mag_density = density
             self.structure[lay][identifier].mag_type = mag_type
@@ -326,7 +342,7 @@ if __name__ == "__main__":
     # Impurity on surface
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
-    sample.addlayer(3, 'CCC', 5) #  Density initialized to 5g/cm^3 ()
+    sample.addlayer(3, 'CCC', 5) #  Density initialized to 5g/cm^3
 
 
     result = sample.structure[1]
@@ -344,3 +360,7 @@ if __name__ == "__main__":
     print('Scattering Factors: ', result[e].mag_scattering_factor)
     print('Density: ', result[e].mag_density)
     print('Type: ', result[e].mag_type)
+
+    print(sample.myelements)
+    print(sample.poly_elements)
+    print(sample.mag_elements)
