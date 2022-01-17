@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cmath
+from scipy import special
 from KK_And_Merge import *
 
 class element:
@@ -170,8 +171,8 @@ class slab:
         self.structure = [dict() for i in range(num_layers)]  # Physical structure
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
-        self.poly_elements = []
-        self.mag_elements = []
+        self.poly_elements = dict()
+        self.mag_elements = dict()
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
@@ -215,9 +216,9 @@ class slab:
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
 
-        for poly in polymorph:  # add polymorphous element to list
-            if poly not in self.poly_elements:
-                self.poly_elements.append(poly)
+        poly_keys = list(self.poly_elements.keys())
+        if ele not in poly_keys:
+            self.poly_elements[ele] = polymorph
 
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = poly_ratio
@@ -230,9 +231,7 @@ class slab:
         layer = self.structure[lay]
         if type(identifier) == list:
 
-            for mag_ele in identifier:  # add magnetic element to list
-                if mag_ele not in self.mag_elements:
-                    self.mag_elements.append(mag_ele)
+
 
             for key in list(layer.keys()):
                 if set(layer[key].polymorph) == set(identifier):
@@ -240,6 +239,7 @@ class slab:
                         self.structure[lay][key].mag_scattering_factor = sf
                         self.structure[lay][key].mag_density = density
                         self.structure[lay][key].mag_type = mag_type
+                        self.mag_elements[key] = identifier
                     else:
                         temp_sf = ['X' for i in range(len(layer[key].polymorph))]
                         temp_density = [0 for i in range(len(layer[key].polymorph))]
@@ -250,71 +250,128 @@ class slab:
                         self.structure[lay][key].mag_scattering_factor = temp_sf
                         self.structure[lay][key].mag_density = temp_density
                         self.structure[lay][key].mag_type = mag_type
+                        self.mag_elements[key] = identifier
         else:
-            if identifier not in self.mag_elements:  # add magnetic element to list
-                self.mag_elements.append(identifier)
 
             self.structure[lay][identifier].mag_scattering_factor = sf
-            self.structure[lay][identifier].mag_density = density
+            self.structure[lay][identifier].mag_density = [density]
             self.structure[lay][identifier].mag_type = mag_type
+            self.mag_elements[identifier] = [identifier]
 
-
-    def setsigma(self, el, lay, rough):
-       
-        self.structure[lay][el].roughness = rough
-
-    def setd(self, el, lay, thick):
-        self.structure[lay][element].thickness = thick
-
-    def setdensity(self, el, lay, rho):
-        
-        self.structure[lay][el].density = rho
 
     def convert_to_slice(self):
             print('Time to convert')
 
 
-    def showprofile(self):
+    def density_profile(self):
+
         thick = np.array([])  # thickness array
-        dense = {k:np.array([]) for k in self.myelements}  # Density dictionary
+        density_struct = {k:np.array([]) for k in self.myelements}
+        density_poly = {k:dict() for k in list(self.poly_elements.keys())}
+        density_mag = {k:dict() for k in list(self.mag_elements.keys())}
+
+        for ele in list(self.poly_elements.keys()):
+            density_struct.pop(ele)
+            density_poly[ele] = {k:np.array([]) for k in self.poly_elements[ele]}
+
+        for ele in list(self.mag_elements.keys()):
+            density_mag[ele] = {k:np.array([]) for k in self.mag_elements[ele]}
+
+        poly_keys = list(self.poly_elements.keys())
+
         first_layer = True  # Boolean that determines if using first layer
-        step = 0.1  # Thickness step size (Angstrom)
+        step = 0.01  # Thickness step size (Angstrom)
         last = 0 + step  # Start of next slab
 
         for layer in self.structure:
             mykeys = list(layer.keys())  # retrieve elements in layer
 
             if first_layer:  # substrate layer
-                temp = np.arange(-50,0+step,step)
-                n = len(temp)
+                temp = np.arange(-50,0+step,step)  # temporay thickness
+                n = len(temp)  # length of the temporary thickness array
                 thick = np.concatenate((thick, temp))  # Add slab thickness to material thickness
                 first_layer = False
-                for ele in self.myelements:  # Create density array for each element
+
+                # Takes care of the none polymorphous and none magnetic case
+                for ele in list(density_struct.keys()):  # Create density array for each element
                     if ele in mykeys:  # Element in substrate layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry/layer[ele].molar_mass))
+                        ratio = layer[ele].stoichiometry/layer[ele].molar_mass
+                        density_struct[ele] = np.concatenate((density_struct[ele], np.ones(n)*layer[ele].density*ratio))
                     else:  # Element in film layer
-                        dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
+                        density_struct[ele] = np.concatenate((density_struct[ele], np.zeros(n)))
+
+                # Takes care of polymorphous case
+                for ele in list(density_poly.keys()):
+                    if ele in mykeys:  #Poly in substrate material
+                        idx = 0
+                        for poly in list(density_poly[ele].keys()):
+                            ratio = layer[ele].stoichiometry*layer[ele].poly_ratio[idx]/layer[ele].molar_mass
+                            density_poly[ele][poly] = np.concatenate((density_poly[ele][poly], np.ones(n)*layer[ele].density*ratio))
+                            idx = idx + 1
+                    else:
+                        for poly in list(density_poly[ele].keys()):
+                            density_poly[ele][poly] = np.concatenate((density_poly[ele][poly], np.zeros(n)))
+
+                for ele in list(density_mag.keys()):
+                    if ele in mykeys:  # Magnet in substrate material
+                        idx = 0
+                        for mag in list(density_mag[ele].keys()):
+                            density_mag[ele][mag] = np.concatenate((density_mag[ele][mag], (-1)*np.ones(n)*layer[ele].mag_density[idx]))
+                            idx = idx + 1
+                    else:
+                        for mag in list(density_mag[ele]):
+                            density_mag[ele][mag] = np.concatenate((density_mag[ele][mag], np.zeros(n)))
+
             else:  # Film Layers
                 first_element = list(layer.keys())[0]
                 temp = np.arange(last, last + layer[first_element].thickness+step,step)
-                print(temp)
                 n = len(temp)
                 thick = np.concatenate((thick, temp))  # Add slab thickness to material thickness
                 last = last + layer[first_element].thickness  # Update start of next layer
-                for ele in self.myelements:  # Create density array for each element
-                    if ele in mykeys:  # Element in current layer
-                        dense[ele] = np.concatenate((dense[ele], np.ones(n)*layer[ele].density*layer[ele].stoichiometry/layer[ele].molar_mass))
-                    else:  # Element not found in current layer
-                        dense[ele] = np.concatenate((dense[ele], np.zeros(n)))
 
-        # Create plot
-        mydense = np.transpose(list(dense.values()))
-        plt.figure()
-        plt.plot(thick, mydense)
-        plt.xlabel('Thickness (Angstrom)')
-        plt.ylabel('Density (mol/cm^3)')
-        plt.suptitle('Density Profile')
-        plt.show()
+                # Takes care of the none polymorphous and none magnetic case
+                for ele in list(density_struct.keys()):  # Create density array for each element
+                    if ele in mykeys:  # Element in substrate layer
+                        ratio = layer[ele].stoichiometry / layer[ele].molar_mass
+
+                        density_struct[ele] = np.concatenate((density_struct[ele], np.ones(n) * layer[ele].density * ratio))
+                    else:  # Element in film layer
+                        density_struct[ele] = np.concatenate((density_struct[ele], np.zeros(n)))
+
+                # Takes care of polymorphous case
+                for ele in list(density_poly.keys()):
+                    if ele in mykeys:  # Poly in substrate material
+                        idx = 0
+                        for poly in list(density_poly[ele].keys()):
+                            ratio = layer[ele].stoichiometry * layer[ele].poly_ratio[idx]/layer[ele].molar_mass
+                            density_poly[ele][poly] = np.concatenate((density_poly[ele][poly], np.ones(n) * layer[ele].density * ratio))
+                            idx = idx + 1
+                    else:
+                        for poly in list(density_poly[ele].keys()):
+                            density_poly[ele][poly] = np.concatenate((density_poly[ele][poly], np.zeros(n)))
+
+                # Takes care of magnetic component
+                for ele in list(density_mag.keys()):
+                    if ele in mykeys:  # Magnet in substrate material
+                        idx = 0
+                        for mag in list(density_mag[ele].keys()):
+                            density_mag[ele][mag] = np.concatenate((density_mag[ele][mag], (-1)*np.ones(n)*layer[ele].mag_density[idx]))
+                            idx = idx + 1
+                    else:
+                        for mag in list(density_mag[ele]):
+                            density_mag[ele][mag] = np.concatenate((density_mag[ele][mag], np.zeros(n)))
+
+        # Create single dictionary to use
+        density = density_struct
+        for ele in list(density_poly.keys()):
+            for poly in list(density_poly[ele].keys()):
+                density[poly] = density_poly[ele][poly]
+
+        density_magnetic = dict()
+        for ele in list(density_mag.keys()):
+            for mag in list(density_mag[ele].keys()):
+                density_magnetic[mag] = density_mag[ele][mag]
+        return thick, density, density_magnetic
 
 
 
@@ -326,23 +383,24 @@ if __name__ == "__main__":
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, link=[False,True,True])  # substrate layer
+    sample.polymorphous(0,'Ti',['Ti3+','Ti4+'], [0.25,0.75])
 
     # First Layer
     # Link: La-->La and O-->O
     # * denotes optional parameter
     sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
-    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.5,0.5], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(1, ['Mn3+', 'Mn2+'], [5,50], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.polymorphous(1,'Mn',['Mn3+','Mn2+'], [0.9,0.1], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(1, ['Mn3+', 'Mn2+'], [0.01,0.03], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
     # Second Layer
     # Link: La-->C and O-->C
     sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2, link=[True, False,True])   # Film 2 on top film 1
-    sample.magnetization(2,'Al', 5, 'Co', mag_type='anisotropic') # mag_type is preset to 'isotropic
+    sample.magnetization(2,'Al', 0.01, 'Co', mag_type='anisotropic') # mag_type is preset to 'isotropic
 
     # Impurity on surface
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
-    sample.addlayer(3, 'CCC', 5) #  Density initialized to 5g/cm^3
+    sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
 
 
     result = sample.structure[1]
@@ -361,6 +419,27 @@ if __name__ == "__main__":
     print('Density: ', result[e].mag_density)
     print('Type: ', result[e].mag_type)
 
-    print(sample.myelements)
-    print(sample.poly_elements)
+    #  print(sample.myelements)
+    #  print(sample.poly_elements)
     print(sample.mag_elements)
+
+    thickness, density, density_magnetic = sample.density_profile()
+    val = list(density.values())
+    mag_val = list(density_magnetic.values())
+    plt.figure()
+    for idx in range(len(val)):
+        plt.plot(thickness, val[idx])
+    for idx in range(len(mag_val)):
+        plt.plot(thickness, mag_val[idx],'--')
+
+    center = np.zeros(len(thickness))
+    plt.plot(thickness, center, 'k-.', linewidth=2)
+    my_legend = list(density.keys())
+    for key in list(density_magnetic.keys()):
+        my_legend.append('Magnetic: ' + key)
+    plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.04,0.5))
+    plt.xlabel('Thickness (Angstrom)')
+    plt.ylabel('Density (mol/cm^3)')
+    plt.show()
+
+
