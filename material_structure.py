@@ -167,8 +167,6 @@ def atomic_mass(atom):
 
 class slab:
     def __init__(self, num_layers):
-
-        self.structure = [dict() for i in range(num_layers)]  # Physical structure
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
         self.poly_elements = dict()
@@ -378,7 +376,7 @@ class slab:
 if __name__ == "__main__":
 
     # Example: Simple sample creation
-    sample = slab(4)  # Initializing four layers
+    sample = slab('f')  # Initializing four layers
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
@@ -436,8 +434,8 @@ if __name__ == "__main__":
     plt.plot(thickness, center, 'k-.', linewidth=2)
     my_legend = list(density.keys())
     for key in list(density_magnetic.keys()):
-        my_legend.append('Magnetic: ' + key)
-    plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.04,0.5))
+        my_legend.append('Mag: ' + key)
+    plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02,0.5))
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
