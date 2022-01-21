@@ -2,27 +2,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cmath
 from scipy import special
+import warnings
 from KK_And_Merge import *
 
 class element:
     def __init__(self, name, stoichiometry):
         """
-        Purpose: Class that keeps track of elemental properties
-        :param name: Elemental symbol
-        :param stoichiometry: Stoichiometry of each element
-        :param polymorph:
-        :param poly_ratio: Amount of ion that makes of element ---> (ion density) = (ionratio)*(element)
+        Purpose: Used in class slab. Used to keep track of elemental properties of each layer
+        :param name: Element Symbol
+        :param stoichiometry: The stoichiometric relation of the chemical formula as input into the class slab
         """
-        self.name = name  # Elemental Symbol
-        self.molar_mass = 0
+        self.name = name  # Element Symbol
+        self.molar_mass = 0  # Total molar mass of all elements in slab layer
         self.density = 0  # Density of the molecule (g/cm^3)
         self.thickness = 0  # Thickness of the layer (Angstrom)
         self.roughness = 0  # Roughness of the surface (Angstrom)
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
-        self.poly_ratio = 1  # Ratio of the total density that this polymorphous form makes up of the total element.
-        self.polymorph = []  # A list that contains the various forms (e.g. ions)
-        self.mag_type = None
-        self.mag_density = None
+        self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
+        self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
+        self.mag_type = None  # The type of magnetization (isotropic and anisotropic)
+        self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = None
 
@@ -167,11 +166,20 @@ def atomic_mass(atom):
 
 class slab:
     def __init__(self, num_layers):
-        self.link = []
+        """
+        Purpose: Create a slab model of the sample layer. Keeps track of the elemental properties for each layer
+        :param num_layers: Initializes the sample with desired number of slabs/layers. Must be inputted as an integer.
+        """
+        self.link = []  # Describes if elements in current layer have a linked roughness to the next layer. This is a list that contains Boolean type.
         self.myelements = []  # Keeps track of the elements in the material
-        self.structure = [dict() for i in range(num_layers)]
-        self.poly_elements = dict()
-        self.mag_elements = dict()
+
+        # Checks if num_layers is integer type
+        if type(num_layers) != int:
+            raise NameError('Number of slab layers must be entered as an integer type')
+
+        self.structure = [dict() for i in range(num_layers)]  # keeps track of the structural properties of each layer
+        self.poly_elements = dict()  # Keeps track of the  polymorphous elements
+        self.mag_elements = dict()  # Keeps track of the magnetized elements in the material
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
@@ -183,6 +191,60 @@ class slab:
         :param roughness: Rougness at the interface
         :param link: Determines if roughness between two of the same sites are linked
         """
+        # Retrieve the element info
+        elements, num_elements = find_stoichiometry(formula)
+        molar_mass = 0
+        # -------------------------------------- Error Checks ---------------------------------------------------------#
+        if len(self.structure[num_layer]) != 0:
+            warnings.warn('Layer '+str(num_layer)+' already initialized')
+
+        # Thickness type check
+        if type(thickness) != int and type(thickness) != float:
+            raise TypeError('Thickness must be integer or float type')
+
+         # Checks if thickness is in a reasonable range
+        if thickness < 0:
+            warnings.warn('Thickness must be a positive number')
+            thickness = abs(thickness)
+        elif thickness == 0:
+            raise ValueError('Thickness cannot be zero')
+
+        # Checks Density
+        if density == None:
+            pass
+        elif type(density) != int and type(density) != float:
+            raise TypeError('Density must be entered in as a float or integer type')
+        elif density < 0:
+            warnings.warn('Density must be positive')
+            density = abs(density)
+        elif density == 0:
+            raise ValueError('The density of a material can not be zero')
+
+        if density == None:
+            pass
+        elif density > 20:
+            warnings.warn('The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+
+        # Checks Roughness
+        if type(roughness) != int and type(roughness) != float:
+            raise TypeError('Roughness must be of float or integer type.')
+        elif roughness < 0:
+            roughness = abs(roughness)
+            warnings.warn('Roughness should be entered as a positive value')
+
+        if roughness > 15:
+            warnings.warn('Roughness is much larger than expected')
+
+        if link == None:
+            pass
+        elif type(link) != list:
+            raise TypeError('Variable link must be a list')
+        elif len(link) != num_elements:
+            raise RuntimeError("Length of link must match number of elements in formula")
+        else:
+            print('y')
+
+        # -------------------------------------------------------------------------------------------------------------#
         # Retrieve the element info
         elements, num_elements = find_stoichiometry(formula)
         molar_mass = 0
@@ -393,8 +455,9 @@ if __name__ == "__main__":
 
     # Second Layer
     # Link: La-->C and O-->C
-    sample.addlayer(2, 'LaAlO3', 16, density=8.08, roughness=2, link=[True, False,True])   # Film 2 on top film 1
+    sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
     sample.magnetization(2,'Al', 0.01, 'Co', mag_type='anisotropic') # mag_type is preset to 'isotropic
+
 
     # Impurity on surface
     # Impurity takes the form 'CCC'
@@ -441,4 +504,5 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
 
+    
 
