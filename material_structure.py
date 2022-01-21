@@ -169,6 +169,7 @@ class slab:
     def __init__(self, num_layers):
         self.link = []
         self.myelements = []  # Keeps track of the elements in the material
+        self.structure = [dict() for i in range(num_layers)]
         self.poly_elements = dict()
         self.mag_elements = dict()
 
@@ -376,7 +377,7 @@ class slab:
 if __name__ == "__main__":
 
     # Example: Simple sample creation
-    sample = slab('f')  # Initializing four layers
+    sample = slab(4)  # Initializing four layers
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
