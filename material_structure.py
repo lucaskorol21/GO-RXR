@@ -20,7 +20,7 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.mag_type = None  # The type of magnetization (isotropic and anisotropic)
+        self.mag_dir = None  # The type of magnetization (isotropic and anisotropic)
         self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = None
@@ -288,7 +288,7 @@ class slab:
         else:
             self.structure[lay][ele].scattering_factor = sf
 
-    def magnetization(self, lay, identifier, density, sf, mag_type='isotropic'):
+    def magnetization(self, lay, identifier, density, sf, mag_dir='z'):
         layer = self.structure[lay]
         if type(identifier) == list:
 
@@ -299,7 +299,7 @@ class slab:
                     if layer[key].polymorph == identifier:
                         self.structure[lay][key].mag_scattering_factor = sf
                         self.structure[lay][key].mag_density = density
-                        self.structure[lay][key].mag_type = mag_type
+                        self.structure[lay][key].mag_dire = mag_dir
                         self.mag_elements[key] = identifier
                     else:
                         temp_sf = ['X' for i in range(len(layer[key].polymorph))]
@@ -310,13 +310,13 @@ class slab:
                             temp_density[idx] = density[n]
                         self.structure[lay][key].mag_scattering_factor = temp_sf
                         self.structure[lay][key].mag_density = temp_density
-                        self.structure[lay][key].mag_type = mag_type
+                        self.structure[lay][key].mag_type = mag_dir
                         self.mag_elements[key] = identifier
         else:
 
             self.structure[lay][identifier].mag_scattering_factor = sf
             self.structure[lay][identifier].mag_density = [density]
-            self.structure[lay][identifier].mag_type = mag_type
+            self.structure[lay][identifier].mag_type = mag_dir
             self.mag_elements[identifier] = [identifier]
 
 
@@ -504,5 +504,5 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
 
-    
+
 
