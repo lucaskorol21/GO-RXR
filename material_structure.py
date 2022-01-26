@@ -213,49 +213,49 @@ class slab:
 
         # Thickness type check
         if type(thickness) != int and type(thickness) != float:
-            raise TypeError('Thickness must be integer or float type')
+            raise TypeError('Layer ' +str(num_layer)+': Thickness must be integer or float type')
 
          # Checks if thickness is in a reasonable range
         if thickness < 0:
-            warnings.warn('Thickness must be a positive number')
+            warnings.warn('Layer ' +str(num_layer)+': Thickness must be a positive number. The absolute value was taken as it was assumed the user meant to input a negative value.')
             thickness = abs(thickness)
         elif thickness == 0:
-            raise ValueError('Thickness cannot be zero')
+            raise ValueError('Layer ' +str(num_layer)+': Thickness cannot be zero')
 
         # Checks Density
         if density == None:
             pass
         elif type(density) != int and type(density) != float:
-            raise TypeError('Density must be entered in as a float or integer type')
+            raise TypeError('Layer ' +str(num_layer)+': Density must be entered in as a float or integer type')
         elif density < 0:
-            warnings.warn('Density must be positive')
+            warnings.warn('Layer ' +str(num_layer)+': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
             density = abs(density)
         elif density == 0:
-            raise ValueError('The density of a material can not be zero')
+            raise ValueError('Layer ' +str(num_layer)+': The density of a material can not be zero')
 
         if density == None:
             pass
         elif density > 20:
-            warnings.warn('The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+            warnings.warn('Layer ' +str(num_layer)+': The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
 
         # Checks Roughness
         if type(roughness) != int and type(roughness) != float:
-            raise TypeError('Roughness must be of float or integer type.')
+            raise TypeError('Layer ' +str(num_layer)+': Roughness must be of float or integer type.')
         elif roughness < 0:
             roughness = abs(roughness)
-            warnings.warn('Roughness should be entered as a positive value')
+            warnings.warn('Layer ' +str(num_layer)+': Roughness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
 
         if roughness > 15:
-            warnings.warn('Roughness is much larger than expected')
+            warnings.warn('Layer ' +str(num_layer)+': Roughness is much larger than expected')
 
         if link == None:
             pass
         elif type(link) != list:
             raise TypeError('Variable link must be a list')
         elif len(link) != num_elements:
-            raise RuntimeError("Length of link must match number of elements in formula")
-        else:
-            print('y')
+            raise RuntimeError('Layer ' +str(num_layer)+'Length of link must match number of elements in formula')
+        elif len(set([type(x) for x in link])) != 1:
+            raise TypeError('Layer ' +str(num_layer)+ ': All elements in link list must be booleans')
 
         # -------------------------------------------------------------------------------------------------------------#
         # Retrieve the element info
@@ -492,7 +492,7 @@ if __name__ == "__main__":
     print('MAGNETIZATION')
     print('Scattering Factors: ', result[e].mag_scattering_factor)
     print('Density: ', result[e].mag_density)
-    print('Type: ', result[e].mag_type)
+    print('Type: ', result[e].mag_dir)
 
     #  print(sample.myelements)
     #  print(sample.poly_elements)
@@ -516,6 +516,8 @@ if __name__ == "__main__":
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
+
+
 
 
 
