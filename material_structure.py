@@ -63,6 +63,14 @@ def checkstring(formula):
 
     :return: Returns a list that contains the chemical formula and it's stoichiometry [symbol, stoich]
     """
+
+    # Used in error check
+    symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',
+               'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se' , 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
+               'Cs', 'Ba', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po' , 'At', 'Rn', 'Fr', 'Ra', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
+               'Rg', 'Cn', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
+               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr']
+
     info = []  # list to store the element symbol and it's stoichiometry
     n = len(formula)  # Get's the number of characters in the list
 
@@ -91,6 +99,8 @@ def checkstring(formula):
                 info.append(formula[0:2])
                 formula, num = get_number(formula[2:])
                 info.append(num)
+            elif formula[2].islower():
+                raise NameError('Unexpected lowercase character ' + formula[0:3])
             else:  # Case UL
                 info.append(formula[0:2])
                 info.append(1)
@@ -106,9 +116,12 @@ def checkstring(formula):
             info.append(1)
             formula = formula[1:]
     else:  # Raises error if unexpected symbol
-        raise NameError(formula)
+        raise NameError('Unexpected symbol ' + formula[0])
 
+    if info[0] not in symbols:
+        raise NameError('Symbol ' + info[0] + ' does not correspond to an element found on the periodic table.')
     return formula, info
+
 
 def find_stoichiometry(formula):
     """
@@ -456,7 +469,7 @@ if __name__ == "__main__":
     # Second Layer
     # Link: La-->C and O-->C
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
-    sample.magnetization(2,'Al', 0.01, 'Co', mag_type='anisotropic') # mag_type is preset to 'isotropic
+    sample.magnetization(2,'Al', 0.01, 'Co', mag_dir='anisotropic') # mag_type is preset to 'isotropic
 
 
     # Impurity on surface
