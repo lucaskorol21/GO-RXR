@@ -354,10 +354,50 @@ class slab:
             self.structure[lay][ele].scattering_factor = sf
 
     def magnetization(self, lay, identifier, density, sf, mag_dir='z'):
+
+        # ---------------------------------------- Error Check ------------------------------------------------------- #
+
+        # Checking that layer exists
+        if lay > len(self.structure) - 1:
+            raise RuntimeError('Layer ' + str(lay) + ' selected, but maximum layer is ' + str(len(self.structure) - 1))
+
+        # Checks to make sure that the variable identifier is either a list or string
+        if type(identifier) != str and type(identifier) != list:
+            raise TypeError('Variable identifier must be a list or string.')
+
+            # Checks to make sure that the variable identifier is either a list or string
+        if type(sf) != str and type(sf) != list:
+            raise TypeError('Variable identifier must be a list or string.')
+
+        # Checks to make sure that the variable identifier is either a list or string
+        if type(density) != int and type(density) != list and type(density) != float:
+            raise TypeError('Density must be entered as a list, integer, or float value')
+
+        # Checks to make sure density is either float or integer value
+        if type(density) == list:
+            if len(density) != len(identifier) and len(identifier) != len(sf):
+                raise RuntimeError('Variables density, identifier, and sf must contain same number of elements.')
+            check = set([type(x) for x in density])
+            for k in check:
+                if k != int and k != float:
+                    raise TypeError('Values in density list must be either integers or floating point values')
+
+        # Checks that all identifiers are strings
+        if type(identifier) == list:
+            if type(identifier[0]) != str:
+                raise TypeError('All list elements must be strings')
+            if len(set([type(x) for x in identifier])) > 1:
+                raise TypeError('All list elements must be strings')
+
+
+        if type(sf) == list:
+            if type(sf[0]) != str:
+                raise TypeError('All list elements must be strings')
+            if len(set([type(x) for x in sf])) > 1:
+                raise TypeError('All list elements must be strings')
+        # ------------------------------------------------------------------------------------------------------------ #
         layer = self.structure[lay]
         if type(identifier) == list:
-
-
 
             for key in list(layer.keys()):
                 if set(layer[key].polymorph) == set(identifier):
