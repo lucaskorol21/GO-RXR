@@ -208,6 +208,12 @@ class slab:
         elements, num_elements = find_stoichiometry(formula)
         molar_mass = 0
         # -------------------------------------- Error Checks ---------------------------------------------------------#
+
+        # Let's user know that layer set is out of total number of layer range
+        if num_layer > len(self.structure) - 1:
+            raise RuntimeError( 'Layer ' + str(num_layer) + ' selected, but maximum layer is ' + str(len(self.structure)-1))
+
+        # Let's user know layer already initialized
         if len(self.structure[num_layer]) != 0:
             warnings.warn('Layer '+str(num_layer)+' already initialized')
 
@@ -290,9 +296,55 @@ class slab:
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
 
+        # ------------------------------------------- Error Checks --------------------------------------------------- #
+
+        # Checking that layer exists
+        if lay > len(self.structure) - 1:
+            raise RuntimeError( 'Layer ' + str(lay) + ' selected, but maximum layer is ' + str(len(self.structure)-1))
+
+        # Checking that the element is found in the material
+        if ele not in self.myelements:
+            raise RuntimeError('Layer ' + str(lay) + ': Element '+ ele + ' not found in any layer.')
+
+        # Checking that the element is found in the desired layer
+        if ele not in list(self.structure[lay].keys()):
+            raise RuntimeError('Layer ' + str(lay) + ': Element ' + ele + ' not found in layer ' + str(lay))
+
+        # Checking polymorphous type
+        if type(polymorph) != list:
+            raise TypeError('Layer ' + str(lay) + ': Input of polymorphous variable must be of type list')
+
+        # Checking poly_ratio type
+        if type(poly_ratio) != list:
+            raise TypeError('Layer ' + str(lay) + ': Input of poly_ratio must be entered as a list')
+
+        # Checks that length of list is greater than 2
+        if len(polymorph) < 2:
+            raise RuntimeError('Layer ' + str(lay) + ': Input more than one different version of the material. Length of list should be greater than two.')
+
+        # Checks that poly_ratio and polymorphous have same length
+        if len(poly_ratio) != len(polymorph):
+            raise RuntimeError('Layer ' + str(lay) + ': variables poly_ratio and polymorph must be same length.')
+
+        # Checks that all polymorphous types are strings
+        if len(set([type(x) for x in polymorph])) != 1:
+            raise TypeError('Layer ' +str(lay)+ ': variable polymorph must only contain strings.')
+
+        # Chekcs that all poly_ratio types are floating points
+        if len(set([type(x) for x in poly_ratio])) != 1:
+            raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
+
+        if abs(1 - sum(poly_ratio)) > 1e-3:
+            warnings.warn('Addition of all values in poly_ratio should add up to 1.')
+        # ------------------------------------------------------------------------------------------------------------ #
+
+        # Finds and sets the polymorphous elements to the right element class
         poly_keys = list(self.poly_elements.keys())
         if ele not in poly_keys:
-            self.poly_elements[ele] = polymorph
+            if len(polymorph) < 2:
+                self.poly_elements[ele] = [polymorph]
+            else:
+                self.poly_elements[ele] = polymorph
 
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = poly_ratio
@@ -327,7 +379,7 @@ class slab:
                         self.mag_elements[key] = identifier
         else:
 
-            self.structure[lay][identifier].mag_scattering_factor = sf
+            self.structure[lay][identifier].mag_scattering_factor = [sf]
             self.structure[lay][identifier].mag_density = [density]
             self.structure[lay][identifier].mag_type = mag_dir
             self.mag_elements[identifier] = [identifier]
