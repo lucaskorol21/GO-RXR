@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cmath
+import math
 from scipy.special import erf
 import warnings
 from KK_And_Merge import *
@@ -437,13 +437,123 @@ class slab:
     def convert_to_slice(self):
             print('Time to convert')
 
-    def error_function(self, t, offset):
+    def error_function(self, t, rough, offset, upward):
+        if rough == 0:
+            if upward:
+                val = np.heaviside(t - offset, 1) * 2 - 1
+            else:
+                val = np.heaviside(offset-t, 1) * 2 - 1
 
-        val = erf((t-offset))
-        print('This is the error function')
+        elif upward:
+            val = erf((t-offset)/rough/sqrt(2))
+        else:
+            val = erf((offset-t) / rough / sqrt(2))
+
+
+        return val
 
     def new_density_profile(self):
-        print('Trying something new')
+
+        n = len(self.structure)  # number of layers
+        thickness = np.array([])  # thickness array
+        density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
+        density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
+        density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
+
+        for ele in list(self.poly_elements.keys()):
+            density_struct.pop(ele)
+            density_poly[ele] = {k: np.array([]) for k in self.poly_elements[ele]}
+
+        for ele in list(self.mag_elements.keys()):
+            density_mag[ele] = {k: np.array([]) for k in self.mag_elements[ele]}
+
+        struct_keys = list(density_struct.keys())
+        poly_keys = list(self.poly_elements.keys())
+        mag_keys = list(self.mag_elements.keys())
+
+        # Initializing thickness array
+        transition = [0]
+        thick = 0
+        for layer in range(1, n):
+            val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
+            transition.append(val)
+            thick = thick + list(self.structure[layer].values())[0].thickness
+
+        step = 1e-4  # consider altering step size
+        thickness = np.arange(-50,thick+10+step, step)
+        # Go through the element list
+        for ele in self.myelements:
+
+            # Simple element case
+            if ele in struct_keys:
+                density_struct[ele] = np.zeros(len(thickness))
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        if layer == 0:
+                            offset = transition[0]  # offset value for error function
+                            rough = self.structure[layer][ele].roughness  # surface roughness
+                            val = (self.error_function(thickness,rough, offset, False) + 1)/2 # calculate error function
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+                            density_struct[ele] = density_struct[ele] + val*self.structure[layer][ele].density*ratio
+
+                        else:
+                            position = self.structure[layer][ele].position  # position of element
+                            offset1 = transition[layer-1]
+                            offset2 = transition[layer]
+
+                            previous_element = list(self.structure[layer-1].keys())[position]
+                            rough1 = self.structure[layer-1][previous_element].roughness
+                            rough2 = self.structure[layer][ele].roughness
+                            val1 = self.error_function(thickness, rough1, offset1, True)
+                            val2 = self.error_function(thickness, rough2, offset2, False)
+
+                            val = val1 + val2
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+                            density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio
+
+
+            if ele in poly_keys:
+                first = True
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        if first:
+                            density_poly[ele] = {k:np.zeros(len(thickness)) for k in list(self.structure[layer][ele].polymorph)}
+                            first = False
+                        if layer == 0:
+                            offset = transition[0]  # offset value for error function
+                            rough = self.structure[layer][ele].roughness  # surface roughness
+                            val = (self.error_function(thickness, rough, offset,False) + 1) / 2  # calculate error function
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+
+                            po = 0
+                            for poly in density_poly[ele]:
+                                print(poly)
+                                density_poly[ele][poly] = density_poly[ele][poly] + val * self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]
+                                po = po + 1
+                        else:
+                            position = self.structure[layer][ele].position  # position of element
+                            offset1 = transition[layer - 1]
+                            offset2 = transition[layer]
+
+                            previous_element = list(self.structure[layer - 1].keys())[position]
+                            rough1 = self.structure[layer - 1][previous_element].roughness
+                            rough2 = self.structure[layer][ele].roughness
+                            val1 = self.error_function(thickness, rough1, offset1, True)
+                            val2 = self.error_function(thickness, rough2, offset2, False)
+                            val = val1 + val2
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+                            po = 0
+                            for poly in density_poly[ele]:
+                                density_poly[ele][poly] = density_poly[ele][poly] + val * self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]
+                                po = po + 1
+
+            ################################################
+            if ele in mag_keys:
+                print('Magnetization')
+
+        return thickness, density_struct
+
+
     def density_profile(self):
 
         thick = np.array([])  # thickness array
@@ -564,11 +674,11 @@ class slab:
 if __name__ == "__main__":
 
     # Example: Simple sample creation
-    sample = slab(4)  # Initializing four layers
+    sample = slab(3)  # Initializing four layers
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, link=[False,True,True])  # substrate layer
+    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False,True,True])  # substrate layer
     sample.polymorphous(0,'Ti',['Ti3+','Ti4+'], [0.25,0.75])
 
     # First Layer
@@ -587,7 +697,7 @@ if __name__ == "__main__":
     # Impurity on surface
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
-    sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
+    #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
 
     result = sample.structure[1]
 
@@ -609,25 +719,35 @@ if __name__ == "__main__":
     #  print(sample.myelements)
     #  print(sample.poly_elements)
     print(sample.mag_elements)
+    print()
+    thickness, density = sample.new_density_profile()
 
-    thickness, density, density_magnetic = sample.density_profile()
+    # thickness, density, density_magnetic = sample.density_profile()
     val = list(density.values())
-    mag_val = list(density_magnetic.values())
+    # mag_val = list(density_magnetic.values())
     plt.figure()
     for idx in range(len(val)):
         plt.plot(thickness, val[idx])
+
+    """
     for idx in range(len(mag_val)):
         plt.plot(thickness, mag_val[idx],'--')
-
+    """
     center = np.zeros(len(thickness))
     plt.plot(thickness, center, 'k-.', linewidth=2)
     my_legend = list(density.keys())
+
+
+    """
     for key in list(density_magnetic.keys()):
         my_legend.append('Mag: ' + key)
+    """
     plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02,0.5))
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
+
+    t = np.arange(-20,20,0.01)
 
 
 
