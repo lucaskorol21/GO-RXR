@@ -20,7 +20,8 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.mag_dir = None  # The type of magnetization (isotropic and anisotropic)
+        self.theta = 0  #
+        self.phi = 0  #
         self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = None
@@ -304,6 +305,18 @@ class slab:
             self.link.append(link)
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
+        """
+        Purpose: Allows the user to set polymorphous elements in their material
+        :param lay: The layer the polymorphous element is found (integer value)
+        :param ele: The symbol of the polymorphous element in the selected layer (string)
+        :param polymorph: List of the polymorph 'names' (e.g. ['Mn2+', 'Mn3+'])
+        :param poly_ratio: A list of ratios that determine how much of the polymorph makes up the total element
+                            - polymorph = ['Mn2+', 'Mn3+'], poly_ratio = [0.2,0.8]
+                                - Density(Mn2+) = Density(Mn)*0.2
+                                - Density(Mn3+) = Density(Mn)*0.8
+                            - Note that the sum of all elements in poly_ratio must equal to 1
+        :param sf: List of the scattering factors. Later version will implement scattering function.
+        """
 
         # ------------------------------------------- Error Checks --------------------------------------------------- #
 
@@ -350,19 +363,31 @@ class slab:
         # Finds and sets the polymorphous elements to the right element class
         poly_keys = list(self.poly_elements.keys())
         if ele not in poly_keys:
-            if len(polymorph) < 2:
+            if len(polymorph) < 2: # Case where only one polymorph is entered
                 self.poly_elements[ele] = [polymorph]
-            else:
+            else: # Multiple entries
                 self.poly_elements[ele] = polymorph
 
+        # Sets polymorph values to appropriate element in the correct layer
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = poly_ratio
+
+        # Sets scattering factors
         if sf == None:
             self.structure[lay][ele].scattering_factor = polymorph
         else:
             self.structure[lay][ele].scattering_factor = sf
 
-    def magnetization(self, lay, identifier, density, sf, mag_dir='z'):
+    def magnetization(self, lay, identifier, density, sf, phi=0, theta=0):
+        """
+        Purpose: Set magnetization properties
+        :param lay: Layer the magnetic material is found
+        :param identifier: The symbol of the magnetic element
+        :param density: The density of the magnetism
+        :param sf: The scattering factor you want to use for the magnetic component
+        :param phi: Azimuthal angle (degrees)
+        :param theta: Polar angle (degrees)
+        """
 
         # ---------------------------------------- Error Check ------------------------------------------------------- #
 
@@ -397,6 +422,8 @@ class slab:
                 raise TypeError('All list elements must be strings')
             if len(set([type(x) for x in identifier])) > 1:
                 raise TypeError('All list elements must be strings')
+            if len(identifier) != len(set(identifier)):
+                raise RuntimeError('An element is repeated in identifier list.')
 
 
         if type(sf) == list:
@@ -404,16 +431,20 @@ class slab:
                 raise TypeError('All list elements must be strings')
             if len(set([type(x) for x in sf])) > 1:
                 raise TypeError('All list elements must be strings')
+
+
         # ------------------------------------------------------------------------------------------------------------ #
         layer = self.structure[lay]
         if type(identifier) == list:
 
+            # Loop through all elements in selected layer
             for key in list(layer.keys()):
-                if set(layer[key].polymorph) == set(identifier):
-                    if layer[key].polymorph == identifier:
+                if set(layer[key].polymorph) == set(identifier): # Checks if elements in identifier and polymorph list the same
+                    if layer[key].polymorph == identifier:  # Checks if they are in the same order, if not switch order
                         self.structure[lay][key].mag_scattering_factor = sf
                         self.structure[lay][key].mag_density = density
-                        self.structure[lay][key].mag_dire = mag_dir
+                        self.structure[lay][key].phi = phi
+                        self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
                     else:
                         temp_sf = ['X' for i in range(len(layer[key].polymorph))]
@@ -424,13 +455,20 @@ class slab:
                             temp_density[idx] = density[n]
                         self.structure[lay][key].mag_scattering_factor = temp_sf
                         self.structure[lay][key].mag_density = temp_density
-                        self.structure[lay][key].mag_type = mag_dir
+                        self.structure[lay][key].phi = phi
+                        self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
+                else:
+                    # Plolymorph names do not match magnetic names
+                    raise RuntimeError('Polymorph names '+str(layer[key].polymorph)+' do not match magnetic names ' + str(identifier))
         else:
-
+            if identifier not in list(layer.keys()):
+                raise NameError('Variable identifier ' +str(identifier)+' does not match any elements in selected layer.')
+            # Case where magnetization does not belong to polymorphs
             self.structure[lay][identifier].mag_scattering_factor = [sf]
             self.structure[lay][identifier].mag_density = [density]
-            self.structure[lay][identifier].mag_type = mag_dir
+            self.structure[lay][identifier].phi = phi
+            self.structure[lay][identifier].phi = theta
             self.mag_elements[identifier] = [identifier]
 
 
@@ -438,21 +476,37 @@ class slab:
             print('Time to convert')
 
     def error_function(self, t, rough, offset, upward):
-        if rough == 0:
+        """
+        Purpose: Computes the roughness using the error function
+        :param t: Thickness list
+        :param rough: Roughness (angstrom)
+        :param offset: Thickness offset (angstrom)
+        :param upward: Boolean used to determine if beginning of element or end of element
+                        True - Beginning of element, error function slopes upward
+                        False - End of element, error function slopes down
+        :return: List representing error function
+        """
+
+        if rough == 0:  # Use heaviside function for zero roughness
             if upward:
                 val = np.heaviside(t - offset, 1) * 2 - 1
             else:
                 val = np.heaviside(offset-t, 1) * 2 - 1
 
-        elif upward:
+        elif upward: # Upward error function
             val = erf((t-offset)/rough/sqrt(2))
-        else:
+        else:  # Downward error function
             val = erf((offset-t) / rough / sqrt(2))
-
 
         return val
 
     def density_profile(self):
+        """
+        Purpose: Creates the density profile based on the slab properties
+        :return: thickness - thickness array in angstrom
+                 density - structural density array in mol/cm^3
+                 mag_density - magnetic density array in mol/cm^3
+        """
 
         n = len(self.structure)  # number of layers
         thickness = np.array([])  # thickness array
@@ -460,60 +514,66 @@ class slab:
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
         density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
 
+        # Pre-initialized density_poly array
         for ele in list(self.poly_elements.keys()):
             density_struct.pop(ele)
             density_poly[ele] = {k: np.array([]) for k in self.poly_elements[ele]}
 
+        # Pre-initializes density_mag array
         for ele in list(self.mag_elements.keys()):
             density_mag[ele] = {k: np.array([]) for k in self.mag_elements[ele]}
 
-        struct_keys = list(density_struct.keys())
-        poly_keys = list(self.poly_elements.keys())
-        mag_keys = list(self.mag_elements.keys())
+        struct_keys = list(density_struct.keys()) # retrieves structure keys
+        poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
+        mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
         # Initializing thickness array
-        transition = [0]
-        thick = 0
+        transition = [0]  # array that contains thickness that slab transition occurs
+        thick = 0  # contains the total film thickness
+
+        # Find all the slab transitions and computes total thickness
         for layer in range(1, n):
             val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
             transition.append(val)
             thick = thick + list(self.structure[layer].values())[0].thickness
 
-        step = 1e-4  # consider altering step size
-        thickness = np.arange(-25,thick+15+step, step)
-        # Go through the element list
+        step = 1e-4  # thickness step size
+        thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
 
+        # Loop through elements in sample
         for ele in self.myelements:
 
-
-            # Simple element case
+            # structural elements (none polymorphous or magnetic)
             if ele in struct_keys:
-                density_struct[ele] = np.zeros(len(thickness))
+                density_struct[ele] = np.zeros(len(thickness))  # sets array same length as thickness array full of zeros
+
+                # Loops through all layers
                 for layer in range(n):
-                    if ele in list(self.structure[layer].keys()):
-                        if layer == 0:
+                    if ele in list(self.structure[layer].keys()): # determines if desired element is in current layer
+                        if layer == 0:  # first layer
                             offset = transition[0]  # offset value for error function
                             rough = self.structure[layer][ele].roughness  # surface roughness
                             val = (self.error_function(thickness,rough, offset, False) + 1)/2 # calculate error function
-                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
-                            density_struct[ele] = density_struct[ele] + val*self.structure[layer][ele].density*ratio
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass # ratio calculation
+                            density_struct[ele] = density_struct[ele] + val*self.structure[layer][ele].density*ratio  # Compute density
 
-                        else:
+                        else:  # not first layer
                             position = self.structure[layer][ele].position  # position of element
-                            offset1 = transition[layer-1]
-                            offset2 = transition[layer]
+                            offset1 = transition[layer-1]  # thickness offset of upward error function
+                            offset2 = transition[layer]  # thickness offset for downward error function
 
+                            # gets element of previous layer that is in the same site as current element (e.g. A-site for ABO3)
                             previous_element = list(self.structure[layer-1].keys())[position]
-                            rough1 = self.structure[layer-1][previous_element].roughness
-                            rough2 = self.structure[layer][ele].roughness
-                            val1 = self.error_function(thickness, rough1, offset1, True)
-                            val2 = self.error_function(thickness, rough2, offset2, False)
+                            rough1 = self.structure[layer-1][previous_element].roughness  # roughness of previous element
+                            rough2 = self.structure[layer][ele].roughness # roughness of surface
+                            val1 = self.error_function(thickness, rough1, offset1, True)  # computes error function
+                            val2 = self.error_function(thickness, rough2, offset2, False)  # computes error function
 
-                            val = val1 + val2
-                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
-                            density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio
+                            val = val1 + val2  # adds both error functions together
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # computes ratio
+                            density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio # computes density
 
-
+            # Polymorphous elements
             if ele in poly_keys:
                 first = True
                 for layer in range(n):
@@ -605,7 +665,7 @@ class slab:
 if __name__ == "__main__":
 
     # Example: Simple sample creation
-    sample = slab(3)  # Initializing four layers
+    sample = slab(6)  # Initializing four layers
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
@@ -615,16 +675,26 @@ if __name__ == "__main__":
     # First Layer
     # Link: La-->La and O-->O
     # * denotes optional parameter
-    sample.addlayer(1, 'LaMnO3', 25, link=[True,False,True])  # Film 1 on top of substrate
+    sample.addlayer(1, 'LaMnO3', 25, roughness=1.5, link=[True,False,True])  # Film 1 on top of substrate
     sample.polymorphous(1,'Mn',['Mn2+','Mn3+'], [0.9,0.1], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [6.1,7.1], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
     # Second Layer
     # Link: La-->C and O-->C
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
-    sample.magnetization(2,'Al', 5, 'Co', mag_dir='z') # mag_type is preset to 'isotropic
+    sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
 
+    sample.addlayer(3, 'LaMnO3', 15, roughness=0.3, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
+    sample.addlayer(4, 'LaMnO3', 2, roughness= 0.3, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 8], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+
+    sample.addlayer(5, 'LaMnO3', 2, roughness=2 , link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.01, 0.99], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
     # Impurity on surface
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
@@ -644,7 +714,8 @@ if __name__ == "__main__":
     print('MAGNETIZATION')
     print('Scattering Factors: ', result[e].mag_scattering_factor)
     print('Density: ', result[e].mag_density)
-    print('Type: ', result[e].mag_dir)
+    print('Phi: ', result[e].phi, ' degrees')
+    print('Theta: ', result[e].theta, ' degrees')
     print('Position: ', result[e].position)
 
     #  print(sample.myelements)
@@ -659,7 +730,6 @@ if __name__ == "__main__":
     mag_val = list(density_magnetic.values())
     plt.figure()
     for idx in range(len(val)):
-        print(thickness)
         plt.plot(thickness, val[idx])
 
 
