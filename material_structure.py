@@ -458,9 +458,7 @@ class slab:
                         self.structure[lay][key].phi = phi
                         self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
-                else:
-                    # Plolymorph names do not match magnetic names
-                    raise RuntimeError('Polymorph names '+str(layer[key].polymorph)+' do not match magnetic names ' + str(identifier))
+
         else:
             if identifier not in list(layer.keys()):
                 raise NameError('Variable identifier ' +str(identifier)+' does not match any elements in selected layer.')
@@ -575,34 +573,37 @@ class slab:
 
             # Polymorphous elements
             if ele in poly_keys:
-                first = True
-                for layer in range(n):
+                first = True  # Boolean used to pre-initialize numpy array with zeros
+                for layer in range(n): # loops through all layers
                     if ele in list(self.structure[layer].keys()):
-                        if first:
+                        if first:  # initializes numpy array with zeros
                             density_poly[ele] = {k:np.zeros(len(thickness)) for k in list(self.structure[layer][ele].polymorph)}
                             first = False
-                        if layer == 0:
+                        if layer == 0:  # substrate layer
                             offset = transition[0]  # offset value for error function
                             rough = self.structure[layer][ele].roughness  # surface roughness
                             val = (self.error_function(thickness, rough, offset,False) + 1) / 2  # calculate error function
-                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # ratio computation
 
+                            # Loops through all the polymorphs of the selected element
                             po = 0
                             for poly in list(density_poly[ele].keys()):
                                 density_poly[ele][poly] = density_poly[ele][poly] + val * self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]
                                 po = po + 1
                         else:
                             position = self.structure[layer][ele].position  # position of element
-                            offset1 = transition[layer - 1]
-                            offset2 = transition[layer]
+                            offset1 = transition[layer - 1]  # offset of previous element in the same position (e.g. A-site for ABO3)
+                            offset2 = transition[layer]  # offset of current element
 
-                            previous_element = list(self.structure[layer - 1].keys())[position]
-                            rough1 = self.structure[layer - 1][previous_element].roughness
-                            rough2 = self.structure[layer][ele].roughness
-                            val1 = self.error_function(thickness, rough1, offset1, True)
-                            val2 = self.error_function(thickness, rough2, offset2, False)
-                            val = val1 + val2
-                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
+                            previous_element = list(self.structure[layer - 1].keys())[position]  # determines previous elements symbol
+                            rough1 = self.structure[layer - 1][previous_element].roughness  # roughness of previous element
+                            rough2 = self.structure[layer][ele].roughness  # roughness of current element
+                            val1 = self.error_function(thickness, rough1, offset1, True)  # upward error calculation
+                            val2 = self.error_function(thickness, rough2, offset2, False)  # downward error calculation
+                            val = val1 + val2  # total error function computation
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # error calculation
+
+                            # Loops through all the polymorphs of the selected element
                             po = 0
                             for poly in list(density_poly[ele].keys()):
                                 density_poly[ele][poly] = density_poly[ele][poly] + val * self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]
@@ -610,8 +611,8 @@ class slab:
 
 
             if ele in mag_keys:
-                first = True
-                for layer in range(n):
+                first = True  # Boolean used for pre-initialization of numpy arrays
+                for layer in range(n):  # loops through all layers
                     if ele in list(self.structure[layer].keys()):
                         if first:
                             density_mag[ele] = {k:np.zeros(len(thickness)) for k in list(self.mag_elements[ele])}
@@ -620,37 +621,40 @@ class slab:
                         if layer == 0:
                             offset = transition[0]  # offset value for error function
                             rough = self.structure[layer][ele].roughness  # surface roughness
-                            val = (self.error_function(thickness, rough, offset,False) + 1) / 2  # calculate error function
+                            val = (self.error_function(thickness, rough, offset,False) + 1) / 2
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
 
+                            # Loops through all the magnetic elements
                             ma = 0
                             for mag in self.mag_elements[ele]:
                                 density_mag[ele][mag] = density_mag[ele][mag] + val * ratio * self.structure[layer][ele].mag_density[ma]
                                 ma = ma + 1
                         else:
                             position = self.structure[layer][ele].position  # position of element
-                            offset1 = transition[layer - 1]
-                            offset2 = transition[layer]
+                            offset1 = transition[layer - 1]  # offset of previous element
+                            offset2 = transition[layer]  # offset of current element
 
-                            previous_element = list(self.structure[layer - 1].keys())[position]
-                            rough1 = self.structure[layer - 1][previous_element].roughness
-                            rough2 = self.structure[layer][ele].roughness
-                            val1 = self.error_function(thickness, rough1, offset1, True)
-                            val2 = self.error_function(thickness, rough2, offset2, False)
-                            val = val1 + val2
+                            previous_element = list(self.structure[layer - 1].keys())[position]  # previous element symbol
+                            rough1 = self.structure[layer - 1][previous_element].roughness  # previous element roughness
+                            rough2 = self.structure[layer][ele].roughness  # current element roughness
+                            val1 = self.error_function(thickness, rough1, offset1, True)  # upward error function
+                            val2 = self.error_function(thickness, rough2, offset2, False)  # downward error function
+                            val = val1 + val2  #
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
                             ma = 0
 
+                            # Loops through all the magnetic elements
                             for mag in self.mag_elements[ele]:
                                 density_mag[ele][mag] = density_mag[ele][mag] + val  * ratio * self.structure[layer][ele].mag_density[ma]
                                 ma = ma + 1
 
-        # Create single dictionary to use
+        # Create single dictionary to use (structural and polymorphs)
         density = density_struct
         for ele in list(density_poly.keys()):
             for poly in list(density_poly[ele].keys()):
                 density[poly] = density_poly[ele][poly]
 
+        # Create magnetic dictionary
         density_magnetic = dict()
         for ele in list(density_mag.keys()):
             for mag in list(density_mag[ele].keys()):
