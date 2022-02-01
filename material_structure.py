@@ -196,6 +196,10 @@ class slab:
         # Checks if num_layers is integer type
         if type(num_layers) != int:
             raise NameError('Number of slab layers must be entered as an integer type')
+        if num_layers < 0:
+            warnings.warn("Number of slab layers should be inputted as a positive integer. "
+                          "Code assumed that negative value was intentional and took it's absolute value.")
+            num_layers = abs(num_layers)
 
         self.structure = [dict() for i in range(num_layers)]  # keeps track of the structural properties of each layer
         self.poly_elements = dict()  # Keeps track of the  polymorphous elements
@@ -286,6 +290,9 @@ class slab:
 
             if density == None:
                 density = perovskite_density(formula)
+
+
+
 
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)

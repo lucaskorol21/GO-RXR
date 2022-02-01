@@ -1,5 +1,6 @@
 
 from material_structure import *
+
 import matplotlib
 import numpy as np
 
@@ -7,14 +8,14 @@ if __name__ == "__main__":
     # ------------------------------------------TEST 0---------------------------------------------------------------- #
     # ---------------------------------------Class: element----------------------------------------------------------- #
 
-    test_00 = [{'input':['Fe', 1], 'output': ['Fe', 0, 0, 0, 0, 1, 1, [], None, None, 'Fe', None], 'reason': 0},
-               {'input': ['Sr', 7], 'output': ['Sr', 0, 0, 0, 0, 7, 1, [], None, None, 'Sr', None], 'reason': 0},
-               {'input': ['K', 1], 'output': ['K', 0, 0, 0, 0, 1, 1, [], None, None, 'K', None], 'reason': 0},
-               {'input': ['C', 2], 'output': ['C', 0, 0, 0, 0, 2, 1, [], None, None, 'C', None], 'reason': 0},
-               {'input':['Ga', 25], 'output': ['Ga', 0, 0, 0, 0, 25, 1, [], None, None, 'Ga', None], 'reason': 0},
-               {'input':['V', 1], 'output': ['V', 0, 0, 0, 0, 1, 1, [], None, None, 'V', None], 'reason': 0},
-               {'input':['N', 1], 'output': ['N', 0, 0, 0, 0, 1, 1, [], None, None, 'N', None], 'reason': 0},
-               {'input':['Hg', 184], 'output': ['Hg', 0, 0, 0, 0, 184, 1, [], None, None, 'Hg', None], 'reason': 0}]
+    test_00 = [{'input':['Fe', 1], 'output': ['Fe', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'Fe', None, None], 'reason': 0},
+               {'input': ['Sr', 7], 'output': ['Sr', 0, 0, 0, 0, 7, 1, [], 0, 0, None, 'Sr', None, None], 'reason': 0},
+               {'input': ['K', 1], 'output': ['K', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'K', None, None], 'reason': 0},
+               {'input': ['C', 2], 'output': ['C', 0, 0, 0, 0, 2, 1, [], 0, 0, None, 'C', None, None], 'reason': 0},
+               {'input':['Ga', 25], 'output': ['Ga', 0, 0, 0, 0, 25, 1, [], 0, 0, None, 'Ga', None, None], 'reason': 0},
+               {'input':['V', 1], 'output': ['V', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'V', None, None], 'reason': 0},
+               {'input':['N', 1], 'output': ['N', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'N', None, None], 'reason': 0},
+               {'input':['Hg', 184], 'output': ['Hg', 0, 0, 0, 0, 184, 1, [], 0, 0, None, 'Hg', None, None], 'reason': 0}]
 
     for test in test_00:
         test_element = element(test['input'][0], test['input'][1])
@@ -35,14 +36,18 @@ if __name__ == "__main__":
             print('Element polymorphous ratio not initialized properly')
         elif test_element.polymorph != test['output'][7]:
             print('Element polymorph not initialized properly')
-        elif test_element.mag_dir != test['output'][8]:
-            print('Element magnetization direction not initialized properly')
-        elif test_element.mag_density != test['output'][9]:
+        elif test_element.theta != test['output'][8]:
+            print('Element magnetization direction theta not initialized properly')
+        elif test_element.phi != test['output'][9]:
+            print('Element magnetization direction phi not initialized properly')
+        elif test_element.mag_density != test['output'][10]:
             print('Element magnetization density not initialized properly')
-        elif test_element.scattering_factor != test['output'][10]:
+        elif test_element.scattering_factor != test['output'][11]:
             print('Element scattering factor not initialized properly')
-        elif test_element.mag_scattering_factor != test['output'][11]:
+        elif test_element.mag_scattering_factor != test['output'][12]:
             print('Element magnetization scattering factor not initialized properly')
+        elif test_element.position != test['output'][13]:
+            print('Element position not initialized properly')
 
     print('0. element class testing complete')
     # ------------------------------------------TEST 1---------------------------------------------------------------- #
@@ -182,6 +187,103 @@ if __name__ == "__main__":
 
     print('5. find_stociometry testing complete')
 
-    # -------------------------------------------TEST 06-------------------------------------------------------------- #
+    # ---------------------------------------------TEST--------------------------------------------------------------- #
     # -----------------------------------------Class: slab------------------------------------------------------------ #
 
+    # -------------------------------------------TEST 06-------------------------------------------------------------- #
+    # ---------------------------------------Slab initialization------------------------------------------------------ #
+
+    test_06 = [{'input': 1, 'output': 1, 'reason': 'single digit'},
+               {'input': 4, 'output': 4, 'reason': 'single digit' },
+               {'input': 9, 'output': 9, 'reason': 'single digit' },
+               {'input': 10, 'output': 10, 'reason': 'double digit' },
+               {'input': 27, 'output': 27, 'reason': 'double digit'},
+               {'input': 77, 'output': 77, 'reason': 'double digit'},
+               {'input': 98, 'output': 98, 'reason': 'double digit'},
+               {'input': 156, 'output': 156, 'reason': 'triple digit'},
+               {'input': 377, 'output': 377, 'reason': 'triple digit'},
+               {'input': 1025, 'output': 1025, 'reason': 'quadruple digit'},
+               {'input': -5, 'output': 5, 'reason': 'negative digit'},
+               {'input': -155, 'output': 155, 'reason': 'negative digit'},
+               {'input': -2098, 'output': 2098, 'reason': 'negative digit'}]
+
+    for test in test_06:
+        sample_test = slab(test['input'])
+
+        if len(sample_test.structure) != test['output']:
+            print('Incorrect number of layers initialized for ' + test['reason'])
+
+    print('6. slab initialization testing complete')
+
+    # -------------------------------------------TEST 07-------------------------------------------------------------- #
+    # -------------------------------------------addlayer------------------------------------------------------------- #
+
+    test_07 = [{'input': [0, 'LaMnO3', 50, 2.5,2,[True,True, False]], 'output': ['LaMnO', [1,1,3],50, 2.5,2,[True,True, False]], 'reason': 1},
+               {'input': [1, 'LaAlO3', 2, 0.5,2,[True,False, False]], 'output': ['LaAlO', [1,1,3], 2, 0.5,2,[True,False, False]], 'reason': 1},
+               {'input': [2, 'SrTiO3', 17.5, 1,0.1,[True,True, True]], 'output': ['SrTiO', [1,1,3], 17.5, 1,0.1,[True,True, True]], 'reason': 1},
+               {'input': [3, 'LaMnO3', 5.55, 2.5,3,[False,False, False]], 'output': ['LaMnO', [1,1,3], 5.55, 2.5,3,[False,False, False]], 'reason': 1},
+               {'input': [4, 'LaMnO3', 101, 7.7,2.2,[True,True, False]], 'output': ['LaMnO', [1,1,3], 101, 7.7,2.2,[True,True, False]], 'reason': 1},
+               {'input': [5, 'SrTiO3', 111.111, 2.5,2,[True,False, False]], 'output': ['SrTiO', [1,1,3], 111.111, 2.5,2,[True,False, False]], 'reason': 1},
+               {'input': [6, 'LaAlO3', 1, 2.5,0.66,[False,True, True]], 'output': ['LaAlO', [1,1,3], 1, 2.5,0.66,[False,True, True]], 'reason': 1},
+               {'input': [7, 'LaYbO3', 6.67, 9,2,[False,True, False]], 'output': ['LaYbO', [1,1,3], 6.67, 9,2,[False,True, False]], 'reason': 1},
+               {'input': [8, 'AlYO3', 42, 2.5,1.89,[False,False, True]], 'output': ['AlYO', [1,1,3], 42, 2.5,1.89,[False,False, True]], 'reason': 1},
+               {'input': [9, 'AlYO3', 42.1, 7.5,1.1,[True,False, True]], 'output': ['AlYO', [1,1,3], 42.1, 7.5,1.1,[True,False, True]], 'reason': 1}]
+
+    myelements = ['La', 'Sr','Mn', 'Al', 'Ti',' Yb', 'Y', 'O']
+    sample_test = slab(10)
+
+    for layer in test_07:
+        sample_test.addlayer(layer['input'][0], layer['input'][1], layer['input'][2], density=layer['input'][3], roughness=layer['input'][4], link=layer['input'][5])
+
+    for lay in range(len(sample_test.structure)):
+        test_layer = test_07[lay]
+        layer = sample_test.structure[lay]
+
+        element_name = ''.join(list(layer.keys()))
+
+        if sample_test.link[lay] != test_layer['output'][5]:
+            print('Element link incorrect.')
+
+        if element_name != test_layer['output'][0]:
+            print('Element names do not match original chemical formula')
+
+        idx = 0
+        for ele in list(layer.keys()):
+            if layer[ele].stoichiometry != test_layer['output'][1][idx]:
+                print('Stocihiometry in layer ' + str(lay) + ' is incorrect for' + ele)
+
+            if layer[ele].thickness != test_layer['output'][2]:
+                print('Thickness in layer ' + str(lay) + ' is incorrect for' + ele)
+
+            if layer[ele].density != test_layer['output'][3]:
+                print('Density in layer ' + str(lay) + ' is incorrect for' + ele)
+
+            if layer[ele].roughness != test_layer['output'][4]:
+                print('Roughness in layer ' + str(lay) + ' is incorrect for' + ele)
+
+            idx = idx + 1
+
+    print('7. addlayer testing complete')
+
+    # -------------------------------------------TEST 08-------------------------------------------------------------- #
+    # -------------------------------------------addlayer------------------------------------------------------------- #
+
+    test_08 = [{'input': [0,'Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'output':['Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'reason': 1},
+               {'input': [2,'Ti', ['Ti3+', 'Ti4+'],[0.1,0.9], ['K','Ge']], 'output':['Ti', ['Ti3+', 'Ti4+'],[0.1,0.9], ['K','Ge']], 'reason': 1},
+               {'input': [4,'Mn', ['Mn2+', 'Mn3+'],[0.85,0.15], ['Mn','Fe']], 'output':['Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'reason': 1},
+               {'input': [5,'Ti', ['Ti3+', 'Ti4+'],[0.74,0.26], ['K','Ge']], 'output':['Ti', ['Ti3+', 'Ti4+'],[0.74,0.26], ['K','Ge']], 'reason': 1}]
+
+    for test in test_08:
+        sample_test.polymorphous(test['input'][0], test['input'][1], test['input'][2], sf=test['input'][3])
+
+    for test in test_08:
+        for layer in sample_test.structure:
+            for ele in list(layer.keys()):
+                if ele == test['output']:
+                    print('hello')
+                else:
+                    if layer[ele].polymorph != []:
+                        print('Non-polymorphous element '+ ele + ' incorrectly initialized' )
+                    if layer[ele].poly_ratio != 1:
+                        print('Non-polymorphous element ratio ' + ele + ' incorrect initialized')
+                    if layer[ele].scattering_factor != ele
