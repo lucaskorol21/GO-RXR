@@ -270,20 +270,39 @@ if __name__ == "__main__":
 
     test_08 = [{'input': [0,'Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'output':['Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'reason': 1},
                {'input': [2,'Ti', ['Ti3+', 'Ti4+'],[0.1,0.9], ['K','Ge']], 'output':['Ti', ['Ti3+', 'Ti4+'],[0.1,0.9], ['K','Ge']], 'reason': 1},
-               {'input': [4,'Mn', ['Mn2+', 'Mn3+'],[0.85,0.15], ['Mn','Fe']], 'output':['Mn', ['Mn2+', 'Mn3+'],[0.5,0.5], ['Mn','Fe']], 'reason': 1},
+               {'input': [3, 'Mn', ['Mn2+', 'Mn3+'], [0.66, 0.34], ['Mn', 'Fe']],'output': ['Mn', ['Mn2+', 'Mn3+'], [0.66, 0.34], ['Mn', 'Fe']], 'reason': 1},
+               {'input': [4,'Mn', ['Mn2+', 'Mn3+'],[0.85,0.15], ['Mn','Fe']], 'output':['Mn', ['Mn2+', 'Mn3+'],[0.85,0.15], ['Mn','Fe']], 'reason': 1},
                {'input': [5,'Ti', ['Ti3+', 'Ti4+'],[0.74,0.26], ['K','Ge']], 'output':['Ti', ['Ti3+', 'Ti4+'],[0.74,0.26], ['K','Ge']], 'reason': 1}]
 
     for test in test_08:
-        sample_test.polymorphous(test['input'][0], test['input'][1], test['input'][2], sf=test['input'][3])
+        sample_test.polymorphous(test['input'][0], test['input'][1], test['input'][2], test['input'][3], sf=test['input'][4])
 
-    for test in test_08:
-        for layer in sample_test.structure:
-            for ele in list(layer.keys()):
-                if ele == test['output']:
-                    print('hello')
-                else:
-                    if layer[ele].polymorph != []:
-                        print('Non-polymorphous element '+ ele + ' incorrectly initialized' )
-                    if layer[ele].poly_ratio != 1:
-                        print('Non-polymorphous element ratio ' + ele + ' incorrect initialized')
-                    if layer[ele].scattering_factor != ele
+    idx = 0
+    for lay in range(len(sample_test.structure)):
+        layer = sample_test.structure[lay]
+        if idx <=len(test_08)-1:
+            if test_08[idx]['input'][0] == lay:
+                test = test_08[idx]
+                idx = idx + 1
+        for ele in list(layer.keys()):
+            if ele in list(sample_test.poly_elements.keys()):  # polymorphous element
+
+                if layer[ele].polymorph != test['output'][1]:
+                    print('Polymorphous element ' + ele + ' incorrectly initialized')
+                if layer[ele].poly_ratio != test['output'][2]:
+                    print('Polymorphous element ratio ' + ele + ' incorrect initialized')
+                if layer[ele].scattering_factor != test['output'][3]:
+                    print('Polymorphous element scattering factor ' + ele + ' incorrect initialized')
+            else:
+                if layer[ele].polymorph != []:
+                    print('Non-polymorphous element '+ ele + ' incorrectly initialized' )
+                if layer[ele].poly_ratio != 1:
+                    print('Non-polymorphous element ratio ' + ele + ' incorrect initialized')
+                if layer[ele].scattering_factor != ele:
+                    print('Non-polymorphous element scattering factor ' + ele + ' incorrect initialized')
+
+
+
+
+
+    print('8. polymorph testing complete')
