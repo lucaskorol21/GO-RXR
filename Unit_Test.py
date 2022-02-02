@@ -306,3 +306,40 @@ if __name__ == "__main__":
 
     # -------------------------------------------TEST 09-------------------------------------------------------------- #
     # ----------------------------------------magnetization----------------------------------------------------------- #
+
+    test_09 = [{'input': [0, ['Mn2+', 'Mn3+'], [5,6],['Co', 'Fe'], 0, 0], 'output': [ [5,6],['Co', 'Fe'], 0, 0], 'reason': 1},
+               {'input': [3, ['Mn3+', 'Mn2+'], [0,3],['Fe', 'Co'], 45, 60], 'output': [[3,0],['Co', 'Fe'], 45, 60], 'reason': 1},
+               {'input': [4, ['Mn2+', 'Mn3+'], [4.4,7.9],['Co', 'Fe'], 16, 181], 'output': [[4.4,7.9],['Co', 'Fe'], 16, 181], 'reason': 1}]
+
+    for test in test_09:
+        sample_test.magnetization(test['input'][0], test['input'][1], test['input'][2], test['input'][3], phi=test['input'][4], theta=test['input'][5])
+
+    idx = 0
+    for lay in range(len(sample_test.structure)):
+        layer = sample_test.structure[lay]
+        if idx <=len(test_09)-1:
+            if test_09[idx]['input'][0] == lay:
+                test = test_09[idx]
+                idx = idx + 1
+
+        for ele in list(layer.keys()):
+            if ele in list(sample_test.mag_elements.keys()):  # polymorphous element
+                if layer[ele].mag_density != test['output'][0]:
+                    print('Magnetic density of element ' + ele + ' incorrectly initialized')
+                if layer[ele].mag_scattering_factor != test['output'][1]:
+                    print('Magnetic scattering factor of element ' + ele + ' incorrect initialized')
+                if layer[ele].phi != test['output'][2]:
+                    print('Magnetic phi of element ' + ele + ' incorrect initialized')
+                if layer[ele].theta != test['output'][3]:
+                    print('Magnetic theta of element scattering factor ' + ele + ' incorrect initialized')
+            else:
+                if layer[ele].mag_density != None:
+                    print('Non-magnetic element ' + ele + ' incorrectly initialized')
+                if layer[ele].mag_scattering_factor != None:
+                    print('Non-magnetic scattering factor of element ' + ele + ' incorrect initialized')
+                if layer[ele].phi != 0:
+                    print('Non-magnetic phi of element ' + ele + ' incorrect initialized')
+                if layer[ele].theta != 0:
+                    print('Non-magnetic theta of element ' + ele + ' incorrect initialized')
+
+    print('9. magnetization testing complete')

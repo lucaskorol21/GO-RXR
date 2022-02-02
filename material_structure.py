@@ -573,8 +573,8 @@ class slab:
                             rough2 = self.structure[layer][ele].roughness # roughness of surface
                             val1 = self.error_function(thickness, rough1, offset1, True)  # computes error function
                             val2 = self.error_function(thickness, rough2, offset2, False)  # computes error function
-
-                            val = val1 + val2  # adds both error functions together
+                            val = (val1 + val2)/2 # adds both error functions together
+                            val[val<0] = 0 # removes all negative points
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # computes ratio
                             density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio # computes density
 
@@ -607,7 +607,8 @@ class slab:
                             rough2 = self.structure[layer][ele].roughness  # roughness of current element
                             val1 = self.error_function(thickness, rough1, offset1, True)  # upward error calculation
                             val2 = self.error_function(thickness, rough2, offset2, False)  # downward error calculation
-                            val = val1 + val2  # total error function computation
+                            val = (val1 + val2)/2  # total error function computation
+                            val[val<0] = 0  # removes all negative points
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # error calculation
 
                             # Loops through all the polymorphs of the selected element
@@ -644,9 +645,11 @@ class slab:
                             previous_element = list(self.structure[layer - 1].keys())[position]  # previous element symbol
                             rough1 = self.structure[layer - 1][previous_element].roughness  # previous element roughness
                             rough2 = self.structure[layer][ele].roughness  # current element roughness
+
                             val1 = self.error_function(thickness, rough1, offset1, True)  # upward error function
                             val2 = self.error_function(thickness, rough2, offset2, False)  # downward error function
-                            val = val1 + val2  #
+                            val = (val1 + val2)/2  # adds and normalizes the total roughness function
+                            val[val<0] = 0  # removes all points that are negative
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass
                             ma = 0
 
@@ -695,17 +698,19 @@ if __name__ == "__main__":
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
     sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
 
-    sample.addlayer(3, 'LaMnO3', 15, roughness=0.3, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(3, 'LaMnO3', 5, roughness=0, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(4, 'LaMnO3', 2, roughness= 0.3, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(4, 'LaMnO3', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 8], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(5, 'LaMnO3', 2, roughness=2 , link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.01, 0.99], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.addlayer(5, 'LaMnO3', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+
+
     # Impurity on surface
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
@@ -760,9 +765,6 @@ if __name__ == "__main__":
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
-
-    t = np.arange(-20,20,0.01)
-
 
 
 
