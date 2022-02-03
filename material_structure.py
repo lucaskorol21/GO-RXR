@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from collections import OrderedDict
 from scipy.special import erf
 import warnings
 from KK_And_Merge import *
@@ -132,11 +133,31 @@ def find_stoichiometry(formula):
     :return: dictionary that contains element symbol as key and element class as value
     """
     num_elements = 0  # keeps track of the number of elements in the chemical formula
-    mydict = dict()
+    ele = []  # keeps track of elements in the chemical formula
+    data = []  # keeps track of the data information
+    repeat_dict = dict()  # dictionary that keeps track of the repeated elements
+    mydict = dict()  # data dictionary
+
+    # Loops through the formula string
     while len(formula) > 0:
-        formula, info = checkstring(formula)
-        mydict[info[0]] = element(info[0], info[1])
-        num_elements = num_elements + 1
+        formula, info = checkstring(formula)  # Get's current element
+        if info[0] in ele:  # checks if element is repeated
+            repeat_dict[info[0]] = 1  # sets the string counter to 1
+
+        ele.append(info[0])  # adds new elements to element list
+        data.append([info[0], element(info[0], info[1])])  # adds element information
+        num_elements = num_elements + 1  # counts number of elements in chemical formula
+
+    # Loops through all the components to change repeated element keys
+    for component in data:
+        if component[0] in list(repeat_dict.keys()):  # case of repeated element
+            old_key = component[0]  # get's the element symbol
+            component[0] = str(old_key) + str(repeat_dict[old_key])  # adds number to string to distinguish between 'different' elements
+            repeat_dict[old_key] = repeat_dict[old_key] + 1  # adds number for new distinguishable element
+
+
+    mydict = dict(OrderedDict(data))
+
 
     return mydict, num_elements
 
@@ -706,9 +727,8 @@ if __name__ == "__main__":
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 8], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(5, 'LaMnO3', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.addlayer(5, 'CCC', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
+
 
 
     # Impurity on surface
