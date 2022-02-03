@@ -225,6 +225,7 @@ class slab:
         self.structure = [dict() for i in range(num_layers)]  # keeps track of the structural properties of each layer
         self.poly_elements = dict()  # Keeps track of the  polymorphous elements
         self.mag_elements = dict()  # Keeps track of the magnetized elements in the material
+        self.number_layers = num_layers
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
@@ -301,7 +302,13 @@ class slab:
         molar_mass = 0
         # Computes the total molar mass of perovskite material
         for key in list(elements.keys()):
-            molar_mass = molar_mass + atomic_mass(key)*elements[key].stoichiometry
+            molar_mass = molar_mass + atomic_mass(elements[key].name)*elements[key].stoichiometry
+
+        # ------------------------------------------------------------------------------------------------------------ #
+        # ------------------------------------------------------------------------------------------------------------ #
+        # might also need to check if last layer
+        # ------------------------------------------------------------------------------------------------------------ #
+        # ------------------------------------------------------------------------------------------------------------ #
 
         position = 0
         for key in list(elements.keys()):
@@ -325,8 +332,9 @@ class slab:
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
         # Determines if A/B site is linked to the A/B site on the next layer
-        n = len(elements)
-        if link == None:
+        if self.number_layers == num_layer-1:  # Roughness link not required for last layer
+            link = None
+        elif link == None:
             mylink = [True for i in range(num_elements)]
             self.link.append(mylink)
         else:
@@ -563,7 +571,7 @@ class slab:
             transition.append(val)
             thick = thick + list(self.structure[layer].values())[0].thickness
 
-        step = 1e-4  # thickness step size
+        step = 1e-3  # thickness step size
         thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
@@ -719,15 +727,15 @@ if __name__ == "__main__":
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
     sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
 
-    sample.addlayer(3, 'LaMnO3', 5, roughness=0, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(3, 'LaMnO3', 5, roughness=1.5, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(4, 'LaMnO3', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(4, 'LaMnO3', 5, roughness= 1.5, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 8], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(5, 'CCC', 5, roughness= 0, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(5, 'C2CO', 5, roughness= 1, density=1, link=[True, False, True])  # Film 1 on top of substrate
 
 
 
@@ -757,16 +765,24 @@ if __name__ == "__main__":
     #  print(sample.myelements)
     #  print(sample.poly_elements)
     print(sample.mag_elements)
-    print()
     thickness, density, density_magnetic = sample.density_profile()
 
     # thickness, density, density_magnetic = sample.density_profile()
     val = list(density.values())
-
     mag_val = list(density_magnetic.values())
+    check = []
+    for key in list(density.keys()):
+        if key[-1].isdigit():
+            check.append(True)
+        else:
+            check.append(False)
+
     plt.figure()
     for idx in range(len(val)):
-        plt.plot(thickness, val[idx])
+        if check[idx]:
+            plt.plot(thickness, val[idx],':')
+        else:
+            plt.plot(thickness, val[idx])
 
 
     for idx in range(len(mag_val)):
