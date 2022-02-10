@@ -1,4 +1,4 @@
-SrTiO3 4.81
+SrTiO3 5.12
 CaTiO3 3.98
 PbTiO3 7.52
 BiFeO3 8.22
