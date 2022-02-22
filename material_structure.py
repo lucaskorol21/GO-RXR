@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import math
 from collections import OrderedDict
 from scipy.special import erf
+from scipy.integrate import simps
 import warnings
 from KK_And_Merge import *
 
@@ -583,6 +584,7 @@ class slab:
 
                 # Loops through all layers
                 for layer in range(n):
+                    d = abs(transition[layer] - transition[layer - 1])  # slab thickness (angstrom)
                     if ele in list(self.structure[layer].keys()): # determines if desired element is in current layer
                         if layer == 0:  # first layer
                             offset = transition[0]  # offset value for error function
@@ -604,13 +606,17 @@ class slab:
                             val2 = self.error_function(thickness, rough2, offset2, False)  # computes error function
                             val = (val1 + val2)/2 # adds both error functions together
                             val[val<0] = 0 # removes all negative points
-                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # computes ratio
-                            density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio # computes density
+                            ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # computes ratio necessary for elemental density
+
+                            # Density normalization
+                            rho = d*ratio*self.structure[layer][ele].density/simps(val * self.structure[layer][ele].density * ratio, thickness) # ratio for density renormalization
+                            density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio*rho # computes density
 
             # Polymorphous elements
             if ele in poly_keys:
                 first = True  # Boolean used to pre-initialize numpy array with zeros
                 for layer in range(n): # loops through all layers
+                    d = abs(transition[layer] - transition[layer - 1])  # slab thickness (angstrom)
                     if ele in list(self.structure[layer].keys()):
                         if first:  # initializes numpy array with zeros
                             density_poly[ele] = {k:np.zeros(len(thickness)) for k in list(self.structure[layer][ele].polymorph)}
@@ -640,9 +646,12 @@ class slab:
                             val[val<0] = 0  # removes all negative points
                             ratio = self.structure[layer][ele].stoichiometry / self.structure[layer][ele].molar_mass  # error calculation
 
+
                             # Loops through all the polymorphs of the selected element
                             po = 0
                             for poly in list(density_poly[ele].keys()):
+                                # Density normalization
+                                rho = d*self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]/simps(self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]*val, thickness)
                                 density_poly[ele][poly] = density_poly[ele][poly] + val * self.structure[layer][ele].density * ratio * self.structure[layer][ele].poly_ratio[po]
                                 po = po + 1
 
@@ -650,6 +659,7 @@ class slab:
             if ele in mag_keys:
                 first = True  # Boolean used for pre-initialization of numpy arrays
                 for layer in range(n):  # loops through all layers
+                    d = abs(transition[layer] - transition[layer - 1])  # slab thickness (angstrom)
                     if ele in list(self.structure[layer].keys()):
                         if first:
                             density_mag[ele] = {k:np.zeros(len(thickness)) for k in list(self.mag_elements[ele])}
@@ -684,7 +694,9 @@ class slab:
 
                             # Loops through all the magnetic elements
                             for mag in self.mag_elements[ele]:
-                                density_mag[ele][mag] = density_mag[ele][mag] + val  * ratio * self.structure[layer][ele].mag_density[ma]
+                                # Density normalization
+                                rho = d * ratio * self.structure[layer][ele].mag_density[ma] / simps(val * self.structure[layer][ele].mag_density[ma] * ratio,thickness)  # ratio for density renormalization
+                                density_mag[ele][mag] = density_mag[ele][mag] + val  * ratio * self.structure[layer][ele].mag_density[ma]*rho
                                 ma = ma + 1
 
         # Create single dictionary to use (structural and polymorphs)
@@ -727,15 +739,15 @@ if __name__ == "__main__":
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
     sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
 
-    sample.addlayer(3, 'LaMnO3', 5, roughness=1.5, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(3, 'LaMnO3', 5, roughness=1, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(4, 'LaMnO3', 5, roughness= 1.5, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(4, 'LaMnO3', 2, roughness= 1.5, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 8], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(5, 'C2CO', 5, roughness= 1, density=1, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(5, 'COC2', 5, roughness= 1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
 
 
 
