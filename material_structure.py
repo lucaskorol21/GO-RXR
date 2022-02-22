@@ -739,11 +739,11 @@ if __name__ == "__main__":
     sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
     sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
 
-    sample.addlayer(3, 'LaMnO3', 5, roughness=1, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(3, 'LaMnO3', 10, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(4, 'LaMnO3', 2, roughness= 1.5, link=[True, False, True])  # Film 1 on top of substrate
+    sample.addlayer(4, 'LaMnO3', 2, roughness= 2, link=[True, False, True])  # Film 1 on top of substrate
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
