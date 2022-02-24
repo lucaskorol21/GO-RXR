@@ -542,7 +542,7 @@ class slab:
                  density - structural density array in mol/cm^3
                  mag_density - magnetic density array in mol/cm^3
         """
-
+        next_density = 0  # initialization required for algorithm
         n = len(self.structure)  # number of layers
         thickness = np.array([])  # thickness array
         density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
@@ -582,10 +582,58 @@ class slab:
             if ele in struct_keys:
                 density_struct[ele] = np.zeros(len(thickness))  # sets array same length as thickness array full of zeros
 
+                # Initializations so python is happy
+                current_density = 0
+                next_density = 0
+                position = 0
+                sigma = 0
+
                 # Loops through all layers
                 for layer in range(n):
+                    offset = transition[layer]
+                    # The current layer
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        sigma = self.structure[layer][ele].roughness  # roughness parameterization
+                        current_density = self.structure[layer][ele].stoichiometry* self.structure[layer][ele].density/ self.structure[layer][ele].molar_mass  # current density
+                        if layer == n - 1:  # Last layer
+                            next_density = 0  # density of element in next layer
+                        elif ele in list(self.structure[layer+1].keys()):  # element in next layer
+                            next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass
+                        else:  # element not in the next layer
+                            next_density = 0
+
+                        begin = 0
+                        if layer == 0:
+                            begin = 1
+
+
+                        const = (next_density - current_density) / 2
+                        erf_func = self.error_function(thickness, sigma, offset, True) + 1
+                        density_struct[ele] = density_struct[ele] + const*erf_func + begin*current_density
+                    else:
+                        current_density = 0
+                        if layer == n - 1:  # Last layer
+                            next_density = current_density
+                            sigma = 0
+                        elif ele in list(self.structure[layer+1].keys()):
+                            position = self.structure[layer+1][ele].position  # position of element
+                            next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass # next layer density
+                            previous_element = list(self.structure[layer].keys())[position]
+                            sigma = self.structure[layer][previous_element].roughness
+                        else:
+                            next_density = 0
+                            sigma = 0
+
+                        const = (next_density-current_density)/2
+                        erf_func = self.error_function(thickness, sigma, offset, True) + 1
+                        density_struct[ele] = density_struct[ele] + const * erf_func
+
+                    """
                     d = abs(transition[layer] - transition[layer - 1])  # slab thickness (angstrom)
                     if ele in list(self.structure[layer].keys()): # determines if desired element is in current layer
+
+                        
                         if layer == 0:  # first layer
                             offset = transition[0]  # offset value for error function
                             rough = self.structure[layer][ele].roughness  # surface roughness
@@ -611,7 +659,7 @@ class slab:
                             # Density normalization
                             rho = d*ratio*self.structure[layer][ele].density/simps(val * self.structure[layer][ele].density * ratio, thickness) # ratio for density renormalization
                             density_struct[ele] = density_struct[ele] + val * self.structure[layer][ele].density * ratio*rho # computes density
-
+                    """
             # Polymorphous elements
             if ele in poly_keys:
                 first = True  # Boolean used to pre-initialize numpy array with zeros
