@@ -119,14 +119,14 @@ if __name__ == "__main__":
     # ------------------------------------------TEST 04--------------------------------------------------------------- #
     # -------------------------------------perovskite_density--------------------------------------------------------- #
 
-    test_04 = [{'input': 'SrTiO3', 'output': 4.81, 'reason': 0},
-               {'input': 'CaTiO3', 'output': 3.98, 'reason': 0},
+    test_04 = [{'input': 'SrTiO3', 'output': 5.12, 'reason': 0},
+               {'input': 'CaTiO3', 'output': 4.10, 'reason': 0},
                {'input': 'PbTiO3', 'output': 7.52, 'reason': 0},
                {'input': 'BiFeO3', 'output': 8.22, 'reason': 0},
                {'input': 'LaYbO3', 'output': 8.08, 'reason': 0},
-               {'input': 'LaMnO3', 'output': 6.50, 'reason': 0},
+               {'input': 'LaMnO3', 'output': 6.52, 'reason': 0},
                {'input': 'AlYO3', 'output': 5.35, 'reason': 0},
-               {'input': 'LaAlO3', 'output': 6.42, 'reason': 0}]
+               {'input': 'LaAlO3', 'output': 6.52, 'reason': 0}]
 
     for test in test_04:
         result1 = perovskite_density(test['input'])
