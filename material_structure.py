@@ -6,6 +6,7 @@ from scipy.special import erf
 from scipy.integrate import simps
 import warnings
 from KK_And_Merge import *
+from material_model import *
 
 class element:
     def __init__(self, name, stoichiometry):
@@ -896,5 +897,16 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
     plt.show()
 
-    print('hello')
+    E = 300  # eV
+    eps = dielectric_constant(density, E)
+    n = sqrt(eps)
+    alpha = abs(n.real-1)
+    beta = abs(n.imag)
+    plt.figure()
+    plt.plot(thickness, alpha, thickness, beta)
+    plt.suptitle('Optical Profile')
+    plt.xlabel('Thickness')
+    plt.ylabel('Profile')
+    plt.legend(['alpha','beta'])
+    plt.show()
 

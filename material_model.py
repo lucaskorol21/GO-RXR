@@ -32,12 +32,13 @@ def form_factor(f,E):
         idx = idx + 1
         factor = f[idx, 0]
 
+    # Determines if we need to interpolate between values
     if factor == E:
-        f_real = f[idx, 1]
-        f_imag = f[idx, 1]
+        f_real = f[idx, 1]  # real component
+        f_imag = f[idx, 1]  # imaginary componentd
     else:
-        f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)
-        f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)
+        f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
+        f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
 
     return complex(f_real, f_imag)
 
@@ -48,14 +49,21 @@ def find_form_factor(element, E):
     :param E: Energy of scan
     :return: The complex form factor
     """
-    for ifile in os.listdir(os.getcwd()):
-        if ifile.startswith(element) and (ifile.endswith('.ff') or ifile.endswith('.ffm')):
-            F = form_factor(np.loadtxt(ifile),E)
+    F = 0
+    my_dir = os.getcwd() + r'\Scattering_Factor'
+    for ifile in os.listdir(my_dir):
+        if ifile.startswith(element):
+            F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
 
     return F
 
-def dielectric_tensor(L, E):
-    # energy [eV]
+def dielectric_constant(rho, E):
+    """
+    Purpose: Compute the dielectric tensor constant
+    :param L: Dictionary {Element 1: [density array], Element 2: [density array]}
+    :param E: Energy of incoming photon (eV)
+    :return: Dielectric constant (f_real + i*f_imag)
+    """
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -66,26 +74,19 @@ def dielectric_tensor(L, E):
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
     value = 0
-    elements = list(L.keys())
-
+    elements = list(rho.keys())  # get's elements in layer
+    F = dict()
+    for element in elements:
+        F[element] = find_form_factor(element,E)
     if len(elements) == 1:
-        rho = L[elements[0]][1]
-        F = find_form_factor(elements[0],E)
-        value = F*L[elements[0]][1]
+        value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor
     else:
-        idx = 0
         for element in elements:
-            print(element)
-            F = find_form_factor(element,E)
-            value = value + F*L[element][1]
-            idx =idx + 1
+            value = value + F[element]*rho[element]  # computes alpha and beta values
 
-
-
-
-    n = 1 - constant*value
-
-    epsilon = n ** 2
+    print(value)
+    n = 1 - constant*value  # computes the index of refraction
+    epsilon = n ** 2  # computes dielectric constant from index of refraction
 
     return epsilon
 
@@ -94,25 +95,25 @@ def dielectric_tensor(L, E):
 
 if __name__ == "__main__":
 
-
+    """
     E = 799.82 # Xray Energy
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e18  # Speed of light in vacuum [A/s]
 
     Theta = np.linspace(0.1, 89.9, 899)  # Angles
     wavelength = (h*c)/E  # Wavelength (same unit as roughness) (Angstroms or nm)
-    test = np.loadtxt('test_example.txt')
-    L1 = {'Fe': [0,0.028,0]}
-    L2 = {'Fe':[38,0.028,0], 'La':[38,0.028,0]}
-    epsilon_2 = dielectric_tensor(L2,E)
-    epsilon_1 = dielectric_tensor(L1,E)
-    A = pr.Generate_structure(2)
-    A[0].seteps(epsilon_1)
-    A[1].seteps(epsilon_2)
-    A[1].setd(38)
+    test = np.loadtxt('test_example.txt')  # Data from ReMagX
+    L1 = {'Fe': [0,0.028,0]}  # First layer {Element: [thickness, density, roughness]}
+    L2 = {'Fe':[38,0.028,0], 'La':[38,0.028,0]}  # Second layer {Element: [thickness, density, roughness]}
+    epsilon_2 = dielectric_constant(L2,E)  # computes dielectric constant for layer
+    epsilon_1 = dielectric_constant(L1,E)  # computes dielectric constant for layer
+    A = pr.Generate_structure(2)  # initializes slab structure
+    A[0].seteps(epsilon_1)  # creates the substrate layer
+    A[1].seteps(epsilon_2)  # creates film layer
+    A[1].setd(38)  # sets thickness
 
 
-    R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)
+    R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
 
     plt.figure()
     qz = (0.001013546247)*E*sin(Theta*pi/180)
@@ -125,6 +126,7 @@ if __name__ == "__main__":
     plt.title('ReMagX vs. Python Script (800 eV)')
     plt.show()
 
+    """
+    print('hello')
 
-
-
+    print(find_form_factor('Sr', 500))
