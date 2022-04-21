@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import cmath
 from KK_And_Merge import *
 import os
+from material_structure import *
 
 def interpolate(fi,ff, Ei, Ef, E):
     """
@@ -84,7 +85,6 @@ def dielectric_constant(rho, E):
         for element in elements:
             value = value + F[element]*rho[element]  # computes alpha and beta values
 
-    print(value)
     n = 1 - constant*value  # computes the index of refraction
     epsilon = n ** 2  # computes dielectric constant from index of refraction
 
@@ -95,21 +95,26 @@ def dielectric_constant(rho, E):
 
 if __name__ == "__main__":
 
-    """
-    E = 799.82 # Xray Energy
+
+    E = 800 # Xray Energy
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e18  # Speed of light in vacuum [A/s]
 
     Theta = np.linspace(0.1, 89.9, 899)  # Angles
     wavelength = (h*c)/E  # Wavelength (same unit as roughness) (Angstroms or nm)
     test = np.loadtxt('test_example.txt')  # Data from ReMagX
-    L1 = {'Fe': [0,0.028,0]}  # First layer {Element: [thickness, density, roughness]}
-    L2 = {'Fe':[38,0.028,0], 'La':[38,0.028,0]}  # Second layer {Element: [thickness, density, roughness]}
-    epsilon_2 = dielectric_constant(L2,E)  # computes dielectric constant for layer
-    epsilon_1 = dielectric_constant(L1,E)  # computes dielectric constant for layer
+
+    sample = slab(2)
+
+    sample.addlayer(0, 'Fe', 50, density=1.56366)
+    sample.addlayer(1, 'Fe', 38, density=1.56366)
+
+    thickness, density, mag_density = sample.density_profile()
+    eps = dielectric_constant(density, E)
+
     A = pr.Generate_structure(2)  # initializes slab structure
-    A[0].seteps(epsilon_1)  # creates the substrate layer
-    A[1].seteps(epsilon_2)  # creates film layer
+    A[0].seteps(eps[0])  # creates the substrate layer
+    A[1].seteps(eps[0])  # creates film layer
     A[1].setd(38)  # sets thickness
 
 
@@ -126,7 +131,4 @@ if __name__ == "__main__":
     plt.title('ReMagX vs. Python Script (800 eV)')
     plt.show()
 
-    """
-    print('hello')
 
-    print(find_form_factor('Sr', 500))
