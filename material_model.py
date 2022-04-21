@@ -87,6 +87,7 @@ def dielectric_constant(rho, E):
 
     n = 1 - constant*value  # computes the index of refraction
     epsilon = n ** 2  # computes dielectric constant from index of refraction
+    #epsilon = n*np.conj(n)
 
     return epsilon
 
@@ -123,8 +124,6 @@ if __name__ == "__main__":
     plt.figure()
     qz = (0.001013546247)*E*sin(Theta*pi/180)
     Sigma, = plt.plot(qz, R1[0], 'k-',label='Python')
-    Data, = plt.plot(test[:,0], test[:,1],'y--', label='ReMagX',)
-    plt.legend(handles=[Sigma, Data])
     plt.yscale("log")
     plt.xlabel('qz')
     plt.ylabel('Reflectivity')

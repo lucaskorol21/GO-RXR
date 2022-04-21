@@ -7,6 +7,22 @@ from scipy.integrate import simps
 import warnings
 from KK_And_Merge import *
 from material_model import *
+import Pythonreflectivity as pr
+
+def spacedmarks(x, y, Nmarks, data_ratio=None):
+    import scipy.integrate
+
+    if data_ratio is None:
+        data_ratio = plt.gca().get_data_ratio()
+
+    dydx = np.gradient(y, x[1])
+    dxdx = np.gradient(x, x[1])*data_ratio
+    arclength = scipy.integrate.cumtrapz(np.sqrt(dydx**2 + dxdx**2), x, initial=0)
+    marks = np.linspace(0, max(arclength), Nmarks)
+    markx = np.interp(marks, arclength, x)
+    marky = np.interp(markx, x, y)
+
+    return markx, marky
 
 class element:
     def __init__(self, name, stoichiometry):
@@ -795,8 +811,45 @@ class slab:
                 density_magnetic[mag] = density_mag[ele][mag]
         return thickness, density, density_magnetic
 
-    def reflectivity(self):
-        print('hello')
+    def reflectivity(self, Nmarks, datrat=None):
+
+        E = 800
+        thickness, density, density_magnetic = self.density_profile()
+        epsilon = dielectric_constant(density, E)
+
+        t, e_r = spacedmarks(thickness,real(epsilon), Nmarks, datrat)
+        t, e_i = spacedmarks(thickness, imag(epsilon), Nmarks, datrat)
+
+        eps = e_r + 1j*e_i
+
+        A = pr.Generate_structure(Nmarks-1)
+
+        for idx in range(Nmarks-1):
+            d = t[idx+1] = t[idx]
+            A[idx].seteps((eps[idx+1]+eps[idx])/2)
+            A[idx].setd(d)
+
+
+
+        h = 4.135667696e-15  # Plank's Constant [eV s]
+        c = 2.99792450e18  # Speed of light in vacuum [A/s]
+
+        Theta = np.linspace(0.1, 89.9, 899)  # Angles
+        wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
+        R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
+
+        plt.figure()
+        qz = (0.001013546247) * E * sin(Theta * pi / 180)
+        Sigma, = plt.plot(qz, R1[0], 'k-', label='Python')
+        plt.yscale("log")
+        plt.xlabel('qz')
+        plt.ylabel('Reflectivity')
+        plt.title('ReMagX vs. Python Script (800 eV)')
+        plt.show()
+
+
+
+
 
 
 
@@ -913,3 +966,4 @@ if __name__ == "__main__":
     plt.legend(['alpha','beta'])
     plt.show()
 
+    sample.reflectivity(500)
