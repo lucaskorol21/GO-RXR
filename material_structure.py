@@ -795,6 +795,9 @@ class slab:
                 density_magnetic[mag] = density_mag[ele][mag]
         return thickness, density, density_magnetic
 
+    def reflectivity(self):
+        print('hello')
+
 
 
 
