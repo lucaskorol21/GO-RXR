@@ -604,7 +604,7 @@ class slab:
             transition.append(val)
             thick = thick + list(self.structure[layer].values())[0].thickness
 
-        step = 1e-3  # thickness step size
+        step = 0.1  # thickness step size
         thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
@@ -989,7 +989,7 @@ if __name__ == "__main__":
     plt.legend(['alpha','beta'])
 
     qz1, R1 = sample.reflectivity(500, 1e-5)
-    qz2, R2 = sample.reflectivity(500, 1e-5)
+    qz2, R2 = sample.reflectivity(500, 1e-6)
 
     plt.figure(3)
     plt.plot(qz1, R1[0], 'k-')
