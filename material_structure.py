@@ -9,20 +9,35 @@ from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
 
-def spacedmarks(x, y, Nmarks, data_ratio=None):
-    import scipy.integrate
+def slice_size(t, d, idx_a, idx_b, precision, n ):
 
-    if data_ratio is None:
-        data_ratio = plt.gca().get_data_ratio()
+    mid = int((idx_a + idx_b)/2)
 
-    dydx = np.gradient(y, x[1])
-    dxdx = np.gradient(x, x[1])*data_ratio
-    arclength = scipy.integrate.cumtrapz(np.sqrt(dydx**2 + dxdx**2), x, initial=0)
-    marks = np.linspace(0, max(arclength), Nmarks)
-    markx = np.interp(marks, arclength, x)
-    marky = np.interp(markx, x, y)
+    dt = t[idx_b] - t[idx_a]
+    left = d[mid]*dt/2
+    right = d[idx_b]*dt/2
+    whole = d[idx_b]*dt
 
-    return markx, marky
+    delta = (left+right-whole)/dt
+
+    while(abs(delta)<precision and not(idx_b >= n-1)):
+        idx_b = idx_b + 2
+        mid = int((idx_a + idx_b) / 2)
+
+        dt = t[idx_b] - t[idx_a]
+        left = d[mid] * dt / 2
+        right = d[idx_b] * dt / 2
+        whole = d[idx_b] * dt
+
+        delta = (left+right-whole)/dt
+
+
+    if abs(idx_a-idx_b) == 2:
+        return idx_b
+    elif idx_b >=n-1:
+        return n-1
+    else:
+        return idx_b-2
 
 class element:
     def __init__(self, name, stoichiometry):
@@ -590,7 +605,7 @@ class slab:
             thick = thick + list(self.structure[layer].values())[0].thickness
 
         step = 1e-3  # thickness step size
-        thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
+        thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
@@ -811,49 +826,50 @@ class slab:
                 density_magnetic[mag] = density_mag[ele][mag]
         return thickness, density, density_magnetic
 
-    def reflectivity(self, Nmarks, datrat=None):
+    def reflectivity(self, E, precision):
 
-        E = 800
         thickness, density, density_magnetic = self.density_profile()
         epsilon = dielectric_constant(density, E)
 
-        t, e_r = spacedmarks(thickness,real(epsilon), Nmarks, datrat)
-        t, e_i = spacedmarks(thickness, imag(epsilon), Nmarks, datrat)
+        idx_a = 0
+        idx_b = 2
+        n = len(thickness)
+        my_slabs = list()
+        while(idx_b < n):
+            idx_b = slice_size(thickness,real(epsilon), idx_a, idx_b, precision, n)
+            my_slabs.append(idx_b)
+            idx_a = idx_b
+            idx_b = idx_b + 2
 
-        eps = e_r + 1j*e_i
-
-        A = pr.Generate_structure(Nmarks-1)
-
-        for idx in range(Nmarks-1):
-            d = t[idx+1] - t[idx]
-            A[idx].seteps((eps[idx+1]+eps[idx])/2)
+        m = len(my_slabs)
+        A =pr.Generate_structure(m)
+        m_j=0
+        idx = 0
+        for m_i in my_slabs:
+            d = thickness[m_i] - thickness[m_j]
+            m_j = m_i
+            A[idx].seteps(epsilon[m_i])
             A[idx].setd(d)
-        
-
-
+            idx = idx + 1
 
         h = 4.135667696e-15  # Plank's Constant [eV s]
         c = 2.99792450e18  # Speed of light in vacuum [A/s]
 
         Theta = np.linspace(0.1, 89.9, 899)  # Angles
         wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
+
         R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
 
-        plt.figure(1)
         qz = (0.001013546247) * E * sin(Theta * pi / 180)
-        Sigma, = plt.plot(qz, R1[0], 'k-', label='Python')
-        plt.yscale("log")
-        plt.xlabel('qz')
-        plt.ylabel('Reflectivity')
-        plt.title('ReMagX vs. Python Script (800 eV)')
+        figure(10)
+        plt.plot(thickness[my_slabs], real(epsilon[my_slabs]), '.')
+        plt.plot(thickness, real(epsilon))
 
 
-        plt.figure(2)
-        plt.plot(t, e_r, '.')
-        plt.xlabel('Thickness')
-        plt.ylabel('Real epsilon')
-        plt.title('Slicing')
-        plt.show()
+        return qz, R1
+
+
+
 
 
 
@@ -935,7 +951,7 @@ if __name__ == "__main__":
         else:
             check.append(False)
 
-    plt.figure()
+    plt.figure(1)
     for idx in range(len(val)):
         if check[idx]:
             plt.plot(thickness, val[idx],':')
@@ -958,19 +974,32 @@ if __name__ == "__main__":
     plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02,0.5))
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Density (mol/cm^3)')
-    plt.show()
+
 
     E = 300  # eV
     eps = dielectric_constant(density, E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
     beta = abs(n.imag)
-    plt.figure()
+    plt.figure(2)
     plt.plot(thickness, alpha, thickness, beta)
     plt.suptitle('Optical Profile')
     plt.xlabel('Thickness')
     plt.ylabel('Profile')
     plt.legend(['alpha','beta'])
-    plt.show()
 
-    sample.reflectivity(50)
+    qz1, R1 = sample.reflectivity(500, 1e-5)
+    qz2, R2 = sample.reflectivity(500, 1e-7)
+
+    plt.figure(3)
+    plt.plot(qz1, R1[0], 'k-')
+    plt.plot(qz2, R2[0], 'r-')
+    plt.legend(["1e-5", "1d-6"])
+    plt.yscale("log")
+    plt.xlabel('qz')
+    plt.ylabel('Reflectivity')
+    plt.title('ReMagX vs. Python Script (800 eV)')
+
+    figure(6)
+    plt.plot(abs(R1[0]-R2[0]))
+    plt.show()

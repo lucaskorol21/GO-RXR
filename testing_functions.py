@@ -1,28 +1,59 @@
+from math import sin
 import numpy as np
+import scipy.integrate as integrate
+
 import matplotlib.pyplot as plt
-import scipy.integrate
 
-def spacedmarks(x, y, Nmarks, data_ratio=None):
-    import scipy.integrate
 
-    if data_ratio is None:
-        data_ratio = plt.gca().get_data_ratio()
+def slice_size(f,a,dt,dt_min,precision):
+    left = (f(a + dt / 2) + 1)* dt / 2
+    right = (f(a + dt) + 1)* dt/2
+    whole = (f(a + dt) + 1)* dt
 
-    dydx = np.gradient(y, x[1])
-    dxdx = np.gradient(x, x[1])*data_ratio
-    arclength = scipy.integrate.cumtrapz(np.sqrt(dydx**2 + dxdx**2), x, initial=0)
-    marks = np.linspace(0, max(arclength), Nmarks)
-    markx = np.interp(marks, arclength, x)
-    marky = np.interp(markx, x, y)
+    delta = (left+right-whole)/dt
 
-    return markx, marky
 
-x = np.linspace(0, 10*np.pi,1000)
-y = np.sin(x*2) + np.sin(x+1)
+    while(abs(delta)<precision):
+        dt = dt + dt_min
+        left = (f(a + dt / 2) + 1) * dt / 2
+        right = (f(a + dt) + 1) * dt/2
+        whole = (f(a + dt) + 1)* dt
 
-markx, marky = spacedmarks(x,y, 80)
+        delta = (left+right-whole)/dt
 
-plt.figure()
-plt.plot(markx, marky, 'o', color='blue')
-plt.plot(x,y)
-plt.show()
+    print(delta, dt)
+    if dt == dt_min:
+        return dt
+    else:
+        return dt-dt_min
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    a = 0
+    b = 2 * np.pi
+
+    dt = 1e-3
+    dt_min = 1e-3
+    precision = 1e-1
+    f = sin
+
+    slicing = list()
+    slicing.append(a)
+    while (a < b):
+        dt = dt_min
+        dt = slice_size(f, a, dt, dt_min, precision)
+        a = a + dt
+        slicing.append(a)
+
+    val = np.sin(np.array(slicing)) + 1
+
+    plt.figure()
+    plt.plot(slicing, val, '.')
+    plt.show()
