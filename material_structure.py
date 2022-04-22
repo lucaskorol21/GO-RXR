@@ -859,10 +859,13 @@ class slab:
         wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
 
         R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
-
         qz = (0.001013546247) * E * sin(Theta * pi / 180)
+
+        plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
+        plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
         figure(10)
-        plt.stem(thickness[my_slabs], real(epsilon[my_slabs]), markerfmt = "" "", bottom=0.9875)
+        plt.stem(plot_t, plot_e, markerfmt = "" "", bottom=0.9875)
+
         plt.plot(thickness, real(epsilon))
 
 
@@ -988,8 +991,8 @@ if __name__ == "__main__":
     plt.ylabel('Profile')
     plt.legend(['alpha','beta'])
 
-    qz1, R1 = sample.reflectivity(500, 1e-5)
-    qz2, R2 = sample.reflectivity(500, 1e-5)
+    qz1, R1 = sample.reflectivity(500, 5e-6)
+    qz2, R2 = sample.reflectivity(500, 5e-6)
 
     plt.figure(3)
     plt.plot(qz1, R1[0], 'k-')
