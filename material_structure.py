@@ -825,9 +825,10 @@ class slab:
         A = pr.Generate_structure(Nmarks-1)
 
         for idx in range(Nmarks-1):
-            d = t[idx+1] = t[idx]
+            d = t[idx+1] - t[idx]
             A[idx].seteps((eps[idx+1]+eps[idx])/2)
             A[idx].setd(d)
+        
 
 
 
@@ -838,15 +839,21 @@ class slab:
         wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
         R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
 
-        plt.figure()
+        plt.figure(1)
         qz = (0.001013546247) * E * sin(Theta * pi / 180)
         Sigma, = plt.plot(qz, R1[0], 'k-', label='Python')
         plt.yscale("log")
         plt.xlabel('qz')
         plt.ylabel('Reflectivity')
         plt.title('ReMagX vs. Python Script (800 eV)')
-        plt.show()
 
+
+        plt.figure(2)
+        plt.plot(t, e_r, '.')
+        plt.xlabel('Thickness')
+        plt.ylabel('Real epsilon')
+        plt.title('Slicing')
+        plt.show()
 
 
 
@@ -966,4 +973,4 @@ if __name__ == "__main__":
     plt.legend(['alpha','beta'])
     plt.show()
 
-    sample.reflectivity(500)
+    sample.reflectivity(50)
