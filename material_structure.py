@@ -862,7 +862,7 @@ class slab:
 
         qz = (0.001013546247) * E * sin(Theta * pi / 180)
         figure(10)
-        plt.plot(thickness[my_slabs], real(epsilon[my_slabs]), '.')
+        plt.stem(thickness[my_slabs], real(epsilon[my_slabs]), markerfmt = "" "", bottom=0.9875)
         plt.plot(thickness, real(epsilon))
 
 
@@ -989,7 +989,7 @@ if __name__ == "__main__":
     plt.legend(['alpha','beta'])
 
     qz1, R1 = sample.reflectivity(500, 1e-5)
-    qz2, R2 = sample.reflectivity(500, 1e-7)
+    qz2, R2 = sample.reflectivity(500, 1e-5)
 
     plt.figure(3)
     plt.plot(qz1, R1[0], 'k-')
