@@ -39,6 +39,25 @@ def slice_size(t, d, idx_a, idx_b, precision, n ):
     else:
         return idx_b-2
 
+def material_slicing(thickness, epsilon, epsilon_mag, precision):
+    idx_a = 0
+    idx_b = 2
+    n = len(epsilon)
+    my_slabs = list()
+    while (idx_b < n):
+        idx_s_r = slice_size(thickness, real(epsilon), idx_a, idx_b, precision, n)  # structural real component
+        idx_s_i = slice_size(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # structural imaginary component
+        idx_m_r = slice_size(thickness, real(epsilon), idx_a, idx_b, precision, n)  # magnetic real component
+        idx_m_i = slice_size(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # magnetic imaginary component
+
+        idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
+
+        my_slabs.append(idx_b)  # append slice value to list
+        idx_a = idx_b  # step to next slab
+        idx_b = idx_b + 2
+
+    return my_slabs
+
 class element:
     def __init__(self, name, stoichiometry):
         """
@@ -828,18 +847,11 @@ class slab:
 
     def reflectivity(self, E, precision):
 
-        thickness, density, density_magnetic = self.density_profile()
-        epsilon = dielectric_constant(density, E)
+        thickness, density, density_magnetic = self.density_profile()  # computes density function
+        epsilon = dielectric_constant(density, E)  # calculates epsilon for structural components
+        epsilon_mag = dielectric_constant(density_magnetic, E)  # calculates epsilon for magnetic component
 
-        idx_a = 0
-        idx_b = 2
-        n = len(thickness)
-        my_slabs = list()
-        while(idx_b < n):
-            idx_b = slice_size(thickness,real(epsilon), idx_a, idx_b, precision, n)
-            my_slabs.append(idx_b)
-            idx_a = idx_b
-            idx_b = idx_b + 2
+        my_slabs = material_slicing(thickness, epsilon, epsilon_mag, precision)
 
         m = len(my_slabs)
         A =pr.Generate_structure(m)
