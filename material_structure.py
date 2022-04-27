@@ -3,11 +3,25 @@ import matplotlib.pyplot as plt
 import math
 from collections import OrderedDict
 from scipy.special import erf
-from scipy.integrate import simps
+from scipy.integrate import simpson
 import warnings
 from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
+from tabulate import tabulate
+
+def slice_diff(t, d, idx_a, idx_b, precision, n ):
+    f1 = d[idx_a]
+    f2 = d[idx_b]
+    delta = abs(f2-f1)
+    while(delta<precision and not(idx_b>=n-1)):
+        idx_b = idx_b + 1
+        f2 = d[idx_b]
+        delta = abs(f2-f1)
+
+    return idx_b
+
+
 
 def slice_size(t, d, idx_a, idx_b, precision, n ):
 
@@ -19,6 +33,7 @@ def slice_size(t, d, idx_a, idx_b, precision, n ):
     whole = d[idx_b]*dt
 
     delta = (left+right-whole)/dt
+
 
     while(abs(delta)<precision and not(idx_b >= n-1)):
         idx_b = idx_b + 2
@@ -55,6 +70,26 @@ def material_slicing(thickness, epsilon, epsilon_mag, precision):
         my_slabs.append(idx_b)  # append slice value to list
         idx_a = idx_b  # step to next slab
         idx_b = idx_b + 2
+
+    return my_slabs
+
+def material_slicing_2(thickness, epsilon, epsilon_mag, precision):
+    idx_a = 0
+    idx_b = 1
+    n = len(epsilon)
+    my_slabs = list()
+
+    while (idx_b < n):
+        idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, precision, n)  # structural real component
+        idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # structural imaginary component
+        idx_m_r = slice_diff(thickness, real(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic real component
+        idx_m_i = slice_diff(thickness, imag(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic imaginary component
+
+        idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
+
+        my_slabs.append(idx_b)  # append slice value to list
+        idx_a = idx_b  # step to next slab
+        idx_b = idx_b + 1
 
     return my_slabs
 
@@ -586,7 +621,7 @@ class slab:
 
         return val
 
-    def density_profile(self):
+    def density_profile(self, step = 0.1):
         """
         Purpose: Creates the density profile based on the slab properties
         :return: thickness - thickness array in angstrom
@@ -623,7 +658,7 @@ class slab:
             transition.append(val)
             thick = thick + list(self.structure[layer].values())[0].thickness
 
-        step = 0.05  # thickness step size
+        #step = 0.05  # thickness step size
         thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
@@ -845,13 +880,13 @@ class slab:
                 density_magnetic[mag] = density_mag[ele][mag]
         return thickness, density, density_magnetic
 
-    def reflectivity(self, E, precision):
+    def reflectivity(self, E, s, precision):
 
-        thickness, density, density_magnetic = self.density_profile()  # computes density function
+        thickness, density, density_magnetic = self.density_profile(step = s)  # computes density function
         epsilon = dielectric_constant(density, E)  # calculates epsilon for structural components
         epsilon_mag = dielectric_constant(density_magnetic, E)  # calculates epsilon for magnetic component
 
-        my_slabs = material_slicing(thickness, epsilon, epsilon_mag, precision)
+        my_slabs = material_slicing_2(thickness, epsilon, epsilon_mag, precision)
 
         m = len(my_slabs)
         A =pr.Generate_structure(m)
@@ -859,9 +894,12 @@ class slab:
         idx = 0
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]
-            m_j = m_i
-            A[idx].seteps(epsilon[m_i])
+            #eps = (epsilon[m_i] + epsilon[m_j])/2
+            #eps = epsilon[m_i]
+            eps = epsilon[m_j]
+            A[idx].seteps(eps)
             A[idx].setd(d)
+            m_j = m_i
             idx = idx + 1
 
         h = 4.135667696e-15  # Plank's Constant [eV s]
@@ -875,13 +913,10 @@ class slab:
 
         plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
         plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
-        figure(10)
-        plt.stem(plot_t, plot_e, markerfmt = "" "", bottom=0.9875)
-
-        plt.plot(thickness, real(epsilon))
 
 
-        return qz, R1
+
+        return qz, R1, [thickness,plot_t], [real(epsilon), plot_e]
 
 
 
@@ -898,6 +933,7 @@ if __name__ == "__main__":
 
     # Example: Simple sample creation
     sample = slab(6)  # Initializing four layers
+    s = 0.1
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
@@ -954,7 +990,7 @@ if __name__ == "__main__":
     #  print(sample.myelements)
     #  print(sample.poly_elements)
     print(sample.mag_elements)
-    thickness, density, density_magnetic = sample.density_profile()
+    thickness, density, density_magnetic = sample.density_profile(step = s)
 
     # thickness, density, density_magnetic = sample.density_profile()
     val = list(density.values())
@@ -991,7 +1027,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 300  # eV
+    E = 900  # eV
     eps = dielectric_constant(density, E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1003,18 +1039,61 @@ if __name__ == "__main__":
     plt.ylabel('Profile')
     plt.legend(['alpha','beta'])
 
-    qz1, R1 = sample.reflectivity(500, 5e-6)
-    qz2, R2 = sample.reflectivity(500, 5e-6)
+    s = 0.1
+    p1 = 1e-5
+    p2 = 2.5e-5
+    qz, R, t, e =  sample.reflectivity(E, s,1e-20)
+    qz1, R1, t1, e1 = sample.reflectivity(E,s, p1)
+    qz2, R2, t2, e2 = sample.reflectivity(E,s, p2)
 
     plt.figure(3)
-    plt.plot(qz1, R1[0], 'k-')
-    plt.plot(qz2, R2[0], 'r-')
-    plt.legend(["1e-5", "1d-6"])
+    plt.plot(qz, R[0], 'k-')
+    plt.plot(qz1, R1[0], 'b--')
+    plt.plot(qz2, R2[0], 'r--')
+    plt.legend(['baseline',str(p1), str(p2)])
     plt.yscale("log")
     plt.xlabel('qz')
     plt.ylabel('Reflectivity')
     plt.title('ReMagX vs. Python Script (800 eV)')
 
+    figure(5)
+    plt.plot(qz1, abs(log(R[0])-log(R1[0])))
+    plt.suptitle("Difference in Spectra: " + str(p1))
+    plt.xlabel("Thickness")
+    plt.ylabel("Difference")
+
     figure(6)
-    plt.plot(abs(R1[0]-R2[0]))
+    plt.plot(qz1, abs(log(R[0]) - log(R2[0])))
+    plt.suptitle("Difference in Spectra: " + str(p2))
+    plt.xlabel("Thickness")
+    plt.ylabel("Difference")
+
+
+
+    plt.figure(7)
+    num1 = len(t1[1])-1
+    plt.stem(t1[1], e1[1], markerfmt=" ", linefmt=None, bottom=0.9875)
+    plt.plot(t1[0], e1[0])
+    plt.suptitle(str(p1))
+    plt.xlabel('Thickness (Angstrom)')
+    plt.ylabel('Dielectric Constant (Real)')
+    plt.legend(['Slabs = '+ str(num1)])
+
+    plt.figure(8)
+    num2 = len(t2[1]) - 1
+    plt.stem(t2[1], e2[1], markerfmt=" ", linefmt=None, bottom=0.9875)
+    plt.plot(t2[0], e2[0])
+    plt.suptitle(str(p2))
+    plt.xlabel('Thickness (Angstrom)')
+    plt.ylabel('Dielectric Constant (Real)')
+    plt.legend(['Slabs = ' + str(num2)])
+
+    max1 = max(abs(log(R[0])-log(R1[0])))
+    max2 = max(abs(log(R[0]) - log(R2[0])))
+    A1 = simpson(abs(log(R[0])-log(R1[0])), qz)
+    A2 = simpson(abs(log(R[0]) - log(R2[0])), qz)
+
+    print()
+    print()
+    print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
     plt.show()
