@@ -894,9 +894,9 @@ class slab:
         idx = 0
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]
-            #eps = (epsilon[m_i] + epsilon[m_j])/2
+            eps = (epsilon[m_i] + epsilon[m_j])/2
             #eps = epsilon[m_i]
-            eps = epsilon[m_j]
+            #eps = epsilon[m_j]
             A[idx].seteps(eps)
             A[idx].setd(d)
             m_j = m_i
