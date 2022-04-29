@@ -22,3 +22,4 @@ if __name__ == "__main__":
     plt.figure(1)
     plt.plot(x, new_func)
     plt.show()
+

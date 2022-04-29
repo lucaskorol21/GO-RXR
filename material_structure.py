@@ -17,11 +17,20 @@ def zero_to_one(func):
     func_min = min(func)
     func_max = max(func)
     amplitude = func_max - func_min
-    return (func-func_min)/amplitude
+    if amplitude==0:
+        return func
+    else:
+        return (func-func_min)/amplitude
 
 def total_variance(func):
     func = zero_to_one(func)
-    return np.sum(np.abs(np.diff(np.array(func))))
+    tv = np.sum(np.abs(np.diff(np.array(func))))
+
+    if tv ==0:
+        return 1
+    else:
+        return tv
+
 
 
 
@@ -677,6 +686,7 @@ class slab:
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
+
         # Initializing thickness array
         transition = [0]  # array that contains thickness that slab transition occurs
         thick = 0  # contains the total film thickness
@@ -824,76 +834,76 @@ class slab:
                             po = po + 1
 
 
+
+            pm=0
             if ele in mag_keys:
-                pm=1
-                if ele in mag_keys:
-                    # initialization of magnetization density dictionary
-                    layer = 0
-                    not_found = True
-                    while not_found or layer <= n - 1:
-                        if ele in list(self.structure[layer].keys()):
-                            density_mag[ele] = {k: np.zeros(len(thickness)) for k in list(self.mag_elements[ele])}
-                            pm = len(self.structure[layer][ele].mag_density)
-                            not_found = False
-                        layer = layer + 1
+                # initialization of magnetization density dictionary
+                layer = 0
+                not_found = True
+                while not_found or layer <= n - 1:
+                    if ele in list(self.structure[layer].keys()):
+                        density_mag[ele] = {k: np.zeros(len(thickness)) for k in list(self.mag_elements[ele])}
+                        pm = len(self.structure[layer][ele].mag_density)
+                        not_found = False
+                    layer = layer + 1
 
-                    if layer > n:  # element not found in any layers
-                        raise RuntimeError(ele + ' defined as a polymorph, but not found in sample.')
+                if layer > n:  # element not found in any layers
+                    raise RuntimeError(ele + ' defined as a polymorph, but not found in sample.')
 
-                # Magnetic elements
-                if ele in mag_keys:
-                    for layer in range(n):  # loops through all layers
-                        offset = transition[layer]
-                        # Element found in current layer
-                        if ele in list(self.structure[layer].keys()):
-                            position = self.structure[layer][ele].position  # position of element
-                            sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                            current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) / self.structure[layer][ele].molar_mass  # current density
-                            if layer == n - 1:  # Last layer
-                                next_density = np.zeros(pm)  # density of element in next layer
-                            elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
-                                next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass
-                            else:  # element not in the next layer
-                                next_density = np.zeros(pm)
+            # Magnetic elements
+            if ele in mag_keys:
+                for layer in range(n):  # loops through all layers
+                    offset = transition[layer]
+                    # Element found in current layer
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        sigma = self.structure[layer][ele].roughness  # roughness parameterization
+                        current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) / self.structure[layer][ele].molar_mass  # current density
+                        if layer == n - 1:  # Last layer
+                            next_density = np.zeros(pm)  # density of element in next layer
+                        elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
+                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass
+                        else:  # element not in the next layer
+                            next_density = np.zeros(pm)
 
-                            begin = 0
-                            if layer == 0:
-                                begin = 1
+                        begin = 0
+                        if layer == 0:
+                            begin = 1
 
-                            # Implement changes ---------------------------------------------------------------------------
-                            erf_func = self.error_function(thickness, sigma, offset, True) + 1
-                            const = (next_density - current_density) / 2
+                        # Implement changes ---------------------------------------------------------------------------
+                        erf_func = self.error_function(thickness, sigma, offset, True) + 1
+                        const = (next_density - current_density) / 2
 
-                            ma = 0
-                            for mag in list(density_mag[ele].keys()):
-                                # Density normalization
-                                density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
-                                ma = ma + 1
+                        ma = 0
+                        for mag in list(density_mag[ele].keys()):
+                            # Density normalization
+                            density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
+                            ma = ma + 1
 
-                        else:  # Element not found in current layer
+                    else:  # Element not found in current layer
 
-                            current_density = np.zeros(pm)
-                            if layer == n - 1:  # Last layer
-                                next_density = current_density
-                                sigma = 0
-                            elif ele in list(self.structure[layer + 1].keys()):
-                                position = self.structure[layer + 1][ele].position  # position of element
-                                previous_element = list(self.structure[layer].keys())[position]
-                                next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass  # next layer density
-                                sigma = self.structure[layer][previous_element].roughness
-                            else:
-                                next_density = current_density
-                                sigma = 0
+                        current_density = np.zeros(pm)
+                        if layer == n - 1:  # Last layer
+                            next_density = current_density
+                            sigma = 0
+                        elif ele in list(self.structure[layer + 1].keys()):
+                            position = self.structure[layer + 1][ele].position  # position of element
+                            previous_element = list(self.structure[layer].keys())[position]
+                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            sigma = self.structure[layer][previous_element].roughness
+                        else:
+                            next_density = current_density
+                            sigma = 0
 
-                            erf_func = self.error_function(thickness, sigma, offset, True) + 1
-                            const = (next_density - current_density) / 2
-                            # Loops through all the polymorphs of the selected element
-                            ma = 0
-                            for mag in list(density_mag[ele].keys()):
-                                # Density normalization
-                                density_mag[ele][mag] = density_mag[ele][mag] + const[ma] * erf_func
-                                density_mag[ele][mag][density_mag[ele][mag]<0] = 0
-                                ma = ma + 1
+                        erf_func = self.error_function(thickness, sigma, offset, True) + 1
+                        const = (next_density - current_density) / 2
+                        # Loops through all the polymorphs of the selected element
+                        ma = 0
+                        for mag in list(density_mag[ele].keys()):
+                            # Density normalization
+                            density_mag[ele][mag] = density_mag[ele][mag] + const[ma] * erf_func
+                            density_mag[ele][mag][density_mag[ele][mag]<0] = 0
+                            ma = ma + 1
 
 
         # Create single dictionary to use (structural and polymorphs)
@@ -960,7 +970,7 @@ class slab:
 
 if __name__ == "__main__":
     """
-    # Example: Simple sample creation
+    # Example 1: Simple sample creation
     sample = slab(5)  # Initializing four layers
     s = 0.1
 
@@ -987,6 +997,8 @@ if __name__ == "__main__":
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
     sample.addlayer(4, 'COC2', 5, roughness= 1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
+    """
+
     """
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
@@ -1029,8 +1041,34 @@ if __name__ == "__main__":
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
     #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
+    """
 
-    result = sample.structure[1]
+
+    # Example 2: Simple sample creation
+    sample = slab(5)  # Initializing four layers
+    s = 0.1
+
+    # Substrate Layer
+    # Link: Ti-->Mn and O-->O
+    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False, True, True])  # substrate layer
+    sample.addlayer(1, 'SrTiO3',4, roughness=2)
+
+    sample.addlayer(2,'LaMnO3', 4, roughness=2)
+    sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
+
+    sample.addlayer(3, 'LaMnO3', 30, roughness=2)
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+
+    sample.addlayer(4, 'LaMnO3', 4, roughness=2)
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+
+    #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
+
+
+    result = sample.structure[2]
 
     e = 'O'
     print('STRUCTURE')
@@ -1050,7 +1088,7 @@ if __name__ == "__main__":
 
     #  print(sample.myelements)
     #  print(sample.poly_elements)
-    print(sample.mag_elements)
+    #print(sample.mag_elements)
     thickness, density, density_magnetic = sample.density_profile(step = s)
 
     # thickness, density, density_magnetic = sample.density_profile()
@@ -1088,7 +1126,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 2000 # eV
+    E = 600.18 # eV
     eps = dielectric_constant(density, E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1164,4 +1202,13 @@ if __name__ == "__main__":
     print()
     print()
     print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
+
+
+    F= np.loadtxt('test_example.txt')
+    q = F[:,0]
+    I = F[:,1]
+    plt.figure(55)
+    plt.plot(q,np.log(I))
+    plt.plot(qz, log(R1[0]))
+    print(q)
     plt.show()
