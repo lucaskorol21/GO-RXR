@@ -1,24 +1,24 @@
 from math import sin
 import numpy as np
-import scipy.integrate as integrate
+import scipy.optimize as optimize
 
 import matplotlib.pyplot as plt
 
 
-def total_variation(fx,fy):
-    diff_x = np.diff(np.array(fx))
-    diff_y = np.diff(np.array(fy))
+def zero_to_one(func):
+    func_min = min(func)
+    func_max = max(func)
+    amplitude = func_max - func_min
 
-    total_var = np.sum(np.abs(diff_x)) + np.sum(np.abs(diff_x))
-    return total_var
+    return (func - func_min) / amplitude
 
-if __name__ == '__main__':
-    x = np.arange(1, 100+0.001, 0.001)
-    fx = np.sin(x) + np.cos(x)
-    fy = x
-    r = x[-1]-x[0]
-    tv = total_variation(fx, fy)
-    z = np.arange(1,100+0.001,r/tv)
-    plt.figure()
-    plt.plot(np.sin(x)+ np.cos(x), x)
+
+if __name__ == "__main__":
+    x = np.arange(0,10,0.01)
+    fun = 10*np.sin(x) + 100
+
+    new_func = zero_to_one(fun)
+
+    plt.figure(1)
+    plt.plot(x, new_func)
     plt.show()

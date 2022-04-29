@@ -4,13 +4,29 @@ import math
 from collections import OrderedDict
 from scipy.special import erf
 from scipy.integrate import simpson
+import scipy.optimize as optimize
 import warnings
 from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
 from tabulate import tabulate
 
+
+
+def zero_to_one(func):
+    func_min = min(func)
+    func_max = max(func)
+    amplitude = func_max - func_min
+    return (func-func_min)/amplitude
+
+def total_variance(func):
+    func = zero_to_one(func)
+    return np.sum(np.abs(np.diff(np.array(func))))
+
+
+
 def slice_diff(t, d, idx_a, idx_b, precision, n ):
+
     f1 = d[idx_a]
     f2 = d[idx_b]
     delta = abs(f2-f1)
@@ -60,10 +76,11 @@ def material_slicing(thickness, epsilon, epsilon_mag, precision):
     n = len(epsilon)
     my_slabs = list()
     while (idx_b < n):
+
         idx_s_r = slice_size(thickness, real(epsilon), idx_a, idx_b, precision, n)  # structural real component
         idx_s_i = slice_size(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # structural imaginary component
-        idx_m_r = slice_size(thickness, real(epsilon), idx_a, idx_b, precision, n)  # magnetic real component
-        idx_m_i = slice_size(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # magnetic imaginary component
+        idx_m_r = slice_size(thickness, real(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic real component
+        idx_m_i = slice_size(thickness, imag(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic imaginary component
 
         idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
 
@@ -78,12 +95,24 @@ def material_slicing_2(thickness, epsilon, epsilon_mag, precision):
     idx_b = 1
     n = len(epsilon)
     my_slabs = list()
-
+    d = thickness[-1]-thickness[0]
     while (idx_b < n):
-        idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, precision, n)  # structural real component
-        idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # structural imaginary component
-        idx_m_r = slice_diff(thickness, real(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic real component
-        idx_m_i = slice_diff(thickness, imag(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic imaginary component
+
+        tv_1 = total_variance(real(epsilon))
+        tv_2 = total_variance(imag(epsilon))
+        tv_3 = total_variance(real(epsilon_mag))
+        tv_4 = total_variance(imag(epsilon_mag))
+
+        tv = tv_1+tv_2+tv_3+tv_4  # total variance
+        p_1 = precision/tv_1/d
+        p_2 = precision/tv_2/d
+        p_3 = precision/tv_3/d
+        p_4 = precision/tv_4/d
+
+        idx_s_r = slice_diff(thickness, zero_to_one(real(epsilon)), idx_a, idx_b, p_1, n)  # structural real component
+        idx_s_i = slice_diff(thickness, zero_to_one(imag(epsilon)), idx_a, idx_b, p_2, n)  # structural imaginary component
+        idx_m_r = slice_diff(thickness, zero_to_one(real(epsilon_mag)), idx_a, idx_b, p_3, n)  # magnetic real component
+        idx_m_i = slice_diff(thickness, zero_to_one(imag(epsilon_mag)), idx_a, idx_b, p_4, n)  # magnetic imaginary component
 
         idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
 
@@ -880,6 +909,7 @@ class slab:
                 density_magnetic[mag] = density_mag[ele][mag]
         return thickness, density, density_magnetic
 
+
     def reflectivity(self, E, s, precision):
 
         thickness, density, density_magnetic = self.density_profile(step = s)  # computes density function
@@ -928,11 +958,10 @@ class slab:
 
 
 
-
 if __name__ == "__main__":
-
+    """
     # Example: Simple sample creation
-    sample = slab(6)  # Initializing four layers
+    sample = slab(5)  # Initializing four layers
     s = 0.1
 
     # Substrate Layer
@@ -947,22 +976,54 @@ if __name__ == "__main__":
     sample.polymorphous(1,'Mn',['Mn2+','Mn3+'], [0.9,0.1], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [6.1,7.1], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
+
+
+    sample.addlayer(2, 'LaMnO3',5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(2, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+
+    sample.addlayer(3, 'LaMnO3', 5, roughness= 2, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+
+    sample.addlayer(4, 'COC2', 5, roughness= 1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
+    """
+    # Example 2: Simple sample creation
+    sample = slab(6)  # Initializing four layers
+    s = 0.1
+
+    # Substrate Layer
+    # Link: Ti-->Mn and O-->O
+    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False, True, True])  # substrate layer
+    sample.polymorphous(0, 'Ti', ['Ti3+', 'Ti4+'], [0.25, 0.75])
+
+    # First Layer
+    # Link: La-->La and O-->O
+    # * denotes optional parameter
+    sample.addlayer(1, 'LaMnO3', 25, roughness=1.5, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.9, 0.1],
+                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(1, ['Mn2+', 'Mn3+'], [6.1, 7.1],
+                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+
     # Second Layer
     # Link: La-->C and O-->C
-    sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False,True])   # Film 2 on top film 1
-    sample.magnetization(2,'Al', 5, 'Co') # mag_type is preset to 'isotropic
+    sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False, True])  # Film 2 on top film 1
+    sample.magnetization(2, 'Al', 5, 'Co')  # mag_type is preset to 'isotropic
 
-    sample.addlayer(3, 'LaMnO3',5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.addlayer(3, 'LaMnO3', 5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9],
+                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2],
+                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(4, 'LaMnO3', 5, roughness= 2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
+    sample.addlayer(4, 'LaMnO3', 5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9],
+                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 5],
+                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
 
-    sample.addlayer(5, 'COC2', 5, roughness= 1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
-
-
+    sample.addlayer(5, 'COC2', 5, roughness=1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
 
     # Impurity on surface
     # Impurity takes the form 'CCC'
@@ -1027,7 +1088,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 900  # eV
+    E = 2000 # eV
     eps = dielectric_constant(density, E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1039,10 +1100,16 @@ if __name__ == "__main__":
     plt.ylabel('Profile')
     plt.legend(['alpha','beta'])
 
-    s = 0.1
-    p1 = 1e-5
-    p2 = 2.5e-5
-    qz, R, t, e =  sample.reflectivity(E, s,1e-20)
+    h = 4.1257e-15 # Plank's constant eV*s
+    c = 2.99792458e8 # speed of light m/s
+    y = h*c/(E*1e-10)  # wavelength m
+
+    s = 1e-2*y
+    print(s)
+
+    p1 = 0.5
+    p2 = 0.1
+    qz, R, t, e =  sample.reflectivity(E, s,0)
     qz1, R1, t1, e1 = sample.reflectivity(E,s, p1)
     qz2, R2, t2, e2 = sample.reflectivity(E,s, p2)
 
@@ -1087,6 +1154,7 @@ if __name__ == "__main__":
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('Dielectric Constant (Real)')
     plt.legend(['Slabs = ' + str(num2)])
+
 
     max1 = max(abs(log(R[0])-log(R1[0])))
     max2 = max(abs(log(R[0]) - log(R2[0])))
