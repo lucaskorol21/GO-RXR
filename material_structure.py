@@ -937,15 +937,18 @@ class slab:
             eps = (epsilon[m_i] + epsilon[m_j])/2
             #eps = epsilon[m_i]
             #eps = epsilon[m_j]
+
             A[idx].seteps(eps)
-            A[idx].setd(d)
+            if idx != 0:
+                A[idx].setd(d)
+
             m_j = m_i
             idx = idx + 1
 
         h = 4.135667696e-15  # Plank's Constant [eV s]
         c = 2.99792450e18  # Speed of light in vacuum [A/s]
 
-        Theta = np.linspace(0.1, 89.9, 899)  # Angles
+        Theta = np.linspace(0.01, 89.99, 899)  # Angles
         wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
 
         R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
@@ -1053,15 +1056,15 @@ if __name__ == "__main__":
     sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False, True, True])  # substrate layer
     sample.addlayer(1, 'SrTiO3',4, roughness=2)
 
-    sample.addlayer(2,'LaMnO3', 4, roughness=2)
+    sample.addlayer(2,'LaMnO3', 4, density = 7.05, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
     sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
 
-    sample.addlayer(3, 'LaMnO3', 30, roughness=2)
+    sample.addlayer(3, 'LaMnO3', 30, density = 7.05, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
-    sample.addlayer(4, 'LaMnO3', 4, roughness=2)
+    sample.addlayer(4, 'LaMnO3', 4, density = 7.05, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
@@ -1126,7 +1129,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 600.18 # eV
+    E = 399.39 # eV
     eps = dielectric_constant(density, E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
