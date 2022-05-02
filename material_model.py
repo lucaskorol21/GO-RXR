@@ -58,7 +58,7 @@ def find_form_factor(element, E):
 
     return F
 
-def dielectric_constant(rho, E):
+def dielectric_constant(rho, sf, E):
     """
     Purpose: Compute the dielectric tensor constant
     :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
@@ -78,7 +78,7 @@ def dielectric_constant(rho, E):
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
     for element in elements:
-        F[element] = find_form_factor(element,E)
+        F[element] = find_form_factor(sf[element],E)
     #print(F)
     if len(elements) == 1:
         value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor

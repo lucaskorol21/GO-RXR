@@ -943,8 +943,8 @@ class slab:
     def reflectivity(self, E, s, precision):
 
         thickness, density, density_magnetic = self.density_profile(step = s)  # computes density function
-        epsilon = dielectric_constant(density, E)  # calculates epsilon for structural components
-        epsilon_mag = dielectric_constant(density_magnetic, E)  # calculates epsilon for magnetic component
+        epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates epsilon for structural components
+        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E)  # calculates epsilon for magnetic component
 
         my_slabs = material_slicing_2(thickness, epsilon, epsilon_mag, precision)
 
@@ -1149,8 +1149,8 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 399.39 # eV
-    eps = dielectric_constant(density, E)
+    E = 899.22 # eV
+    eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
     beta = abs(n.imag)
@@ -1233,7 +1233,8 @@ if __name__ == "__main__":
     plt.figure(55)
     plt.plot(q,np.log(I))
     plt.plot(qz, log(R1[0]))
-    print(q)
+    plt.legend(['ReMagX','Lucas'])
+
     plt.show()
 
 
