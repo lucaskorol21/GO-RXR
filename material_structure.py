@@ -1159,7 +1159,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 600.18 # eV
+    E = 899.22 # eV
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1181,10 +1181,13 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 20
-    p2 = 1
+    p1 = 1
+    p2 = 0.1
     qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
+    start = time.time()
     qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
+    end = time.time()
+    print(end-start)
     qz2, R2, t2, e2 = sample.reflectivity(E,s,qi, qf, p2)
 
     plt.figure(3)
