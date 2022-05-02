@@ -61,7 +61,7 @@ def find_form_factor(element, E):
 def dielectric_constant(rho, E):
     """
     Purpose: Compute the dielectric tensor constant
-    :param L: Dictionary {Element 1: [density array], Element 2: [density array]}
+    :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
     :param E: Energy of incoming photon (eV)
     :return: Dielectric constant (f_real + i*f_imag)
     """
@@ -71,7 +71,7 @@ def dielectric_constant(rho, E):
     re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
     avocado = 6.02214076e23  # avagoadro's number
     k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
-    factor = [0]
+
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
     value = 0
@@ -79,6 +79,7 @@ def dielectric_constant(rho, E):
     F = dict()
     for element in elements:
         F[element] = find_form_factor(element,E)
+    #print(F)
     if len(elements) == 1:
         value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor
     else:

@@ -351,6 +351,8 @@ class slab:
         self.poly_elements = dict()  # Keeps track of the  polymorphous elements
         self.mag_elements = dict()  # Keeps track of the magnetized elements in the material
         self.number_layers = num_layers
+        self.find_sf = [dict(), dict()]  # [structural, magnetic]
+
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
         """
@@ -631,8 +633,6 @@ class slab:
             self.mag_elements[identifier] = [identifier]
 
 
-    def convert_to_slice(self):
-            print('Time to convert')
 
     def error_function(self, t, rough, offset, upward):
         """
@@ -705,6 +705,8 @@ class slab:
 
             # structural elements (none polymorphous or magnetic)
             if ele in struct_keys:
+
+
                 density_struct[ele] = np.zeros(len(thickness))  # sets array same length as thickness array full of zeros
 
                 # Initializations so python is happy
@@ -718,6 +720,11 @@ class slab:
                     offset = transition[layer]
                     # The current layer
                     if ele in list(self.structure[layer].keys()):
+
+                        # saves scattering factor to be used in computation
+                        if ele not in self.find_sf[0]:
+                            self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
+
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
                         current_density = self.structure[layer][ele].stoichiometry* self.structure[layer][ele].density/ self.structure[layer][ele].molar_mass  # current density
@@ -780,6 +787,7 @@ class slab:
                     offset = transition[layer]
                     # Element found in current layer
                     if ele in list(self.structure[layer].keys()):
+
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
                         current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density / self.structure[layer][ele].molar_mass  # current density
@@ -800,6 +808,11 @@ class slab:
 
                         po = 0
                         for poly in list(density_poly[ele].keys()):
+
+                            # saves scattering factor of polymorphs
+                            if ele not in self.find_sf[0]:
+                                self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
+
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const*erf_func + begin*current_density) * self.structure[layer][ele].poly_ratio[po]
 
@@ -876,6 +889,10 @@ class slab:
 
                         ma = 0
                         for mag in list(density_mag[ele].keys()):
+
+                            # finds magnetic scattering factors
+                            if mag not in self.find_sf[1]:
+                                self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
                             ma = ma + 1
@@ -917,7 +934,10 @@ class slab:
         for ele in list(density_mag.keys()):
             for mag in list(density_mag[ele].keys()):
                 density_magnetic[mag] = density_mag[ele][mag]
+
+
         return thickness, density, density_magnetic
+
 
 
     def reflectivity(self, E, s, precision):
@@ -1215,3 +1235,5 @@ if __name__ == "__main__":
     plt.plot(qz, log(R1[0]))
     print(q)
     plt.show()
+
+
