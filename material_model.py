@@ -51,7 +51,7 @@ def form_factor(f,E):
         f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
         f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
     """
-    return complex(f_real, f_imag)
+    return complex(f_real, -f_imag)
 
 def find_form_factor(element, E):
     """
@@ -89,7 +89,6 @@ def dielectric_constant(rho, sf, E):
     F = dict()
     for element in elements:
         F[element] = find_form_factor(sf[element],E)
-    print(F)
 
 
     if len(elements) == 1:
