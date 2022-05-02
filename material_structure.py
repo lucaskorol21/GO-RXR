@@ -431,6 +431,8 @@ class slab:
         for key in list(elements.keys()):
             molar_mass = molar_mass + atomic_mass(elements[key].name)*elements[key].stoichiometry
 
+
+
         # ------------------------------------------------------------------------------------------------------------ #
         # ------------------------------------------------------------------------------------------------------------ #
         # might also need to check if last layer
@@ -445,8 +447,6 @@ class slab:
 
             if density == None:
                 density = perovskite_density(formula)
-
-
 
 
             elements[key].density = density  # sets density  (g/cm^3)
@@ -732,12 +732,14 @@ class slab:
                             next_density = 0  # density of element in next layer
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
                             next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass
+
                         else:  # element not in the next layer
                             next_density = 0
 
                         begin = 0
                         if layer == 0:
                             begin = 1
+
 
 
                         const = (next_density - current_density) / 2
@@ -940,7 +942,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, s, precision):
+    def reflectivity(self, E, s,qi,qf, precision):
 
         thickness, density, density_magnetic = self.density_profile(step = s)  # computes density function
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates epsilon for structural components
@@ -967,8 +969,10 @@ class slab:
 
         h = 4.135667696e-15  # Plank's Constant [eV s]
         c = 2.99792450e18  # Speed of light in vacuum [A/s]
-
-        Theta = np.linspace(0.01, 89.99, 899)  # Angles
+        theta_i = arcsin(qi/E/(0.001013546247))*180/pi
+        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi
+        delta_theta = (theta_f-theta_i)/1000
+        Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angles
         wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
 
         R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
@@ -1068,25 +1072,30 @@ if __name__ == "__main__":
 
 
     # Example 2: Simple sample creation
-    sample = slab(5)  # Initializing four layers
+    sample = slab(6)  # Initializing four layers
     s = 0.1
 
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False, True, True])  # substrate layer
-    sample.addlayer(1, 'SrTiO3',4, roughness=2)
+    sample.addlayer(0, 'SrTiO3', 50, density = 5.120891853,roughness=2, link=[False, True, True])  # substrate layer
+    sample.addlayer(1, 'SrTiO3', 4, density=5.120891853, roughness=2, link=[False, True, True])  # substrate layer
 
-    sample.addlayer(2,'LaMnO3', 4, density = 7.05, roughness=2)
+
+    sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
     sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
 
-    sample.addlayer(3, 'LaMnO3', 30, density = 7.05, roughness=2)
+    sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
-    sample.addlayer(4, 'LaMnO3', 4, density = 7.05, roughness=2)
+    sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+
+    sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
@@ -1149,7 +1158,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 899.22 # eV
+    E = 600.18 # eV
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1166,13 +1175,16 @@ if __name__ == "__main__":
     y = h*c/(E*1e-10)  # wavelength m
 
     s = 1e-2*y
-    print(s)
+
+    F = np.loadtxt('test_example.txt')
+    qi = F[0,0]
+    qf = F[-1,0]
 
     p1 = 0.5
     p2 = 0.1
-    qz, R, t, e =  sample.reflectivity(E, s,0)
-    qz1, R1, t1, e1 = sample.reflectivity(E,s, p1)
-    qz2, R2, t2, e2 = sample.reflectivity(E,s, p2)
+    qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
+    qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
+    qz2, R2, t2, e2 = sample.reflectivity(E,s,qi, qf, p2)
 
     plt.figure(3)
     plt.plot(qz, R[0], 'k-')
@@ -1227,7 +1239,7 @@ if __name__ == "__main__":
     print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
 
 
-    F= np.loadtxt('test_example.txt')
+
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)

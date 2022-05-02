@@ -8,6 +8,7 @@ from KK_And_Merge import *
 import os
 from material_structure import *
 
+
 def interpolate(fi,ff, Ei, Ef, E):
     """
     Purpose: Finds the form factor for a specific energy using linear interpolation
@@ -27,6 +28,15 @@ def form_factor(f,E):
     :param E: Desired energy
     :return: From factor [real, imaginary]
     """
+    from scipy import interpolate
+
+    E_axis = f[:,0]
+    tck_real = interpolate.splrep(E_axis,f[:,1])
+    f_real = interpolate.splev(E, tck_real)
+
+    tck_imag = interpolate.splrep(E_axis, f[:,2])
+    f_imag = interpolate.splev(E, tck_imag)
+    """
     idx = 0
     factor = f[0,0]  # First energy
     while (factor < E and factor != E):
@@ -40,7 +50,7 @@ def form_factor(f,E):
     else:
         f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
         f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
-
+    """
     return complex(f_real, f_imag)
 
 def find_form_factor(element, E):
@@ -53,9 +63,9 @@ def find_form_factor(element, E):
     F = 0
     my_dir = os.getcwd() + r'\Scattering_Factor'
     for ifile in os.listdir(my_dir):
-        if ifile.startswith(element):
+        if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-
+    #print(element, F)
     return F
 
 def dielectric_constant(rho, sf, E):
@@ -79,7 +89,9 @@ def dielectric_constant(rho, sf, E):
     F = dict()
     for element in elements:
         F[element] = find_form_factor(sf[element],E)
-    #print(F)
+    print(F)
+
+
     if len(elements) == 1:
         value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor
     else:
