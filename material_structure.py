@@ -10,6 +10,7 @@ from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
 from tabulate import tabulate
+from scipy import interpolate
 
 
 
@@ -1180,8 +1181,8 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 0.5
-    p2 = 0.1
+    p1 = 1
+    p2 = 0.5
     qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
     qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
     qz2, R2, t2, e2 = sample.reflectivity(E,s,qi, qf, p2)
@@ -1243,10 +1244,21 @@ if __name__ == "__main__":
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)
-    plt.plot(q,np.log(I))
-    plt.plot(qz, log(R1[0]))
+    plt.plot(q,np.log(I),'k')
+    plt.plot(qz, log(R1[0]), 'r--')
+    plt.suptitle('ReMagX vs. Lucas Comparion')
+    plt.xlabel('qz')
+    plt.ylabel('Reflectivity')
     plt.legend(['ReMagX','Lucas'])
 
+    itr = interpolate.splrep(qz, log(R1[0]))
+    R_int = interpolate.splev(q, itr)
+    plt.figure(56)
+    plt.plot(q, np.log(I)-R_int, 'k')
+    plt.suptitle('ReMagX vs. Lucas Difference')
+    plt.xlabel('qz')
+    plt.ylabel('Difference')
+    plt.legend(['ReMagX', 'Lucas'])
     plt.show()
 
 
