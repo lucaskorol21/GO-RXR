@@ -1181,8 +1181,8 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 1
-    p2 = 0.5
+    p1 = 20
+    p2 = 1
     qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
     qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
     qz2, R2, t2, e2 = sample.reflectivity(E,s,qi, qf, p2)
@@ -1254,8 +1254,8 @@ if __name__ == "__main__":
     itr = interpolate.splrep(qz, log(R1[0]))
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
-    plt.plot(q, np.log(I)-R_int, 'k')
-    plt.suptitle('ReMagX vs. Lucas Difference')
+    plt.plot(q, abs(np.log(I)-R_int), 'k')
+    plt.suptitle('ReMagX vs. Lucas Difference: precision = ' + str(p1))
     plt.xlabel('qz')
     plt.ylabel('Difference')
     plt.legend(['ReMagX', 'Lucas'])
