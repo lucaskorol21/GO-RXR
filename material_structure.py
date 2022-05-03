@@ -11,6 +11,7 @@ from material_model import *
 import Pythonreflectivity as pr
 from tabulate import tabulate
 from scipy import interpolate
+from scipy.signal import argrelextrema
 
 
 
@@ -28,19 +29,17 @@ def zero_to_one(func):
     else:
         return (func-func_min)/amplitude
 
-def total_variance(func):
+def total_variation(func):
     """
     Purpose: Calculates the total variation of the input function
     :param func: Input function, in our case the dielectric constant
     :return: Total variation
     """
-    func = zero_to_one(func)
+
     tv = np.sum(np.abs(np.diff(np.array(func))))
 
-    if tv ==0:
-        return 1
-    else:
-        return tv
+    return tv
+
 
 
 
@@ -136,28 +135,33 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
     n = len(epsilon)  # total number of elements in dielectric constant array
     my_slabs = list()  # list that keeps tracks of layer segmentation indices
     d = thickness[-1]-thickness[0]  # total thickness of the sample
+    delta_d = thickness[1]-thickness[0]  # thickness step
+    # computes total variation for real and imaginary of structural and magnetic dielectric constants
 
-    # Determines the layer segmentation
+    max_1 = max(abs(np.diff(real(epsilon))))
+    max_2 = max(abs(np.diff(imag(epsilon))))
+    max_3 = max(abs(np.diff(real(epsilon_mag))))
+    max_4 = max(abs(np.diff(imag(epsilon_mag))))
+
+    p_1 = precision * max_1
+    p_2 = precision * max_2
+    p_3 = precision * max_3
+    p_4 = precision * max_4
+
+
     while (idx_b < n):
 
-        # computes total variation for real and imaginary of structural and magnetic dielectric constants
-        tv_1 = total_variance(real(epsilon))
-        tv_2 = total_variance(imag(epsilon))
-        tv_3 = total_variance(real(epsilon_mag))
-        tv_4 = total_variance(imag(epsilon_mag))
+
 
         # Computes the precision values based on the average variance over the interval
-        p_1 = precision/tv_1/d
-        p_2 = precision/tv_2/d
-        p_3 = precision/tv_3/d
-        p_4 = precision/tv_4/d
 
-        idx_s_r = slice_diff(thickness, zero_to_one(real(epsilon)), idx_a, idx_b, p_1, n)  # structural real component
-        idx_s_i = slice_diff(thickness, zero_to_one(imag(epsilon)), idx_a, idx_b, p_2, n)  # structural imaginary component
-        idx_m_r = slice_diff(thickness, zero_to_one(real(epsilon_mag)), idx_a, idx_b, p_3, n)  # magnetic real component
-        idx_m_i = slice_diff(thickness, zero_to_one(imag(epsilon_mag)), idx_a, idx_b, p_4, n)  # magnetic imaginary component
+        idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, p_1, n)  # structural real component
+        idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, p_2, n)  # structural imaginary component
+        idx_m_r = slice_diff(thickness, real(epsilon_mag), idx_a, idx_b, p_3, n)  # magnetic real component
+        idx_m_i = slice_diff(thickness, imag(epsilon_mag), idx_a, idx_b, p_4, n)  # magnetic imaginary component
 
-        idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
+        #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
+        idx_b = min(idx_s_r,  idx_s_i)  # use the smallest slice value
 
         my_slabs.append(idx_b)  # append slice value to list
         idx_a = idx_b  # step to next slab
@@ -996,7 +1000,7 @@ class slab:
         # Determines the minimum step size unless user provides a value
         if s_min == None:
             wavelength = h * c / (E * 1e-10)  # wavelength m
-            s_min = 1e-2 * wavelength
+            s_min = 5e-3 * wavelength
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
@@ -1209,7 +1213,8 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 899.22 # eV
+    E = 399.39 # eV
+
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
@@ -1229,8 +1234,8 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 0.0001
-    p2 = 0.0001
+    p1 = 1
+    p2 = 0.5
     qz, R, t, e =  sample.reflectivity(E, qi,qf,0)
 
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
