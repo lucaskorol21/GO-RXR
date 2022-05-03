@@ -122,7 +122,7 @@ def material_slicing(thickness, epsilon, epsilon_mag, precision):
 
     return my_slabs
 
-def material_slicing_2(thickness, epsilon, epsilon_mag, precision):
+def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
     """
     Purpose: Performs the layer segmentation over entire interval based on total variation
     :param thickness: Thickness array of sample (angstrom)
@@ -976,51 +976,68 @@ class slab:
 
 
 
-    def reflectivity(self, E, s,qi,qf, precision):
+    def reflectivity(self, E,qi,qf, precision,s_min = None):
+        """
+        Purpose: Computes the reflectivity
+        :param E: Energy of reflectivity scan (eV)
+        :param qi: Starting momentum transfer
+        :param qf: End momentum transfer
+        :param precision: Precision value
+        :param s_min: Minimum step size (None indicates using default value)
+        :return:
+            qz - momentum transfer
+            R1 - reflectivity
 
-        thickness, density, density_magnetic = self.density_profile(step = s)  # computes density function
-        epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates epsilon for structural components
-        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E)  # calculates epsilon for magnetic component
+        """
 
-        my_slabs = material_slicing_2(thickness, epsilon, epsilon_mag, precision)
+        h = 4.1257e-15  # Plank's constant eV*s
+        c = 2.99792458e8  # speed of light m/s
 
-        m = len(my_slabs)
-        A =pr.Generate_structure(m)
-        m_j=0
-        idx = 0
+        # Determines the minimum step size unless user provides a value
+        if s_min == None:
+            wavelength = h * c / (E * 1e-10)  # wavelength m
+            s_min = 1e-2 * wavelength
+
+        thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
+        epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
+        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
+
+        my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+
+        m = len(my_slabs)  # number of slabs
+        A =pr.Generate_structure(m)  # creates object for reflectivity computation
+        m_j=0  # previous slab
+        idx = 0  # keeps track of current layer
         for m_i in my_slabs:
-            d = thickness[m_i] - thickness[m_j]
-            eps = (epsilon[m_i] + epsilon[m_j])/2
-            #eps = epsilon[m_i]
-            #eps = epsilon[m_j]
+            d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
+            eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
 
-            A[idx].seteps(eps)
+            A[idx].seteps(eps)  # sets dielectric constant value
             if idx != 0:
-                A[idx].setd(d)
+                A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
 
+            # move onto the next layer
             m_j = m_i
             idx = idx + 1
 
-        h = 4.135667696e-15  # Plank's Constant [eV s]
-        c = 2.99792450e18  # Speed of light in vacuum [A/s]
-        theta_i = arcsin(qi/E/(0.001013546247))*180/pi
-        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi
-        delta_theta = (theta_f-theta_i)/1000
-        Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angles
-        wavelength = (h * c) / E  # Wavelength (same unit as roughness) (Angstroms or nm)
 
-        R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
-        qz = (0.001013546247) * E * sin(Theta * pi / 180)
+        # requires angle for reflectivity computation
+        theta_i = arcsin(qi/E/(0.001013546247))*180/pi  # initial angle
+        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+        delta_theta = (theta_f-theta_i)/1000  # sets step size
+        Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angle array
 
+
+        R = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
+        qz = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
+
+        # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
         plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
 
 
 
-        return qz, R1, [thickness,plot_t], [real(epsilon), plot_e]
-
-
-
+        return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
 
 
 
@@ -1208,20 +1225,16 @@ if __name__ == "__main__":
     c = 2.99792458e8 # speed of light m/s
     y = h*c/(E*1e-10)  # wavelength m
 
-    s = 1e-2*y
-
     F = np.loadtxt('test_example.txt')
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 0.1
-    p2 = 0.05
-    qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
-    start = time.time()
-    qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
-    end = time.time()
-    print(end-start)
-    qz2, R2, t2, e2 = sample.reflectivity(E,s,qi, qf, p2)
+    p1 = 0.0001
+    p2 = 0.0001
+    qz, R, t, e =  sample.reflectivity(E, qi,qf,0)
+
+    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
+    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2)
 
     plt.figure(3)
     plt.plot(qz, R[0], 'k-')
