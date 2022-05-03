@@ -1181,8 +1181,8 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 1
-    p2 = 0.1
+    p1 = 0.1
+    p2 = 0.05
     qz, R, t, e =  sample.reflectivity(E, s, qi,qf,0)
     start = time.time()
     qz1, R1, t1, e1 = sample.reflectivity(E,s, qi,qf, p1)
@@ -1197,20 +1197,20 @@ if __name__ == "__main__":
     plt.legend(['baseline',str(p1), str(p2)])
     plt.yscale("log")
     plt.xlabel('qz')
-    plt.ylabel('Reflectivity')
+    plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.title('ReMagX vs. Python Script (800 eV)')
 
     figure(5)
-    plt.plot(qz1, abs(log(R[0])-log(R1[0])))
+    plt.plot(qz1, abs(np.log10(R[0])-np.log10(R1[0])))
     plt.suptitle("Difference in Spectra: " + str(p1))
-    plt.xlabel("Thickness")
-    plt.ylabel("Difference")
+    plt.xlabel("Thickness (Angstroms)")
+    plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
 
     figure(6)
-    plt.plot(qz1, abs(log(R[0]) - log(R2[0])))
+    plt.plot(qz1, abs(np.log10(R[0]) - np.log10(R2[0])))
     plt.suptitle("Difference in Spectra: " + str(p2))
-    plt.xlabel("Thickness")
-    plt.ylabel("Difference")
+    plt.xlabel("Thickness (Angstrom)")
+    plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
 
 
 
@@ -1233,10 +1233,10 @@ if __name__ == "__main__":
     plt.legend(['Slabs = ' + str(num2)])
 
 
-    max1 = max(abs(log(R[0])-log(R1[0])))
-    max2 = max(abs(log(R[0]) - log(R2[0])))
-    A1 = simpson(abs(log(R[0])-log(R1[0])), qz)
-    A2 = simpson(abs(log(R[0]) - log(R2[0])), qz)
+    max1 = max(abs(np.log10(R[0])-np.log10(R1[0])))
+    max2 = max(abs(np.log10(R[0]) - np.log10(R2[0])))
+    A1 = simpson(abs(np.log10(R[0])-np.log10(R1[0])), qz)
+    A2 = simpson(abs(np.log10(R[0]) - np.log10(R2[0])), qz)
 
     print()
     print()
@@ -1247,20 +1247,20 @@ if __name__ == "__main__":
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)
-    plt.plot(q,np.log(I),'k')
-    plt.plot(qz, log(R1[0]), 'r--')
+    plt.plot(q,np.log10(I),'k')
+    plt.plot(qz, np.log10(R1[0]), 'r--')
     plt.suptitle('ReMagX vs. Lucas Comparion')
     plt.xlabel('qz')
-    plt.ylabel('Reflectivity')
+    plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
 
-    itr = interpolate.splrep(qz, log(R1[0]))
+    itr = interpolate.splrep(qz, np.log10(R1[0]))
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
-    plt.plot(q, abs(np.log(I)-R_int), 'k')
+    plt.plot(q, abs(np.log10(I)-R_int), 'k')
     plt.suptitle('ReMagX vs. Lucas Difference: precision = ' + str(p1))
     plt.xlabel('qz')
-    plt.ylabel('Difference')
+    plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
 
