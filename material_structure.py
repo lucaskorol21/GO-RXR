@@ -15,15 +15,25 @@ from scipy import interpolate
 
 
 def zero_to_one(func):
-    func_min = min(func)
-    func_max = max(func)
-    amplitude = func_max - func_min
+    """
+    Purpose: Spans the function over a range from 0 to 1 for layer segmentation
+    :param func: Input function, in our case it is the dielectric constant function
+    :return: The transformed function
+    """
+    func_min = min(func)  # maximum value in the function
+    func_max = max(func)  # minimum value in the function
+    amplitude = func_max - func_min  # computes the amplitude from min to max
     if amplitude==0:
         return func
     else:
         return (func-func_min)/amplitude
 
 def total_variance(func):
+    """
+    Purpose: Calculates the total variation of the input function
+    :param func: Input function, in our case the dielectric constant
+    :return: Total variation
+    """
     func = zero_to_one(func)
     tv = np.sum(np.abs(np.diff(np.array(func))))
 
@@ -35,15 +45,27 @@ def total_variance(func):
 
 
 
-def slice_diff(t, d, idx_a, idx_b, precision, n ):
+def slice_diff(d, eps, idx_a, idx_b, precision, n ):
+    """
+    Purpose: Determines the steps size to take for the layer segmentation
+    :param d: Total thickness
+    :param eps: dielectric constant array
+    :param idx_a: current index
+    :param idx_b: next index
+    :param precision: precision value
+    :param n: number of elements in dielectric constant array
+    :return:
+    """
 
-    f1 = d[idx_a]
-    f2 = d[idx_b]
-    delta = abs(f2-f1)
+    f1 = eps[idx_a]  # current dielectric constant value
+    f2 = eps[idx_b]  # dielectric constant value of next step
+    delta = abs(f2-f1)  # difference between dielectric constant values
+
+    # Determines if layer segmentation is too large
     while(delta<precision and not(idx_b>=n-1)):
-        idx_b = idx_b + 1
-        f2 = d[idx_b]
-        delta = abs(f2-f1)
+        idx_b = idx_b + 1  # increases step size until too large of layer segmentation take
+        f2 = eps[idx_b]  # retrieves dielectric constant
+        delta = abs(f2-f1)  # computes difference
 
     return idx_b
 
@@ -101,19 +123,30 @@ def material_slicing(thickness, epsilon, epsilon_mag, precision):
     return my_slabs
 
 def material_slicing_2(thickness, epsilon, epsilon_mag, precision):
-    idx_a = 0
-    idx_b = 1
-    n = len(epsilon)
-    my_slabs = list()
-    d = thickness[-1]-thickness[0]
+    """
+    Purpose: Performs the layer segmentation over entire interval based on total variation
+    :param thickness: Thickness array of sample (angstrom)
+    :param epsilon: Structural dielectric constant array
+    :param epsilon_mag: Magnetic dielectric constant array
+    :param precision: Precision value
+    :return: Indices for slicing
+    """
+    idx_a = 0  # current index
+    idx_b = 1  # index of next slice
+    n = len(epsilon)  # total number of elements in dielectric constant array
+    my_slabs = list()  # list that keeps tracks of layer segmentation indices
+    d = thickness[-1]-thickness[0]  # total thickness of the sample
+
+    # Determines the layer segmentation
     while (idx_b < n):
 
+        # computes total variation for real and imaginary of structural and magnetic dielectric constants
         tv_1 = total_variance(real(epsilon))
         tv_2 = total_variance(imag(epsilon))
         tv_3 = total_variance(real(epsilon_mag))
         tv_4 = total_variance(imag(epsilon_mag))
 
-        tv = tv_1+tv_2+tv_3+tv_4  # total variance
+        # Computes the precision values based on the average variance over the interval
         p_1 = precision/tv_1/d
         p_2 = precision/tv_2/d
         p_3 = precision/tv_3/d
