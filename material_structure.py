@@ -42,8 +42,6 @@ def total_variation(func):
 
 
 
-
-
 def slice_diff(d, eps, idx_a, idx_b, precision, n ):
     """
     Purpose: Determines the steps size to take for the layer segmentation
@@ -101,6 +99,7 @@ def slice_size(t, d, idx_a, idx_b, precision, n ):
     else:
         return idx_b-2
 
+
 def material_slicing(thickness, epsilon, epsilon_mag, precision):
     idx_a = 0
     idx_b = 2
@@ -154,7 +153,6 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
 
 
         # Computes the precision values based on the average variance over the interval
-
         idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, p_1, n)  # structural real component
         idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, p_2, n)  # structural imaginary component
         idx_m_r = slice_diff(thickness, real(epsilon_mag), idx_a, idx_b, p_3, n)  # magnetic real component
@@ -997,10 +995,17 @@ class slab:
         h = 4.1257e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
         wavelength = h * c / (E * 1e-10)  # wavelength m
-        # Determines the minimum step size unless user provides a value
-        if s_min == None:
-            s_min = 5e-3 * wavelength
 
+        # requires angle for reflectivity computation and minimum slab thickness
+        theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
+        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+        delta_theta = (theta_f - theta_i) / 1000  # sets step size
+
+        # minimum step size calculated base on minimum path length difference where interference pattern would be minimal
+        if s_min == None:
+            beta = wavelength/50
+            s_min =  beta/sin(theta_f)/2
+        print (s_min)
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
         epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
@@ -1024,10 +1029,7 @@ class slab:
             idx = idx + 1
 
 
-        # requires angle for reflectivity computation
-        theta_i = arcsin(qi/E/(0.001013546247))*180/pi  # initial angle
-        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        delta_theta = (theta_f-theta_i)/1000  # sets step size
+
         Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angle array
 
 
@@ -1235,10 +1237,10 @@ if __name__ == "__main__":
 
     p1 = 1
     p2 = 0.5
-    qz, R, t, e =  sample.reflectivity(E, qi,qf,0, s_min=0.1)
+    qz, R, t, e =  sample.reflectivity(E, qi,qf,0)
 
-    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
-    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
+    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
+    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2)
 
     plt.figure(3)
     plt.plot(qz, R[0], 'k-')
