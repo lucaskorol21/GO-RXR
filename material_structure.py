@@ -1003,8 +1003,9 @@ class slab:
 
         # minimum step size calculated base on minimum path length difference where interference pattern would be minimal
         if s_min == None:
-            beta = wavelength/50
-            s_min =  beta/sin(theta_f)/2
+            beta = wavelength/100  # Difference in path length
+            s_min =  beta/sin(theta_f)/2  # minimum slab thickness based on Bragg's condition
+
         print (s_min)
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
