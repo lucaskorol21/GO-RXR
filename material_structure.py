@@ -1236,8 +1236,8 @@ if __name__ == "__main__":
     qi = F[0,0]
     qf = F[-1,0]
 
-    p1 = 1
-    p2 = 0.5
+    p1 = 0.5
+    p2 = 0.25
     qz, R, t, e =  sample.reflectivity(E, qi,qf,0)
 
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
