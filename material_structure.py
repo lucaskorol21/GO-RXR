@@ -909,11 +909,13 @@ class slab:
                     if ele in list(self.structure[layer].keys()):
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                        current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) / self.structure[layer][ele].molar_mass  # current density
+                        #current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) / self.structure[layer][ele].molar_mass  # current density
+                        current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density)
                         if layer == n - 1:  # Last layer
                             next_density = np.zeros(pm)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
-                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass
+                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass
+                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
                         else:  # element not in the next layer
                             next_density = np.zeros(pm)
 
@@ -944,7 +946,8 @@ class slab:
                         elif ele in list(self.structure[layer + 1].keys()):
                             position = self.structure[layer + 1][ele].position  # position of element
                             previous_element = list(self.structure[layer].keys())[position]
-                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
                             sigma = self.structure[layer][previous_element].roughness
                         else:
                             next_density = current_density
@@ -1020,10 +1023,13 @@ class slab:
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
+            eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            A[idx].seteps(eps)  # sets dielectric constant value
+            A[idx].setmag("x")
+            A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
             if idx != 0:
                 A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
+
 
             # move onto the next layer
             m_j = m_i
@@ -1140,19 +1146,19 @@ if __name__ == "__main__":
 
     sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [0.01,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
@@ -1215,7 +1221,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 399.39 # eV
+    E = 640.2 # eV
 
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
@@ -1243,10 +1249,13 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2)
 
+    R = np.array(R)
+    R1 = np.array(R1)
+    R2 = np.array(R2)
     plt.figure(3)
-    plt.plot(qz, R[0], 'k-')
-    plt.plot(qz1, R1[0], 'b--')
-    plt.plot(qz2, R2[0], 'r--')
+    plt.plot(qz, np.log10(R[2])-np.log10(R[3]), 'k-')
+    plt.plot(qz1, np.log10(R1[2])-np.log10(R1[3]), 'b--')
+    plt.plot(qz2, np.log10(R2[2])-np.log10(R2[3]), 'r--')
     plt.legend(['baseline',str(p1), str(p2)])
     plt.yscale("log")
     plt.xlabel('qz')
@@ -1254,13 +1263,13 @@ if __name__ == "__main__":
     plt.title('ReMagX vs. Python Script (800 eV)')
 
     figure(5)
-    plt.plot(qz1, abs(np.log10(R[0])-np.log10(R1[0])))
+    plt.plot(qz1, abs(np.log10(R[2])-np.log10(R[3])-np.log10(R1[2])-np.log10(R1[3])))
     plt.suptitle("Difference in Spectra: " + str(p1))
     plt.xlabel("Thickness (Angstroms)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
 
     figure(6)
-    plt.plot(qz1, abs(np.log10(R[0]) - np.log10(R2[0])))
+    plt.plot(qz1, abs(np.log10(R[2])-np.log10(R[3]) - np.log10(R2[2])-np.log10(R2[3])))
     plt.suptitle("Difference in Spectra: " + str(p2))
     plt.xlabel("Thickness (Angstrom)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
@@ -1286,10 +1295,10 @@ if __name__ == "__main__":
     plt.legend(['Slabs = ' + str(num2)])
 
 
-    max1 = max(abs(np.log10(R[0])-np.log10(R1[0])))
-    max2 = max(abs(np.log10(R[0]) - np.log10(R2[0])))
-    A1 = simpson(abs(np.log10(R[0])-np.log10(R1[0])), qz)
-    A2 = simpson(abs(np.log10(R[0]) - np.log10(R2[0])), qz)
+    max1 = max(abs(np.log10(R[2])-np.log10(R[3])-np.log10(R1[2])-np.log10(R1[3])))
+    max2 = max(abs(np.log10(R[2]) - np.log10(R2[2])))
+    A1 = simpson(abs(np.log10(R[2])-np.log10(R1[2])), qz)
+    A2 = simpson(abs(np.log10(R[2]) - np.log10(R2[2])), qz)
 
     print()
     print()
@@ -1301,13 +1310,13 @@ if __name__ == "__main__":
     I = F[:,1]
     plt.figure(55)
     plt.plot(q,np.log10(I),'k')
-    plt.plot(qz, np.log10(R1[0]), 'r--')
+    plt.plot(qz, np.log10(R1[2])-np.log10(R1[3]), 'r--')
     plt.suptitle('ReMagX vs. Lucas Comparion')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
 
-    itr = interpolate.splrep(qz, np.log10(R1[0]))
+    itr = interpolate.splrep(qz, np.log10(R1[2])-np.log10(R1[3]))
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
     plt.plot(q, abs(np.log10(I)-R_int), 'k')

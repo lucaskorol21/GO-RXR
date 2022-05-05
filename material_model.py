@@ -91,6 +91,7 @@ def dielectric_constant(rho, sf, E):
         F[element] = find_form_factor(sf[element],E)
 
 
+
     if len(elements) == 1:
         value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor
     else:
