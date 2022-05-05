@@ -13,8 +13,22 @@ from tabulate import tabulate
 from scipy import interpolate
 from scipy.signal import argrelextrema
 
+def energy_scan(sample, Ei,Ef, theta):
+    delta_E = (Ef-Ei)/1000
+    Energy = np.arange(Ei,Ef,delta_E)
+    theta_i = theta - 5
+    theta_f = theta + 5
+    Energy_Scan = list()
 
-
+    for E in Energy:
+        qi = (0.001013546247) * E * sin(theta_i * pi / 180)
+        qf = (0.001013546247) * E * sin(theta_f * pi / 180)
+        q = (0.001013546247) * E * sin(theta * pi / 180)
+        qz, R, t, e = sample.reflectivity(E, qi, qf, 0.5,s_min=0.1)  # baseline
+        itr = interpolate.splrep(qz, R[0])
+        R_int = interpolate.splev(q, itr)
+        Energy_Scan.append(R_int)
+    return Energy, Energy_Scan
 def zero_to_one(func):
     """
     Purpose: Spans the function over a range from 0 to 1 for layer segmentation
@@ -1002,17 +1016,17 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        delta_theta = (theta_f - theta_i) / 1000  # sets step size
+        delta_theta = (theta_f - theta_i) / 100  # sets step size
 
         # minimum step size calculated base on minimum path length difference where interference pattern would be minimal
         if s_min == None:
             beta = wavelength/100  # Difference in path length
             s_min =  beta/sin(theta_f)/2  # minimum slab thickness based on Bragg's condition
 
-        print (s_min)
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
+
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
+        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=False)   # calculates dielectric constant for magnetic component
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1023,10 +1037,11 @@ class slab:
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
-            eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+            #eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            A[idx].setmag("x")
-            A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
+            #A[idx].setmag("z")
+            #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
+            A[idx].seteps(eps)
             if idx != 0:
                 A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
 
@@ -1146,19 +1161,19 @@ if __name__ == "__main__":
 
     sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [0.01,0],['Co','Ni'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.01, 0], ['Co', 'Ni'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
@@ -1221,7 +1236,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 640.2 # eV
+    E =640.2 # eV
 
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
@@ -1241,35 +1256,32 @@ if __name__ == "__main__":
     F = np.loadtxt('test_example.txt')
     qi = F[0,0]
     qf = F[-1,0]
-
     p1 = 0.5
     p2 = 0.25
-    qz, R, t, e =  sample.reflectivity(E, qi,qf,0)
 
+    qz, R, t, e =  sample.reflectivity(E, qi,qf,0)  # baseline
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2)
 
-    R = np.array(R)
-    R1 = np.array(R1)
-    R2 = np.array(R2)
-    plt.figure(3)
-    plt.plot(qz, np.log10(R[2])-np.log10(R[3]), 'k-')
-    plt.plot(qz1, np.log10(R1[2])-np.log10(R1[3]), 'b--')
-    plt.plot(qz2, np.log10(R2[2])-np.log10(R2[3]), 'r--')
+
+    plt.figure(4)
+    plt.plot(qz, np.log10(R[0]), 'k-')
+    plt.plot(qz1, np.log10(R1[0]), 'b--')
+    plt.plot(qz2, np.log10(R2[0]), 'r--')
     plt.legend(['baseline',str(p1), str(p2)])
-    plt.yscale("log")
+    #plt.yscale("log")
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.title('ReMagX vs. Python Script (800 eV)')
 
     figure(5)
-    plt.plot(qz1, abs(np.log10(R[2])-np.log10(R[3])-np.log10(R1[2])-np.log10(R1[3])))
+    plt.plot(qz1, abs(np.log10(R[0])-np.log10(R1[0])))
     plt.suptitle("Difference in Spectra: " + str(p1))
     plt.xlabel("Thickness (Angstroms)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
 
     figure(6)
-    plt.plot(qz1, abs(np.log10(R[2])-np.log10(R[3]) - np.log10(R2[2])-np.log10(R2[3])))
+    plt.plot(qz1, abs(np.log10(R[0]) - np.log10(R2[0])))
     plt.suptitle("Difference in Spectra: " + str(p2))
     plt.xlabel("Thickness (Angstrom)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
@@ -1295,10 +1307,10 @@ if __name__ == "__main__":
     plt.legend(['Slabs = ' + str(num2)])
 
 
-    max1 = max(abs(np.log10(R[2])-np.log10(R[3])-np.log10(R1[2])-np.log10(R1[3])))
-    max2 = max(abs(np.log10(R[2]) - np.log10(R2[2])))
-    A1 = simpson(abs(np.log10(R[2])-np.log10(R1[2])), qz)
-    A2 = simpson(abs(np.log10(R[2]) - np.log10(R2[2])), qz)
+    max1 = max(abs(np.log10(R[0])-np.log10(R1[0])))
+    max2 = max(abs(np.log10(R[0]) - np.log10(R2[0])))
+    A1 = simpson(abs(np.log10(R[0])-np.log10(R1[0])), qz)
+    A2 = simpson(abs(np.log10(R[0]) - np.log10(R2[0])), qz)
 
     print()
     print()
@@ -1310,13 +1322,13 @@ if __name__ == "__main__":
     I = F[:,1]
     plt.figure(55)
     plt.plot(q,np.log10(I),'k')
-    plt.plot(qz, np.log10(R1[2])-np.log10(R1[3]), 'r--')
+    plt.plot(qz, np.log10(R1[0]), 'r--')
     plt.suptitle('ReMagX vs. Lucas Comparion')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
 
-    itr = interpolate.splrep(qz, np.log10(R1[2])-np.log10(R1[3]))
+    itr = interpolate.splrep(qz, np.log10(R1[0]))
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
     plt.plot(q, abs(np.log10(I)-R_int), 'k')
@@ -1327,3 +1339,8 @@ if __name__ == "__main__":
     plt.show()
 
 
+    E, Escan = energy_scan(sample,600,690,55.0)
+
+    plt.figure(15)
+    plt.plot(E,Escan)
+    plt.show()

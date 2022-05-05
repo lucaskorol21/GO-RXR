@@ -53,7 +53,7 @@ def form_factor(f,E):
     """
     return complex(f_real, -f_imag)
 
-def find_form_factor(element, E):
+def find_form_factor(element, E, mag):
     """
     Purpose: Finds the form factors at energy 'E' from the form factor database for the specified element
     :param element: The name of the element in abbreviated from (string)
@@ -61,14 +61,19 @@ def find_form_factor(element, E):
     :return: The complex form factor
     """
     F = 0
-    my_dir = os.getcwd() + r'\Scattering_Factor'
+
+    if mag:
+        my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
+    else:
+        my_dir = os.getcwd() + r'\Scattering_Factor'
+
     for ifile in os.listdir(my_dir):
+
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-    #print(element, F)
     return F
 
-def dielectric_constant(rho, sf, E):
+def dielectric_constant(rho, sf, E, mag=False):
     """
     Purpose: Compute the dielectric tensor constant
     :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
@@ -88,7 +93,8 @@ def dielectric_constant(rho, sf, E):
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
     for element in elements:
-        F[element] = find_form_factor(sf[element],E)
+        F[element] = find_form_factor(sf[element],E, mag)
+
 
 
 
@@ -109,7 +115,7 @@ def dielectric_constant(rho, sf, E):
 
 if __name__ == "__main__":
 
-
+    """
     E = 800 # Xray Energy
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e18  # Speed of light in vacuum [A/s]
@@ -124,7 +130,7 @@ if __name__ == "__main__":
     sample.addlayer(1, 'Fe', 38, density=1.56366)
 
     thickness, density, mag_density = sample.density_profile()
-    eps = dielectric_constant(density, E)
+    eps = dielectric_constant(density, E, mag)
 
     A = pr.Generate_structure(2)  # initializes slab structure
     A[0].seteps(eps[0])  # creates the substrate layer
@@ -142,5 +148,8 @@ if __name__ == "__main__":
     plt.ylabel('Reflectivity')
     plt.title('ReMagX vs. Python Script (800 eV)')
     plt.show()
-
-
+    """
+    my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
+    file = my_dir + "\\" + "Ni.txt"
+    print(file)
+    np.loadtxt(file)
