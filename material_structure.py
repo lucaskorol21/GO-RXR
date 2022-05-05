@@ -1164,11 +1164,11 @@ if __name__ == "__main__":
     sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 1], sf=['Mn', 'Fe'])
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
@@ -1259,9 +1259,9 @@ if __name__ == "__main__":
     p1 = 0.5
     p2 = 0.25
 
-    qz, R, t, e =  sample.reflectivity(E, qi,qf,0)  # baseline
-    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1)
-    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2)
+    qz, R, t, e =  sample.reflectivity(E, qi,qf,0,s_min=0.1)  # baseline
+    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
+    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
 
     plt.figure(4)
@@ -1336,11 +1336,21 @@ if __name__ == "__main__":
     plt.xlabel('qz')
     plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')
     plt.legend(['ReMagX', 'Lucas'])
-    plt.show()
 
 
-    E, Escan = energy_scan(sample,600,690,55.0)
+    testing_array = np.loadtxt('energy_test.txt')
+    E_test = testing_array[:,0]
+    Escan_test = testing_array[:,1]
+    E, Escan = energy_scan(sample,E_test[0],E_test[-1],55.0)
 
-    plt.figure(15)
-    plt.plot(E,Escan)
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Energy Scan for theta=55.0')
+    ax1.plot(E_test, Escan_test)
+    ax1.set_title('ReMagX')
+    ax1.set_xlabel('Energy (eV)')
+    ax1.set_ylabel('R')
+    ax2.plot(E, Escan)
+    ax2.set_title('Lucas ')
+    ax2.set_xlabel('Energy (eV)')
+    ax2.set_ylabel('R')
     plt.show()
