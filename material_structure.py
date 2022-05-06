@@ -982,7 +982,7 @@ class slab:
 
 
 
-    def reflectivity(self, E,qi,qf, precision,s_min = None):
+    def reflectivity(self, E,qi,qf, precision,s_min = 0.1):
         """
         Purpose: Computes the reflectivity
         :param E: Energy of reflectivity scan (eV)
@@ -1005,15 +1005,10 @@ class slab:
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
         delta_theta = (theta_f - theta_i) / 100  # sets step size
 
-        # minimum step size calculated base on minimum path length difference where interference pattern would be minimal
-        if s_min == None:
-            beta = wavelength/100  # Difference in path length
-            s_min =  beta/sin(theta_f)/2  # minimum slab thickness based on Bragg's condition
-
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
         epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=False)   # calculates dielectric constant for magnetic component
+        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=True)   # calculates dielectric constant for magnetic component
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1057,7 +1052,7 @@ class slab:
 
         h = 4.1257e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
-        Energy = np.linspace(Ei,Ef,100)  # input energy array
+        Energy = np.linspace(Ei,Ef,200)  # input energy array
         Escan = list()
 
         for E in Energy:
@@ -1183,19 +1178,19 @@ if __name__ == "__main__":
 
     sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [0.1,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
