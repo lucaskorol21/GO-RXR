@@ -29,6 +29,7 @@ def energy_scan(sample, Ei,Ef, theta):
         R_int = interpolate.splev(q, itr)
         Energy_Scan.append(R_int)
     return Energy, Energy_Scan
+
 def zero_to_one(func):
     """
     Purpose: Spans the function over a range from 0 to 1 for layer segmentation
@@ -53,6 +54,7 @@ def total_variation(func):
     tv = np.sum(np.abs(np.diff(np.array(func))))
 
     return tv
+
 
 
 
@@ -1341,10 +1343,10 @@ if __name__ == "__main__":
     testing_array = np.loadtxt('energy_test.txt')
     E_test = testing_array[:,0]
     Escan_test = testing_array[:,1]
-    E, Escan = energy_scan(sample,E_test[0],E_test[-1],55.0)
+    E, Escan = energy_scan(sample,E_test[0],E_test[-1],25.0)
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle('Energy Scan for theta=55.0')
+    fig.suptitle('Energy Scan for theta=25.0')
     ax1.plot(E_test, Escan_test)
     ax1.set_title('ReMagX')
     ax1.set_xlabel('Energy (eV)')
