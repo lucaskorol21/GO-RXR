@@ -13,22 +13,7 @@ from tabulate import tabulate
 from scipy import interpolate
 from scipy.signal import argrelextrema
 
-def energy_scan(sample, Ei,Ef, theta):
-    delta_E = (Ef-Ei)/1000
-    Energy = np.arange(Ei,Ef,delta_E)
-    theta_i = theta - 5
-    theta_f = theta + 5
-    Energy_Scan = list()
 
-    for E in Energy:
-        qi = (0.001013546247) * E * sin(theta_i * pi / 180)
-        qf = (0.001013546247) * E * sin(theta_f * pi / 180)
-        q = (0.001013546247) * E * sin(theta * pi / 180)
-        qz, R, t, e = sample.reflectivity(E, qi, qf, 0.5,s_min=0.1)  # baseline
-        itr = interpolate.splrep(qz, R[0])
-        R_int = interpolate.splev(q, itr)
-        Energy_Scan.append(R_int)
-    return Energy, Energy_Scan
 
 def zero_to_one(func):
     """
@@ -1068,10 +1053,45 @@ class slab:
 
         return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
 
+    def energy_scan(self, Ei, Ef, Theta, precision=0.5):
+
+        h = 4.1257e-15  # Plank's constant eV*s
+        c = 2.99792458e8  # speed of light m/s
+        Energy = np.linspace(Ei,Ef,100)  # input energy array
+        Escan = list()
+
+        for E in Energy:
+            wavelength = h * c / (E * 1e-10)
+            thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
+            epsilon = dielectric_constant(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
+            epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E,mag=False)  # calculates dielectric constant for magnetic component
+            my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+
+            # Intializing the slab model #
+            m = len(my_slabs)  # number of slabs
+            A = pr.Generate_structure(m)  # creates object for reflectivity computation
+            m_j = 0  # previous slab
+            idx = 0  # keeps track of current layer
+            for m_i in my_slabs:
+                d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
+                eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
+                # eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+
+                # A[idx].setmag("z")
+                # A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
+                A[idx].seteps(eps)
+                if idx != 0:
+                    A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
+
+                # move onto the next layer
+                m_j = m_i
+                idx = idx + 1
 
 
+            R = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)
 
-
+            Escan.append(R[0][0])
+        return Energy, np.array(Escan)
 
 
 
@@ -1238,7 +1258,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E =640.2 # eV
+    E =642.2 # eV
 
     eps = dielectric_constant(density, sample.find_sf[0], E)
     n = sqrt(eps)
@@ -1343,7 +1363,9 @@ if __name__ == "__main__":
     testing_array = np.loadtxt('energy_test.txt')
     E_test = testing_array[:,0]
     Escan_test = testing_array[:,1]
-    E, Escan = energy_scan(sample,E_test[0],E_test[-1],25.0)
+
+    E, Escan = sample.energy_scan(E_test[0],E_test[-1],25.0)
+
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Energy Scan for theta=25.0')
