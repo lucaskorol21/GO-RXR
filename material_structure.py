@@ -1007,8 +1007,11 @@ class slab:
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
-        epsilon = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=True)   # calculates dielectric constant for magnetic component
+        n = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
+        n_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=True)   # calculates dielectric constant for magnetic component
+        value = 1-n_mag
+        epsilon = n**2
+        epsilon_mag = (2*value)*(n**2)
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1019,11 +1022,11 @@ class slab:
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
-            #eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+            eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            #A[idx].setmag("z")
-            #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
-            A[idx].seteps(eps)
+            A[idx].setmag("z")
+            A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
+            #A[idx].seteps(eps)
             if idx != 0:
                 A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
 
@@ -1058,10 +1061,12 @@ class slab:
         for E in Energy:
             wavelength = h * c / (E * 1e-10)
             thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
-            epsilon = dielectric_constant(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
-            epsilon_mag = dielectric_constant(density_magnetic, self.find_sf[1], E,mag=False)  # calculates dielectric constant for magnetic component
+            n = dielectric_constant(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
+            n_mag = dielectric_constant(density_magnetic, self.find_sf[1], E,mag=False)  # calculates dielectric constant for magnetic component
             my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
+            epsilon = n**2
+            epsilon_mag = n_mag**2
             # Intializing the slab model #
             m = len(my_slabs)  # number of slabs
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
@@ -1280,11 +1285,14 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
+    R = np.log10(R[3])
+    R1 = np.log10(R1[3])
+    R2 = np.log10(R2[3])
 
     plt.figure(4)
-    plt.plot(qz, np.log10(R[0]), 'k-')
-    plt.plot(qz1, np.log10(R1[0]), 'b--')
-    plt.plot(qz2, np.log10(R2[0]), 'r--')
+    plt.plot(qz, R, 'k-')
+    plt.plot(qz1, R1, 'b--')
+    plt.plot(qz2, R2, 'r--')
     plt.legend(['baseline',str(p1), str(p2)])
     #plt.yscale("log")
     plt.xlabel('qz')
@@ -1292,13 +1300,13 @@ if __name__ == "__main__":
     plt.title('ReMagX vs. Python Script (800 eV)')
 
     figure(5)
-    plt.plot(qz1, abs(np.log10(R[0])-np.log10(R1[0])))
+    plt.plot(qz1, abs(R-R1))
     plt.suptitle("Difference in Spectra: " + str(p1))
     plt.xlabel("Thickness (Angstroms)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
 
     figure(6)
-    plt.plot(qz1, abs(np.log10(R[0]) - np.log10(R2[0])))
+    plt.plot(qz1, abs(R-R2))
     plt.suptitle("Difference in Spectra: " + str(p2))
     plt.xlabel("Thickness (Angstrom)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
@@ -1324,10 +1332,10 @@ if __name__ == "__main__":
     plt.legend(['Slabs = ' + str(num2)])
 
 
-    max1 = max(abs(np.log10(R[0])-np.log10(R1[0])))
-    max2 = max(abs(np.log10(R[0]) - np.log10(R2[0])))
-    A1 = simpson(abs(np.log10(R[0])-np.log10(R1[0])), qz)
-    A2 = simpson(abs(np.log10(R[0]) - np.log10(R2[0])), qz)
+    max1 = max(abs(R-R1))
+    max2 = max(abs(R-R2))
+    A1 = simpson(abs(R-R1), qz)
+    A2 = simpson(abs(R-R2), qz)
 
     print()
     print()
@@ -1339,13 +1347,13 @@ if __name__ == "__main__":
     I = F[:,1]
     plt.figure(55)
     plt.plot(q,np.log10(I),'k')
-    plt.plot(qz, np.log10(R1[0]), 'r--')
+    plt.plot(qz, R1, 'r--')
     plt.suptitle('ReMagX vs. Lucas Comparion')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
 
-    itr = interpolate.splrep(qz, np.log10(R1[0]))
+    itr = interpolate.splrep(qz, R1)
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
     plt.plot(q, abs(np.log10(I)-R_int), 'k')
@@ -1353,8 +1361,9 @@ if __name__ == "__main__":
     plt.xlabel('qz')
     plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')
     plt.legend(['ReMagX', 'Lucas'])
+    plt.show()
 
-
+    """
     testing_array = np.loadtxt('energy_test.txt')
     E_test = testing_array[:,0]
     Escan_test = testing_array[:,1]
@@ -1373,3 +1382,4 @@ if __name__ == "__main__":
     ax2.set_xlabel('Energy (eV)')
     ax2.set_ylabel('R')
     plt.show()
+    """

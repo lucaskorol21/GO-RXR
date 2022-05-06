@@ -103,12 +103,11 @@ def dielectric_constant(rho, sf, E, mag=False):
     else:
         for element in elements:
             value = value + F[element]*rho[element]  # computes alpha and beta values
+    n = 1 - constant * value  # computes the index of refraction
 
-    n = 1 - constant*value  # computes the index of refraction
-    epsilon = n ** 2  # computes dielectric constant from index of refraction
     #epsilon = n*np.conj(n)
 
-    return epsilon
+    return n
 
 
 
