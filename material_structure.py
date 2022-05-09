@@ -1012,7 +1012,8 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         epsilon = n**2
-        epsilon_mag = 2*Q*(n**2)
+        epsilon_mag = Q*(n**2)
+
 
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
@@ -1180,7 +1181,7 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
-
+    mag_dense = 0.1
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density = 5.120891853,roughness=2, link=[False, True, True])  # substrate layer
@@ -1189,19 +1190,19 @@ if __name__ == "__main__":
 
     sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [0.1,0],['Co','Ni'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [mag_dense,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.1, 0], ['Co', 'Ni'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 

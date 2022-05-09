@@ -74,7 +74,7 @@ def find_form_factor(element, E, mag):
     return F
 
 def magnetic_optical_constant(rho, sf, E):
-    mag = True  # Variable used to toggle find_form_factor to find magnetic scattering factors
+    mag = True
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -84,7 +84,6 @@ def magnetic_optical_constant(rho, sf, E):
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
-
     value = 0
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
@@ -92,13 +91,15 @@ def magnetic_optical_constant(rho, sf, E):
         F[element] = find_form_factor(sf[element], E, mag)
 
     if len(elements) == 1:
-        value = F[elements[0]]*rho[elements[0]]
+        value = F[element[0]] * rho[element[0]]
     else:
         for element in elements:
-            value = value + F[element]*rho[element]
+            value = value + F[element] * rho[element]
 
 
-    Q = value*constant # computes the magnetic optical constant as defined in Lott Dieter Thesis
+
+
+    Q = constant * value
 
     return Q
 
