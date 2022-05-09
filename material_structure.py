@@ -1027,7 +1027,7 @@ class slab:
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            A[idx].setmag("z")
+            A[idx].setmag('z')
             A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
             #A[idx].seteps(eps)
             if idx != 0:
@@ -1043,7 +1043,8 @@ class slab:
         Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angle array
 
 
-        R = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
+        R = pr.Reflectivity(A, Theta, wavelength)  # Computes the reflectivity
+
         qz = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
 
         # Used to demonstrate how sample is being segmented
