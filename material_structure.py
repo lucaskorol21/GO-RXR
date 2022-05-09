@@ -910,12 +910,12 @@ class slab:
                     if ele in list(self.structure[layer].keys()):
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                        #current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) / self.structure[layer][ele].molar_mass  # current density
+                        #current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) * np.array(self.structure[layer][ele].density) / self.structure[layer][ele].molar_mass  # current density
                         current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density)
                         if layer == n - 1:  # Last layer
                             next_density = np.zeros(pm)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
-                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass
+                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) * np.array(self.structure[layer + 1][ele].density) / self.structure[layer + 1][ele].molar_mass
                             next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
                         else:  # element not in the next layer
                             next_density = np.zeros(pm)
@@ -947,7 +947,7 @@ class slab:
                         elif ele in list(self.structure[layer + 1].keys()):
                             position = self.structure[layer + 1][ele].position  # position of element
                             previous_element = list(self.structure[layer].keys())[position]
-                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)*np.array(self.structure[layer + 1][ele].density) / self.structure[layer + 1][ele].molar_mass  # next layer density
                             next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
                             sigma = self.structure[layer][previous_element].roughness
                         else:
@@ -1007,11 +1007,13 @@ class slab:
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
-        n = dielectric_constant(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        n_mag = dielectric_constant(density_magnetic, self.find_sf[1], E, mag=True)   # calculates dielectric constant for magnetic component
-        value = 1-n_mag
+        n = index_of_refraction(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
+        Q = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)   # calculates dielectric constant for magnetic component
+
+        # definition as described in Lott Dieter Thesis
         epsilon = n**2
-        epsilon_mag = (2*value)*(n**2)
+        epsilon_mag = 2*Q*(n**2)
+
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1061,12 +1063,16 @@ class slab:
         for E in Energy:
             wavelength = h * c / (E * 1e-10)
             thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
-            n = dielectric_constant(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
-            n_mag = dielectric_constant(density_magnetic, self.find_sf[1], E,mag=False)  # calculates dielectric constant for magnetic component
-            my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+            n = index_of_refraction(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
+            Q = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
 
             epsilon = n**2
-            epsilon_mag = n_mag**2
+            epsilon_mag = Q*(n**2)
+
+
+            my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+
+
             # Intializing the slab model #
             m = len(my_slabs)  # number of slabs
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
@@ -1258,9 +1264,9 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E =642.2 # eV
+    E =640.2 # eV
 
-    eps = dielectric_constant(density, sample.find_sf[0], E)
+    eps = index_of_refraction(density, sample.find_sf[0], E)
     n = sqrt(eps)
     alpha = abs(n.real-1)
     beta = abs(n.imag)
@@ -1285,9 +1291,9 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
-    R = np.log10(R[3])
-    R1 = np.log10(R1[3])
-    R2 = np.log10(R2[3])
+    R = np.log10(R[2])
+    R1 = np.log10(R1[2])
+    R2 = np.log10(R2[2])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1356,7 +1362,7 @@ if __name__ == "__main__":
     itr = interpolate.splrep(qz, R1)
     R_int = interpolate.splev(q, itr)
     plt.figure(56)
-    plt.plot(q, abs(np.log10(I)-R_int), 'k')
+    plt.plot(q, abs(I-R_int), 'k')
     plt.suptitle('ReMagX vs. Lucas Difference: precision = ' + str(p1))
     plt.xlabel('qz')
     plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')

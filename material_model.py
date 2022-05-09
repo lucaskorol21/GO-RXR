@@ -51,7 +51,7 @@ def form_factor(f,E):
         f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
         f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
     """
-    return complex(f_real, -f_imag)
+    return complex(f_real, f_imag)
 
 def find_form_factor(element, E, mag):
     """
@@ -73,13 +73,8 @@ def find_form_factor(element, E, mag):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
 
-def dielectric_constant(rho, sf, E, mag=False):
-    """
-    Purpose: Compute the dielectric tensor constant
-    :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
-    :param E: Energy of incoming photon (eV)
-    :return: Dielectric constant (f_real + i*f_imag)
-    """
+def magnetic_optical_constant(rho, sf, E):
+    mag = True  # Variable used to toggle find_form_factor to find magnetic scattering factors
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -89,23 +84,56 @@ def dielectric_constant(rho, sf, E, mag=False):
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
+
     value = 0
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
     for element in elements:
-        F[element] = find_form_factor(sf[element],E, mag)
+        F[element] = find_form_factor(sf[element], E, mag)
+
+    if len(elements) == 1:
+        value = F[elements[0]]*rho[elements[0]]
+    else:
+        for element in elements:
+            value = value + F[element]*rho[element]
 
 
+    Q = value*constant # computes the magnetic optical constant as defined in Lott Dieter Thesis
+
+    return Q
+
+def index_of_refraction(rho, sf, E):
+    """
+    Purpose: Compute the dielectric tensor constant
+    :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
+    :param E: Energy of incoming photon (eV)
+    :return: Dielectric constant (f_real + i*f_imag)
+    """
+    mag = False
+    # Constants
+    h = 4.135667696e-15  # Plank's Constant [eV s]
+    c = 2.99792450e10  # Speed of light in vacuum [cm/s]
+    re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
+    avocado = 6.02214076e23  # avagoadro's number
+    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+
+    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+
+
+    value = 0
+    elements = list(rho.keys())  # get's elements in layer
+    F = dict()
+    for element in elements:
+        F[element] = np.conj(find_form_factor(sf[element],E, mag))
 
 
     if len(elements) == 1:
-        value = F[elements[0]]*rho[elements[0]]  # computes alpha and beta values for form factor
+        value = F[element[0]]*rho[element[0]]
     else:
         for element in elements:
-            value = value + F[element]*rho[element]  # computes alpha and beta values
-    n = 1 - constant * value  # computes the index of refraction
+            value = value + F[element]*rho[element]
 
-    #epsilon = n*np.conj(n)
+    n = 1-constant*value
 
     return n
 
