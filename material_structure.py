@@ -1012,10 +1012,13 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         epsilon = n**2
-        epsilon_mag = Q*(n**2)
+        epsilon_mag = Q*(-1)*(n**2)
 
 
 
+        plt.figure(77)
+        plt.plot(thickness,real(epsilon_mag))
+        plt.plot(thickness,imag(epsilon_mag))
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
         m = len(my_slabs)  # number of slabs
@@ -1027,7 +1030,7 @@ class slab:
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            A[idx].setmag('z')
+            A[idx].setmag('y')
             A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
             #A[idx].seteps(eps)
             if idx != 0:
@@ -1268,8 +1271,8 @@ if __name__ == "__main__":
 
     E =640.2 # eV
 
-    eps = index_of_refraction(density, sample.find_sf[0], E)
-    n = sqrt(eps)
+    n = index_of_refraction(density, sample.find_sf[0], E)
+
     alpha = abs(n.real-1)
     beta = abs(n.imag)
     plt.figure(2)
@@ -1293,9 +1296,13 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
-    R = np.log10(R[2])
-    R1 = np.log10(R1[2])
-    R2 = np.log10(R2[2])
+    #R = np.log10(R[2])
+    #R1 = np.log10(R1[2])
+    #R2 = np.log10(R2[2])
+
+    R = (R[3]-R[2])/(R[2]+R[3])
+    R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
+    R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1354,9 +1361,9 @@ if __name__ == "__main__":
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)
-    plt.plot(q,np.log10(I),'k')
+    plt.plot(q,I,'k')
     plt.plot(qz, R1, 'r--')
-    plt.suptitle('ReMagX vs. Lucas Comparion')
+    plt.suptitle('Asymmetry Full 640.2 eV ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])

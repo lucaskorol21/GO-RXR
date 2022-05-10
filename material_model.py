@@ -71,6 +71,7 @@ def find_form_factor(element, E, mag):
 
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
+
     return F
 
 def magnetic_optical_constant(rho, sf, E):
@@ -100,6 +101,7 @@ def magnetic_optical_constant(rho, sf, E):
 
 
     Q = constant * value
+
 
     return Q
 
