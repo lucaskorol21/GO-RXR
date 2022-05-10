@@ -1296,13 +1296,13 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
-    #R = np.log10(R[2])
-    #R1 = np.log10(R1[2])
-    #R2 = np.log10(R2[2])
+    R = np.log10(R[2])
+    R1 = np.log10(R1[2])
+    R2 = np.log10(R2[2])
 
-    R = (R[3]-R[2])/(R[2]+R[3])
-    R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
-    R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
+    #R = (R[3]-R[2])/(R[2]+R[3])
+    #R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
+    #R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1361,9 +1361,9 @@ if __name__ == "__main__":
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)
-    plt.plot(q,I,'k')
+    plt.plot(q,np.log10(I),'k')
     plt.plot(qz, R1, 'r--')
-    plt.suptitle('Asymmetry Full 640.2 eV ')
+    plt.suptitle('Left Circular Parratt 640.2 eV ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
