@@ -1003,7 +1003,7 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        delta_theta = (theta_f - theta_i) / 100  # sets step size
+        delta_theta = (theta_f - theta_i) / 1000  # sets step size
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
@@ -1185,7 +1185,7 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.1
+    mag_dense = 0.01
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density = 5.120891853,roughness=2, link=[False, True, True])  # substrate layer
@@ -1296,13 +1296,13 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
-    R = np.log10(R[2])
-    R1 = np.log10(R1[2])
-    R2 = np.log10(R2[2])
+    #R = np.log10(R[2])
+    #R1 = np.log10(R1[2])
+    #R2 = np.log10(R2[2])
 
-    #R = (R[3]-R[2])/(R[2]+R[3])
-    #R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
-    #R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
+    R = (R[3]-R[2])/(R[2]+R[3])
+    R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
+    R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1361,7 +1361,7 @@ if __name__ == "__main__":
     q = F[:,0]
     I = F[:,1]
     plt.figure(55)
-    plt.plot(q,np.log10(I),'k')
+    plt.plot(q,I,'k')
     plt.plot(qz, R1, 'r--')
     plt.suptitle('Left Circular Parratt 640.2 eV ')
     plt.xlabel('qz')
