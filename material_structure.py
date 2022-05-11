@@ -1003,7 +1003,7 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        delta_theta = (theta_f - theta_i) / 1000  # sets step size
+        delta_theta = (theta_f - theta_i) / 300  # sets step size
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
@@ -1012,7 +1012,7 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         epsilon = n**2
-        epsilon_mag = 2*Q*(n**2)
+        epsilon_mag = 2*Q*(n**2)*(-1)
 
 
 
@@ -1304,7 +1304,7 @@ if __name__ == "__main__":
     F = np.loadtxt('test_example.txt')
     qi = F[0,0]
     qf = F[-1,0]
-    p1 = 0.5
+    p1 = 0.1
     p2 = 0.25
 
     qz, R, t, e =  sample.reflectivity(E, qi,qf,0,s_min=0.1)  # baseline
@@ -1315,9 +1315,9 @@ if __name__ == "__main__":
     #R1 = np.log10(R1[2])
     #R2 = np.log10(R2[2])
 
-    R = (R[3]-R[2])/(R[2]+R[3])
-    R1 = (R1[3]-R1[2])/(R1[2]+R1[3])
-    R2 = (R2[3]-R2[2])/(R2[2]+R2[3])
+    R = abs((R[2]-R[3])/(R[2]+R[3]))
+    R1 = abs((R1[2]-R1[3])/(R1[2]+R1[3]))
+    R2 = abs((R2[2]-R2[3])/(R2[2]+R2[3]))
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1379,7 +1379,7 @@ if __name__ == "__main__":
     plt.figure(55)
     plt.plot(q,I,'k')
     plt.plot(qz, R1, 'r--')
-    plt.suptitle('Left Circular Parratt 640.2 eV ')
+    plt.suptitle('Parratt: Asymmetry 642.2 eV (rho=0.1) ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
