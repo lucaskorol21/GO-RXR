@@ -1003,22 +1003,22 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        delta_theta = (theta_f - theta_i) / 300  # sets step size
+        delta_theta = (theta_f - theta_i) / 301  # sets step size
 
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
-        n = index_of_refraction(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        Q = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)   # calculates dielectric constant for magnetic component
+        delta, beta = index_of_refraction(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
+        delta_m, beta_m = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)   # calculates dielectric constant for magnetic component
 
         # definition as described in Lott Dieter Thesis
-        epsilon = n**2
-        epsilon_mag = 2*Q*(n**2)*(-1)
-
-
+        epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+        Q = np.vectorize(complex)(delta_m, beta_m )
+        epsilon_mag = Q*(-1)*epsilon*2
 
         plt.figure(77)
         plt.plot(thickness,real(epsilon_mag))
         plt.plot(thickness,imag(epsilon_mag))
+
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
         m = len(my_slabs)  # number of slabs
@@ -1068,9 +1068,11 @@ class slab:
         for E in Energy:
             wavelength = h * c / (E * 1e-10)
             thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
-            n = index_of_refraction(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
-            Q = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
+            delta,beta = index_of_refraction(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
+            delta_m, beta_m = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
 
+            n = 1 - np.vectorize(complex)(-2*delta,2*beta)
+            Q = np.vectorize(complex)(delta_m, beta_m)*(-1)
             epsilon = n**2
             epsilon_mag = Q*(n**2)
 
@@ -1086,11 +1088,11 @@ class slab:
             for m_i in my_slabs:
                 d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
                 eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
-                # eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+                eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-                # A[idx].setmag("z")
-                # A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
-                A[idx].seteps(eps)
+                A[idx].setmag("z")
+                A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
+                #A[idx].seteps(eps)
                 if idx != 0:
                     A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
 
@@ -1284,18 +1286,17 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E =642.2 # eV
+    E = 642.2 # eV
 
-    n = index_of_refraction(density, sample.find_sf[0], E)
+    delta, beta = index_of_refraction(density, sample.find_sf[0], E)
 
-    alpha = abs(n.real-1)
-    beta = abs(n.imag)
+
     plt.figure(2)
-    plt.plot(thickness, alpha, thickness, beta)
+    plt.plot(thickness, delta, thickness, beta)
     plt.suptitle('Optical Profile')
     plt.xlabel('Thickness')
     plt.ylabel('Profile')
-    plt.legend(['alpha','beta'])
+    plt.legend(['delta','beta'])
 
     h = 4.1257e-15 # Plank's constant eV*s
     c = 2.99792458e8 # speed of light m/s
@@ -1315,9 +1316,13 @@ if __name__ == "__main__":
     #R1 = np.log10(R1[2])
     #R2 = np.log10(R2[2])
 
-    R = abs((R[2]-R[3])/(R[2]+R[3]))
-    R1 = abs((R1[2]-R1[3])/(R1[2]+R1[3]))
-    R2 = abs((R2[2]-R2[3])/(R2[2]+R2[3]))
+    #R = (np.log10(R[3])-np.log10(R[2]))/(np.log10(R[2])+np.log10(R[3]))
+    #R1 = (np.log10(R1[3])-np.log10(R1[2]))/(np.log10(R1[2])+np.log10(R1[3]))
+    #R2 = (np.log10(R2[3])-np.log10(R2[2]))/(np.log10(R2[2])+np.log10(R2[3]))
+
+    R = -(R[3] - R[2]) / (R[2] + R[3])
+    R1 = -(R1[3] - R1[2]) / (R1[2] + R1[3])
+    R2 = -(R2[3] - R2[2]) / (R2[2] + R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')

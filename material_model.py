@@ -9,7 +9,7 @@ import os
 from material_structure import *
 
 
-def interpolate(fi,ff, Ei, Ef, E):
+def interpolate_Lucas(fi,ff, Ei, Ef, E):
     """
     Purpose: Finds the form factor for a specific energy using linear interpolation
     :param fi: Initial form factor
@@ -31,12 +31,16 @@ def form_factor(f,E):
     from scipy import interpolate
 
     E_axis = f[:,0]
+    """
     tck_real = interpolate.splrep(E_axis,f[:,1])
     f_real = interpolate.splev(E, tck_real)
 
     tck_imag = interpolate.splrep(E_axis, f[:,2])
     f_imag = interpolate.splev(E, tck_imag)
+
     """
+
+
     idx = 0
     factor = f[0,0]  # First energy
     while (factor < E and factor != E):
@@ -46,12 +50,12 @@ def form_factor(f,E):
     # Determines if we need to interpolate between values
     if factor == E:
         f_real = f[idx, 1]  # real component
-        f_imag = f[idx, 1]  # imaginary componentd
+        f_imag = f[idx, 2]  # imaginary componentd
     else:
-        f_real = interpolate(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
-        f_imag = interpolate(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
-    """
-    return complex(f_real, f_imag)
+        f_real = interpolate_Lucas(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
+        f_imag = interpolate_Lucas(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
+
+    return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
     """
@@ -85,25 +89,30 @@ def magnetic_optical_constant(rho, sf, E):
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
-    value = 0
+    #value = 0
+    f1 = 0
+    f2 = 0
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
     for element in elements:
         F[element] = find_form_factor(sf[element], E, mag)
-
+    print(F)
     if len(elements) == 1:
-        value = F[element[0]] * rho[element[0]]
+        f1 = F[element[0]][0]*rho[element[0]]
+        f2 = F[element[0]][1] * rho[element[0]]
+        #value = F[element[0]] * rho[element[0]]
     else:
         for element in elements:
-            value = value + F[element] * rho[element]
+            f1 = f1 + F[element][0]*rho[element]
+            f2 = f2 + F[element][1] * rho[element]
+            #value = value + F[element] * rho[element]
 
 
+    delta_m = constant * f1
+    beta_m = constant * f2
 
 
-    Q = constant * value
-
-
-    return Q
+    return delta_m, beta_m
 
 def index_of_refraction(rho, sf, E):
     """
@@ -122,23 +131,29 @@ def index_of_refraction(rho, sf, E):
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
-
-    value = 0
+    f1 = 0
+    f2 = 0
+    #value = 0
     elements = list(rho.keys())  # get's elements in layer
     F = dict()
     for element in elements:
-        F[element] = np.conj(find_form_factor(sf[element],E, mag))
+        F[element] = find_form_factor(sf[element],E, mag)
 
-
+    print(F)
     if len(elements) == 1:
-        value = F[element[0]]*rho[element[0]]
+        f1 = F[element[0]][0]*rho[element]
+        f2 = F[element[0]][1] * rho[element]
+        #value = F[element[0]]*rho[element[0]]
     else:
         for element in elements:
-            value = value + F[element]*rho[element]
+            #value = value + F[element]*rho[element]
+            f1 = f1 + F[element][0]*rho[element]
+            f2 = f2 + F[element][1]*rho[element]
 
-    n = 1-constant*value
+    delta = f1*constant
+    beta = f2*constant
 
-    return n
+    return delta, beta
 
 
 
