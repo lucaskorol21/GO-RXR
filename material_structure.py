@@ -433,8 +433,8 @@ class slab:
         elif density < 0:
             warnings.warn('Layer ' +str(num_layer)+': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
             density = abs(density)
-        elif density == 0:
-            raise ValueError('Layer ' +str(num_layer)+': The density of a material can not be zero')
+        #elif density == 0:
+        #    raise ValueError('Layer ' +str(num_layer)+': The density of a material can not be zero')
 
         if density == None:
             pass
@@ -1012,7 +1012,7 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         epsilon = n**2
-        epsilon_mag = Q*(-1)*(n**2)
+        epsilon_mag = 2*Q*(n**2)
 
 
 
@@ -1181,7 +1181,7 @@ if __name__ == "__main__":
     #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
     """
 
-
+    """
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
@@ -1232,7 +1232,22 @@ if __name__ == "__main__":
     #  print(sample.myelements)
     #  print(sample.poly_elements)
     #print(sample.mag_elements)
-    thickness, density, density_magnetic = sample.density_profile(step = s)
+    
+    """
+    # Example 2: Simple sample creation
+    sample = slab(2)  # Initializing four layers
+    s = 0.1
+    mag_dense = 0.1
+    # Substrate Layer
+    # Link: Ti-->Mn and O-->O
+    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
+
+
+    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
+    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
+
+    thickness, density, density_magnetic = sample.density_profile(step=s)
 
     # thickness, density, density_magnetic = sample.density_profile()
     val = list(density.values())
@@ -1269,7 +1284,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E =640.2 # eV
+    E =642.2 # eV
 
     n = index_of_refraction(density, sample.find_sf[0], E)
 
@@ -1360,6 +1375,7 @@ if __name__ == "__main__":
 
     q = F[:,0]
     I = F[:,1]
+    #I = np.log10(I)
     plt.figure(55)
     plt.plot(q,I,'k')
     plt.plot(qz, R1, 'r--')
