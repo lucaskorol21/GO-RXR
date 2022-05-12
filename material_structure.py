@@ -999,7 +999,7 @@ class slab:
         h = 4.1257e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
         wavelength = h * c / (E * 1e-10)  # wavelength m
-
+        #wavelength = 19.366478131833802
         # requires angle for reflectivity computation and minimum slab thickness
         theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
@@ -1011,13 +1011,17 @@ class slab:
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)   # calculates dielectric constant for magnetic component
 
         # definition as described in Lott Dieter Thesis
+        n = 1 + np.vectorize(complex)(-delta, beta)
         epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
-        Q = np.vectorize(complex)(delta_m, beta_m )
-        epsilon_mag = Q*(-1)*epsilon*2
+        #epsilon = n**2
+        #Q = np.vectorize(complex)(delta, beta)
+        Q = np.vectorize(complex)(-beta_m, delta_m )
+        epsilon_mag = Q*epsilon
 
         plt.figure(77)
-        plt.plot(thickness,real(epsilon_mag))
-        plt.plot(thickness,imag(epsilon_mag))
+        plt.plot(thickness,real(epsilon_mag)/2,'k')
+        plt.plot(thickness,imag(epsilon_mag)/2,'r')
+        plt.legend(["delta_m","beta_m"])
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1046,14 +1050,13 @@ class slab:
         Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angle array
 
 
-        R = pr.Reflectivity(A, Theta, wavelength)  # Computes the reflectivity
+        R = pr.Reflectivity(A, Theta, wavelength,MultipleScattering=True)  # Computes the reflectivity
 
         qz = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
 
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
         plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
-
 
 
         return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
@@ -1074,7 +1077,7 @@ class slab:
             n = 1 - np.vectorize(complex)(-2*delta,2*beta)
             Q = np.vectorize(complex)(delta_m, beta_m)*(-1)
             epsilon = n**2
-            epsilon_mag = Q*(n**2)
+            epsilon_mag = Q*(n**2)*2
 
 
             my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
@@ -1239,7 +1242,7 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.1
+    mag_dense = 0.5
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
@@ -1312,17 +1315,17 @@ if __name__ == "__main__":
     qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
     qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
 
-    #R = np.log10(R[2])
-    #R1 = np.log10(R1[2])
-    #R2 = np.log10(R2[2])
+    R = np.log10(R[2])
+    R1 = np.log10(R1[2])
+    R2 = np.log10(R2[2])
 
     #R = (np.log10(R[3])-np.log10(R[2]))/(np.log10(R[2])+np.log10(R[3]))
     #R1 = (np.log10(R1[3])-np.log10(R1[2]))/(np.log10(R1[2])+np.log10(R1[3]))
     #R2 = (np.log10(R2[3])-np.log10(R2[2]))/(np.log10(R2[2])+np.log10(R2[3]))
 
-    R = -(R[3] - R[2]) / (R[2] + R[3])
-    R1 = -(R1[3] - R1[2]) / (R1[2] + R1[3])
-    R2 = -(R2[3] - R2[2]) / (R2[2] + R2[3])
+    #R = (R[2] - R[3]) / (R[2] + R[3])
+    #R1 = (R1[2] - R1[3]) / (R1[2] + R1[3])
+    #R2 = (R2[2] - R2[3]) / (R2[2] + R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1380,11 +1383,11 @@ if __name__ == "__main__":
 
     q = F[:,0]
     I = F[:,1]
-    #I = np.log10(I)
+    I = np.log10(I)
     plt.figure(55)
     plt.plot(q,I,'k')
     plt.plot(qz, R1, 'r--')
-    plt.suptitle('Parratt: Asymmetry 642.2 eV (rho=0.1) ')
+    plt.suptitle('Zak Formalism: Left Circular 642.2 eV (rho=0.5) ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
