@@ -148,15 +148,15 @@ if __name__ == "__main__":
     bm_rat = bm_fit/beta_m
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    fig.suptitle(r"$Optical\;\;Profile\;\;Comparison\;\;(\delta)\;\;for\;\;\rho=0.01\;\;mol/cm^3$")
+    fig.suptitle(r"$Optical\;\;Profile\;\;Comparison\;\;(\delta_m)\;\;for\;\;\rho=0.01\;\;mol/cm^3$")
     ax1.plot(t, d_rat)
     ax1.set_title("Ratio")
-    ax1.set_ylabel(r"$\delta^{L}/\delta^{R}$", fontsize=14)
+    ax1.set_ylabel(r"$\delta_m^{L}/\delta_m^{R}$", fontsize=14)
 
-    ax2.plot(t, d_diff)
+    ax2.plot(t, dm_diff)
     ax2.set_title("Difference")
     ax2.set_xlabel("Thickness (A)")
-    ax2.set_ylabel(r"$|\delta^{L}=\delta^{R}|$", fontsize=14)
+    ax2.set_ylabel(r"$|\delta_m^{L}=\delta_m^{R}|$", fontsize=14)
     plt.subplots_adjust(hspace=0.3, top=0.85)
     plt.show()
 

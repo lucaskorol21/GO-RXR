@@ -123,14 +123,14 @@ def index_of_refraction(rho, sf, E):
     """
     mag = False
     # Constants
-    #h = 4.135667696e-15  # Plank's Constant [eV s]
-    h = 4.1357e-15
-    #c = 2.99792450e10  # Speed of light in vacuum [cm/s]
-    c = 2.9979e10
-    re = 2.8179e-13
-    #re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
-    #avocado = 6.02214076e23  # avagoadro's number
-    avocado = 6.0221e23
+    h = 4.135667696e-15  # Plank's Constant [eV s]
+    #h = 4.1357e-15
+    c = 2.99792450e10  # Speed of light in vacuum [cm/s]
+    #c = 2.9979e10
+    #re = 2.8179e-13
+    re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
+    avocado = 6.02214076e23  # avagoadro's number
+    #avocado = 6.0221e23
     k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
