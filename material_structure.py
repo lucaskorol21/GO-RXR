@@ -1019,8 +1019,8 @@ class slab:
         epsilon_mag = Q*epsilon
 
         plt.figure(77)
-        plt.plot(thickness,real(epsilon_mag)/2,'k')
-        plt.plot(thickness,imag(epsilon_mag)/2,'r')
+        plt.plot(thickness,delta_m,'k')
+        plt.plot(thickness,beta_m,'r')
         plt.legend(["delta_m","beta_m"])
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
@@ -1289,7 +1289,7 @@ if __name__ == "__main__":
     plt.ylabel('Density (mol/cm^3)')
 
 
-    E = 642.2 # eV
+    E = 640.2 # eV
 
     delta, beta = index_of_refraction(density, sample.find_sf[0], E)
 
