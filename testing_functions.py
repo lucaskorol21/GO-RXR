@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 
 
-    R = pr.Reflectivity(A, Theta, wavelength)
+    R = pr.Reflectivity(A, Theta, wavelength,MagneticCutoff=1e-8)
     Rs = R[0]
     Rp = R[1]
     Rl = R[2]
@@ -86,14 +86,14 @@ if __name__ == "__main__":
     qz_temp = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
 
     # Interpolation
-    itr = interpolate.splrep(qz_temp, Rs)
+    itr = interpolate.splrep(qz_temp, Ra)
     R_fit = interpolate.splev(qz, itr)
-    R_diff = abs(R_fit-Re)
+    R_diff = abs(R_fit-Rea)
 
     fig, (ax1, ax2) = plt.subplots(2,1, sharex=True)
-    fig.suptitle(r"$Zak \;\; Formalism:\;\;S-Polarized\;\;for\;\;E = 640.2eV\;\;and\;\;\rho=0.5\;\;mol/cm^3$")
-    ax1.plot(qz_temp, Rs,'k')
-    ax1.plot(qz, Re,'r--')
+    fig.suptitle(r"$No\;\;Magnetic\;\;Cutoff:\;\;Asymmetry\;\;for\;\;E = 640.2eV\;\;and\;\;\rho=0.001\;\;mol/cm^3$")
+    ax1.plot(qz_temp, Ra,'k')
+    ax1.plot(qz, Rea,'r--')
     ax1.legend(['Lucas','ReMagX'])
     ax1.set_title("Reflectivity Spectra")
     ax1.set_ylabel(r"$log_{10}(R)y$")
