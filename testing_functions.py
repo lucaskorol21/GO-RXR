@@ -119,11 +119,23 @@ if __name__ == "__main__":
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
+
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
 
-    d, b = index_of_refraction(density, sample.find_sf[0],E)  # calculates dielectric constant for structural component
+    elements = density.keys()
+    sf = dict()
+    elements_mag = density_magnetic.keys()
+    sfm = dict()
+    # Non-Magnetic Scattering Factor
+    for e in sample.find_sf[0].keys():
+        sf[e] = find_form_factor(sample.find_sf[0][e], E, False)
+    # Magnetic Scattering Factor
+    for em in sample.find_sf[1].keys():
+        sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
 
-    dm, bm = magnetic_optical_constant(density_magnetic, sample.find_sf[1],E)  # calculates dielectric constant for magnetic component
+    d, b = index_of_refraction(density, sf,E)  # calculates dielectric constant for structural component
+
+    dm, bm = magnetic_optical_constant(density_magnetic, sfm,E)  # calculates dielectric constant for magnetic component
     dm = dm*(-1)
     bm = bm*(-1)
 
