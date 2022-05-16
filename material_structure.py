@@ -983,6 +983,7 @@ class slab:
 
 
     def reflectivity(self, E,qi,qf, precision,s_min = 0.1):
+
         """
         Purpose: Computes the reflectivity
         :param E: Energy of reflectivity scan (eV)
@@ -1005,10 +1006,20 @@ class slab:
         theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
         delta_theta = (theta_f - theta_i) / 301  # sets step size
 
+        sf = dict()  # form factors of non-magnetic components
+        sfm = dict()  # form factors of magnetic components
+
+        # Non-Magnetic Scattering Factor
+        for e in self.find_sf[0].keys():
+            sf[e] = find_form_factor(self.find_sf[0][e], E, False)
+        # Magnetic Scattering Factor
+        for em in self.find_sf[1].keys():
+            sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
+
         thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
-        delta, beta = index_of_refraction(density, self.find_sf[0], E)  # calculates dielectric constant for structural component
-        delta_m, beta_m = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)   # calculates dielectric constant for magnetic component
+        delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+        delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
@@ -1017,11 +1028,6 @@ class slab:
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(-beta_m, delta_m )
         epsilon_mag = Q*epsilon
-
-        plt.figure(77)
-        plt.plot(thickness,delta_m,'k')
-        plt.plot(thickness,beta_m,'r')
-        plt.legend(["delta_m","beta_m"])
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1061,53 +1067,7 @@ class slab:
 
         return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
 
-    def energy_scan(self, Ei, Ef, Theta, precision=0.5):
 
-        h = 4.1257e-15  # Plank's constant eV*s
-        c = 2.99792458e8  # speed of light m/s
-        Energy = np.linspace(Ei,Ef,200)  # input energy array
-        Escan = list()
-
-        for E in Energy:
-            wavelength = h * c / (E * 1e-10)
-            thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
-            delta,beta = index_of_refraction(density, self.find_sf[0],E)  # calculates dielectric constant for structural component
-            delta_m, beta_m = magnetic_optical_constant(density_magnetic, self.find_sf[1], E)  # calculates dielectric constant for magnetic component
-
-            n = 1 - np.vectorize(complex)(-2*delta,2*beta)
-            Q = np.vectorize(complex)(delta_m, beta_m)*(-1)
-            epsilon = n**2
-            epsilon_mag = Q*(n**2)*2
-
-
-            my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
-
-
-            # Intializing the slab model #
-            m = len(my_slabs)  # number of slabs
-            A = pr.Generate_structure(m)  # creates object for reflectivity computation
-            m_j = 0  # previous slab
-            idx = 0  # keeps track of current layer
-            for m_i in my_slabs:
-                d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-                eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
-                eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
-
-                A[idx].setmag("z")
-                A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
-                #A[idx].seteps(eps)
-                if idx != 0:
-                    A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
-
-                # move onto the next layer
-                m_j = m_i
-                idx = idx + 1
-
-
-            R = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)
-
-            Escan.append(R[0][0])
-        return Energy, np.array(Escan)
 
 
 
@@ -1254,6 +1214,8 @@ if __name__ == "__main__":
 
     thickness, density, density_magnetic = sample.density_profile(step=s)
 
+
+
     # thickness, density, density_magnetic = sample.density_profile()
     val = list(density.values())
     mag_val = list(density_magnetic.values())
@@ -1291,7 +1253,19 @@ if __name__ == "__main__":
 
     E = 640.2 # eV
 
-    delta, beta = index_of_refraction(density, sample.find_sf[0], E)
+    elements = density.keys()
+    sf = dict()
+    elements_mag = density_magnetic.keys()
+    sfm = dict()
+    # Non-Magnetic Scattering Factor
+    for e in sample.find_sf[0].keys():
+        sf[e] = find_form_factor(sample.find_sf[0][e], E, False)
+    # Magnetic Scattering Factor
+    for em in sample.find_sf[1].keys():
+        sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
+
+
+    delta, beta = index_of_refraction(density, sf, E)
 
 
     plt.figure(2)

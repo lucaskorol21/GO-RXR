@@ -33,8 +33,8 @@ def form_factor(f,E):
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
 
-    # Check if energy range is within the range specified by
-    if f[0,1] > E or f[-1,1] < E:
+    # Check if energy within form factor energy range
+    if f[0,0] > E or f[-1,0] < E:
         f_real = 0
         f_imag = 0
     else:
@@ -46,16 +46,19 @@ def form_factor(f,E):
 
 def find_form_factor(element, E, mag):
     """
-    Purpose: Finds the form factors at energy 'E' from the form factor database for the specified element
-    :param element: The name of the element in abbreviated from (string)
-    :param E: Energy of scan
-    :return: The complex form factor
+    Purpose: Retrieve form factor from database
+    :param element: String containing element symbol
+    :param E: Float or integer of desired energy in units of eV
+    :param mag: Boolean
+                    True - Magnetic form factor
+                    False - Non-magnetic form factor
+    :return: Return form factor at energy 'E'
     """
-    F = 0
+    F = 0  # pre-initialized form factor
 
-    if mag:
+    if mag:  # looking for magnetic form factors
         my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
-    else:
+    else:  # looking for non-magnetic form factors
         my_dir = os.getcwd() + r'\Scattering_Factor'
 
     for ifile in os.listdir(my_dir):
@@ -65,8 +68,18 @@ def find_form_factor(element, E, mag):
 
     return F
 
-def magnetic_optical_constant(rho, sf, E):
-    mag = True
+def magnetic_optical_constant(rho, sfm, E):
+    """
+    Purpose: Calculate the magnetic optical constants
+    :param rho: Magnetic density in mol/cm^3
+    :param sf: dictionary relates elements to scattering factor sf = {'ele1':'ffm1',...,'eleN':'ffmN'}
+    :param E: Desired energy in units of eV
+    :return: delta_m - magneto-optic dispersive component
+             beta_m  - magneto-optic absorptive component
+    """
+
+    mag = True  # States that retrieval of form factors is magnetic
+
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -76,38 +89,42 @@ def magnetic_optical_constant(rho, sf, E):
 
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
-    #value = 0
-    f1 = 0
-    f2 = 0
-    elements = list(rho.keys())  # get's elements in layer
+    f1 = 0  # for dispersive component computation
+    f2 = 0  # for absorptive component computation
+
+    elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
+    """
+    # Retrieve the form factors of each magnetic element
     F = dict()
     for element in elements:
         F[element] = find_form_factor(sf[element], E, mag)
+    """
+    # Computes the dispersive and absorptive components of the index of refraction
     if len(elements) == 1:
-        f1 = F[element[0]][0]*rho[element[0]]
-        f2 = F[element[0]][1] * rho[element[0]]
-        #value = F[element[0]] * rho[element[0]]
+        f1 = sfm[elements[0]][0]*rho[elements[0]]
+        f2 = sfm[elements[0]][1] * rho[elements[0]]
     else:
         for element in elements:
-            f1 = f1 + F[element][0]*rho[element]
-            f2 = f2 + F[element][1] * rho[element]
-            #value = value + F[element] * rho[element]
+            f1 = f1 + sfm[element][0]*rho[element]
+            f2 = f2 + sfm[element][1] * rho[element]
 
-
-    delta_m = constant * f1
-    beta_m = constant * f2
+    delta_m = constant * f1  # dispersive component
+    beta_m = constant * f2  # absorptive component
 
 
     return delta_m, beta_m
 
 def index_of_refraction(rho, sf, E):
     """
-    Purpose: Compute the dielectric tensor constant
-    :param L: Dictionary {Element 1: [density array], Element 2: [density array],..., Element N: {density array}}
-    :param E: Energy of incoming photon (eV)
-    :return: Dielectric constant (f_real + i*f_imag)
+    Purpose: Calculates the dispersive and absorptive components of the index of refraction
+    :param rho: Dictionary containing density profile of elements {'ele1':rho1,...,'eleN':rhoN}
+    :param sf: Dictionary of scattering factors {'ele1':ff1, ... , 'eleN':ffN}
+    :param E: Desired energy in units of eV
+    :return: delta - dispersive component of the refractive index
+             beta - absorptive component of the refractive index
     """
-    mag = False
+    mag = False  # statement for retrieval of non=magnetic form factors
+
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     #h = 4.1357e-15
@@ -118,29 +135,28 @@ def index_of_refraction(rho, sf, E):
     avocado = 6.02214076e23  # avagoadro's number
     #avocado = 6.0221e23
     k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
-
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
-    f1 = 0
-    f2 = 0
-    #value = 0
-    elements = list(rho.keys())  # get's elements in layer
-    F = dict()
-    for element in elements:
-        F[element] = find_form_factor(sf[element],E, mag)
+    f1 = 0  # dispersive form factor
+    f2 = 0  # absorptive form factor
 
+    elements = list(rho.keys())  # retrieves element symbols within layer
+    """
+    F = dict()  # dictionary used to contain the form factors
+    for element in elements:
+        F[ element] = find_form_factor(sf[element],E, mag)
+    """
+    #  Computes the dispersive and absorptive components
     if len(elements) == 1:
-        f1 = F[element[0]][0]*rho[element]
-        f2 = F[element[0]][1] * rho[element]
-        #value = F[element[0]]*rho[element[0]]
+        f1 = sf[elements[0]][0]*rho[elements[0]]
+        f2 = sf[elements[0]][1] * rho[elements[0]]
     else:
         for element in elements:
-            #value = value + F[element]*rho[element]
-            f1 = f1 + F[element][0]*rho[element]
-            f2 = f2 + F[element][1]*rho[element]
+            f1 = f1 + sf[element][0]*rho[element]
+            f2 = f2 + sf[element][1]*rho[element]
 
-    delta = f1*constant
-    beta = f2*constant
+    delta = f1*constant  # dispersive component
+    beta = f2*constant  # absorptive component
 
     return delta, beta
 
