@@ -1,0 +1,4 @@
+from material_structure import *
+
+if __name__ == "__main__":
+    print('hello')
