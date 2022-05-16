@@ -13,6 +13,7 @@ from material_model import *
 if __name__ == "__main__":
 
     E = 640.2  # eV
+    """
     mag_optical_profile = np.loadtxt('mag_optical_profile')
     optical_profile = np.loadtxt('optical_constant')
     spectra = np.loadtxt('test_example.txt')
@@ -194,3 +195,4 @@ if __name__ == "__main__":
 
 
     plt.show()
+    """

@@ -982,7 +982,7 @@ class slab:
 
 
 
-    def reflectivity(self, E,qi,qf, precision,s_min = 0.1):
+    def reflectivity(self, E, precision=0.5,s_min = 0.1):
 
         """
         Purpose: Computes the reflectivity
@@ -1002,8 +1002,10 @@ class slab:
         wavelength = h * c / (E * 1e-10)  # wavelength m
         #wavelength = 19.366478131833802
         # requires angle for reflectivity computation and minimum slab thickness
-        theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
-        theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+        #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
+        #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+        theta_i = 0.1
+        theta_f = 89.9
         delta_theta = (theta_f - theta_i) / 301  # sets step size
 
         sf = dict()  # form factors of non-magnetic components
@@ -1198,7 +1200,7 @@ if __name__ == "__main__":
     #  print(sample.poly_elements)
     #print(sample.mag_elements)
     
-    """
+    
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
@@ -1376,7 +1378,7 @@ if __name__ == "__main__":
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
 
-    """
+    
     testing_array = np.loadtxt('energy_test.txt')
     E_test = testing_array[:,0]
     Escan_test = testing_array[:,1]
@@ -1396,3 +1398,4 @@ if __name__ == "__main__":
     ax2.set_ylabel('R')
     plt.show()
     """
+    print("hello")
