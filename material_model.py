@@ -30,7 +30,7 @@ def form_factor(f,E):
     """
     from scipy import interpolate
 
-    E_axis = f[:,0]
+    #E_axis = f[:,0]
     """
     tck_real = interpolate.splrep(E_axis,f[:,1])
     f_real = interpolate.splev(E, tck_real)
@@ -39,8 +39,13 @@ def form_factor(f,E):
     f_imag = interpolate.splev(E, tck_imag)
 
     """
+    fr = interpolate.interp1d(f[:,0],f[:,1])
+    fi = interpolate.interp1d(f[:,0],f[:,2])
 
+    f_real = fr(E)
+    f_imag = fi(E)
 
+    """
     idx = 0
     factor = f[0,0]  # First energy
     while (factor < E and factor != E):
@@ -54,7 +59,7 @@ def form_factor(f,E):
     else:
         f_real = interpolate_Lucas(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
         f_imag = interpolate_Lucas(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
-
+    """
     return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
