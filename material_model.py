@@ -23,15 +23,17 @@ def interpolate_Lucas(fi,ff, Ei, Ef, E):
 
 def form_factor(f,E):
     """
-    Purpose: Determines if form factor can be directly taken from database or if linear interpolation needs to be done
-    :param f: 2D list that contains the form factors at their respective energies
+    Purpose: Determines form factors with energy E using linear interpolation
+    :param f: List of form factors
     :param E: Desired energy
-    :return: From factor [real, imaginary]
+    :return: Array contains real and imaginary component of form factor at energy E: f=[real, imaginary]
     """
+
     from scipy import interpolate
 
-    #E_axis = f[:,0]
     """
+    #E_axis = f[:,0]
+    # Splice interpolation
     tck_real = interpolate.splrep(E_axis,f[:,1])
     f_real = interpolate.splev(E, tck_real)
 
@@ -39,27 +41,19 @@ def form_factor(f,E):
     f_imag = interpolate.splev(E, tck_imag)
 
     """
+    # Linear interpolation
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
 
-    f_real = fr(E)
-    f_imag = fi(E)
-
-    """
-    idx = 0
-    factor = f[0,0]  # First energy
-    while (factor < E and factor != E):
-        idx = idx + 1
-        factor = f[idx, 0]
-
-    # Determines if we need to interpolate between values
-    if factor == E:
-        f_real = f[idx, 1]  # real component
-        f_imag = f[idx, 2]  # imaginary componentd
+    # Check if energy range is within the range specified by
+    if f[0,1] > E or f[-1,1] < E:
+        f_real = 0
+        f_imag = 0
     else:
-        f_real = interpolate_Lucas(f[idx - 1, 1], f[idx, 1], f[idx - 1, 0], f[idx, 0], E)  # real component
-        f_imag = interpolate_Lucas(f[idx - 1, 2], f[idx, 2], f[idx - 1, 0], f[idx, 0], E)  # imaginary component
-    """
+        f_real = fr(E)
+        f_imag = fi(E)
+
+
     return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
@@ -101,7 +95,6 @@ def magnetic_optical_constant(rho, sf, E):
     F = dict()
     for element in elements:
         F[element] = find_form_factor(sf[element], E, mag)
-    print(F)
     if len(elements) == 1:
         f1 = F[element[0]][0]*rho[element[0]]
         f2 = F[element[0]][1] * rho[element[0]]
@@ -148,7 +141,6 @@ def index_of_refraction(rho, sf, E):
     for element in elements:
         F[element] = find_form_factor(sf[element],E, mag)
 
-    print(F)
     if len(elements) == 1:
         f1 = F[element[0]][0]*rho[element]
         f2 = F[element[0]][1] * rho[element]

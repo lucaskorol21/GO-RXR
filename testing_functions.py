@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     itr_dm = interpolate.splrep(thickness, dm)
     dm_fit = interpolate.splev(t, itr_dm)
-    dm_diff = abs(dm_fit - delta_m)
+    dm_diff = abs(dm_fit - delta_m)/abs(dm_fit+delta_m)
     dm_rat = dm_fit/delta_m
 
     itr_bm = interpolate.splrep(thickness, bm)
