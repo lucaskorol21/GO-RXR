@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 
 
-    R = pr.Reflectivity(A, Theta, wavelength,MagneticCutoff=1e-8)
+    R = pr.Reflectivity(A, Theta, wavelength,MagneticCutoff=1e-10)
     Rs = R[0]
     Rp = R[1]
     Rl = R[2]
@@ -110,12 +110,12 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.01
+    mag_dense = 0.0001
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
+    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=4, link=[False, True, True])  # substrate layer
 
-    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
+    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=4)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
