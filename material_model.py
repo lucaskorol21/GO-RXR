@@ -9,18 +9,6 @@ import os
 from material_structure import *
 
 
-def interpolate_Lucas(fi,ff, Ei, Ef, E):
-    """
-    Purpose: Finds the form factor for a specific energy using linear interpolation
-    :param fi: Initial form factor
-    :param ff: Final form factor
-    :param Ei: Initial energy
-    :param Ef: Final energy
-    :param E: Energy of desired form factor
-    :return: Form factor at desired energy E
-    """
-    return ff - (ff-fi)*(Ef-E)/(Ef-Ei)
-
 def form_factor(f,E):
     """
     Purpose: Determines form factors with energy E using linear interpolation
