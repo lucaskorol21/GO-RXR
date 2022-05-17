@@ -210,51 +210,39 @@ if __name__ == "__main__":
     qz = (0.001013546247) * E * sin(Theta * pi / 180)
 
     ################### Construct Sample - Use this Space to construct model
-    N = 8
-    sample = slab(N)
 
-    # Convention is to build one layer at a time
-    sample.addlayer(0, 'SrTiO3', 50, roughness=2)  # Substrate
-
-    sample.addlayer(1, 'SrTiO3', 5, density = 5,roughness=1)  # Substrate extends slightly into the thin film
-
-    # Divide slab that is 40 A into a slab of 10, 25, 5 A
-    sample.addlayer(2, 'LaMnO3', 10, roughness=1.5)
-    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.01, 0.99], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+', 'Mn3+'], [0.01, 0.02], ['Co', 'Ni'])
-
-    sample.addlayer(3, 'LaMnO3', 25, roughness=5)
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.001, 0.025], ['Co', 'Ni'])
-
-    sample.addlayer(4, 'LaAlO3', 15, roughness=3)
-
-    sample.addlayer(5, 'LaMnO3', 7, roughness=2)
-    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.99, 0.01], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
-
-    sample.addlayer(6, 'LaMnO3', 9, roughness=0.1)
-    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.6, 0.4], sf=['Mn', 'Fe'])
-    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.03, 0.01], ['Co', 'Ni'])
+    # N = ?
+    # sample = slab(N)
 
 
-    sample.addlayer(7, 'LaMnO3', 5, roughness=2)
-    sample.polymorphous(7, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(7, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
 
 
-    plot_density_profile(sample,10)
+    # plot_density_profile(sample,10)  # use this to plot the density profile of your sample
 
     ################### Compute reflectivity - Use this space to compute reflectivity
 
     # ignore t and e
-    qz, R, t, e = sample.reflectivity(E, qz)  # incoming photon energy of 360 eV
-    Rl = np.log10(R[2])
+    #qz, R, t, e = sample.reflectivity(E, qz)
+    # R_answer = ?  # select the correct polarization
 
 
-    ################### Model Check - Use this space to check your model with expected output
 
+    ################### Model Check - Uncomment the code below to check your model
 
+    # Check terminal for printed out results
+    """
+    reference = np.load('Trial1_check.npy')
+    qz_r = reference[0]
+    Rr  =reference[1]
+
+    total_diff = sum(abs(Rr-R_answer))
+    if total_diff == 0:
+        print('Your model is correct!')
+    elif total_diff < 1e-4:
+        print('Your model is close!')
+    else:
+        print('Either your model or reflectivity computation is incorrect.')
+    """
     plt.show()
 
 
