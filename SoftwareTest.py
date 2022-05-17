@@ -1,6 +1,7 @@
 from material_structure import *
 import matplotlib.pyplot as plt
 import numpy as np
+from Trial1_comparison import *
 
 def plot_density_profile(sample, fig=1):
     thickness, density, density_magnetic = sample.density_profile()
@@ -199,7 +200,7 @@ if __name__ == "__main__":
     ################# Now your turn! Construct the sample as outlines in the provided word document ####################
 
 
-    E = 0  # Change Energy
+    E = 625  # Change Energy
 
     # Ignore this portion
     theta_i = 0.1
@@ -241,9 +242,14 @@ if __name__ == "__main__":
     sample.polymorphous(7, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(7, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
 
+
     plot_density_profile(sample,10)
 
     ################### Compute reflectivity - Use this space to compute reflectivity
+
+    # ignore t and e
+    qz, R, t, e = sample.reflectivity(E, qz)  # incoming photon energy of 360 eV
+    Rl = np.log10(R[2])
 
 
     ################### Model Check - Use this space to check your model with expected output
