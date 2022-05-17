@@ -1,7 +1,7 @@
 from material_structure import *
 import matplotlib.pyplot as plt
 import numpy as np
-from Trial1_comparison import *
+
 
 def plot_density_profile(sample, fig=1):
     thickness, density, density_magnetic = sample.density_profile()
@@ -196,11 +196,11 @@ if __name__ == "__main__":
     plt.xlabel(r"$Momentum\;\;Transfer\;\;(q_z)$")
     plt.ylabel(r'$log_{10}(R)$')
 
-
+    ####################################################################################################################
     ################# Now your turn! Construct the sample as outlines in the provided word document ####################
+    ####################################################################################################################
 
-
-    E = 625  # Change Energy
+    E = 0  # Change Energy
 
     # Ignore this portion
     theta_i = 0.1
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     Theta = np.arange(theta_i, theta_f + delta_theta, delta_theta)
     qz = (0.001013546247) * E * sin(Theta * pi / 180)
 
-    ################### Construct Sample - Use this Space to construct model
+    ################### Construct Sample - Use this Space to construct model ##########################################
 
     # N = ?
     # sample = slab(N)
@@ -219,7 +219,7 @@ if __name__ == "__main__":
 
     # plot_density_profile(sample,10)  # use this to plot the density profile of your sample
 
-    ################### Compute reflectivity - Use this space to compute reflectivity
+    ################### Compute reflectivity - Use this space to compute reflectivity ##################################
 
     # ignore t and e
     #qz, R, t, e = sample.reflectivity(E, qz)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
 
 
-    ################### Model Check - Uncomment the code below to check your model
+    ################### Model Check - Uncomment the code below to check your model #####################################
 
     # Check terminal for printed out results
     """
