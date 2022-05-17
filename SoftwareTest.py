@@ -181,7 +181,7 @@ if __name__ == "__main__":
     plt.figure(4)
     plt.plot(qz, Rs)
     plt.suptitle('Reflectivity Spectra')
-    plt.xlabel(r"$Momentum Transfer (q_z)$")
+    plt.xlabel(r"$Momentum\;\;Transfer\;\;(q_z)$")
     plt.ylabel(r'$log_{10}(R)$')
     plt.show()
 

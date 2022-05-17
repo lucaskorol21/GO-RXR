@@ -570,7 +570,7 @@ class slab:
 
         # Sets polymorph values to appropriate element in the correct layer
         self.structure[lay][ele].polymorph = polymorph
-        self.structure[lay][ele].poly_ratio = poly_ratio
+        self.structure[lay][ele].poly_ratio = np.array(poly_ratio)
 
         # Sets scattering factors
         if sf == None:
@@ -642,7 +642,7 @@ class slab:
                 if set(layer[key].polymorph) == set(identifier): # Checks if elements in identifier and polymorph list the same
                     if layer[key].polymorph == identifier:  # Checks if they are in the same order, if not switch order
                         self.structure[lay][key].mag_scattering_factor = sf
-                        self.structure[lay][key].mag_density = density
+                        self.structure[lay][key].mag_density = np.array(density)
                         self.structure[lay][key].phi = phi
                         self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
@@ -654,7 +654,7 @@ class slab:
                             temp_sf[idx] = sf[n]
                             temp_density[idx] = density[n]
                         self.structure[lay][key].mag_scattering_factor = temp_sf
-                        self.structure[lay][key].mag_density = temp_density
+                        self.structure[lay][key].mag_density = np.array(temp_density)
                         self.structure[lay][key].phi = phi
                         self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
@@ -664,7 +664,7 @@ class slab:
                 raise NameError('Variable identifier ' +str(identifier)+' does not match any elements in selected layer.')
             # Case where magnetization does not belong to polymorphs
             self.structure[lay][identifier].mag_scattering_factor = [sf]
-            self.structure[lay][identifier].mag_density = [density]
+            self.structure[lay][identifier].mag_density = np.array([density])
             self.structure[lay][identifier].phi = phi
             self.structure[lay][identifier].phi = theta
             self.mag_elements[identifier] = [identifier]
@@ -769,7 +769,6 @@ class slab:
                             next_density = 0  # density of element in next layer
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
                             next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass
-
                         else:  # element not in the next layer
                             next_density = 0
 
@@ -821,6 +820,7 @@ class slab:
 
             # Polymorphous elements
             if ele in poly_keys:
+
                 for layer in range(n): # loops through all layers
 
                     offset = transition[layer]
@@ -829,13 +829,13 @@ class slab:
 
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                        current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density / self.structure[layer][ele].molar_mass  # current density
+                        current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density*self.structure[layer][ele].poly_ratio / self.structure[layer][ele].molar_mass  # current density
                         if layer == n - 1:  # Last layer
-                            next_density = 0  # density of element in next layer
+                            next_density = np.zeros(pn)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
-                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density / self.structure[layer + 1][ele].molar_mass
+                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density* self.structure[layer+1][ele].poly_ratio/ self.structure[layer + 1][ele].molar_mass
                         else:  # element not in the next layer
-                            next_density = 0
+                            next_density = np.zeros(pn)
 
                         begin = 0
                         if layer == 0:
@@ -853,26 +853,25 @@ class slab:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
 
                             # Density normalization
-                            density_poly[ele][poly] = density_poly[ele][poly] + (const*erf_func + begin*current_density) * self.structure[layer][ele].poly_ratio[po]
+                            density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
                             po = po + 1
 
                     else:  # Element not found in current layer
 
-                        poly_ratio = np.zeros(pn)
-                        current_density = 0
+
+                        current_density = np.zeros(pn)
                         if layer == n - 1:  # Last layer
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
                             position = self.structure[layer + 1][ele].position  # position of element
                             previous_element = list(self.structure[layer].keys())[position]
-                            poly_ratio = self.structure[layer+1][ele].poly_ratio
-                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density * self.structure[layer+1][ele].poly_ratio / self.structure[layer + 1][ele].molar_mass  # next layer density
 
                             sigma = self.structure[layer][previous_element].roughness
                         else:
-                            next_density = 0
+                            next_density = np.zeros(pn)
                             sigma = 0
 
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
@@ -881,7 +880,7 @@ class slab:
                         po = 0
                         for poly in list(density_poly[ele].keys()):
                             # Density normalization
-                            density_poly[ele][poly] = density_poly[ele][poly] + const * erf_func * poly_ratio[po]
+                            density_poly[ele][poly] = density_poly[ele][poly] + const[po] * erf_func
                             density_poly[ele][poly][density_poly[ele][poly]<0] = 0
                             po = po + 1
 
