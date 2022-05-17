@@ -57,12 +57,10 @@ if __name__ == "__main__":
     qf = qz[-1]
     length_qz = len(qz)
 
-
-
-    h = 4.1257e-15  # Plank's constant eV*s
+    h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
-    #wavelength = h * c / (E * 1e-10)  # wavelength m
-    wavelength = 12398/E
+    wavelength = h * c / (E * 1e-10)  # wavelength m
+    #wavelength = 12398/E
 
     theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
     theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval

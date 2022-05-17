@@ -996,7 +996,7 @@ class slab:
 
         """
 
-        h = 4.1257e-15  # Plank's constant eV*s
+        h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
         wavelength = h * c / (E * 1e-10)  # wavelength m
         #wavelength = 19.366478131833802
