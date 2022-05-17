@@ -40,6 +40,14 @@ if __name__ == "__main__":
     # (enclosed in the PDF). I will provide further instructions within the script.
     # Good Luck!!!
 
+    # My code relies on using the same momentum transfer as the input data.
+    # This will be preset for you when you are testing out the software
+    E = 640
+    theta_i = 0.1
+    theta_f = 89.9
+    delta_theta = (theta_f - theta_i) / 301  # sets step size
+    Theta = np.arange(theta_i, theta_f + delta_theta, delta_theta)  # Angle array
+    qz = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
     #------------------------ Sample Setup Examples-------------------------------#
 
     # ------- Strutural Model
@@ -102,7 +110,7 @@ if __name__ == "__main__":
     #       - theta: Polar angle to the normal of surface (degrees)
 
     # Important: Density is in mol/cm^3 unlike the structural definition of g/cm^3.
-    # ** Note that the magnetic layer will have the exact same structure as the structural component.
+    # ** Note that the magnetic layer will have the exact same roughness as defined in the structural component.
 
     N = 3
     example2 = slab(N)
@@ -151,6 +159,7 @@ if __name__ == "__main__":
     # To compute the reflectivity the class method relfectivity must be used.
     #   - Required input parameters (E)
     #       - E: Energy of incoming photon in units of eV
+    #       - qz: Momentum Transfer (pre-defined)
     #   - Optional input parameters (precision, s_min)
     #       - precision: precision value that determines maximum slab thickness based on maximum variation
     #       - s_min: value that sets the minimum slab thickness that can be used (A)
@@ -170,13 +179,15 @@ if __name__ == "__main__":
     #       - IGNORE LAST TWO OUTPUT VALUES
 
     # ignore t and e
-    qz, R, t, e = example3.reflectivity(640)  # incoming photon energy of 360 eV
+    qz, R, t, e = example3.reflectivity(E, qz)  # incoming photon energy of 360 eV
 
     # Note that when plotting the reflectivity you must take the logarithm to see anything significant
     Rs = np.log10(R[0])  # s-polarized
     Rp = np.log10(R[1])  # p-polarized
     Rl = np.log10(R[2])  # left circular
     Rr = np.log10(R[3])  # right circular
+    # Note that if you did not specifiy any magnetism or set the denity to zero for all layer, the function
+    # will not return the reflectivity for right or left circular light.
 
     plt.figure(4)
     plt.plot(qz, Rs)

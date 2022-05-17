@@ -981,7 +981,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, precision=0.5,s_min = 0.1):
+    def reflectivity(self, E, qz, precision=0.5,s_min = 0.1):
 
         """
         Purpose: Computes the reflectivity
@@ -1003,9 +1003,7 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        theta_i = 0.1
-        theta_f = 89.9
-        delta_theta = (theta_f - theta_i) / 301  # sets step size
+
 
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
@@ -1054,12 +1052,12 @@ class slab:
 
 
 
-        Theta = np.arange(theta_i, theta_f+delta_theta, delta_theta)  # Angle array
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
 
         R = pr.Reflectivity(A, Theta, wavelength,MultipleScattering=True)  # Computes the reflectivity
 
-        qz = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
+
 
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)

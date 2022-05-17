@@ -13,7 +13,7 @@ from material_model import *
 if __name__ == "__main__":
 
     E = 640.2  # eV
-    """
+
     mag_optical_profile = np.loadtxt('mag_optical_profile')
     optical_profile = np.loadtxt('optical_constant')
     spectra = np.loadtxt('test_example.txt')
@@ -41,9 +41,9 @@ if __name__ == "__main__":
     for idx in range(m):
         d = t[idx+1] - t[idx]
         eps = (epsilon[idx+1]+epsilon[idx])/2
-        #eps = epsilon[idx]
+        #eps = epsilon[idx+2]
         eps_mag = (epsilon_mag[idx+1]+epsilon_mag[idx])/2
-        #eps_mag = epsilon_mag[idx]
+        #eps_mag = epsilon_mag[idx+2]
 
         A[idx].setmag('y')
         A[idx].seteps([eps,eps,eps,eps_mag])
@@ -61,13 +61,14 @@ if __name__ == "__main__":
 
     h = 4.1257e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
-    wavelength = h * c / (E * 1e-10)  # wavelength m
+    #wavelength = h * c / (E * 1e-10)  # wavelength m
+    wavelength = 12398/E
 
     theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
     theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-    delta_theta = (theta_f - theta_i) / (length_qz)  # sets step size
+    delta_theta = (theta_f - theta_i) / (1000)  # sets step size
     Theta = np.arange(theta_i, theta_f + delta_theta, delta_theta)  # Angle array
-
+    Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
 
     R = pr.Reflectivity(A, Theta, wavelength,MagneticCutoff=1e-10)
@@ -85,14 +86,16 @@ if __name__ == "__main__":
     Re = np.log10(spectra[:, 1])  # ReMagX Spectra
     Rea = spectra[:,1]
     qz_temp = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
+    qz_temp = qz
 
     # Interpolation
-    itr = interpolate.splrep(qz_temp, Ra)
-    R_fit = interpolate.splev(qz, itr)
-    R_diff = abs(R_fit-Rea)
+    #itr = interpolate.splrep(qz_temp, Ra)
+    #R_fit = interpolate.splev(qz, itr)
+    R_diff = abs(Ra-Rea)/abs(Ra+Rea)*100
 
     fig, (ax1, ax2) = plt.subplots(2,1, sharex=True)
-    fig.suptitle(r"$No\;\;Magnetic\;\;Cutoff:\;\;Asymmetry\;\;for\;\;E = 640.2eV\;\;and\;\;\rho=0.001\;\;mol/cm^3$")
+    #fig.suptitle(r"$No\;\;Magnetic\;\;Cutoff:\;\;Left\;\;Circular\;\;for\;\;E = 640.2eV\;\;and\;\;\rho=0.001\;\;mol/cm^3$")
+    fig.suptitle('Altered')
     ax1.plot(qz_temp, Ra,'k')
     ax1.plot(qz, Rea,'r--')
     ax1.legend(['Lucas','ReMagX'])
@@ -100,9 +103,9 @@ if __name__ == "__main__":
     ax1.set_ylabel(r"$log_{10}(R)y$")
 
     ax2.plot(qz, R_diff)
-    ax2.set_title("Difference between ReMagX and Lucas Code")
+    ax2.set_title("Percent Difference")
     ax2.set_xlabel(r"$Momentum\;\;Transfer\;\;(q_z)$")
-    ax2.set_ylabel(r"$Difference log_{10}(R_1/R_2)$")
+    ax2.set_ylabel(r"$\frac{|R_L-R_R|}{|R_L+R_R|}x100\%$")
     plt.subplots_adjust(hspace=0.3,top=0.8)
 
 
@@ -111,12 +114,12 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.0001
+    mag_dense = 0.01
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=4, link=[False, True, True])  # substrate layer
+    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
 
-    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=4)
+    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
@@ -195,4 +198,3 @@ if __name__ == "__main__":
 
 
     plt.show()
-    """
