@@ -82,7 +82,7 @@ if __name__ == "__main__":
     #       - sf: List of the scattering factors you want to use for the polymorphs. If no element symbol is chosen
     #             then the polymorph symplot inputted will be used.
 
-    example1.addlayer(2, 'LaMnO3',20, roughness=2)
+    example1.addlayer(2, 'LaMnO3',40, roughness=2)
     example1.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [0.1,0.9], sf=['Mn','Fe'])
 
     plot_density_profile(example1,fig=1)  # plot the density profile
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     example2.addlayer(1, 'SrTiO3', 2, roughness=2)  # Substrate extends slightly into the thin film
 
-    example2.addlayer(2, 'LaMnO3', 20, roughness=2)
+    example2.addlayer(2, 'LaMnO3', 40, roughness=2)
     example2.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])
     example2.magnetization(2, ['Mn2+','Mn3+'],[0.1,0.1],['Co','Ni'])
 
@@ -130,18 +130,18 @@ if __name__ == "__main__":
 
     example3.addlayer(1, 'SrTiO3', 2, roughness=1)  # Substrate extends slightly into the thin film
 
-    # Divide slab that is 20 A into a slab of 5, 10, 5 A
-    example3.addlayer(2, 'LaMnO3', 5, roughness=2)
-    example3.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.25, 0.75], sf=['Mn', 'Fe'])
-    example3.magnetization(2, ['Mn2+', 'Mn3+'], [0.001, 0.001], ['Co', 'Ni'])
+    # Divide slab that is 40 A into a slab of 10, 25, 5 A
+    example3.addlayer(2, 'LaMnO3', 10, roughness=2)
+    example3.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.01, 0.99], sf=['Mn', 'Fe'])
+    example3.magnetization(2, ['Mn2+', 'Mn3+'], [0.01, 0.02], ['Co', 'Ni'])
 
-    example3.addlayer(3, 'LaMnO3', 10,roughness=3)
-    example3.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.25, 0.75], sf=['Mn', 'Fe'])
-    example3.magnetization(3, ['Mn2+', 'Mn3+'], [0.02, 0.001], ['Co', 'Ni'])
+    example3.addlayer(3, 'LaMnO3', 25,roughness=3)
+    example3.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
+    example3.magnetization(3, ['Mn2+', 'Mn3+'], [0.02, 0.05], ['Co', 'Ni'])
 
     example3.addlayer(4, 'LaMnO3', 5,roughness=2)
-    example3.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.25, 0.75], sf=['Mn', 'Fe'])
-    example3.magnetization(4, ['Mn2+', 'Mn3+'], [0.001, 0.02], ['Co', 'Ni'])
+    example3.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.99, 0.01], sf=['Mn', 'Fe'])
+    example3.magnetization(4, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
 
     plot_density_profile(example3, fig=3)  # plot density profile
 
