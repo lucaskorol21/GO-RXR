@@ -12,7 +12,7 @@ from material_model import *
 
 if __name__ == "__main__":
 
-    E = 640.2  # eV
+    E = 642.2  # eV
 
     mag_optical_profile = np.loadtxt('mag_optical_profile')
     optical_profile = np.loadtxt('optical_constant')
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.01
+    mag_dense = 0.5
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
