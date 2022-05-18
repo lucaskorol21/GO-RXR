@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # Sometimes we want to be able to distinguish between different  polymorphs (forms) of the same element.
     # For example: it can be important to distinguish between the different oxidation states. To incorporate a
     # a polymorph into the your structure you need to use the class method polymorphous. Once you set one element
-    # to be a polymorph, you must maintain consistent and set this for the remainder of the layers that include this
+    # to be a polymorph, you must maintain consistency and set this for the remainder of the layers that include this
     # element.
     #   - Required Inputs (lay, ele, polymorph, poly_ratio)
     #       - lay: The layer the polymorph element is found
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     example2.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])
     example2.magnetization(2, ['Mn2+','Mn3+'],[0.1,0.1],['Co','Ni'])
 
-    # plot_density_profile(example2,fig=2)  # Plot the density profile
+    plot_density_profile(example2,fig=2)  # Plot the density profile
 
     #-------- Complicated magnetic structure and polymorph structure
     # Sometimes yoy may want a more complicated structure. This can easily be done by dividing a single slab
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     Rp = np.log10(R[1])  # p-polarized
     Rl = np.log10(R[2])  # left circular
     Rr = np.log10(R[3])  # right circular
-    # Note that if you did not specifiy any magnetism or set the denity to zero for all layer, the function
+    # Note that if you did not specify any magnetism or set the denity to zero for all layer, the function
     # will not return the reflectivity for right or left circular light.
 
     plt.figure(4)
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     ################# Now your turn! Construct the sample as outlines in the provided word document ####################
     ####################################################################################################################
 
-    E = 0  # Change Energy
+    E = 625  # Change Energy
 
     # Ignore this portion
     theta_i = 0.1
@@ -211,29 +211,55 @@ if __name__ == "__main__":
 
     ################### Construct Sample - Use this Space to construct model ##########################################
 
-    # N = ?
-    # sample = slab(N)
+    N = 8
+    sample = slab(N)
+    sample.addlayer(0, 'SrTiO3', 50, roughness=2)
+
+    sample.addlayer(1, 'SrTiO3', 5, roughness=1, density=5)
+
+    sample.addlayer(2, 'LaMnO3', 10, roughness=1.5)
+    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.01, 0.99], sf=['Mn','Fe'])
+    sample.magnetization(2, ['Mn3+', 'Mn2+'], [0.02, 0.01], ['Ni', 'Co'])
+
+    sample.addlayer(3, 'LaMnO3', 25, roughness=5)
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn','Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.001, 0.025], ['Co', 'Ni'])
+
+    sample.addlayer(4, 'LaAlO3', 15, roughness=3)
+
+    sample.addlayer(5, 'LaMnO3', 7, roughness=2)
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [0.99, 0.01], sf=['Mn', 'Fe'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
+
+    sample.addlayer(6, 'LaMnO3', 9, roughness=0.1)
+    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.6, 0.4], sf=['Mn', 'Fe'])
+    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.03, 0.01], ['Co', 'Ni'])
+
+    sample.addlayer(7, 'LaMnO3', 5, roughness=2)
+    sample.polymorphous(7, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(7, ['Mn2+', 'Mn3+'], [0.04, 0.001], ['Co', 'Ni'])
 
 
 
 
-    # plot_density_profile(sample,10)  # use this to plot the density profile of your sample
+    plot_density_profile(sample,10)  # use this to plot the density profile of your sample
 
     ################### Compute reflectivity - Use this space to compute reflectivity ##################################
 
     # ignore t and e
-    # qz, R, t, e = sample.reflectivity(E, qz)
-    # R_answer = ?  # select the correct polarization
+    qz, R, t, e = sample.reflectivity(E, qz)
+    R_answer = np.log10(R[2])  # left circular # select the correct polarization
 
 
 
     ################### Model Check - Uncomment the code below to check your model #####################################
 
     # Check terminal for printed out results
-    """
+
+
     reference = np.load('Trial1_check.npy')
     qz_r = reference[0]
-    Rr  =reference[1]
+    Rr = reference[1]
 
     total_diff = sum(abs(Rr-R_answer))
     if total_diff == 0:
@@ -242,7 +268,7 @@ if __name__ == "__main__":
         print('Your model is close!')
     else:
         print('Either your model or reflectivity computation is incorrect.')
-    """
+
     plt.show()
 
 
