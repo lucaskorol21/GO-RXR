@@ -222,7 +222,7 @@ if __name__ == "__main__":
     ################### Compute reflectivity - Use this space to compute reflectivity ##################################
 
     # ignore t and e
-    #qz, R, t, e = sample.reflectivity(E, qz)
+    # qz, R, t, e = sample.reflectivity(E, qz)
     # R_answer = ?  # select the correct polarization
 
 
