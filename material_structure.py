@@ -183,12 +183,13 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.gamma = 0  #
-        self.phi = 0  #
+        self.gamma = 90  #
+        self.phi = 90  #
         self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = None
         self.position = None
+
 
 def get_number(string):
     """
@@ -389,6 +390,8 @@ class slab:
         self.mag_elements = dict()  # Keeps track of the magnetized elements in the material
         self.number_layers = num_layers
         self.find_sf = [dict(), dict()]  # [structural, magnetic]
+        self.transition = None
+        self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
 
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
@@ -595,6 +598,7 @@ class slab:
         if lay > len(self.structure) - 1:
             raise RuntimeError('Layer ' + str(lay) + ' selected, but maximum layer is ' + str(len(self.structure) - 1))
 
+        self.layer_magnetized[lay] = True
         # Checks to make sure that the variable identifier is either a list or string
         if type(identifier) != str and type(identifier) != list:
             raise TypeError('Variable identifier must be a list or string.')
@@ -665,8 +669,8 @@ class slab:
             # Case where magnetization does not belong to polymorphs
             self.structure[lay][identifier].mag_scattering_factor = [sf]
             self.structure[lay][identifier].mag_density = np.array([density])
+            self.structure[lay][identifier].gamma = gamma
             self.structure[lay][identifier].phi = phi
-            self.structure[lay][identifier].phi = theta
             self.mag_elements[identifier] = [identifier]
 
 
@@ -976,7 +980,7 @@ class slab:
             for mag in list(density_mag[ele].keys()):
                 density_magnetic[mag] = density_mag[ele][mag]
 
-
+        self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
 
     def plot_density_profile(self, fig=1):
@@ -1066,14 +1070,49 @@ class slab:
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
+        layer = 0
+        gamma = 90
+        phi = 90
+
         for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
-            A[idx].setmag('y')
-            A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
-            #A[idx].seteps(eps)
+            # Determines the magnetization direction of the first layer
+            if layer ==0:
+                if self.layer_magnetized[0]:
+                    for ele in self.structure[layer].keys():
+                        if self.structure[0][ele].mag_scattering_factor != None:
+                            gamma = self.structure[0][ele].gamma
+                            phi = self.structure[0][ele].phi
+
+
+            # Determines the magnetization direction of the other layers
+            if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
+                print(layer)
+                layer = layer + 1
+                if self.layer_magnetized[0]:
+                    for ele in self.structure[layer].keys():
+                        if self.structure[0][ele].mag_scattering_factor != None:
+                            gamma = self.structure[0][ele].gamma
+                            phi = self.structure[0][ele].phi
+
+            # sets the magnetization direction based on the input angles
+            if self.layer_magnetized[layer]:
+                if gamma == 90 and phi == 90:
+                    A[idx].setmag('y')
+                elif gamma == 0 and phi == 90:
+                    A[idx].setmag('x')
+                elif gamma == 0 and phi == 0:
+                    A[idx].setmag('z')
+                else:
+                    raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
+
+                A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
+            else:
+                A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+
 
             if idx != 0:
                 A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
