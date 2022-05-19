@@ -45,7 +45,7 @@ if __name__ == "__main__":
         elif test_element.polymorph != test['output'][7]:
             print('Element polymorph not initialized properly')
             Success = False
-        elif test_element.theta != test['output'][8]:
+        elif test_element.gamma != test['output'][8]:
             print('Element magnetization direction theta not initialized properly')
             Success = False
         elif test_element.phi != test['output'][9]:
@@ -351,7 +351,7 @@ if __name__ == "__main__":
                {'input': [4, ['Mn2+', 'Mn3+'], [4.4,7.9],['Co', 'Fe'], 16, 181], 'output': [[4.4,7.9],['Co', 'Fe'], 16, 181], 'reason': 1}]
 
     for test in test_09:
-        sample_test.magnetization(test['input'][0], test['input'][1], test['input'][2], test['input'][3], phi=test['input'][4], theta=test['input'][5])
+        sample_test.magnetization(test['input'][0], test['input'][1], test['input'][2], test['input'][3], gamma=test['input'][4], phi=test['input'][5])
 
     idx = 0
     for lay in range(len(sample_test.structure)):
@@ -370,10 +370,10 @@ if __name__ == "__main__":
                 if layer[ele].mag_scattering_factor != test['output'][1]:
                     print('Magnetic scattering factor of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].phi != test['output'][2]:
+                if layer[ele].gamma != test['output'][2]:
                     print('Magnetic phi of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].theta != test['output'][3]:
+                if layer[ele].phi != test['output'][3]:
                     print('Magnetic theta of element scattering factor ' + ele + ' incorrect initialized')
                     Success = False
             else:
@@ -383,10 +383,10 @@ if __name__ == "__main__":
                 if layer[ele].mag_scattering_factor != None:
                     print('Non-magnetic scattering factor of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].phi != 0:
+                if layer[ele].gamma != 0:
                     print('Non-magnetic phi of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].theta != 0:
+                if layer[ele].phi != 0:
                     print('Non-magnetic theta of element ' + ele + ' incorrect initialized')
                     Success = False
 

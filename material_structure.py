@@ -183,7 +183,7 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.theta = 0  #
+        self.gamma = 0  #
         self.phi = 0  #
         self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
@@ -578,15 +578,15 @@ class slab:
         else:
             self.structure[lay][ele].scattering_factor = sf
 
-    def magnetization(self, lay, identifier, density, sf, phi=0, theta=0):
+    def magnetization(self, lay, identifier, density, sf, gamma=90, phi=90):
         """
         Purpose: Set magnetization properties
         :param lay: Layer the magnetic material is found
         :param identifier: The symbol of the magnetic element
         :param density: The density of the magnetism
         :param sf: The scattering factor you want to use for the magnetic component
-        :param phi: Azimuthal angle (degrees)
-        :param theta: Polar angle (degrees)
+        :param gamma: Azimuthal angle (degrees)
+        :param phi: Polar angle (degrees)
         """
 
         # ---------------------------------------- Error Check ------------------------------------------------------- #
@@ -643,8 +643,8 @@ class slab:
                     if layer[key].polymorph == identifier:  # Checks if they are in the same order, if not switch order
                         self.structure[lay][key].mag_scattering_factor = sf
                         self.structure[lay][key].mag_density = np.array(density)
+                        self.structure[lay][key].gamma = gamma
                         self.structure[lay][key].phi = phi
-                        self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
                     else:
                         temp_sf = ['X' for i in range(len(layer[key].polymorph))]
@@ -655,8 +655,8 @@ class slab:
                             temp_density[idx] = density[n]
                         self.structure[lay][key].mag_scattering_factor = temp_sf
                         self.structure[lay][key].mag_density = np.array(temp_density)
+                        self.structure[lay][key].gamma = gamma
                         self.structure[lay][key].phi = phi
-                        self.structure[lay][key].theta = theta
                         self.mag_elements[key] = identifier
 
         else:
