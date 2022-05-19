@@ -979,6 +979,38 @@ class slab:
 
         return thickness, density, density_magnetic
 
+    def plot_density_profile(self, fig=1):
+        thickness, density, density_magnetic = self.density_profile()
+        val = list(density.values())
+        mag_val = list(density_magnetic.values())
+        check = []
+        for key in list(density.keys()):
+            if key[-1].isdigit():
+                check.append(True)
+            else:
+                check.append(False)
+
+        plt.figure(fig)
+        for idx in range(len(val)):
+            if check[idx]:
+                plt.plot(thickness, val[idx], ':')
+            else:
+                plt.plot(thickness, val[idx])
+
+        for idx in range(len(mag_val)):
+            plt.plot(thickness, -mag_val[idx], '--')
+
+        center = np.zeros(len(thickness))
+        plt.plot(thickness, center, 'k-.', linewidth=2)
+        my_legend = list(density.keys())
+
+        for key in list(density_magnetic.keys()):
+            my_legend.append('Mag: ' + key)
+
+        plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
+        plt.xlabel('Thickness (Angstrom)')
+        plt.ylabel('Density (mol/cm^3)')
+
 
 
     def reflectivity(self, E, qz, precision=0.5,s_min = 0.1):
@@ -1022,11 +1054,11 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
-        epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
-        #epsilon = n**2
+        #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+        epsilon = n**2
         #Q = np.vectorize(complex)(delta, beta)
-        Q = np.vectorize(complex)(-beta_m, delta_m )
-        epsilon_mag = Q*epsilon
+        Q = np.vectorize(complex)(beta_m, delta_m )
+        epsilon_mag = Q*epsilon*2*(-1)
 
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
@@ -1042,6 +1074,7 @@ class slab:
             A[idx].setmag('y')
             A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric constant value
             #A[idx].seteps(eps)
+
             if idx != 0:
                 A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
 
@@ -1055,13 +1088,30 @@ class slab:
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
 
-        R = pr.Reflectivity(A, Theta, wavelength,MultipleScattering=True)  # Computes the reflectivity
-
+        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10 )  # Computes the reflectivity
+        R = dict()
 
 
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
         plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
+
+
+        if len(Rtemp) == 2:
+            R['S'] = Rtemp[0]
+            R['P'] = Rtemp[1]
+            R['LC'] = np.zeros(len(Rtemp[0]))
+            R['RC'] = np.zeros(len(Rtemp[0]))
+            R['A'] = np.zeros(len(Rtemp[0]))
+        elif len(Rtemp)==4:
+            R['S'] = Rtemp[0]
+            R['P'] = Rtemp[1]
+            R['LC'] = Rtemp[2]
+            R['RC'] = Rtemp[3]
+            R['A'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
+        else:
+            raise TypeError('Error in reflectivity computation. Reflection array not expected sizes.')
+
 
 
         return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
@@ -1145,11 +1195,11 @@ if __name__ == "__main__":
     #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
     """
 
-    """
+
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.01
+    mag_dense = 0.1
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density = 5.120891853,roughness=2, link=[False, True, True])  # substrate layer
@@ -1158,7 +1208,7 @@ if __name__ == "__main__":
 
     sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [mag_dense,0],['Co','Ni'])
+    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
 
     sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
@@ -1166,15 +1216,15 @@ if __name__ == "__main__":
 
     sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
 
     #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
-
+    """
     result = sample.structure[2]
 
     e = 'O'
@@ -1201,7 +1251,7 @@ if __name__ == "__main__":
     # Example 2: Simple sample creation
     sample = slab(2)  # Initializing four layers
     s = 0.1
-    mag_dense = 0.5
+    mag_dense = 0.1
     # Substrate Layer
     # Link: Ti-->Mn and O-->O
     sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
@@ -1211,46 +1261,13 @@ if __name__ == "__main__":
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
 
-    thickness, density, density_magnetic = sample.density_profile(step=s)
+    """
+    sample.plot_density_profile()
+    thickness, density, density_magnetic = sample.density_profile(step=0.1)
 
 
 
-    # thickness, density, density_magnetic = sample.density_profile()
-    val = list(density.values())
-    mag_val = list(density_magnetic.values())
-    check = []
-    for key in list(density.keys()):
-        if key[-1].isdigit():
-            check.append(True)
-        else:
-            check.append(False)
-
-    plt.figure(1)
-    for idx in range(len(val)):
-        if check[idx]:
-            plt.plot(thickness, val[idx],':')
-        else:
-            plt.plot(thickness, val[idx])
-
-
-    for idx in range(len(mag_val)):
-        plt.plot(thickness, -mag_val[idx],'--')
-
-    center = np.zeros(len(thickness))
-    plt.plot(thickness, center, 'k-.', linewidth=2)
-    my_legend = list(density.keys())
-
-
-
-    for key in list(density_magnetic.keys()):
-        my_legend.append('Mag: ' + key)
-
-    plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02,0.5))
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel('Density (mol/cm^3)')
-
-
-    E = 640.2 # eV
+    E = 642.2 # eV
 
     elements = density.keys()
     sf = dict()
@@ -1262,7 +1279,6 @@ if __name__ == "__main__":
     # Magnetic Scattering Factor
     for em in sample.find_sf[1].keys():
         sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
-
 
     delta, beta = index_of_refraction(density, sf, E)
 
@@ -1279,26 +1295,22 @@ if __name__ == "__main__":
     y = h*c/(E*1e-10)  # wavelength m
 
     F = np.loadtxt('test_example.txt')
-    qi = F[0,0]
-    qf = F[-1,0]
-    p1 = 0.1
-    p2 = 0.25
+    qz = F[:,0]
+    p1 = 0.0001
+    p2 = 0.1
 
-    qz, R, t, e =  sample.reflectivity(E, qi,qf,0,s_min=0.1)  # baseline
-    qz1, R1, t1, e1 = sample.reflectivity(E, qi,qf, p1, s_min=0.1)
-    qz2, R2, t2, e2 = sample.reflectivity(E,qi, qf, p2, s_min=0.1)
+    qz, Rtemp, t, e =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
+    qz1, R1temp, t1, e1 = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
+    qz2, R2temp, t2, e2 = sample.reflectivity(E,qz, precision = p2, s_min=0.1)
 
-    R = np.log10(R[2])
-    R1 = np.log10(R1[2])
-    R2 = np.log10(R2[2])
+    #R = np.log10(Rtemp['LC'])
+    #R1 = np.log10(R1temp['LC'])
+    #R2 = np.log10(R2temp['LC'])
 
-    #R = (np.log10(R[3])-np.log10(R[2]))/(np.log10(R[2])+np.log10(R[3]))
-    #R1 = (np.log10(R1[3])-np.log10(R1[2]))/(np.log10(R1[2])+np.log10(R1[3]))
-    #R2 = (np.log10(R2[3])-np.log10(R2[2]))/(np.log10(R2[2])+np.log10(R2[3]))
+    R = Rtemp['A']
+    R1 = R1temp['A']
+    R2 = R2temp['A']
 
-    #R = (R[2] - R[3]) / (R[2] + R[3])
-    #R1 = (R1[2] - R1[3]) / (R1[2] + R1[3])
-    #R2 = (R2[2] - R2[3]) / (R2[2] + R2[3])
 
     plt.figure(4)
     plt.plot(qz, R, 'k-')
@@ -1310,14 +1322,16 @@ if __name__ == "__main__":
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.title('ReMagX vs. Python Script (800 eV)')
 
+    diff_1 = abs(R-R1)/abs(R+R1)
     figure(5)
-    plt.plot(qz1, abs(R-R1))
+    plt.plot(qz1, diff_1)
     plt.suptitle("Difference in Spectra: " + str(p1))
     plt.xlabel("Thickness (Angstroms)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
 
+    diff_2 = abs(R-R2)/abs(R+R2)
     figure(6)
-    plt.plot(qz1, abs(R-R2))
+    plt.plot(qz1, diff_2)
     plt.suptitle("Difference in Spectra: " + str(p2))
     plt.xlabel("Thickness (Angstrom)")
     plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
@@ -1356,19 +1370,18 @@ if __name__ == "__main__":
 
     q = F[:,0]
     I = F[:,1]
-    I = np.log10(I)
+    # I = np.log10(I)
     plt.figure(55)
     plt.plot(q,I,'k')
-    plt.plot(qz, R1, 'r--')
+    plt.plot(qz, R, 'r--')
     plt.suptitle('Zak Formalism: Left Circular 642.2 eV (rho=0.5) ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
 
-    itr = interpolate.splrep(qz, R1)
-    R_int = interpolate.splev(q, itr)
+    diff_3 = abs(I-R)/abs(I+R)
     plt.figure(56)
-    plt.plot(q, abs(I-R_int), 'k')
+    plt.plot(q, diff_3, 'k')
     plt.suptitle('ReMagX vs. Lucas Difference: precision = ' + str(p1))
     plt.xlabel('qz')
     plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')
@@ -1376,23 +1389,9 @@ if __name__ == "__main__":
     plt.show()
 
     
-    testing_array = np.loadtxt('energy_test.txt')
-    E_test = testing_array[:,0]
-    Escan_test = testing_array[:,1]
-
-    E, Escan = sample.energy_scan(E_test[0],E_test[-1],25.0)
 
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle('Energy Scan for theta=25.0')
-    ax1.plot(E_test, Escan_test)
-    ax1.set_title('ReMagX')
-    ax1.set_xlabel('Energy (eV)')
-    ax1.set_ylabel('R')
-    ax2.plot(E, Escan)
-    ax2.set_title('Lucas ')
-    ax2.set_xlabel('Energy (eV)')
-    ax2.set_ylabel('R')
-    plt.show()
-    """
-    print("hello")
+
+
+
+
