@@ -7,6 +7,7 @@ import numpy as np
 if __name__ == "__main__":
     # ------------------------------------------TEST 0---------------------------------------------------------------- #
     # ---------------------------------------Class: element----------------------------------------------------------- #
+    Success = True
 
     test_00 = [{'input':['Fe', 1], 'output': ['Fe', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'Fe', None, None], 'reason': 0},
                {'input': ['Sr', 7], 'output': ['Sr', 0, 0, 0, 0, 7, 1, [], 0, 0, None, 'Sr', None, None], 'reason': 0},
@@ -22,32 +23,46 @@ if __name__ == "__main__":
 
         if test_element.name != test['output'][0]:
             print('Element name not initialized properly')
+            Success = False
         elif test_element.molar_mass != test['output'][1]:
             print('Element molar mass not initialized properly')
+            Success = False
         elif test_element.density != test['output'][2]:
             print('Element density not initialized properly')
+            Success = False
         elif test_element.thickness != test['output'][3]:
             print('Element thickness not initialized properly')
+            Success = False
         elif test_element.roughness != test['output'][4]:
             print('Element roughness not initialized properly')
+            Success = False
         elif test_element.stoichiometry != test['output'][5]:
             print('Element stoichiometry not initialized properly')
+            Success = False
         elif test_element.poly_ratio != test['output'][6]:
             print('Element polymorphous ratio not initialized properly')
+            Success = False
         elif test_element.polymorph != test['output'][7]:
             print('Element polymorph not initialized properly')
+            Success = False
         elif test_element.theta != test['output'][8]:
             print('Element magnetization direction theta not initialized properly')
+            Success = False
         elif test_element.phi != test['output'][9]:
             print('Element magnetization direction phi not initialized properly')
+            Success = False
         elif test_element.mag_density != test['output'][10]:
             print('Element magnetization density not initialized properly')
+            Success = False
         elif test_element.scattering_factor != test['output'][11]:
             print('Element scattering factor not initialized properly')
+            Success = False
         elif test_element.mag_scattering_factor != test['output'][12]:
             print('Element magnetization scattering factor not initialized properly')
+            Success = False
         elif test_element.position != test['output'][13]:
             print('Element position not initialized properly')
+            Success = False
 
     print('0. element class testing complete')
     # ------------------------------------------TEST 1---------------------------------------------------------------- #
@@ -64,8 +79,10 @@ if __name__ == "__main__":
 
         if result1 != test['output'][0]:
             print('String ' + test['input'] + ' incorrect ')
+            Success = False
         elif result2 != test['output'][1]:
             print('Number ' + test['input']+ 'incorrect')
+            Success = False
 
     print('1. get_number testing complete')
 
@@ -85,12 +102,15 @@ if __name__ == "__main__":
 
         if result1 != test['output'][0]:
             print('The formula ' + test['input'] + ' is reduced to ' + result1 + ' and not ' + test['output'][0])
+            Success = False
 
         if result2[0] != test['output'][1][0]:
             print('Element not removed properly.')
+            Success = False
 
         if result2[1] != test['output'][1][1]:
             print('Stochicometry not correct.')
+            Success = False
 
     print('2. checkstring testing complete')
 
@@ -133,6 +153,7 @@ if __name__ == "__main__":
 
         if result1 != test['output']:
             print('Density of ' + str(test['output']) + 'g/cm^3  for ' + test['input'] + '  not ' + str(result1) + 'g/cm^3.')
+            Success = False
 
     print('4. pervoskite_density testing complete')
 
@@ -159,16 +180,19 @@ if __name__ == "__main__":
         if len(result1) != len(test['output']):
             print('Incorrect number of dictionary elements for finding formula stoichiometry.')
             print(test['reason'])
+            Success = False
 
         # Testing keys
         if set(list(result1.keys())) != set(list(test['output'].keys())):
             print('Keys for find_stoichiometry not as expected.')
             print(test['reason'])
+            Success = False
 
         # Test key order
         if list(result1.keys()) != list(test['output'].keys()):
             print('Keys and values not in correct order.')
             print(test['reason'])
+            Success = False
 
         for check in list(result1.keys()):
             answer = test['output'][check]
@@ -178,11 +202,13 @@ if __name__ == "__main__":
             if answer.name != test_function.name:
                 print('Name incorrect in element class.')
                 print(test['reason'])
+                Success = False
 
             # Checking that stoichiometry input is correct in element class
             if answer.stoichiometry != test_function.stoichiometry:
                 print('Stoichiometry of element incorrect.')
                 print(test['reason'])
+                Success = False
 
 
     print('5. find_stochiometry testing complete')
@@ -243,23 +269,29 @@ if __name__ == "__main__":
 
         if sample_test.link[lay] != test_layer['output'][5]:
             print('Element link incorrect.')
+            Success = False
 
         if element_name != test_layer['output'][0]:
             print('Element names do not match original chemical formula')
+            Success = False
 
         idx = 0
         for ele in list(layer.keys()):
             if layer[ele].stoichiometry != test_layer['output'][1][idx]:
                 print('Stocihiometry in layer ' + str(lay) + ' is incorrect for' + ele)
+                Success = False
 
             if layer[ele].thickness != test_layer['output'][2]:
                 print('Thickness in layer ' + str(lay) + ' is incorrect for' + ele)
+                Success = False
 
             if layer[ele].density != test_layer['output'][3]:
                 print('Density in layer ' + str(lay) + ' is incorrect for' + ele)
+                Success = False
 
             if layer[ele].roughness != test_layer['output'][4]:
                 print('Roughness in layer ' + str(lay) + ' is incorrect for' + ele)
+                Success = False
 
             idx = idx + 1
 
@@ -286,20 +318,27 @@ if __name__ == "__main__":
                 idx = idx + 1
         for ele in list(layer.keys()):
             if ele in list(sample_test.poly_elements.keys()):  # polymorphous element
-
                 if layer[ele].polymorph != test['output'][1]:
                     print('Polymorphous element ' + ele + ' incorrectly initialized')
-                if layer[ele].poly_ratio != test['output'][2]:
-                    print('Polymorphous element ratio ' + ele + ' incorrect initialized')
+                    Success = False
+
+                for rat in range(len(layer[ele].poly_ratio)):
+                    if layer[ele].poly_ratio[rat] != test['output'][2][rat]:
+                        print('Polymorphous element ratio ' + ele + ' incorrect initialized')
+                        Success = False
                 if layer[ele].scattering_factor != test['output'][3]:
                     print('Polymorphous element scattering factor ' + ele + ' incorrect initialized')
+                    Success = False
             else:
                 if layer[ele].polymorph != []:
                     print('Non-polymorphous element '+ ele + ' incorrectly initialized' )
+                    Success = False
                 if layer[ele].poly_ratio != 1:
                     print('Non-polymorphous element ratio ' + ele + ' incorrect initialized')
+                    Success = False
                 if layer[ele].scattering_factor != ele:
                     print('Non-polymorphous element scattering factor ' + ele + ' incorrect initialized')
+                    Success = False
 
 
     print('8. polymorph testing complete')
@@ -324,22 +363,35 @@ if __name__ == "__main__":
 
         for ele in list(layer.keys()):
             if ele in list(sample_test.mag_elements.keys()):  # polymorphous element
-                if layer[ele].mag_density != test['output'][0]:
-                    print('Magnetic density of element ' + ele + ' incorrectly initialized')
+                for md in range(len(layer[ele].mag_density)):
+                    if layer[ele].mag_density[md] != test['output'][0][md]:
+                        print('Magnetic density of element ' + ele + ' incorrectly initialized')
+                        Success = False
                 if layer[ele].mag_scattering_factor != test['output'][1]:
                     print('Magnetic scattering factor of element ' + ele + ' incorrect initialized')
+                    Success = False
                 if layer[ele].phi != test['output'][2]:
                     print('Magnetic phi of element ' + ele + ' incorrect initialized')
+                    Success = False
                 if layer[ele].theta != test['output'][3]:
                     print('Magnetic theta of element scattering factor ' + ele + ' incorrect initialized')
+                    Success = False
             else:
                 if layer[ele].mag_density != None:
                     print('Non-magnetic element ' + ele + ' incorrectly initialized')
+                    Success = False
                 if layer[ele].mag_scattering_factor != None:
                     print('Non-magnetic scattering factor of element ' + ele + ' incorrect initialized')
+                    Success = False
                 if layer[ele].phi != 0:
                     print('Non-magnetic phi of element ' + ele + ' incorrect initialized')
+                    Success = False
                 if layer[ele].theta != 0:
                     print('Non-magnetic theta of element ' + ele + ' incorrect initialized')
+                    Success = False
 
     print('9. magnetization testing complete')
+    if Success:
+        print()
+        print()
+        print('UNIT TESTING SUCCESSFUL :)')
