@@ -183,10 +183,10 @@ if __name__ == "__main__":
     qz, R, t, e = example3.reflectivity(E, qz)  # incoming photon energy of 360 eV
 
     # Note that when plotting the reflectivity you must take the logarithm to see anything significant
-    Rs = np.log10(R[0])  # s-polarized
-    Rp = np.log10(R[1])  # p-polarized
-    Rl = np.log10(R[2])  # left circular
-    Rr = np.log10(R[3])  # right circular
+    Rs = np.log10(R['S'])  # s-polarized
+    Rp = np.log10(R['P'])  # p-polarized
+    Rl = np.log10(R['LC'])  # left circular
+    Rr = np.log10(R['RC'])  # right circular
     # Note that if you did not specify any magnetism or set the denity to zero for all layer, the function
     # will not return the reflectivity for right or left circular light.
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
     # ignore t and e
     qz, R, t, e = sample.reflectivity(E, qz)
-    R_answer = np.log10(R[2])  # left circular # select the correct polarization
+    R_answer = np.log10(R['LC'])  # left circular # select the correct polarization
 
 
 

@@ -1090,7 +1090,6 @@ class slab:
 
             # Determines the magnetization direction of the other layers
             if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
-                print(layer)
                 layer = layer + 1
                 if self.layer_magnetized[0]:
                     for ele in self.structure[layer].keys():
@@ -1137,19 +1136,21 @@ class slab:
 
 
         if len(Rtemp) == 2:
-            R['S'] = Rtemp[0]
-            R['P'] = Rtemp[1]
-            R['LC'] = np.zeros(len(Rtemp[0]))
-            R['RC'] = np.zeros(len(Rtemp[0]))
-            R['A'] = np.zeros(len(Rtemp[0]))
+            R['S'] = Rtemp[0]  # s-polarized light
+            R['P'] = Rtemp[1]  # p-polarized light
+            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])  # Asymmetry linear polarized
+            R['LC'] = np.zeros(len(Rtemp[0]))  # Left circular
+            R['RC'] = np.zeros(len(Rtemp[0]))  # right circular
+            R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized
         elif len(Rtemp)==4:
             R['S'] = Rtemp[0]
             R['P'] = Rtemp[1]
+            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])
             R['LC'] = Rtemp[2]
             R['RC'] = Rtemp[3]
-            R['A'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
+            R['AC'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
         else:
-            raise TypeError('Error in reflectivity computation. Reflection array not expected sizes.')
+            raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
 
 
@@ -1366,14 +1367,14 @@ if __name__ == "__main__":
     plt.plot(qz1, diff_1)
     plt.suptitle("Difference in Spectra: " + str(p1))
     plt.xlabel("Thickness (Angstroms)")
-    plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$")
+    plt.ylabel("Percent Difference")
 
     diff_2 = abs(R-R2)/abs(R+R2)
     figure(6)
     plt.plot(qz1, diff_2)
     plt.suptitle("Difference in Spectra: " + str(p2))
     plt.xlabel("Thickness (Angstrom)")
-    plt.ylabel("$log_{10}(R_2)-log_{10}(R_1)$e")
+    plt.ylabel("Percent Difference")
 
 
 
@@ -1413,7 +1414,7 @@ if __name__ == "__main__":
     plt.figure(55)
     plt.plot(q,I,'k')
     plt.plot(qz, R, 'r--')
-    plt.suptitle('Zak Formalism: Left Circular 642.2 eV (rho=0.5) ')
+    plt.suptitle('Zak Formalism: Asymmetry 642.2 eV (rho=0.5) ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX','Lucas'])
@@ -1421,9 +1422,9 @@ if __name__ == "__main__":
     diff_3 = abs(I-R)/abs(I+R)
     plt.figure(56)
     plt.plot(q, diff_3, 'k')
-    plt.suptitle('ReMagX vs. Lucas Difference: precision = ' + str(p1))
+    plt.suptitle('Percent Difference: precision = ' + str(0))
     plt.xlabel('qz')
-    plt.ylabel('$log_{10}(R_2)-log_{10}(R_1)$')
+    plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
 
