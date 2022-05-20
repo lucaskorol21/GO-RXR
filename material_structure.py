@@ -185,7 +185,7 @@ class element:
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
         self.gamma = 90  #
         self.phi = 90  #
-        self.mag_density = None  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
+        self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = None
         self.position = None
@@ -663,9 +663,9 @@ class slab:
                         self.structure[lay][key].phi = phi
                         self.mag_elements[key] = identifier
 
-        else:
+        else:  # deals with non-polymorph magnetization
             if identifier not in list(layer.keys()):
-                raise NameError('Variable identifier ' +str(identifier)+' does not match any elements in selected layer.')
+                raise NameError('Variable identifier ' +str(identifier)+' does not match any polymorphs in selected layer.')
             # Case where magnetization does not belong to polymorphs
             self.structure[lay][identifier].mag_scattering_factor = [sf]
             self.structure[lay][identifier].mag_density = np.array([density])
@@ -726,7 +726,6 @@ class slab:
         struct_keys = list(density_struct.keys()) # retrieves structure keys
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
-
 
         # Initializing thickness array
         transition = [0]  # array that contains thickness that slab transition occurs
@@ -812,6 +811,9 @@ class slab:
                 not_found = True
                 while not_found or layer<=n-1:
                     if ele in list(self.structure[layer].keys()):
+                        if len(list(self.structure[layer][ele].polymorph)) == 0:
+                            raise SyntaxError('Polymorph not defined for ' + str(ele) + ' in layer ' + str(layer))
+
                         pn = len(list(self.structure[layer][ele].polymorph))  # number of polymorphs for element
                         density_poly[ele] = {k: np.zeros(len(thickness)) for k in list(self.structure[layer][ele].polymorph)}
                         not_found = False
@@ -834,7 +836,8 @@ class slab:
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
                         current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density*self.structure[layer][ele].poly_ratio / self.structure[layer][ele].molar_mass  # current density
-                        if layer == n - 1:  # Last layer
+
+                        if layer == n - 1:  # On last layer
                             next_density = np.zeros(pn)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
                             next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density* self.structure[layer+1][ele].poly_ratio/ self.structure[layer + 1][ele].molar_mass
@@ -898,6 +901,8 @@ class slab:
                 while not_found or layer <= n - 1:
                     if ele in list(self.structure[layer].keys()):
                         density_mag[ele] = {k: np.zeros(len(thickness)) for k in list(self.mag_elements[ele])}
+                        if len(self.structure[layer][ele].mag_density) == 0:
+                            raise SyntaxError('Magnetization not defined for ' + str(ele) + ' in layer ' + str(layer))
                         pm = len(self.structure[layer][ele].mag_density)
                         not_found = False
                     layer = layer + 1
@@ -1428,6 +1433,7 @@ if __name__ == "__main__":
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
+
 
     
 
