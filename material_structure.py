@@ -1233,6 +1233,7 @@ if __name__ == "__main__":
     # Impurity takes the form 'CCC'
     # The exact implementation of this has not quite been determined yet
     #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
+    hi
     """
 
 
