@@ -103,7 +103,7 @@ def slice_size(t, d, idx_a, idx_b, precision, n ):
 
 def material_slicing(thickness, epsilon, epsilon_mag, precision):
     idx_a = 0
-    idx_b = 2
+    idx_b = 1
     n = len(epsilon)
     my_slabs = list()
     while (idx_b < n):
@@ -117,7 +117,7 @@ def material_slicing(thickness, epsilon, epsilon_mag, precision):
 
         my_slabs.append(idx_b)  # append slice value to list
         idx_a = idx_b  # step to next slab
-        idx_b = idx_b + 2
+        idx_b = idx_b + 1
 
     return my_slabs
 
@@ -1071,7 +1071,7 @@ class slab:
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
         layer = 0
-        gamma = 90
+        gamma = 90  # pre-initialize magnetization direction
         phi = 90
 
         for m_i in my_slabs:
@@ -1347,9 +1347,9 @@ if __name__ == "__main__":
     #R1 = np.log10(R1temp['LC'])
     #R2 = np.log10(R2temp['LC'])
 
-    R = Rtemp['A']
-    R1 = R1temp['A']
-    R2 = R2temp['A']
+    R = Rtemp['AC']
+    R1 = R1temp['AC']
+    R2 = R2temp['AC']
 
 
     plt.figure(4)
