@@ -403,6 +403,8 @@ class slab:
         :param density: Density of the perovskite material (g/cm^3). No input indicates user wants to use density found in database
         :param roughness: Rougness at the interface
         :param link: Determines if roughness between two of the same sites are linked
+        :param gamma: Gamma value for magnetization of entire slab
+        :param theta: Theta value for magnetization of entire slab
         """
         # Retrieve the element info
         elements, num_elements = find_stoichiometry(formula)
@@ -487,7 +489,6 @@ class slab:
 
             if density == None:
                 density = perovskite_density(formula)
-
 
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
@@ -636,9 +637,73 @@ class slab:
             if len(set([type(x) for x in sf])) > 1:
                 raise TypeError('All list elements must be strings')
 
+        if type(gamma) == list and type(phi)==list:
+            if len(gamma) != len(phi):
+                raise TypeError('Gamma and Phi must be of same type')
+            fg = gamma[0]
+            fp = phi[0]
+            for g in gamma:
+                if g != fg:
+                    raise SyntaxError('Current implementation required all elements to have same magnetization direction')
+            for p in phi:
+                if p != fp:
+                    raise SyntaxError('Current implementation required all elements to have same magnetization direction')
+
+        if type(phi) != list and type(gamma) == list:
+            raise TypeError('Gamma and Phi must be of same type')
+
+        if type(phi) == list and type(gamma) != list:
+            raise TypeError('Gamma and Phi must be of same type')
+
+
 
         # ------------------------------------------------------------------------------------------------------------ #
         layer = self.structure[lay]
+        poly_start = True
+        if type(identifier) == list:
+            for key in list(layer.keys()):
+                for idx in range(len(identifier)):
+                    if len(layer[key].polymorph) != 0:  # polymorph case
+                        if identifier[idx] in layer[key].polymorph:  # checks if identifier in selected polymorph
+                            # pre-initializing for polymorph case
+                            poly_idx = layer[key].polymorph.index(identifier[idx])  # determine index of poly
+
+                            # initialization
+                            if poly_start:  # first polymorph appearance
+                                self.structure[lay][key].mag_scattering_factor = [0 for i in range(len(layer[key].polymorph))]
+                                self.structure[lay][key].mag_density = np.zeros(len(layer[key].polymorph))
+                                self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
+                                poly_start = False
+                                # gamma and phi entered as multiple arrays
+                                if type(gamma) == list and type(phi) == list:
+                                    self.structure[lay][key].gamma = np.zeros(len(layer[key].polymorph))
+                                    self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
+                            self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
+                            self.structure[lay][key].mag_density[poly_idx] = density[idx]
+                            self.mag_elements[key][poly_idx] = identifier[idx]
+                            if type(gamma) == list and type(phi) == list:
+                                self.structure[lay][key].gamma = gamma[idx]
+                                self.structure[lay][key].phi = phi[idx]
+                            else:
+                                self.structure[lay][key].gamma = gamma
+                                self.structure[lay][key].phi = phi
+                    elif key == identifier[idx]:
+                        self.structure[lay][identifier[idx]].mag_scattering_factor = [sf[idx]]
+                        self.structure[lay][identifier[idx]].mag_density = np.array([density[idx]])
+                        self.mag_elements[key] = [key]
+                        # case where we want multiple different magnetization angles
+                        # this implementation is for futur versions of code
+                        if type(gamma) == list and type(phi) == list:
+                            self.structure[lay][key].gamma = gamma[idx]
+                            self.structure[lay][key].phi = phi[idx]
+                        else:
+                            self.structure[lay][key].gamma = gamma
+                            self.structure[lay][key].phi = phi
+
+
+
+
+        """
         if type(identifier) == list:
 
             # Loop through all elements in selected layer
@@ -673,8 +738,8 @@ class slab:
             self.structure[lay][identifier].phi = phi
             self.mag_elements[identifier] = [identifier]
 
-
-
+        print(self.mag_elements)
+        """
     def error_function(self, t, rough, offset, upward):
         """
         Purpose: Computes the roughness using the error function
@@ -1085,7 +1150,7 @@ class slab:
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
             # Determines the magnetization direction of the first layer
-            if layer ==0:
+            if layer == 0:
                 if self.layer_magnetized[0]:
                     for ele in self.structure[layer].keys():
                         if self.structure[0][ele].mag_scattering_factor != None:
@@ -1096,14 +1161,15 @@ class slab:
             # Determines the magnetization direction of the other layers
             if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
                 layer = layer + 1
-                if self.layer_magnetized[0]:
+                if self.layer_magnetized[layer]:
                     for ele in self.structure[layer].keys():
-                        if self.structure[0][ele].mag_scattering_factor != None:
-                            gamma = self.structure[0][ele].gamma
-                            phi = self.structure[0][ele].phi
+                        if self.structure[layer][ele].mag_scattering_factor != None:
+                            gamma = self.structure[layer][ele].gamma
+                            phi = self.structure[layer][ele].phi
 
             # sets the magnetization direction based on the input angles
             if self.layer_magnetized[layer]:
+
                 if gamma == 90 and phi == 90:
                     A[idx].setmag('y')
                 elif gamma == 0 and phi == 90:
@@ -1433,9 +1499,6 @@ if __name__ == "__main__":
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
-
-
-    
 
 
 
