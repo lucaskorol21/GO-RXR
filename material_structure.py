@@ -11,7 +11,7 @@ from material_model import *
 import Pythonreflectivity as pr
 from tabulate import tabulate
 from scipy import interpolate
-from scipy.signal import argrelextrema
+
 
 
 
@@ -43,7 +43,7 @@ def total_variation(func):
 
 
 
-def slice_diff(d, eps, idx_a, idx_b, precision, n ):
+def slice_diff(thickness, eps, idx_a, idx_b, precision, n ):
     """
     Purpose: Determines the steps size to take for the layer segmentation
     :param d: Total thickness
@@ -59,67 +59,44 @@ def slice_diff(d, eps, idx_a, idx_b, precision, n ):
     f2 = eps[idx_b]  # dielectric constant value of next step
     delta = abs(f2-f1)  # difference between dielectric constant values
 
+
     # Determines if layer segmentation is too large
     while(delta<precision and not(idx_b>=n-1)):
         idx_b = idx_b + 1  # increases step size until too large of layer segmentation take
         f2 = eps[idx_b]  # retrieves dielectric constant
         delta = abs(f2-f1)  # computes difference
 
+
     return idx_b
 
 
+def slice_diff_new(tck_eps, d_current,s_min, d_next, precision):
+    """
+    Purpose: Determines the steps size to take for the layer segmentation
+    :param d: Total thickness
+    :param eps: dielectric constant array
+    :param idx_a: current index
+    :param idx_b: next index
+    :param precision: precision value
+    :param n: number of elements in dielectric constant array
+    :return:
+    """
+    delta_d = s_min*0.1
+    f1 = interpolate.splev(d_current, tck_eps)  # current dielectric constant value
+    f2 = interpolate.splev(d_next,tck_eps)# dielectric constant value of next step
+    delta = abs(f2 - f1)  # difference between dielectric constant values
 
-def slice_size(t, d, idx_a, idx_b, precision, n ):
-
-    mid = int((idx_a + idx_b)/2)
-
-    dt = t[idx_b] - t[idx_a]
-    left = d[mid]*dt/2
-    right = d[idx_b]*dt/2
-    whole = d[idx_b]*dt
-
-    delta = (left+right-whole)/dt
-
-
-    while(abs(delta)<precision and not(idx_b >= n-1)):
-        idx_b = idx_b + 2
-        mid = int((idx_a + idx_b) / 2)
-
-        dt = t[idx_b] - t[idx_a]
-        left = d[mid] * dt / 2
-        right = d[idx_b] * dt / 2
-        whole = d[idx_b] * dt
-
-        delta = (left+right-whole)/dt
-
-
-    if abs(idx_a-idx_b) == 2:
-        return idx_b
-    elif idx_b >=n-1:
-        return n-1
-    else:
-        return idx_b-2
+    # Determines if layer segmentation is too large
+    while (delta < precision):
+        d_next = d_next + delta_d
+        f2 = interpolate.splev(d_next, tck_eps)  # retrieves dielectric constant
+        delta = abs(f2 - f1)  # computes difference
+        if delta < precision and abs(d_next-d_current)<s_min:
+            d_next = d_current + s_min
 
 
-def material_slicing(thickness, epsilon, epsilon_mag, precision):
-    idx_a = 0
-    idx_b = 1
-    n = len(epsilon)
-    my_slabs = list()
-    while (idx_b < n):
+    return d_next
 
-        idx_s_r = slice_size(thickness, real(epsilon), idx_a, idx_b, precision, n)  # structural real component
-        idx_s_i = slice_size(thickness, imag(epsilon), idx_a, idx_b, precision, n)  # structural imaginary component
-        idx_m_r = slice_size(thickness, real(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic real component
-        idx_m_i = slice_size(thickness, imag(epsilon_mag), idx_a, idx_b, precision, n)  # magnetic imaginary component
-
-        idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
-
-        my_slabs.append(idx_b)  # append slice value to list
-        idx_a = idx_b  # step to next slab
-        idx_b = idx_b + 1
-
-    return my_slabs
 
 def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
     """
@@ -155,16 +132,75 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
 
         # Computes the precision values based on the average variance over the interval
         idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, p_1, n)  # structural real component
-        idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, p_2, n)  # structural imaginary component
+        #idx_s_i = slice_diff(thickness, imag(epsilon), idx_a, idx_b, p_2, n)  # structural imaginary component
         idx_m_r = slice_diff(thickness, real(epsilon_mag), idx_a, idx_b, p_3, n)  # magnetic real component
-        idx_m_i = slice_diff(thickness, imag(epsilon_mag), idx_a, idx_b, p_4, n)  # magnetic imaginary component
+        #idx_m_i = slice_diff(thickness, imag(epsilon_mag), idx_a, idx_b, p_4, n)  # magnetic imaginary component
 
         #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
-        idx_b = min(idx_s_r,  idx_s_i)  # use the smallest slice value
+        idx_b = min(idx_s_r,  idx_m_r)  # use the smallest slice value
 
         my_slabs.append(idx_b)  # append slice value to list
         idx_a = idx_b  # step to next slab
         idx_b = idx_b + 1
+
+    return my_slabs
+
+def layer_segmentation_new(thickness, epsilon, epsilon_mag, precision):
+    """
+    Purpose: Performs the layer segmentation over entire interval based on total variation
+    :param thickness: Thickness array of sample (angstrom)
+    :param epsilon: Structural dielectric constant array
+    :param epsilon_mag: Magnetic dielectric constant array
+    :param precision: Precision value
+    :return: Indices for slicing
+    """
+    tck_epsilon = interpolate.splrep(thickness, real(epsilon))  # interpolation for adaptive layer segmentation
+    tck_epsilon_mag = interpolate.splrep(thickness, real(epsilon))  # interpolation for adaptive layer segmentation
+    tck_epsilon_i = interpolate.splrep(thickness, imag(epsilon))  # interpolation for adaptive layer segmentation
+    tck_epsilon_mag_i = interpolate.splrep(thickness, imag(epsilon))  # interpolation for adaptive layer segmentation
+
+    d_last = thickness[-1]
+
+    my_slabs = list()  # list that keeps tracks of layer segmentation indices
+    my_slabs.append(thickness[-1])
+
+    s_min = 0.1
+    delta_d = s_min*0.1  # minimum step size
+    d_current = thickness[0]
+    d_next = d_current + delta_d
+    # computes total variation for real and imaginary of structural and magnetic dielectric constants
+
+    max_epsilon = max(abs(np.diff(real(epsilon))))
+    max_epsilon_mag = max(abs(np.diff(real(epsilon_mag))))
+
+
+    precision_epsilon = max_epsilon*precision
+    precision_epsilon_mag = max_epsilon_mag*precision
+
+    print(delta_d)
+    while (d_next <d_last):
+
+
+        # Computes the precision values based on the average variance over the interval
+        d_next_epsilon = slice_diff_new(tck_epsilon,d_current, s_min, d_next, precision_epsilon)  # structural real component
+        d_next_epsilon_mag = slice_diff_new(tck_epsilon_mag, d_current, s_min, d_next, precision_epsilon_mag)  # magnetic real component
+
+
+        #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
+        d_next = min(d_next_epsilon,  d_next_epsilon_mag)  # use the smallest slice value
+
+        my_slabs.append(d_next)
+
+
+
+        d_current = d_next
+        d_next = d_next + delta_d
+        if d_next > d_last:
+            my_slabs.append(d_next)
+
+
+
+
 
     return my_slabs
 
@@ -1202,8 +1238,8 @@ class slab:
 
 
         # Used to demonstrate how sample is being segmented
-        plot_t = np.insert(thickness[my_slabs], 0, thickness[0], axis = 0)
-        plot_e = np.insert(real(epsilon[my_slabs]), 0, real(epsilon[0]), axis = 0)
+        plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
+        plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
 
 
         if len(Rtemp) == 2:
