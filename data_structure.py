@@ -2,6 +2,8 @@ from SpecFileProcessing import *
 from FGT_RXR_Processing import *
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
+from material_structure import *
+from material_model import *
 
 def WriteLucas(fname,AScans,AInfo,EScans,EInfo,header):
     file = open(fname, "w")
@@ -169,9 +171,8 @@ def ReadLucasFile(fname):
                 y_axis = list()
                 scan_number = None
                 scanType = None
-                angle = None
+                angle=None
                 energy = None
-                polarization = None
                 numberPoints = None
                 Sinfo.append(createNewDict())
                 NewScan = False
@@ -206,7 +207,8 @@ def ReadLucasFile(fname):
                 data = float(data)
                 Sinfo[idx]['energy'] = data
             if info == 'polarization':
-                Sinfo[idx]['polarization'] = polarization
+
+                Sinfo[idx]['polarization'] = data
             if info == 'datasetpoints':
                 Sinfo[idx]['numberPoints'] = polarization
             if info == 'dataset_qz':
@@ -221,9 +223,11 @@ def ReadLucasFile(fname):
             if info == 'dataset_eng':
                 data = float(data)
                 y_axis.append(data)
+    if len(Sscan) != len(Sinfo):
+        Sinfo.pop()
     return Sscan, Sinfo
 
-def selectScan(Sinfo, Sscan):
+def selectScan(Sinfo, Sscan, sample):
 
     header = ['#', 'Scan Type', 'Energy', 'Angle', 'Polarization']
     tab = PrettyTable(header)
@@ -231,7 +235,36 @@ def selectScan(Sinfo, Sscan):
         data = [scan['dataNumber'], scan['scanType'], scan['energy'], scan['angle'], scan['polarization']]
         tab.add_row(data)
 
+    print(tab)
     val = input('Select scan # you would like to you')
+    val = int(val)
+    info = Sinfo[val-1]
+    data = Sscan[val-1]
+
+    E = info['energy']
+    qz = np.array(data[0])
+    pol = info['polarization']
+
+
+    Rdata = data[1]
+
+    qz, R, t, e = sample.reflectivity(E,qz)
+    if pol == 'S' or pol == 'S' or pol == 'S' or pol == 'S':
+        Rtest = np.log10(R[pol])
+        Rdata = np.log10(Rdata)
+    else:
+        Rtest = R[pol]
+
+
+
+
+
+
+    plt.figure()
+    plt.plot(qz, Rdata)
+    plt.plot(qz, Rtest)
+    plt.plot()
+    plt.show()
 
 
 # The purpose of this set of python functions is to create the data structure that will be in my python
@@ -241,6 +274,7 @@ def selectScan(Sinfo, Sscan):
 # Personally, I think that HDF5 is the best option
 
 if __name__ == "__main__":
+    """
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
 
@@ -252,7 +286,7 @@ if __name__ == "__main__":
 
     thicknesses = [[0, 6, 6, 6, 25, 25],
                    [0, 3, 3, 3, 25, 25]]
-
+    
     for sam in range(len(samples)):
         EScan, AScan, ECal, Geo, Corr = GetSampleInfo(datadir + fnameCorr, datadir + samples[sam])
         AsData, AsInfo = ProcessRXR(datadir + samples[sam], AScan, ECal, Geo, Corr, "A")
@@ -263,8 +297,17 @@ if __name__ == "__main__":
         WriteLucas(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo, header)
         print()
     print('########################### DONE!!!! #######################################')
+    """
+    sample =slab(2)
+
+    sample.addlayer(0,'SrTiO3',50, density = 5.12,roughness=2)
+
+    sample.addlayer(1,'LaMnO3', 40, density= 6.5, roughness=2)
+    sample.polymorphous(1,'Mn',['Mn2+','Mn3+'],[1,0], sf=['Mn','Fe'])
+    sample.magnetization(1,['Mn2+','Mn3+'],[1,0],['Co', 'Ni'])
+
     fname = "FGT-1L.all"
     Sscan, Sinfo = ReadLucasFile(fname)
 
-    selectScan(Sinfo, Sscan)
+    selectScan(Sinfo, Sscan, sample)
 

@@ -413,38 +413,37 @@ def GetSampleInfo(fnameCorr,fnameSample):
   return np.array(EScansList),np.array(AScansList),np.array(ECalList),np.array(GeometryList),CorrectionInfo
     
   
+if __name__ == "__main__":
   
   
-  
-fnameCorr = "FGT-2L"
-samples = ["FGT-2L", "FGT-1L" ]
+    fnameCorr = "FGT-2L"
+    samples = ["FGT-2L", "FGT-1L" ]
 
-names = [ ["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"], 
-          ["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"] ]
+    names = [ ["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"],
+              ["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"] ]
 
-densities = [ [5.323, 7.3, 7.3, 7.3, 5.323, 5.323],
-              [5.323, 7.3, 7.3, 7.3, 5.323, 5.323] ]
+    densities = [ [5.323, 7.3, 7.3, 7.3, 5.323, 5.323],
+                  [5.323, 7.3, 7.3, 7.3, 5.323, 5.323] ]
 
-thicknesses = [ [0,  6,  6,  6, 25, 25],
-                [0,  3,  3,  3, 25, 25] ]
+    thicknesses = [ [0,  6,  6,  6, 25, 25],
+                    [0,  3,  3,  3, 25, 25] ]
                  
-for sam in range(len(samples)):  
-  EScan,AScan,ECal,Geo,Corr = GetSampleInfo(datadir + fnameCorr, datadir + samples[sam])
-  AsData,AsInfo = ProcessRXR(datadir + samples[sam], AScan,ECal,Geo,Corr,"A")
-  EsData,EsInfo = ProcessRXR(datadir + samples[sam], EScan,ECal,Geo,Corr,"E")
+    for sam in range(len(samples)):
+        EScan,AScan,ECal,Geo,Corr = GetSampleInfo(datadir + fnameCorr, datadir + samples[sam])
+        AsData,AsInfo = ProcessRXR(datadir + samples[sam], AScan,ECal,Geo,Corr,"A")
+        EsData,EsInfo = ProcessRXR(datadir + samples[sam], EScan,ECal,Geo,Corr,"E")
   
-  remagxHeader = GetReMagXHeader(names[sam],densities[sam],thicknesses[sam])
+        remagxHeader = GetReMagXHeader(names[sam],densities[sam],thicknesses[sam])
   
- # print(remagxHeader)
- # exit()
-  
-  WriteReMagX(samples[sam] + ".all",AsData,AsInfo,EsData,EsInfo,remagxHeader)
+    # print(remagxHeader)
+    # exit()
+    WriteReMagX(samples[sam] + ".all",AsData,AsInfo,EsData,EsInfo,remagxHeader)
 
 
 
 
-#example of just plotting some data
-#sInfo, sData = ReadSpecFile("Fe3O4-4ML")
-#plscans = [21, 22]
-#PlotSpecData(sData,plscans,"MonoEngy","MCP")
+    #example of just plotting some data
+    #sInfo, sData = ReadSpecFile("Fe3O4-4ML")
+    #plscans = [21, 22]
+    #PlotSpecData(sData,plscans,"MonoEngy","MCP")
 

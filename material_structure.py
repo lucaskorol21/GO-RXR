@@ -1146,6 +1146,7 @@ class slab:
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
 
+        thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
 
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
@@ -1157,7 +1158,6 @@ class slab:
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
 
-        thickness, density, density_magnetic = self.density_profile(step = s_min)  # Computes the density profile
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component

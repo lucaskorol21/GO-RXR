@@ -124,7 +124,6 @@ def index_of_refraction(rho, sf, E):
              beta - absorptive component of the refractive index
     """
     mag = False  # statement for retrieval of non=magnetic form factors
-
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     #h = 4.1357e-15
