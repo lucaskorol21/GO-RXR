@@ -236,10 +236,11 @@ def selectScan(Sinfo, Sscan, sample):
         tab.add_row(data)
 
     print(tab)
-    val = input('Select scan # you would like to you')
+    val = input('Select scan # you would like to use: ')
     val = int(val)
     info = Sinfo[val-1]
     data = Sscan[val-1]
+    scan_type = info['scanType']
 
     E = info['energy']
     qz = np.array(data[0])
@@ -248,23 +249,28 @@ def selectScan(Sinfo, Sscan, sample):
 
     Rdata = data[1]
 
-    qz, R, t, e = sample.reflectivity(E,qz)
-    if pol == 'S' or pol == 'S' or pol == 'S' or pol == 'S':
-        Rtest = np.log10(R[pol])
-        Rdata = np.log10(Rdata)
-    else:
-        Rtest = R[pol]
+    if scan_type == 'Reflectivity':
+        qz, R, t, e = sample.reflectivity(E,qz)
+        if pol == 'S' or pol == 'S' or pol == 'S' or pol == 'S':
+            Rtest = np.log10(R[pol])
+            Rdata = np.log10(Rdata)
+        else:
+            Rtest = R[pol]
+
+        plt.figure()
+        plt.plot(qz, Rdata)
+        plt.plot(qz, Rtest)
+        plt.plot()
+        plt.show()
+    elif scan_type == 'Energy':
+        print('No current implementation of energy scans')
 
 
 
 
 
 
-    plt.figure()
-    plt.plot(qz, Rdata)
-    plt.plot(qz, Rtest)
-    plt.plot()
-    plt.show()
+
 
 
 # The purpose of this set of python functions is to create the data structure that will be in my python
