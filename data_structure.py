@@ -424,6 +424,8 @@ def sampleFormat(fname, sample):
 
         num_lay = num_lay + 1
 
+
+
 if __name__ == "__main__":
     """
     fnameCorr = "FGT-2L"
@@ -466,7 +468,7 @@ if __name__ == "__main__":
     #Sscan, Sinfo = ReadLucasFile(fname)
 
     #selectScan(Sinfo, Sscan, sample)
-    sampleFormat('testascii',sample)
+    sampleFormat('testascii.all',sample)
 
 
 
