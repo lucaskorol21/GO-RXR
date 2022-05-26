@@ -167,6 +167,7 @@ def ReadLucasFile(fname):
     for line in file:
         if line == "\n":
             if NewScan:
+                Sscan.append([x_axis, y_axis])
                 x_axis = list()
                 y_axis = list()
                 scan_number = None
@@ -176,7 +177,6 @@ def ReadLucasFile(fname):
                 numberPoints = None
                 Sinfo.append(createNewDict())
                 NewScan = False
-                Sscan.append([x_axis, y_axis])
                 idx = idx + 1
         else:
             NewScan = True
@@ -202,27 +202,41 @@ def ReadLucasFile(fname):
                     angle = float(angle)
                     Sinfo[idx]['angle'] = angle
 
+            if scanType == 'Energy':
+                if info == 'datasetenergy':
+                    data = float(data)
+                    Sinfo[idx]['energy'] = data
+                if info == 'polarization':
+                    Sinfo[idx]['polarization'] = data
+                if info == 'datasetpoints':
+                    Sinfo[idx]['numberPoints'] = polarization
+                if info == 'dataset_R0':
+                    data = float(data)
+                    y_axis.append(data)
+                if info == 'dataset_A':
+                    data = float(data)
+                    y_axis.append(data)
+                if info == 'dataset_eng':
+                    data = float(data)
+                    x_axis.append(data)
+            elif scanType == 'Reflectivity':
+                if info == 'datasetenergy':
+                    data = float(data)
+                    Sinfo[idx]['energy'] = data
+                if info == 'polarization':
+                    Sinfo[idx]['polarization'] = data
+                if info == 'datasetpoints':
+                    Sinfo[idx]['numberPoints'] = polarization
+                if info == 'dataset_qz':
+                    data = float(data)
+                    x_axis.append(data)
+                if info == 'dataset_R0':
+                    data = float(data)
+                    y_axis.append(data)
+                if info == 'dataset_A':
+                    data = float(data)
+                    y_axis.append(data)
 
-            if info == 'datasetenergy':
-                data = float(data)
-                Sinfo[idx]['energy'] = data
-            if info == 'polarization':
-
-                Sinfo[idx]['polarization'] = data
-            if info == 'datasetpoints':
-                Sinfo[idx]['numberPoints'] = polarization
-            if info == 'dataset_qz':
-                data = float(data)
-                x_axis.append(data)
-            if info == 'dataset_R0':
-                data = float(data)
-                y_axis.append(data)
-            if info == 'dataset_A':
-                data = float(data)
-                y_axis.append(data)
-            if info == 'dataset_eng':
-                data = float(data)
-                y_axis.append(data)
     if len(Sscan) != len(Sinfo):
         Sinfo.pop()
     return Sscan, Sinfo
@@ -238,32 +252,58 @@ def selectScan(Sinfo, Sscan, sample):
     print(tab)
     val = input('Select scan # you would like to use: ')
     val = int(val)
+
     info = Sinfo[val-1]
     data = Sscan[val-1]
+
     scan_type = info['scanType']
 
-    E = info['energy']
-    qz = np.array(data[0])
     pol = info['polarization']
-
-
     Rdata = data[1]
-
     if scan_type == 'Reflectivity':
+        E = info['energy']
+        qz = np.array(data[0])
+
+
+
         qz, R, t, e = sample.reflectivity(E,qz)
-        if pol == 'S' or pol == 'S' or pol == 'S' or pol == 'S':
-            Rtest = np.log10(R[pol])
+
+        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+            is_all_zero = np.all((R[pol] == 0))
+            Rtest = R[pol]
             Rdata = np.log10(Rdata)
+            if not(is_all_zero):
+                Rtest = np.log10(R[pol])
+
         else:
             Rtest = R[pol]
 
         plt.figure()
         plt.plot(qz, Rdata)
         plt.plot(qz, Rtest)
-        plt.plot()
-        plt.show()
+        plt.legend(['Data','Simulation'])
+
     elif scan_type == 'Energy':
-        print('No current implementation of energy scans')
+        Theta = info['angle']
+        energy = np.array(data[0])
+        energy, R = sample.energy_scan(Theta, energy)
+
+        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+            is_all_zero = np.all((R[pol] == 0))
+            Rtest = R[pol]
+            Rdata = np.log10(Rdata)
+            if not (is_all_zero):
+                Rtest = np.log10(R[pol])
+        else:
+            Rtest = R[pol]
+
+        plt.figure()
+        plt.plot(energy,Rdata)
+        plt.plot(energy, Rtest)
+        plt.legend(['Data', 'Simulation'])
+
+    plt.show()
+
 
 
 
@@ -310,7 +350,7 @@ if __name__ == "__main__":
 
     sample.addlayer(1,'LaMnO3', 40, density= 6.5, roughness=2)
     sample.polymorphous(1,'Mn',['Mn2+','Mn3+'],[1,0], sf=['Mn','Fe'])
-    sample.magnetization(1,['Mn2+','Mn3+'],[1,0],['Co', 'Ni'])
+    sample.magnetization(1,['Mn2+','Mn3+'],[2,0],['Co', 'Ni'])
 
     fname = "FGT-1L.all"
     Sscan, Sinfo = ReadLucasFile(fname)
