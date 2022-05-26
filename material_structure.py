@@ -1229,7 +1229,6 @@ class slab:
             m_j = m_i
             idx = idx + 1
 
-        print(qz, E)
 
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 

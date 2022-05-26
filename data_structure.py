@@ -6,11 +6,21 @@ from material_structure import *
 from material_model import *
 
 def WriteLucas(fname,AScans,AInfo,EScans,EInfo,header):
+    """
+    Purpose: Write experimental data to .all file for program use
+    :param fname: Name of data file
+    :param AScans: Reflection scan experimental data
+    :param AInfo: Info about reflection data scans
+    :param EScans: Energy scan experimental data
+    :param EInfo: Energy scan info
+    :param header: Additional header
+    :return:
+    """
     file = open(fname, "w")
 
     startstr = """ # My header"""
 
-
+    # Current version does not use header
     if (header == ""):
         file.write(startstr)
     elif (header == 'None'):
@@ -123,12 +133,20 @@ def WriteLucas(fname,AScans,AInfo,EScans,EInfo,header):
     file.close()
 
 def getScanInfo(title):
+    """
+    Purpose: Retrieves important information in the scan title
+    :param title: title/label of the scan
+    :return:
+    """
     title = title.split('_')
 
     scanType = None
     angle = None
 
+
     scan_number = title[0]
+
+    # Determines the scan type
     if title[1] == 'A':
         scanType = 'Reflectivity'
     else:
@@ -136,7 +154,12 @@ def getScanInfo(title):
         angle = title[2].replace('Th','')
 
     return scan_number, scanType, angle
+
 def createNewDict():
+    """
+    Purpose: Initializes a dicitonary with the required keys and values
+    :return:
+    """
     my_dict = dict()
     my_dict['scanNumber'] = None
     my_dict['dataNumber'] = None
@@ -148,11 +171,18 @@ def createNewDict():
     return my_dict
 
 def ReadLucasFile(fname):
+    """
+    Purpose: Read in datafile and transform into a usable format for dta analysis
+    :param fname: The sample file name
+    :return:
+    """
     idx = 0  # index of scan
-    Sinfo = []
+    Sinfo = []  # will contain information of sample
     Sinfo.append(createNewDict())
     Sscan = []
     file = open(fname)
+
+    # initialization of parameters
     x_axis = list()
     y_axis = list()
     scan_number = 0
@@ -162,11 +192,12 @@ def ReadLucasFile(fname):
     polarization = 0
     numberPoints = 0
 
-    NewScan = True
+    NewScan = True  # determines if we have a new scan
     # Read in each line one at a time
     for line in file:
         if line == "\n":
             if NewScan:
+                # resets all parameters when new scan
                 Sscan.append([x_axis, y_axis])
                 x_axis = list()
                 y_axis = list()
@@ -189,11 +220,12 @@ def ReadLucasFile(fname):
             info = line[0]  # data identifier
             data = line[1]  # data value
 
+            # retrieves the datasetnumber
             if info == 'datasetnumber':
                 data = int(data)
                 Sinfo[idx]['dataNumber'] = data
 
-
+            # retrieves the data set title
             if info == 'datasettitle':
                 scan_number, scanType, angle = getScanInfo(data)
                 Sinfo[idx]['scanNumber'] = scan_number
@@ -202,6 +234,7 @@ def ReadLucasFile(fname):
                     angle = float(angle)
                     Sinfo[idx]['angle'] = angle
 
+            # sets parameters based on scan type
             if scanType == 'Energy':
                 if info == 'datasetenergy':
                     data = float(data)
@@ -237,87 +270,86 @@ def ReadLucasFile(fname):
                     data = float(data)
                     y_axis.append(data)
 
+    # sometimes the data file has a new line at the end of the file and creates too long of a list
     if len(Sscan) != len(Sinfo):
         Sinfo.pop()
     return Sscan, Sinfo
 
 def selectScan(Sinfo, Sscan, sample):
+    """
+    Purpose: Takes in the read in data and plots the data and the simulated data
+    :param Sinfo: Scan info
+    :param Sscan: Scan data
+    :param sample: Data sample for simulation
+    :return:
+    """
 
+    # Prints out the scans and their information
     header = ['#', 'Scan Type', 'Energy', 'Angle', 'Polarization']
     tab = PrettyTable(header)
     for scan in Sinfo:
         data = [scan['dataNumber'], scan['scanType'], scan['energy'], scan['angle'], scan['polarization']]
         tab.add_row(data)
-
     print(tab)
     val = input('Select scan # you would like to use: ')
     val = int(val)
+    while val != 0:
+        # Determines the scan to use based on #
 
-    info = Sinfo[val-1]
-    data = Sscan[val-1]
+        info = Sinfo[val-1]
+        data = Sscan[val-1]
 
-    scan_type = info['scanType']
-
-    pol = info['polarization']
-    Rdata = data[1]
-    if scan_type == 'Reflectivity':
-        E = info['energy']
-        qz = np.array(data[0])
+        scan_type = info['scanType']  # determine the scan type
+        pol = info['polarization']  # determines the polarization of the scan
+        Rdata = data[1]  # retrieves the reflectivity information
 
 
+        if scan_type == 'Reflectivity':
+            E = info['energy']  # retrieves the energy
+            qz = np.array(data[0])  # gets momentum transfer of data
 
-        qz, R, t, e = sample.reflectivity(E,qz)
+            qz, R, t, e = sample.reflectivity(E,qz)  # performs reflectivity simulation calculation
 
-        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-            is_all_zero = np.all((R[pol] == 0))
-            Rtest = R[pol]
-            Rdata = np.log10(Rdata)
-            if not(is_all_zero):
-                Rtest = np.log10(R[pol])
+            # Determines if the reflectivity of the data should be calculated
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                is_all_zero = np.all((R[pol] == 0))
+                Rtest = R[pol]
+                Rdata = np.log10(Rdata)
+                if not(is_all_zero):
+                    Rtest = np.log10(R[pol])
 
-        else:
-            Rtest = R[pol]
+            else:
+                Rtest = R[pol]
 
-        plt.figure()
-        plt.plot(qz, Rdata)
-        plt.plot(qz, Rtest)
-        plt.legend(['Data','Simulation'])
+            plt.figure()
+            plt.plot(qz, Rdata)
+            plt.plot(qz, Rtest)
+            plt.legend(['Data','Simulation'])
 
-    elif scan_type == 'Energy':
-        Theta = info['angle']
-        energy = np.array(data[0])
-        energy, R = sample.energy_scan(Theta, energy)
+        elif scan_type == 'Energy':
+            Theta = info['angle']  # angle of energy scan
+            energy = np.array(data[0])  # energy array
+            energy, R = sample.energy_scan(Theta, energy)  # simulated energy scan
 
-        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-            is_all_zero = np.all((R[pol] == 0))
-            Rtest = R[pol]
-            Rdata = np.log10(Rdata)
-            if not (is_all_zero):
-                Rtest = np.log10(R[pol])
-        else:
-            Rtest = R[pol]
+            # Again, determines if natural logarithm needs to be calculated
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                is_all_zero = np.all((R[pol] == 0))
+                Rtest = R[pol]
+                Rdata = np.log10(Rdata)
+                if not (is_all_zero):
+                    Rtest = np.log10(R[pol])
+            else:
+                Rtest = R[pol]
 
-        plt.figure()
-        plt.plot(energy,Rdata)
-        plt.plot(energy, Rtest)
-        plt.legend(['Data', 'Simulation'])
+            plt.figure()
+            plt.plot(energy,Rdata)
+            plt.plot(energy, Rtest)
+            plt.legend(['Data', 'Simulation'])
 
-    plt.show()
+        plt.show()
+        val = input('Select scan # you would like to use: ')
+        val = int(val)
 
-
-
-
-
-
-
-
-
-
-# The purpose of this set of python functions is to create the data structure that will be in my python
-# reflectivity software.
-
-# Initial conversations revealed that HDF5 or ASCII are good options
-# Personally, I think that HDF5 is the best option
 
 if __name__ == "__main__":
     """
