@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 from material_structure import *
 from material_model import *
+import h5py
 
 def WriteLucas(fname,AScans,AInfo,EScans,EInfo,header):
     """
@@ -376,6 +377,7 @@ if __name__ == "__main__":
         print()
     print('########################### DONE!!!! #######################################')
     """
+    """
     sample =slab(2)
 
     sample.addlayer(0,'SrTiO3',50, density = 5.12,roughness=2)
@@ -388,4 +390,8 @@ if __name__ == "__main__":
     Sscan, Sinfo = ReadLucasFile(fname)
 
     selectScan(Sinfo, Sscan, sample)
+
+    """
+    f = h5py.File("mytestfile.hdf5","w")
+    dset = f.create_dataset("mydtaset",(100,), dtype='i')
 
