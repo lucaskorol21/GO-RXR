@@ -7,7 +7,7 @@ from material_model import *
 import h5py
 
 
-def WriteData(fname,AScans,AInfo,EScans,EInfo,header):
+def WriteExperimentalData(fname,AScans,AInfo,EScans,EInfo):
     """
     Purpose: Write experimental data to .all file for program use
     :param fname: Name of data file
@@ -20,16 +20,8 @@ def WriteData(fname,AScans,AInfo,EScans,EInfo,header):
     """
     file = open(fname, "w")
 
-    startstr = """ # My header"""
+    file.write("# Experimental_Data \n\n")
 
-    # Current version does not use header
-    if (header == ""):
-        file.write(startstr)
-    elif (header == 'None'):
-        print('No header')
-    else:
-        file.write(header)
-    #file.write('#DATA')
     dsNum = 1
     for i in range(len(AScans)):
         file.write("datasetnumber = %d \n" % dsNum)
@@ -277,6 +269,89 @@ def ReadLucasFile(fname):
         Sinfo.pop()
     return Sscan, Sinfo
 
+def sampleFormat(fname, sample):
+    file = open(fname, "w")
+    file.write("# Structure \n\n")
+    num_lay = 0
+    density = 0
+    thickness = 0
+    roughness = 0
+    polymorph = 0
+    poly_ratio = 0
+    gamma = 0
+    phi = 0
+    mag_density = 0
+    scattering_factor = 0
+    position = 0
+    for layer in sample.structure:
+        my_layer = "# Layer " + str(num_lay) + "\n"
+        file.write(my_layer)
+        formula = ''
+
+        # retieves the chemical formula
+        for ele in layer.keys():
+
+            # retrieve the chemical formula
+            stoich = layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+
+        file.write("formula = %s \n" % formula)
+        file.write("\n")
+
+        for ele in layer.keys():
+            file.write("element = %s \n" % ele)
+            file.write("density = %f \n" % layer[ele].density)
+            file.write("thickness = %f \n" % layer[ele].thickness)
+            file.write("roughness = %f \n" % layer[ele].roughness)
+
+            poly_names = ''
+            poly_ratio = ''
+            sf = ''
+
+            scatfact = layer[ele].scattering_factor
+
+            if type(scatfact) == list:
+                for s in scatfact:
+                    sf =sf + s + " "
+            else:
+                sf = scatfact
+
+            file.write("scatteringfactor = %s \n" % sf)
+
+            for poly in layer[ele].polymorph:
+                poly_names = poly_names + poly + " "
+
+            if type(layer[ele].poly_ratio) != int:
+                for rat in layer[ele].poly_ratio:
+                    poly_ratio = poly_ratio + str(rat)+ " "
+
+
+            file.write("polymorph = %s \n" % poly_names)
+            file.write("polyratio = %s \n" % poly_ratio)
+
+
+            file.write("gamma = %f \n" % layer[ele].gamma)
+            file.write("phi = %f \n" % layer[ele].phi)
+
+            mag_density = ''
+            if len(layer[ele].mag_density) != 0:
+                for md in layer[ele].mag_density:
+                    mag_density = mag_density + str(md) + " "
+
+            file.write("magdensity = %s \n" % mag_density)
+
+            sfm = ''
+            if layer[ele].mag_scattering_factor != None:
+                for magscat in layer[ele].mag_scattering_factor:
+                    sfm = sfm + magscat + " "
+            file.write("magscatteringfactor = %s \n" % sfm)
+            file.write("\n")
+
+        num_lay = num_lay + 1
+
 def selectScan(Sinfo, Sscan, sample):
     """
     Purpose: Takes in the read in data and plots the data and the simulated data
@@ -341,88 +416,7 @@ def selectScan(Sinfo, Sscan, sample):
         val = input('Select scan # you would like to use: ')
         val = int(val)
 
-def sampleFormat(fname, sample):
-    file = open(fname, "w")
 
-    num_lay = 0
-    density = 0
-    thickness = 0
-    roughness = 0
-    polymorph = 0
-    poly_ratio = 0
-    gamma = 0
-    phi = 0
-    mag_density = 0
-    scattering_factor = 0
-    position = 0
-    for layer in sample.structure:
-        my_layer = "# Layer " + str(num_lay) + "\n"
-        file.write(my_layer)
-        formula = ''
-
-        # retieves the chemical formula
-        for ele in layer.keys():
-
-            # retrieve the chemical formula
-            stoich = layer[ele].stoichiometry
-            if stoich == 1:
-                formula = formula + ele
-            else:
-                formula = formula + ele + str(stoich)
-
-        file.write("formula = %s \n" % formula)
-        file.write("\n")
-
-        for ele in layer.keys():
-            file.write("element=%s \n" % ele)
-            file.write("density = %f \n" % layer[ele].density)
-            file.write("thickness = %f \n" % layer[ele].thickness)
-            file.write("roughness = %f \n" % layer[ele].roughness)
-
-            poly_names = ''
-            poly_ratio = ''
-            sf = ''
-
-            scatfact = layer[ele].scattering_factor
-
-            if type(scatfact) == list:
-                for s in scatfact:
-                    sf =sf + s + " "
-            else:
-                sf = scatfact
-
-            file.write("scatteringfactor = %s \n" % sf)
-
-            for poly in layer[ele].polymorph:
-                poly_names = poly_names + poly + " "
-
-            if type(layer[ele].poly_ratio) != int:
-                for rat in layer[ele].poly_ratio:
-                    poly_ratio = poly_ratio + str(rat)+ " "
-
-
-            file.write("polymorph = %s \n" % poly_names)
-            file.write("polyratio = %s \n" % poly_ratio)
-
-
-            file.write("gamma = %f \n" % layer[ele].gamma)
-            file.write("phi = %f \n" % layer[ele].phi)
-
-            mag_density = ''
-            if len(layer[ele].mag_density) != 0:
-                for md in layer[ele].mag_density:
-                    mag_density = mag_density + str(md) + " "
-
-            file.write("magdensity = %s \n" % mag_density)
-
-            sfm = ''
-            if layer[ele].mag_scattering_factor != None:
-                for magscat in layer[ele].mag_scattering_factor:
-                    sfm = sfm + magscat + " "
-            file.write("magscatteringfactor = %s \n" % sfm)
-            file.write("\n")
-
-        num_lay = num_lay + 1
 
 
 
@@ -450,7 +444,7 @@ if __name__ == "__main__":
 
         #remagxHeader = GetReMagXHeader(names[sam], densities[sam], thicknesses[sam])
         header = 'None'
-        WriteData(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo, header)
+        WriteExperimentalData(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo)
         print()
     print('########################### DONE!!!! #######################################')
 
@@ -470,5 +464,7 @@ if __name__ == "__main__":
     #selectScan(Sinfo, Sscan, sample)
     sampleFormat('testascii.all',sample)
 
+    file = open('testascii.all')
 
-
+    for line in file:
+        print(line.split())
