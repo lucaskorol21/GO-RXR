@@ -7,8 +7,116 @@ from material_model import *
 from time import time
 import h5py
 
+def WriteData(fname,AScans,AInfo,EScans,EInfo, sample):
 
-def WriteExperimentalData(fname,AScans,AInfo,EScans,EInfo):
+    file = open(fname, "w")
+    sampleFormat(file, sample)
+    WriteExperimentalData(file, AScans,AInfo,EScans,EInfo)
+
+def sampleFormat(file,sample):
+
+    file.write("# Structure \n")
+    n = len(sample.structure)
+    link = sample.link
+    file.write("numberlayers = %s \n\n" % str(n))
+
+    num_lay = 0
+    molarmass = 0
+    density = 0
+    thickness = 0
+    roughness = 0
+    polymorph = 0
+    poly_ratio = 0
+    gamma = 0
+    phi = 0
+    mag_density = 0
+    scattering_factor = 0
+    position = 0
+    for layer in sample.structure:
+
+        file.write("layer = %s \n" % str(num_lay))
+        formula = ''
+
+        # retieves the chemical formula
+        for ele in layer.keys():
+
+            # retrieve the chemical formula
+            stoich = layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+
+
+        file.write("formula = %s \n" % formula)
+
+        laymag = sample.layer_magnetized
+        layermagnetized = ''
+        for lm in laymag:
+            layermagnetized = layermagnetized + str(lm) + " "
+        file.write("layermagnetized = %s \n" % layermagnetized)
+
+        my_link = ''
+
+        for li in link[num_lay]:
+            my_link = my_link + str(li) + " "
+
+        file.write("link = %s \n\n" % my_link)
+
+        for ele in layer.keys():
+            file.write("element = %s \n" % ele)
+            file.write("molarmass = %f \n" % layer[ele].molar_mass)
+            file.write("density = %f \n" % layer[ele].density)
+            file.write("thickness = %f \n" % layer[ele].thickness)
+            file.write("roughness = %f \n" % layer[ele].roughness)
+
+            poly_names = ''
+            poly_ratio = ''
+            sf = ''
+
+            scatfact = layer[ele].scattering_factor
+
+            if type(scatfact) == list:
+                for s in scatfact:
+                    sf =sf + s + " "
+            else:
+                sf = scatfact
+
+            file.write("scatteringfactor = %s \n" % sf)
+
+            for poly in layer[ele].polymorph:
+                poly_names = poly_names + poly + " "
+
+            if type(layer[ele].poly_ratio) != int:
+                for rat in layer[ele].poly_ratio:
+                    poly_ratio = poly_ratio + str(rat)+ " "
+
+
+            file.write("polymorph = %s \n" % poly_names)
+            file.write("polyratio = %s \n" % poly_ratio)
+
+
+            file.write("gamma = %f \n" % layer[ele].gamma)
+            file.write("phi = %f \n" % layer[ele].phi)
+
+            mag_density = ''
+            if len(layer[ele].mag_density) != 0:
+                for md in layer[ele].mag_density:
+                    mag_density = mag_density + str(md) + " "
+
+            file.write("magdensity = %s \n" % mag_density)
+
+            sfm = ''
+            if layer[ele].mag_scattering_factor != None:
+                for magscat in layer[ele].mag_scattering_factor:
+                    sfm = sfm + magscat + " "
+            file.write("magscatteringfactor = %s \n" % sfm)
+            file.write("position = %s \n" % layer[ele].position)
+            file.write("\n")
+
+        num_lay = num_lay + 1
+
+def WriteExperimentalData(file, AScans,AInfo,EScans,EInfo):
     """
     Purpose: Write experimental data to .all file for program use
     :param fname: Name of data file
@@ -19,7 +127,7 @@ def WriteExperimentalData(fname,AScans,AInfo,EScans,EInfo):
     :param header: Additional header
     :return:
     """
-    file = open(fname, "w")
+
 
     file.write("# Experimental_Data \n\n")
 
@@ -165,6 +273,152 @@ def createNewDict():
     my_dict['numberPoints'] = None
     return my_dict
 
+
+def ReadData(fname):
+    file = open(fname)
+    structure = False
+    experimental_data = False
+    for line in file:
+        line = line.split()
+        if len(line) != 0:
+            if line[0] == '#':
+                if line[1] == 'Structure':
+                    Structure = True
+                    experimental_data = False
+                    layer = 0
+                    layermagnetized = []
+                    formula = ''
+                    my_link = []
+                    new_element = False
+                    element = ''
+                    thickness = 20
+                    roughness = 0
+                    scatteringfactor = []
+                    polymorph = []
+                    polyratio = []
+                    gamma = 90
+                    phi = 90
+                    magdensity = []
+                    magscatteringfactor = []
+                    position = 0
+
+                elif line[1] == 'Experimental_Data':
+                    Structure = False
+                    experimental_data = True
+            else:
+                if Structure:
+                    if '=' not in line:
+                        raise SyntaxError('Data file is improperly initialized.')
+                    line.remove('=')  # removes the equal sign
+
+                    # initializing the slab with correct number of layers
+                    if line[0] == 'numberlayers':
+                        sample = slab(int(line[1]))
+                    if line[0] == 'layer':
+                        layer = int(line[1])
+                    if line[0] == 'formula':
+                        formula = line[1]
+                    if line[0] == 'layermagnetized':
+                        line.pop(0)
+                        for laymag in line:
+                            if laymag == 'False':
+                                layermagnetized.append(False)
+                            elif laymag == 'True':
+                                layermagnetized.append(True)
+                    if line[0] == 'link':
+                        line.pop(0)
+                        for val in line:
+                            if val == 'True':
+                                my_link.append(True)
+                            elif val == 'False':
+                                my_link.append(False)
+                        thickness = 20
+                        sample.addlayer(layer,formula,thickness,link=my_link)
+                        sample.layer_magnetized = layermagnetized
+                        my_link = []
+                        layermagnetized = []
+
+
+                    if line[0] == 'element':
+                        element = line[1]
+                        new_element = True
+
+                    if new_element:
+                        if line[0] == 'molarmass':
+                            molarmass= float(line[1])
+                        elif line[0] == 'density':
+                            density = float(line[1])
+                        elif line[0] == 'thickness':
+                            thickness = float(line[1])
+                        elif line[0] == 'roughness':
+                            roughness = float(line[1])
+                        elif line[0] == 'scatteringfactor':
+                            line.pop(0)
+                            if len(line) == 1:
+                                scatteringfactor = line[0]
+                            else:
+                                scatteringfactor = line
+
+                        elif line[0] == 'polymorph':
+                            line.pop(0)
+                            if len(line) == 0:
+                                polymorph = []
+                            else:
+                                polymorph = line
+
+                        elif line[0] == 'polyratio':
+                            line.pop(0)
+                            if len(line) == 0:
+                                polyratio = 1
+                            else:
+                                for rat in line:
+                                    polyratio.append(float(rat))
+                        elif line[0] == 'gamma':
+                            gamma = line[1]
+                        elif line[0] == 'phi':
+                            phi = line[1]
+                        elif line[0] == 'magdensity':
+                            line.pop(0)
+                            if len(line) == 0:
+                                magdensity = []
+                            if len(line) == 1:
+                                magdensity = float(line[0])
+                            else:
+                                for mag in line:
+                                    magdensity.append(float(mag))
+
+                        elif line[0] == 'magscatteringfactor':
+                            line.pop(0)
+                            if len(line)==0:
+                                magscatteringfactor = None
+                            else:
+                                magscatteringfactor = line
+                        elif line[0] == 'position':
+                            position = int(line[1])
+
+                            # End of arguments to load in
+                            sample.structure[layer][element].name = element
+                            sample.structure[layer][element].molar_mass = molarmass
+                            sample.structure[layer][element].density = density
+                            sample.structure[layer][element].thickness = thickness
+                            sample.structure[layer][element].roughness = roughness
+                            sample.structure[layer][element].poly_ratio = polyratio
+                            sample.structure[layer][element].polymorph = polymorph
+                            sample.structure[layer][element].gamma = gamma
+                            sample.structure[layer][element].phi = phi
+                            sample.structure[layer][element].mag_density = magdensity
+                            sample.structure[layer][element].scattering_factor = scatteringfactor
+                            sample.structure[layer][element].mag_scattering_factor = magscatteringfactor
+                            sample.structure[layer][element].position = position
+                            polyratio = []
+                            new_element=False  # make sure we do not enter this if statement
+
+
+                elif experimental_data:
+                    a= 1
+    return sample
+
+
 def ReadLucasFile(fname):
     """
     Purpose: Read in datafile and transform into a usable format for dta analysis
@@ -270,88 +524,7 @@ def ReadLucasFile(fname):
         Sinfo.pop()
     return Sscan, Sinfo
 
-def sampleFormat(fname, sample):
-    file = open(fname, "w")
-    file.write("# Structure \n\n")
-    num_lay = 0
-    density = 0
-    thickness = 0
-    roughness = 0
-    polymorph = 0
-    poly_ratio = 0
-    gamma = 0
-    phi = 0
-    mag_density = 0
-    scattering_factor = 0
-    position = 0
-    for layer in sample.structure:
-        my_layer = "# Layer " + str(num_lay) + "\n"
-        file.write(my_layer)
-        formula = ''
 
-        # retieves the chemical formula
-        for ele in layer.keys():
-
-            # retrieve the chemical formula
-            stoich = layer[ele].stoichiometry
-            if stoich == 1:
-                formula = formula + ele
-            else:
-                formula = formula + ele + str(stoich)
-
-        file.write("formula = %s \n" % formula)
-        file.write("\n")
-
-        for ele in layer.keys():
-            file.write("element = %s \n" % ele)
-            file.write("density = %f \n" % layer[ele].density)
-            file.write("thickness = %f \n" % layer[ele].thickness)
-            file.write("roughness = %f \n" % layer[ele].roughness)
-
-            poly_names = ''
-            poly_ratio = ''
-            sf = ''
-
-            scatfact = layer[ele].scattering_factor
-
-            if type(scatfact) == list:
-                for s in scatfact:
-                    sf =sf + s + " "
-            else:
-                sf = scatfact
-
-            file.write("scatteringfactor = %s \n" % sf)
-
-            for poly in layer[ele].polymorph:
-                poly_names = poly_names + poly + " "
-
-            if type(layer[ele].poly_ratio) != int:
-                for rat in layer[ele].poly_ratio:
-                    poly_ratio = poly_ratio + str(rat)+ " "
-
-
-            file.write("polymorph = %s \n" % poly_names)
-            file.write("polyratio = %s \n" % poly_ratio)
-
-
-            file.write("gamma = %f \n" % layer[ele].gamma)
-            file.write("phi = %f \n" % layer[ele].phi)
-
-            mag_density = ''
-            if len(layer[ele].mag_density) != 0:
-                for md in layer[ele].mag_density:
-                    mag_density = mag_density + str(md) + " "
-
-            file.write("magdensity = %s \n" % mag_density)
-
-            sfm = ''
-            if layer[ele].mag_scattering_factor != None:
-                for magscat in layer[ele].mag_scattering_factor:
-                    sfm = sfm + magscat + " "
-            file.write("magscatteringfactor = %s \n" % sfm)
-            file.write("\n")
-
-        num_lay = num_lay + 1
 
 def selectScan(Sinfo, Sscan, sample):
     """
@@ -429,20 +602,25 @@ def selectScan(Sinfo, Sscan, sample):
 
 
 if __name__ == "__main__":
+    fname = "FGT-1L.all"
+
+
+    sample = slab(2)
+
+    sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
+
+    sample.addlayer(1, 'LaMnO3', 40, density=6.5, roughness=2)
+    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
+
     """
+
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
 
-    names = [["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"],
-             ["Ge", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Fe300Ge100Te200Co", "Ge5O", "Ge5O3C"]]
 
-    densities = [[5.323, 7.3, 7.3, 7.3, 5.323, 5.323],
-                 [5.323, 7.3, 7.3, 7.3, 5.323, 5.323]]
 
-    thicknesses = [[0, 6, 6, 6, 25, 25],
-                   [0, 3, 3, 3, 25, 25]]
-    """
-    """
+
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
     for sam in range(len(samples)):
@@ -451,26 +629,28 @@ if __name__ == "__main__":
         EsData, EsInfo = ProcessRXR(datadir + samples[sam], EScan, ECal, Geo, Corr, "E")
 
         #remagxHeader = GetReMagXHeader(names[sam], densities[sam], thicknesses[sam])
-        header = 'None'
-        WriteExperimentalData(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo)
+
+        WriteData(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo, sample)
         print()
     print('########################### DONE!!!! #######################################')
 
+
     """
-    sample =slab(2)
-
-    sample.addlayer(0,'SrTiO3',50, density = 5.12,roughness=2)
-
-    sample.addlayer(1,'LaMnO3', 40, density= 6.5, roughness=2)
-    sample.polymorphous(1,'Mn',['Mn2+','Mn3+'],[1,0], sf=['Mn','Fe'])
-    sample.magnetization(1,['Mn2+','Mn3+'],[0.5,0],['Co', 'Ni'])
 
 
-    fname = "FGT-1L.all"
-    Sscan, Sinfo = ReadLucasFile(fname)
+    sample1 = ReadData(fname)
+    sample1.density_profile()
+    sample.density_profile()
+    print(sample1.mag_elements)
+    print(sample.mag_elements)
 
-    selectScan(Sinfo, Sscan, sample)
-    sampleFormat('testascii.all',sample)
+    #sample.plot_density_profile(fig=1)
+    #sample1.plot_density_profile(fig=2)
+    #plt.show()
+    #Sscan, Sinfo = ReadLucasFile(fname)
 
-    file = open('testascii.all')
+    #selectScan(Sinfo, Sscan, sample)
+    #sampleFormat('testascii.all',sample)
+
+
 

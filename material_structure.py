@@ -741,43 +741,7 @@ class slab:
 
 
 
-        """
-        if type(identifier) == list:
 
-            # Loop through all elements in selected layer
-            for key in list(layer.keys()):
-                if set(layer[key].polymorph) == set(identifier): # Checks if elements in identifier and polymorph list the same
-                    if layer[key].polymorph == identifier:  # Checks if they are in the same order, if not switch order
-                        self.structure[lay][key].mag_scattering_factor = sf
-                        self.structure[lay][key].mag_density = np.array(density)
-                        self.structure[lay][key].gamma = gamma
-                        self.structure[lay][key].phi = phi
-                        self.mag_elements[key] = identifier
-                    else:
-                        temp_sf = ['X' for i in range(len(layer[key].polymorph))]
-                        temp_density = [0 for i in range(len(layer[key].polymorph))]
-                        for n in range(len(layer[key].polymorph)):
-                            idx = identifier.index(layer[key].polymorph[n])
-                            temp_sf[idx] = sf[n]
-                            temp_density[idx] = density[n]
-                        self.structure[lay][key].mag_scattering_factor = temp_sf
-                        self.structure[lay][key].mag_density = np.array(temp_density)
-                        self.structure[lay][key].gamma = gamma
-                        self.structure[lay][key].phi = phi
-                        self.mag_elements[key] = identifier
-
-        else:  # deals with non-polymorph magnetization
-            if identifier not in list(layer.keys()):
-                raise NameError('Variable identifier ' +str(identifier)+' does not match any polymorphs in selected layer.')
-            # Case where magnetization does not belong to polymorphs
-            self.structure[lay][identifier].mag_scattering_factor = [sf]
-            self.structure[lay][identifier].mag_density = np.array([density])
-            self.structure[lay][identifier].gamma = gamma
-            self.structure[lay][identifier].phi = phi
-            self.mag_elements[identifier] = [identifier]
-
-        print(self.mag_elements)
-        """
     def error_function(self, t, rough, offset, upward):
         """
         Purpose: Computes the roughness using the error function
