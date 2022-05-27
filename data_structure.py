@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 from material_structure import *
 from material_model import *
+from time import time
 import h5py
 
 
@@ -385,8 +386,11 @@ def selectScan(Sinfo, Sscan, sample):
             E = info['energy']  # retrieves the energy
             qz = np.array(data[0])  # gets momentum transfer of data
 
+            start = time()
             qz, R, t, e = sample.reflectivity(E,qz)  # performs reflectivity simulation calculation
+            end = time()
 
+            print(end-start)
             # Determines if the reflectivity of the data should be calculated
             plt.figure()
             plt.plot(qz, Rdata)
@@ -400,7 +404,10 @@ def selectScan(Sinfo, Sscan, sample):
         elif scan_type == 'Energy':
             Theta = info['angle']  # angle of energy scan
             energy = np.array(data[0])  # energy array
+            start = time()
             energy, R = sample.energy_scan(Theta, energy)  # simulated energy scan
+            #energy, R = sample.energy_scan_multi(Theta, energy)  # simulated energy scan
+
 
             plt.figure()
             plt.plot(energy, Rdata)
@@ -413,6 +420,7 @@ def selectScan(Sinfo, Sscan, sample):
 
 
         plt.show()
+
         val = input('Select scan # you would like to use: ')
         val = int(val)
 
@@ -458,13 +466,11 @@ if __name__ == "__main__":
     sample.magnetization(1,['Mn2+','Mn3+'],[0.5,0],['Co', 'Ni'])
 
 
-    #fname = "FGT-1L.all"
-    #Sscan, Sinfo = ReadLucasFile(fname)
+    fname = "FGT-1L.all"
+    Sscan, Sinfo = ReadLucasFile(fname)
 
-    #selectScan(Sinfo, Sscan, sample)
+    selectScan(Sinfo, Sscan, sample)
     sampleFormat('testascii.all',sample)
 
     file = open('testascii.all')
-    import multiprocessing
-    import thre
-    print(multiprocessing.cpu_count())
+

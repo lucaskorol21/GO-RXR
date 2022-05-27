@@ -1427,13 +1427,20 @@ class slab:
         tran = self.transition
 
         cores = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(processes=cores)
-        parameters = partial(multi_energy_calc,find_sf=fsf, structure=st, layer_magnetized=lm, transition=tran, theta=Theta, prec=precision)
-        result_list = pool.map(multi_energy_calc, energy)
+        pool = multiprocessing.Pool(cores)
+
+        prod = partial(multi_energy_calc,thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision)
+
+        with multiprocessing.Pool(processes = cores) as pool:
+            result_list = pool.map(prod, energy)
+        pool.join()
         print(result_list)
+        return energy, result_list
 
-def multi_energy_calc(find_sf, structure, layer_magnetized, transition, theta, prec, E):
+def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, layer_magnetized, transition, theta, prec , E):
 
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
 
     wavelength = h * c / (E * 1e-10)  # wavelength m
     sf = dict()  # form factors of non-magnetic components
@@ -1514,7 +1521,7 @@ def multi_energy_calc(find_sf, structure, layer_magnetized, transition, theta, p
 
     # Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
-    R = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+    R = pr.Reflectivity(A, theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
 
     return R
