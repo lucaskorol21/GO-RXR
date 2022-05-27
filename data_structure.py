@@ -465,6 +465,6 @@ if __name__ == "__main__":
     sampleFormat('testascii.all',sample)
 
     file = open('testascii.all')
-
-    for line in file:
-        print(line.split())
+    import multiprocessing
+    import thre
+    print(multiprocessing.cpu_count())

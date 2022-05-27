@@ -11,6 +11,8 @@ from material_model import *
 import Pythonreflectivity as pr
 from tabulate import tabulate
 from scipy import interpolate
+import multiprocessing
+from functools import partial
 
 
 
@@ -1395,7 +1397,127 @@ class slab:
 
         return energy, R
 
+    def energy_scan_multi(self, Theta, energy, precision=0.5,s_min = 0.1):
+        """
+                        Purpose: Computes the reflectivity
+                        :param E: Energy of reflectivity scan (eV)
+                        :param qi: Starting momentum transfer
+                        :param qf: End momentum transfer
+                        :param precision: Precision value
+                        :param s_min: Minimum step size (None indicates using default value)
+                        :return:
+                            qz - momentum transfer
+                            R1 - reflectivity
 
+                        """
+
+        h = 4.135667696e-15  # Plank's constant eV*s
+        c = 2.99792458e8  # speed of light m/s
+
+        # wavelength = 19.366478131833802
+        # requires angle for reflectivity computation and minimum slab thickness
+        # theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
+        # theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+
+        thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
+
+        fsf = self.find_sf
+        st = self.structure
+        lm = self.layer_magnetized
+        tran = self.transition
+
+        cores = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(processes=cores)
+        parameters = partial(multi_energy_calc,find_sf=fsf, structure=st, layer_magnetized=lm, transition=tran, theta=Theta, prec=precision)
+        result_list = pool.map(multi_energy_calc, energy)
+        print(result_list)
+
+def multi_energy_calc(find_sf, structure, layer_magnetized, transition, theta, prec, E):
+
+
+    wavelength = h * c / (E * 1e-10)  # wavelength m
+    sf = dict()  # form factors of non-magnetic components
+    sfm = dict()  # form factors of magnetic components
+
+    # Non-Magnetic Scattering Factor
+    for e in find_sf[0].keys():
+        sf[e] = find_form_factor(find_sf[0][e], E, False)
+    # Magnetic Scattering Factor
+    for em in find_sf[1].keys():
+        sfm[em] = find_form_factor(find_sf[1][em], E, True)
+
+    delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+    delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+
+    # definition as described in Lott Dieter Thesis
+    n = 1 + np.vectorize(complex)(-delta, beta)
+    # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+    epsilon = n ** 2
+    # Q = np.vectorize(complex)(delta, beta)
+    Q = np.vectorize(complex)(beta_m, delta_m)
+    epsilon_mag = Q * epsilon * 2 * (-1)
+
+    my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, prec)  # computes the layer segmentation
+
+    m = len(my_slabs)  # number of slabs
+    A = pr.Generate_structure(m)  # creates object for reflectivity computation
+    m_j = 0  # previous slab
+    idx = 0  # keeps track of current layer
+    layer = 0
+    gamma = 90  # pre-initialize magnetization direction
+    phi = 90
+
+    for m_i in my_slabs:
+        d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
+        eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
+        eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
+
+        # Determines the magnetization direction of the first layer
+        if layer == 0:
+            if layer_magnetized[0]:
+                for ele in structure[layer].keys():
+                    if structure[0][ele].mag_scattering_factor != None:
+                        gamma = structure[0][ele].gamma
+                        phi = structure[0][ele].phi
+
+        # Determines the magnetization direction of the other layers
+        if transition[layer] <= thickness[m_j] and layer < len(transition) - 1:
+            layer = layer + 1
+            if layer_magnetized[layer]:
+                for ele in structure[layer].keys():
+                    if structure[layer][ele].mag_scattering_factor != None:
+                        gamma = structure[layer][ele].gamma
+                        phi = structure[layer][ele].phi
+
+        # sets the magnetization direction based on the input angles
+        if layer_magnetized[layer]:
+
+            if gamma == 90 and phi == 90:
+                A[idx].setmag('y')
+            elif gamma == 0 and phi == 90:
+                A[idx].setmag('x')
+            elif gamma == 0 and phi == 0:
+                A[idx].setmag('z')
+            else:
+                raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
+
+            A[idx].seteps([eps, eps, eps, eps_mag])  # sets dielectric tensor for magnetic layer
+        else:
+            A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+
+        if idx != 0:
+            A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
+
+        # move onto the next layer
+        m_j = m_i
+        idx = idx + 1
+
+    # Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+
+    R = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+
+
+    return R
 
 if __name__ == "__main__":
     """
