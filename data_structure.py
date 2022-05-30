@@ -627,17 +627,13 @@ if __name__ == "__main__":
 
     sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
 
-    sample.addlayer(1, 'LaMnO3', 40, density=6.5, roughness=2)
+    sample.addlayer(1, 'LaMnO3', 20, density=6.5, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
 
     """
-
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
-
-
-
 
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
@@ -652,15 +648,15 @@ if __name__ == "__main__":
         print()
     print('########################### DONE!!!! #######################################')
 
-
-
     """
+
+
 
     sample1 = ReadData(fname)
 
-    sample.plot_density_profile(fig=1)
-    sample1.plot_density_profile(fig=2)
-    plt.show()
+    #sample.plot_density_profile(fig=1)
+    #sample1.plot_density_profile(fig=2)
+    #plt.show()
     #Sscan, Sinfo = ReadLucasFile(fname)
 
     #selectScan(Sinfo, Sscan, sample)
