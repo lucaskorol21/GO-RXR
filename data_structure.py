@@ -5,6 +5,7 @@ from prettytable import PrettyTable
 from material_structure import *
 from material_model import *
 from time import time
+import ast
 import h5py
 
 def WriteData(fname,AScans,AInfo,EScans,EInfo, sample):
@@ -18,7 +19,16 @@ def sampleFormat(file,sample):
     file.write("# Structure \n")
     n = len(sample.structure)
     link = sample.link
-    file.write("numberlayers = %s \n\n" % str(n))
+
+    file.write("numberlayers = %s \n" % str(n))
+    file.write("polyelements = %s \n" % str(sample.poly_elements))
+    file.write("magelements = %s \n" % str(sample.mag_elements))
+
+    laymag = sample.layer_magnetized
+    layermagnetized = ''
+    for lm in laymag:
+        layermagnetized = layermagnetized + str(lm) + " "
+    file.write("layermagnetized = %s \n\n" % layermagnetized)
 
     num_lay = 0
     molarmass = 0
@@ -50,11 +60,7 @@ def sampleFormat(file,sample):
 
         file.write("formula = %s \n" % formula)
 
-        laymag = sample.layer_magnetized
-        layermagnetized = ''
-        for lm in laymag:
-            layermagnetized = layermagnetized + str(lm) + " "
-        file.write("layermagnetized = %s \n" % layermagnetized)
+
 
         my_link = ''
 
@@ -289,6 +295,8 @@ def ReadData(fname):
                     layermagnetized = []
                     formula = ''
                     my_link = []
+                    polyelements = dict()
+                    magelements = dict()
                     new_element = False
                     element = ''
                     thickness = 20
@@ -314,18 +322,28 @@ def ReadData(fname):
                     # initializing the slab with correct number of layers
                     if line[0] == 'numberlayers':
                         sample = slab(int(line[1]))
-                    if line[0] == 'layer':
+                    elif line[0] == 'polyelements':
+                        line.pop(0)
+                        line = ''.join(line)
+                        polyelements = ast.literal_eval(line)
+                        sample.poly_elements = polyelements
+                    elif line[0] == 'magelements':
+                        line.pop(0)
+                        line = ''.join(line)
+                        magelements = ast.literal_eval(line)
+                        sample.mag_elements = magelements
+                    elif line[0] == 'layer':
                         layer = int(line[1])
-                    if line[0] == 'formula':
+                    elif line[0] == 'formula':
                         formula = line[1]
-                    if line[0] == 'layermagnetized':
+                    elif line[0] == 'layermagnetized':
                         line.pop(0)
                         for laymag in line:
                             if laymag == 'False':
                                 layermagnetized.append(False)
                             elif laymag == 'True':
                                 layermagnetized.append(True)
-                    if line[0] == 'link':
+                    elif line[0] == 'link':
                         line.pop(0)
                         for val in line:
                             if val == 'True':
@@ -339,7 +357,7 @@ def ReadData(fname):
                         layermagnetized = []
 
 
-                    if line[0] == 'element':
+                    elif line[0] == 'element':
                         element = line[1]
                         new_element = True
 
@@ -402,7 +420,7 @@ def ReadData(fname):
                             sample.structure[layer][element].density = density
                             sample.structure[layer][element].thickness = thickness
                             sample.structure[layer][element].roughness = roughness
-                            sample.structure[layer][element].poly_ratio = polyratio
+                            sample.structure[layer][element].poly_ratio = np.array(polyratio)
                             sample.structure[layer][element].polymorph = polymorph
                             sample.structure[layer][element].gamma = gamma
                             sample.structure[layer][element].phi = phi
@@ -635,18 +653,14 @@ if __name__ == "__main__":
     print('########################### DONE!!!! #######################################')
 
 
+
     """
 
-
     sample1 = ReadData(fname)
-    sample1.density_profile()
-    sample.density_profile()
-    print(sample1.mag_elements)
-    print(sample.mag_elements)
 
-    #sample.plot_density_profile(fig=1)
-    #sample1.plot_density_profile(fig=2)
-    #plt.show()
+    sample.plot_density_profile(fig=1)
+    sample1.plot_density_profile(fig=2)
+    plt.show()
     #Sscan, Sinfo = ReadLucasFile(fname)
 
     #selectScan(Sinfo, Sscan, sample)
