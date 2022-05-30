@@ -99,7 +99,7 @@ ff = {'H': 0,
 F = 0  # pre-initialized form factor
 
 my_dict = {}
-my_dir = os.getcwd() + r'\Scattering_Factor'
+my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
 
 elements = ff.keys()
 for element in elements:
@@ -110,11 +110,6 @@ for element in elements:
                   my_dict[element] = F
 
 
-with open('test_dict.pkl', 'wb') as f:
+with open('form_factor_magnetic.pkl', 'wb') as f:
       pickle.dump(my_dict, f)
 
-start = time.time()
-with open('test_dict.pkl', 'rb') as handle:
-    b = pickle.load(handle)
-end = time.time()
-print(end-start)

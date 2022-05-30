@@ -821,3 +821,5 @@ if __name__ == "__main__":
     tot = avg_interp + avg_retrieve
     print(avg_interp*100/tot, avg_retrieve*100/tot)
 
+    print(avg_opt)
+

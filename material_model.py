@@ -8,13 +8,21 @@ from KK_And_Merge import *
 import os
 from material_structure import *
 from time import time
+import pickle
 
+with open('form_factor.pkl', 'rb') as f:
+    ff = pickle.load(f)
+
+
+with open('form_factor_magnetic.pkl','rb') as f:
+    ffm = pickle.load(f)
 
 global inter
 global retrieve
 
 inter = []
 retrieve = []
+
 
 def form_factor(f,E):
     """
@@ -54,6 +62,15 @@ def form_factor(f,E):
     return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
+
+    if mag:
+        F = form_factor(ffm[element],E)
+    else:
+        F = form_factor(ff[element], E)
+
+    return F
+
+def find_form_factors(element, E, mag):
     """
     Purpose: Retrieve form factor from database
     :param element: String containing element symbol

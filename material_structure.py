@@ -20,19 +20,12 @@ global opt_comp
 global adapt_comp
 global init_comp
 global R_compt
-global sff
-global nmo
-global mo
-global eps_cal
+
 
 opt_comp = []
 adapt_comp = []
 init_comp = []
 R_compt = []
-sff = []
-nmo = []
-mo = []
-eps_cal = []
 
 
 def zero_to_one(func):
@@ -1290,18 +1283,11 @@ class slab:
             # Magnetic Scattering Factor
             for em in self.find_sf[1].keys():
                 sfm[em] = find_form_factor(self.find_sf[1][em], energy[E], True)
-            end_sff = time()
-            sff.append(end_sff-start_o)
 
-            start_nmo = time()
+
             delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
-            end_nmo = time()
             delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])  # calculates dielectric constant for magnetic component
-            end_mo = time()
-            nmo.append(end_nmo-start_nmo)
-            mo.append(end_mo-end_nmo)
 
-            start_eps = time()
             # definition as described in Lott Dieter Thesis
             n = 1 + np.vectorize(complex)(-delta, beta)
             # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
@@ -1310,8 +1296,6 @@ class slab:
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
             end_o = time()
-            end_eps = time()
-            eps_cal.append(end_eps-start_eps)
             opt_comp.append(end_o-start_o)
 
             start_adapt = time()
@@ -1437,7 +1421,6 @@ class slab:
         with multiprocessing.Pool(processes = cores) as pool:
             result_list = pool.map(prod, energy)
         pool.join()
-        print(result_list)
         return energy, result_list
 
 def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, layer_magnetized, transition, theta, prec , E):
