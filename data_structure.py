@@ -784,27 +784,7 @@ if __name__ == "__main__":
     plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3,-0.15))
     plt.show()
 
-    avg_sff = mean(sff)
-    avg_nmo = mean(nmo)
-    avg_mo = mean(mo)
-    avg_eps = mean(eps_cal)
-    total_opt = avg_sff + avg_mo + avg_nmo + avg_eps
 
-    pie_chart = np.array([avg_sff, avg_nmo, avg_mo, avg_eps]) * 100 / total_opt
-
-    my_trunc = np.trunc(np.array(pie_chart) * 100) / 100
-    my_label = []
-    for idx in range(len(my_trunc)):
-        label = my_trunc[idx]
-        label = str(label) + "%"
-        my_label.append(label)
-
-    my_legend = ['find_sf', 'non-magnetic', 'magnetic', 'epsilon']
-    plt.figure()
-    plt.suptitle("Two Layer Sample - Timing Chart")
-    plt.pie(pie_chart, labels=my_label)
-    plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3, -0.15))
-    plt.show()
     #Sscan, Sinfo, sample1 = ReadData(fname)
 
     #sample.plot_density_profile(fig=1)
@@ -815,11 +795,4 @@ if __name__ == "__main__":
     #selectScan(Sinfo, Sscan, sample)
     #sampleFormat('testascii.all',sample)
 
-    avg_interp = mean(inter)
-    avg_retrieve = mean(retrieve)
-    print(avg_retrieve)
-    tot = avg_interp + avg_retrieve
-    print(avg_interp*100/tot, avg_retrieve*100/tot)
-
-    print(avg_opt)
 
