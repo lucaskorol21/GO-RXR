@@ -13,8 +13,26 @@ from tabulate import tabulate
 from scipy import interpolate
 import multiprocessing
 from functools import partial
+from time import time
 
 
+global opt_comp
+global adapt_comp
+global init_comp
+global R_compt
+global sff
+global nmo
+global mo
+global eps_cal
+
+opt_comp = []
+adapt_comp = []
+init_comp = []
+R_compt = []
+sff = []
+nmo = []
+mo = []
+eps_cal = []
 
 
 def zero_to_one(func):
@@ -1256,7 +1274,6 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         # theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         # theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-
         thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
 
         for E in range(len(energy)):
@@ -1265,16 +1282,26 @@ class slab:
             sf = dict()  # form factors of non-magnetic components
             sfm = dict()  # form factors of magnetic components
 
+
             # Non-Magnetic Scattering Factor
+            start_o = time()
             for e in self.find_sf[0].keys():
                 sf[e] = find_form_factor(self.find_sf[0][e], energy[E], False)
             # Magnetic Scattering Factor
             for em in self.find_sf[1].keys():
                 sfm[em] = find_form_factor(self.find_sf[1][em], energy[E], True)
+            end_sff = time()
+            sff.append(end_sff-start_o)
 
+            start_nmo = time()
             delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
+            end_nmo = time()
             delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])  # calculates dielectric constant for magnetic component
+            end_mo = time()
+            nmo.append(end_nmo-start_nmo)
+            mo.append(end_mo-end_nmo)
 
+            start_eps = time()
             # definition as described in Lott Dieter Thesis
             n = 1 + np.vectorize(complex)(-delta, beta)
             # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
@@ -1282,9 +1309,17 @@ class slab:
             # Q = np.vectorize(complex)(delta, beta)
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
+            end_o = time()
+            end_eps = time()
+            eps_cal.append(end_eps-start_eps)
+            opt_comp.append(end_o-start_o)
 
+            start_adapt = time()
             my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+            end_adapt = time()
+            adapt_comp.append(end_adapt-start_adapt)
 
+            start_init = time()
             m = len(my_slabs)  # number of slabs
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
             m_j = 0  # previous slab
@@ -1339,9 +1374,13 @@ class slab:
                 idx = idx + 1
 
             #Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+            end_init = time()
+            init_comp.append(end_init-start_init)
 
+            start = time()
             Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-
+            end = time()
+            R_compt.append(end-start)
 
             if len(Rtemp) == 2:
                 R['S'][E] = Rtemp[0][0]  # s-polarized light
@@ -1357,7 +1396,7 @@ class slab:
             else:
                 raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
-
+            #print(end-start)
 
         return energy, R
 
@@ -1489,6 +1528,7 @@ def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, 
 
 
     return R
+
 
 if __name__ == "__main__":
     """
@@ -1758,6 +1798,7 @@ if __name__ == "__main__":
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
     plt.show()
+
 
 
 

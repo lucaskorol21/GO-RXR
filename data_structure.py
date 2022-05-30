@@ -8,6 +8,7 @@ from time import time
 import ast
 import h5py
 
+
 def WriteData(fname,AScans,AInfo,EScans,EInfo, sample):
 
     file = open(fname, "w")
@@ -135,7 +136,7 @@ def WriteExperimentalData(file, AScans,AInfo,EScans,EInfo):
     """
 
 
-    file.write("# Experimental_Data \n\n")
+    file.write("# Experimental_Data \n")
 
     dsNum = 1
     for i in range(len(AScans)):
@@ -313,6 +314,26 @@ def ReadData(fname):
                 elif line[1] == 'Experimental_Data':
                     Structure = False
                     experimental_data = True
+
+                    idx = 0  # index of scan
+                    Sinfo = []  # will contain information of sample
+                    Sinfo.append(createNewDict())
+                    Sscan = []
+                    file = open(fname)
+
+                    # initialization of parameters
+                    x_axis = list()
+                    y_axis = list()
+                    scan_number = 0
+                    scanType = 0
+                    angle = 0
+                    energy = 0
+                    polarization = 0
+                    numberPoints = 0
+
+                    NewScan = True  # determines if we have a new scan
+                    first = True
+                    # Read in each line one at a time
             else:
                 if Structure:
                     if '=' not in line:
@@ -433,8 +454,91 @@ def ReadData(fname):
 
 
                 elif experimental_data:
-                    a= 1
-    return sample
+
+                    if NewScan:
+                        # resets all parameters when new scan
+                        Sscan.append([x_axis, y_axis])
+                        x_axis = list()
+                        y_axis = list()
+                        scan_number = None
+                        scanType = None
+                        angle = None
+                        energy = None
+                        numberPoints = None
+                        Sinfo.append(createNewDict())
+                        NewScan = False
+
+                        if not(first):
+                            idx = idx + 1
+                    else:
+
+                        line = line.split()
+                        if '=' not in line:
+                            raise SyntaxError('Data file is improperly initialized.')
+
+                        line.remove('=')  # removes the equal sign
+                        info = line[0]  # data identifier
+                        data = line[1]  # data value
+
+                        # retrieves the datasetnumber
+                        if info == 'datasetnumber':
+                            if first:
+                                first = False
+                            else:
+                                NewScan = True
+                            data = int(data)
+                            Sinfo[idx]['dataNumber'] = data
+
+                        # retrieves the data set title
+                        if info == 'datasettitle':
+                            scan_number, scanType, angle = getScanInfo(data)
+                            Sinfo[idx]['scanNumber'] = scan_number
+                            Sinfo[idx]['scanType'] = scanType
+                            if angle != None:
+                                angle = float(angle)
+                                Sinfo[idx]['angle'] = angle
+
+                        # sets parameters based on scan type
+                        if scanType == 'Energy':
+                            if info == 'datasetenergy':
+                                data = float(data)
+                                Sinfo[idx]['energy'] = data
+                            if info == 'polarization':
+                                Sinfo[idx]['polarization'] = data
+                            if info == 'datasetpoints':
+                                Sinfo[idx]['numberPoints'] = polarization
+                            if info == 'dataset_R0':
+                                data = float(data)
+                                y_axis.append(data)
+                            if info == 'dataset_A':
+                                data = float(data)
+                                y_axis.append(data)
+                            if info == 'dataset_eng':
+                                data = float(data)
+                                x_axis.append(data)
+                        elif scanType == 'Reflectivity':
+                            if info == 'datasetenergy':
+                                data = float(data)
+                                Sinfo[idx]['energy'] = data
+                            elif info == 'polarization':
+                                Sinfo[idx]['polarization'] = data
+                            elif info == 'datasetpoints':
+                                Sinfo[idx]['numberPoints'] = polarization
+                            elif info == 'dataset_qz':
+                                data = float(data)
+                                x_axis.append(data)
+                            elif info == 'dataset_R0':
+                                data = float(data)
+                                y_axis.append(data)
+                            elif info == 'dataset_A':
+                                data = float(data)
+                                y_axis.append(data)
+
+    # sometimes the data file has a new line at the end of the file and creates too long of a list
+    if len(Sscan) != len(Sinfo):
+        Sinfo.pop()
+
+    return Sscan, Sinfo, sample
 
 
 def ReadLucasFile(fname):
@@ -627,9 +731,11 @@ if __name__ == "__main__":
 
     sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
 
-    sample.addlayer(1, 'LaMnO3', 20, density=6.5, roughness=2)
+    sample.addlayer(1, 'LaMnO3', 10, density=6.5, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
+
+
 
     """
     fnameCorr = "FGT-2L"
@@ -648,11 +754,58 @@ if __name__ == "__main__":
         print()
     print('########################### DONE!!!! #######################################')
 
+
     """
+    energy = np.linspace(600,602, num=20)
+    num_E = len(energy)
 
 
+    energy, R = sample.energy_scan(15, energy)
 
-    sample1 = ReadData(fname)
+
+    avg_opt = mean(opt_comp)
+    avg_adapt = mean(adapt_comp)
+    avg_init = mean(init_comp)
+    avg_R = mean(R_compt)
+    total = avg_opt + avg_adapt + avg_init + avg_R
+    pie_chart = np.array([avg_opt,avg_adapt, avg_init, avg_R])*100/total
+
+    my_trunc = np.trunc(np.array(pie_chart)*100)/100
+    my_label = []
+    for idx in range(len(my_trunc)):
+        label = my_trunc[idx]
+        label = str(label) + "%"
+        my_label.append(label)
+
+    my_legend = ['Optical','Adaptive','Structure','Reflectivity']
+    plt.figure()
+    plt.suptitle("Two Layer Sample - Timing Chart")
+    plt.pie(pie_chart, labels=my_label)
+    plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3,-0.15))
+    plt.show()
+
+    avg_sff = mean(sff)
+    avg_nmo = mean(nmo)
+    avg_mo = mean(mo)
+    avg_eps = mean(eps_cal)
+    total_opt = avg_sff + avg_mo + avg_nmo + avg_eps
+
+    pie_chart = np.array([avg_sff, avg_nmo, avg_mo, avg_eps]) * 100 / total_opt
+
+    my_trunc = np.trunc(np.array(pie_chart) * 100) / 100
+    my_label = []
+    for idx in range(len(my_trunc)):
+        label = my_trunc[idx]
+        label = str(label) + "%"
+        my_label.append(label)
+
+    my_legend = ['find_sf', 'non-magnetic', 'magnetic', 'epsilon']
+    plt.figure()
+    plt.suptitle("Two Layer Sample - Timing Chart")
+    plt.pie(pie_chart, labels=my_label)
+    plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3, -0.15))
+    plt.show()
+    #Sscan, Sinfo, sample1 = ReadData(fname)
 
     #sample.plot_density_profile(fig=1)
     #sample1.plot_density_profile(fig=2)
@@ -662,5 +815,9 @@ if __name__ == "__main__":
     #selectScan(Sinfo, Sscan, sample)
     #sampleFormat('testascii.all',sample)
 
-
+    avg_interp = mean(inter)
+    avg_retrieve = mean(retrieve)
+    print(avg_retrieve)
+    tot = avg_interp + avg_retrieve
+    print(avg_interp*100/tot, avg_retrieve*100/tot)
 

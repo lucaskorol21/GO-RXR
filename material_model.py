@@ -7,7 +7,14 @@ import cmath
 from KK_And_Merge import *
 import os
 from material_structure import *
+from time import time
 
+
+global inter
+global retrieve
+
+inter = []
+retrieve = []
 
 def form_factor(f,E):
     """
@@ -30,9 +37,11 @@ def form_factor(f,E):
 
     """
     # Linear interpolation
+    start = time()
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
-
+    end = time()
+    inter.append(end-start)
     # Check if energy within form factor energy range
     if f[0,0] > E or f[-1,0] < E:
         f_real = 0
@@ -61,11 +70,13 @@ def find_form_factor(element, E, mag):
     else:  # looking for non-magnetic form factors
         my_dir = os.getcwd() + r'\Scattering_Factor'
 
+    start = time()
     for ifile in os.listdir(my_dir):
 
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-
+    end = time()
+    retrieve.append(end-start)
     return F
 
 def magnetic_optical_constant(rho, sfm, E):
