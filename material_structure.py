@@ -1213,7 +1213,7 @@ class slab:
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
 
-        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10 )  # Computes the reflectivity
+        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
         R = dict()
 
         """

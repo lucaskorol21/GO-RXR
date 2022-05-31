@@ -17,13 +17,6 @@ with open('form_factor.pkl', 'rb') as f:
 with open('form_factor_magnetic.pkl','rb') as f:
     ffm = pickle.load(f)
 
-global inter
-global retrieve
-
-inter = []
-retrieve = []
-
-
 def form_factor(f,E):
     """
     Purpose: Determines form factors with energy E using linear interpolation
@@ -45,11 +38,9 @@ def form_factor(f,E):
 
     """
     # Linear interpolation
-    start = time()
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
-    end = time()
-    inter.append(end-start)
+
     # Check if energy within form factor energy range
     if f[0,0] > E or f[-1,0] < E:
         f_real = 0
@@ -64,8 +55,14 @@ def form_factor(f,E):
 def find_form_factor(element, E, mag):
 
     if mag:
+        mag_keys = list(ffm.keys())
+        if element not in mag_keys:
+            raise NameError(element + " not found in magnetic form factors")
         F = form_factor(ffm[element],E)
     else:
+        struc_keys = list(ff.keys())
+        if element not in struc_keys:
+            raise NameError(element + " not found in structural form factors")
         F = form_factor(ff[element], E)
 
     return F
@@ -87,13 +84,10 @@ def find_form_factors(element, E, mag):
     else:  # looking for non-magnetic form factors
         my_dir = os.getcwd() + r'\Scattering_Factor'
 
-    start = time()
     for ifile in os.listdir(my_dir):
 
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-    end = time()
-    retrieve.append(end-start)
     return F
 
 def magnetic_optical_constant(rho, sfm, E):
