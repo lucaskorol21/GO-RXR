@@ -282,6 +282,14 @@ def createNewDict():
 
 
 def ReadData(fname):
+    """
+    Purpose: Read .all file that contains sample and experimental information
+    :param fname: Name of file contatining related information
+    :return: Sscan - list of energy/reflectivity data
+             Sinfo - contains a dictionary of relevant scan information
+             sample - pre-initialized slab class
+    """
+
     file = open(fname)
     structure = False
     experimental_data = False
@@ -319,7 +327,6 @@ def ReadData(fname):
                     Sinfo = []  # will contain information of sample
                     Sinfo.append(createNewDict())
                     Sscan = []
-                    file = open(fname)
 
                     # initialization of parameters
                     x_axis = list()
@@ -331,7 +338,7 @@ def ReadData(fname):
                     polarization = 0
                     numberPoints = 0
 
-                    NewScan = True  # determines if we have a new scan
+                    NewScan = False  # determines if we have a new scan
                     first = True
                     # Read in each line one at a time
             else:
@@ -455,88 +462,96 @@ def ReadData(fname):
 
                 elif experimental_data:
 
-                    if NewScan:
-                        # resets all parameters when new scan
-                        Sscan.append([x_axis, y_axis])
-                        x_axis = list()
-                        y_axis = list()
-                        scan_number = None
-                        scanType = None
-                        angle = None
-                        energy = None
-                        numberPoints = None
-                        Sinfo.append(createNewDict())
-                        NewScan = False
 
-                        if not(first):
+                    #line = line.split()
+                    if '=' not in line:
+                        raise SyntaxError('Data file is improperly initialized.')
+                    line.remove('=')  # removes the equal sign
+
+                    info = line[0]  # data identifier
+                    data = line[1]  # data value
+
+                    # retrieves the datasetnumber
+                    if info == 'datasetnumber':
+
+                        if first:
+                            data = int(data)
+                            Sinfo[idx]['dataNumber'] = data
+                            first = False
+                        else:
+                            Sinfo[idx]['scanNumber'] = scan_number
+                            Sinfo[idx]['scanType'] = scanType
+                            Sinfo[idx]['angle'] = angle
+                            Sinfo[idx]['energy'] = energy
+                            Sinfo[idx]['polarization'] = polarization
+                            Sinfo[idx]['numberPoints'] = numberPoints
+                            Sscan.append([x_axis, y_axis])
+
+                            # resets all parameters when new scan
+                            Sinfo.append(createNewDict())
+                            x_axis = list()
+                            y_axis = list()
+                            scan_number = None
+                            scanType = None
+                            angle = None
+                            energy = None
+                            numberPoints = None
                             idx = idx + 1
-                    else:
-
-                        line = line.split()
-                        if '=' not in line:
-                            raise SyntaxError('Data file is improperly initialized.')
-
-                        line.remove('=')  # removes the equal sign
-                        info = line[0]  # data identifier
-                        data = line[1]  # data value
-
-                        # retrieves the datasetnumber
-                        if info == 'datasetnumber':
-                            if first:
-                                first = False
-                            else:
-                                NewScan = True
                             data = int(data)
                             Sinfo[idx]['dataNumber'] = data
 
-                        # retrieves the data set title
-                        if info == 'datasettitle':
-                            scan_number, scanType, angle = getScanInfo(data)
-                            Sinfo[idx]['scanNumber'] = scan_number
-                            Sinfo[idx]['scanType'] = scanType
-                            if angle != None:
-                                angle = float(angle)
-                                Sinfo[idx]['angle'] = angle
 
-                        # sets parameters based on scan type
-                        if scanType == 'Energy':
-                            if info == 'datasetenergy':
-                                data = float(data)
-                                Sinfo[idx]['energy'] = data
-                            if info == 'polarization':
-                                Sinfo[idx]['polarization'] = data
-                            if info == 'datasetpoints':
-                                Sinfo[idx]['numberPoints'] = polarization
-                            if info == 'dataset_R0':
-                                data = float(data)
-                                y_axis.append(data)
-                            if info == 'dataset_A':
-                                data = float(data)
-                                y_axis.append(data)
-                            if info == 'dataset_eng':
-                                data = float(data)
-                                x_axis.append(data)
-                        elif scanType == 'Reflectivity':
-                            if info == 'datasetenergy':
-                                data = float(data)
-                                Sinfo[idx]['energy'] = data
-                            elif info == 'polarization':
-                                Sinfo[idx]['polarization'] = data
-                            elif info == 'datasetpoints':
-                                Sinfo[idx]['numberPoints'] = polarization
-                            elif info == 'dataset_qz':
-                                data = float(data)
-                                x_axis.append(data)
-                            elif info == 'dataset_R0':
-                                data = float(data)
-                                y_axis.append(data)
-                            elif info == 'dataset_A':
-                                data = float(data)
-                                y_axis.append(data)
 
-    # sometimes the data file has a new line at the end of the file and creates too long of a list
-    if len(Sscan) != len(Sinfo):
-        Sinfo.pop()
+                    # retrieves the data set title
+                    if info == 'datasettitle':
+                        scan_number, scanType, angle = getScanInfo(data)
+                        #Sinfo[idx]['scanNumber'] = scan_number
+                        #Sinfo[idx]['scanType'] = scanType
+                        if angle != None:
+                            angle = float(angle)
+                            #Sinfo[idx]['angle'] = angle
+
+                    # sets parameters based on scan type
+                    if scanType == 'Energy':
+                        if info == 'datasetenergy':
+                            energy = float(data)
+                        if info == 'polarization':
+                            polarization = data
+                        if info == 'datasetpoints':
+                            numberPoints = int(data)
+                        if info == 'dataset_R0':
+                            data = float(data)
+                            y_axis.append(data)
+                        if info == 'dataset_A':
+                            data = float(data)
+                            y_axis.append(data)
+                        if info == 'dataset_eng':
+                            data = float(data)
+                            x_axis.append(data)
+                    elif scanType == 'Reflectivity':
+                        if info == 'datasetenergy':
+                            energy = float(data)
+                        elif info == 'polarization':
+                            polarization = data
+                        elif info == 'datasetpoints':
+                            numberPoints = int(data)
+                        elif info == 'dataset_qz':
+                            data = float(data)
+                            x_axis.append(data)
+                        elif info == 'dataset_R0':
+                            data = float(data)
+                            y_axis.append(data)
+                        elif info == 'dataset_A':
+                            data = float(data)
+                            y_axis.append(data)
+    if experimental_data:
+        Sinfo[idx]['scanNumber'] = scan_number
+        Sinfo[idx]['scanType'] = scanType
+        Sinfo[idx]['angle'] = angle
+        Sinfo[idx]['energy'] = energy
+        Sinfo[idx]['polarization'] = polarization
+        Sinfo[idx]['numberPoints'] = numberPoints
+        Sscan.append([x_axis, y_axis])
 
     return Sscan, Sinfo, sample
 
@@ -581,6 +596,7 @@ def ReadLucasFile(fname):
                 NewScan = False
                 idx = idx + 1
         else:
+
             NewScan = True
             line = line.split()
             if '=' not in line:
@@ -590,7 +606,6 @@ def ReadLucasFile(fname):
             line.remove('=')  # removes the equal sign
             info = line[0]  # data identifier
             data = line[1]  # data value
-
             # retrieves the datasetnumber
             if info == 'datasetnumber':
                 data = int(data)
@@ -641,9 +656,9 @@ def ReadLucasFile(fname):
                     data = float(data)
                     y_axis.append(data)
 
-    # sometimes the data file has a new line at the end of the file and creates too long of a list
     if len(Sscan) != len(Sinfo):
         Sinfo.pop()
+
     return Sscan, Sinfo
 
 
@@ -656,7 +671,7 @@ def selectScan(Sinfo, Sscan, sample):
     :param sample: Data sample for simulation
     :return:
     """
-
+    sample.plot_density_profile(fig=1)  # plots the sample density profile
     # Prints out the scans and their information
     header = ['#', 'Scan Type', 'Energy', 'Angle', 'Polarization']
     tab = PrettyTable(header)
@@ -682,7 +697,7 @@ def selectScan(Sinfo, Sscan, sample):
             qz = np.array(data[0])  # gets momentum transfer of data
 
             start = time()
-            qz, R, t, e = sample.reflectivity(E,qz)  # performs reflectivity simulation calculation
+            qz, R = sample.reflectivity(E,qz)  # performs reflectivity simulation calculation
             end = time()
 
             print(end-start)
@@ -704,7 +719,7 @@ def selectScan(Sinfo, Sscan, sample):
             #energy, R = sample.energy_scan_multi(Theta, energy)  # simulated energy scan
 
 
-            plt.figure()
+            plt.figure(2)
             plt.plot(energy, Rdata)
             plt.plot(energy, R[pol])
             plt.legend(['Data', 'Simulation'])
@@ -756,58 +771,8 @@ if __name__ == "__main__":
 
 
     """
-    """
-    energy = np.linspace(600,602, num=20)
-    num_E = len(energy)
 
-
-    energy, R = sample.energy_scan(15, energy)
-
-
-    avg_opt = mean(opt_comp)
-    avg_adapt = mean(adapt_comp)
-    avg_init = mean(init_comp)
-    avg_R = mean(R_compt)
-    total = avg_opt + avg_adapt + avg_init + avg_R
-    pie_chart = np.array([avg_opt,avg_adapt, avg_init, avg_R])*100/total
-
-    my_trunc = np.trunc(np.array(pie_chart)*100)/100
-    my_label = []
-    for idx in range(len(my_trunc)):
-        label = my_trunc[idx]
-        label = str(label) + "%"
-        my_label.append(label)
-
-    my_legend = ['Optical','Adaptive','Structure','Reflectivity']
-    plt.figure()
-    plt.suptitle("Two Layer Sample - Timing Chart")
-    plt.pie(pie_chart, labels=my_label)
-    plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3,-0.15))
-    plt.show()
-
-    """
-    #Sscan, Sinfo, sample1 = ReadData(fname)
-
-    #sample.plot_density_profile(fig=1)
-    #sample1.plot_density_profile(fig=2)
-    #plt.show()
-    #Sscan, Sinfo = ReadLucasFile(fname)
-
-    #selectScan(Sinfo, Sscan, sample)
+    Sscan, Sinfo, sample1 = ReadData(fname)
+    selectScan(Sinfo, Sscan, sample)
     #sampleFormat('testascii.all',sample)
 
-    data = np.loadtxt('energy_test.txt')
-    energy = data[:, 0]
-
-    start = time()
-    sample.energy_scan(15, energy)
-    end = time()
-    print('Energy Scan: ', end - start)
-
-    E = 642.2
-    data = np.loadtxt('test_example.txt')
-    qz = data[:,0]
-    start_r = time()
-    sample.reflectivity(E, qz)
-    end_r = time()
-    print('Reflectivity Scan: ', end_r-start_r)
