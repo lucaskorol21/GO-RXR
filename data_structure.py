@@ -772,5 +772,13 @@ if __name__ == "__main__":
 
     """
 
-    Sscan, Sinfo, sample1 = ReadData(fname)
-    selectScan(Sinfo, Sscan, sample)
+    #Sscan, Sinfo, sample1 = ReadData(fname)
+    #selectScan(Sinfo, Sscan, sample)
+    #sample.plot_density_profile(fig=1)
+    #sample1.plot_density_profile(fig=2)
+    #plt.show()
+    qz = np.loadtxt('test_example.txt')[:,0]
+    start = time()
+    sample.reflectivity(642.2, qz)
+    end = time()
+    print(end-start)

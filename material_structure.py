@@ -13,7 +13,8 @@ from tabulate import tabulate
 from scipy import interpolate
 import multiprocessing
 from functools import partial
-from time import time
+from time import *
+
 from multiprocessing.pool import ThreadPool
 
 
@@ -1131,6 +1132,7 @@ class slab:
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
+        start = time()
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             sf[e] = find_form_factor(self.find_sf[0][e], E, False)
@@ -1149,9 +1151,10 @@ class slab:
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(beta_m, delta_m )
         epsilon_mag = Q*epsilon*2*(-1)
-
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
-
+        end = time()
+        print("Layer Segmentation: ", end-start)
+        start = time()
         m = len(my_slabs)  # number of slabs
         #m = len(epsilon)
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
@@ -1212,8 +1215,12 @@ class slab:
 
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
-
+        end = time()
+        print('Initialization: ', end-start)
+        start = time()
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+        end = time()
+        print('Reflectivity: ', end-start)
         R = dict()
 
         """
@@ -1221,7 +1228,7 @@ class slab:
         plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
         plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
         """
-
+        print(len(Theta))
         if len(Rtemp) == 2:
             R['S'] = Rtemp[0]  # s-polarized light
             R['P'] = Rtemp[1]  # p-polarized light
@@ -1238,7 +1245,6 @@ class slab:
             R['AC'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
-
 
         return qz, R
 
