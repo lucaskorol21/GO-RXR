@@ -756,6 +756,7 @@ if __name__ == "__main__":
 
 
     """
+    """
     energy = np.linspace(600,602, num=20)
     num_E = len(energy)
 
@@ -784,7 +785,7 @@ if __name__ == "__main__":
     plt.legend(my_legend, loc="lower right", bbox_to_anchor=(1.3,-0.15))
     plt.show()
 
-
+    """
     #Sscan, Sinfo, sample1 = ReadData(fname)
 
     #sample.plot_density_profile(fig=1)
@@ -795,4 +796,18 @@ if __name__ == "__main__":
     #selectScan(Sinfo, Sscan, sample)
     #sampleFormat('testascii.all',sample)
 
+    data = np.loadtxt('energy_test.txt')
+    energy = data[:, 0]
 
+    start = time()
+    sample.energy_scan(15, energy)
+    end = time()
+    print('Energy Scan: ', end - start)
+
+    E = 642.2
+    data = np.loadtxt('test_example.txt')
+    qz = data[:,0]
+    start_r = time()
+    sample.reflectivity(E, qz)
+    end_r = time()
+    print('Reflectivity Scan: ', end_r-start_r)

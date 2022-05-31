@@ -14,6 +14,8 @@ from scipy import interpolate
 import multiprocessing
 from functools import partial
 from time import time
+from multiprocessing.pool import ThreadPool
+
 
 
 global opt_comp
@@ -1151,6 +1153,7 @@ class slab:
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
 
         m = len(my_slabs)  # number of slabs
+        #m = len(epsilon)
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
@@ -1213,11 +1216,11 @@ class slab:
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10 )  # Computes the reflectivity
         R = dict()
 
-
+        """
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
         plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
-
+        """
 
         if len(Rtemp) == 2:
             R['S'] = Rtemp[0]  # s-polarized light
@@ -1237,7 +1240,7 @@ class slab:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
 
-        return qz, R, [thickness,plot_t], [real(epsilon), plot_e]
+        return qz, R
 
     def energy_scan(self, Theta, energy, precision=0.5,s_min = 0.1):
         """
@@ -1298,13 +1301,15 @@ class slab:
             end_o = time()
             opt_comp.append(end_o-start_o)
 
+            """
             start_adapt = time()
             my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
             end_adapt = time()
             adapt_comp.append(end_adapt-start_adapt)
-
+            """
             start_init = time()
-            m = len(my_slabs)  # number of slabs
+            #m = len(my_slabs)  # number of slabs
+            m = len(epsilon)
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
             m_j = 0  # previous slab
             idx = 0  # keeps track of current layer
@@ -1312,7 +1317,7 @@ class slab:
             gamma = 90  # pre-initialize magnetization direction
             phi = 90
 
-            for m_i in my_slabs:
+            for m_i in range(m-1):
                 d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
                 eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
                 eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
@@ -1413,14 +1418,16 @@ class slab:
         lm = self.layer_magnetized
         tran = self.transition
 
-        cores = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(cores)
+
 
         prod = partial(multi_energy_calc,thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision)
 
-        with multiprocessing.Pool(processes = cores) as pool:
+        with multiprocessing.Pool() as pool:
             result_list = pool.map(prod, energy)
         pool.join()
+
+
+
         return energy, result_list
 
 def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, layer_magnetized, transition, theta, prec , E):
@@ -1690,11 +1697,16 @@ if __name__ == "__main__":
 
     F = np.loadtxt('test_example.txt')
     qz = F[:,0]
-    p1 = 0.0001
-    p2 = 0.1
-
+    p1 = 0.5
+    p2 = 1
+    start = time()
     qz, Rtemp, t, e =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
+    end = time()
+    print(end-start)
+    start = time()
     qz1, R1temp, t1, e1 = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
+    end = time()
+    print(end-start)
     qz2, R2temp, t2, e2 = sample.reflectivity(E,qz, precision = p2, s_min=0.1)
 
     #R = np.log10(Rtemp['LC'])
@@ -1780,7 +1792,8 @@ if __name__ == "__main__":
     plt.xlabel('qz')
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
-    plt.show()
+
+
 
 
 
