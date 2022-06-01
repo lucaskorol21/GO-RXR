@@ -14,10 +14,8 @@ from scipy import interpolate
 import multiprocessing
 from functools import partial
 from time import *
-
 from multiprocessing.pool import ThreadPool
-
-
+from numba import *
 
 global opt_comp
 global adapt_comp
@@ -55,8 +53,6 @@ def total_variation(func):
     tv = np.sum(np.abs(np.diff(np.array(func))))
 
     return tv
-
-
 
 
 def slice_diff(thickness, eps, idx_a, idx_b, precision, n ):
@@ -114,7 +110,7 @@ def slice_diff_new(tck_eps, d_current,s_min, d_next, precision):
     return d_next
 
 
-def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
+def layer_segmentation(thickness, epsilon, epsilon_mag, precision=1e-6):
     """
     Purpose: Performs the layer segmentation over entire interval based on total variation
     :param thickness: Thickness array of sample (angstrom)
@@ -126,25 +122,25 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
     idx_a = 0  # current index
     idx_b = 1  # index of next slice
     n = len(epsilon)  # total number of elements in dielectric constant array
-    my_slabs = list()  # list that keeps tracks of layer segmentation indices
+    my_slabs = np.array([], dtype=int)  # list that keeps tracks of layer segmentation indices
     d = thickness[-1]-thickness[0]  # total thickness of the sample
     delta_d = thickness[1]-thickness[0]  # thickness step
     # computes total variation for real and imaginary of structural and magnetic dielectric constants
 
-    max_1 = max(abs(np.diff(real(epsilon))))
-    max_2 = max(abs(np.diff(imag(epsilon))))
-    max_3 = max(abs(np.diff(real(epsilon_mag))))
-    max_4 = max(abs(np.diff(imag(epsilon_mag))))
+    #max_1 = max(abs(np.diff(real(epsilon))))
+    #max_2 = max(abs(np.diff(imag(epsilon))))
+    #max_3 = max(abs(np.diff(real(epsilon_mag))))
+    #max_4 = max(abs(np.diff(imag(epsilon_mag))))
 
-    p_1 = precision * max_1
-    p_2 = precision * max_2
-    p_3 = precision * max_3
-    p_4 = precision * max_4
+    #p_1 = precision * max_1
+    #p_2 = precision * max_2
+    #p_3 = precision * max_3
+    #p_4 = precision * max_4
+    p_1 = precision
+    p_3 = precision
 
 
     while (idx_b < n):
-
-
 
         # Computes the precision values based on the average variance over the interval
         idx_s_r = slice_diff(thickness, real(epsilon), idx_a, idx_b, p_1, n)  # structural real component
@@ -154,71 +150,29 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision):
 
         #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
         idx_b = min(idx_s_r,  idx_m_r)  # use the smallest slice value
-
-        my_slabs.append(idx_b)  # append slice value to list
+        my_slabs = np.append(my_slabs, idx_b)
         idx_a = idx_b  # step to next slab
         idx_b = idx_b + 1
 
     return my_slabs
 
-def layer_segmentation_new(thickness, epsilon, epsilon_mag, precision):
-    """
-    Purpose: Performs the layer segmentation over entire interval based on total variation
-    :param thickness: Thickness array of sample (angstrom)
-    :param epsilon: Structural dielectric constant array
-    :param epsilon_mag: Magnetic dielectric constant array
-    :param precision: Precision value
-    :return: Indices for slicing
-    """
-    tck_epsilon = interpolate.splrep(thickness, real(epsilon))  # interpolation for adaptive layer segmentation
-    tck_epsilon_mag = interpolate.splrep(thickness, real(epsilon))  # interpolation for adaptive layer segmentation
-    tck_epsilon_i = interpolate.splrep(thickness, imag(epsilon))  # interpolation for adaptive layer segmentation
-    tck_epsilon_mag_i = interpolate.splrep(thickness, imag(epsilon))  # interpolation for adaptive layer segmentation
+@njit()
+def ALS(thickness, epsilon, epsilon_mag, precision=1e-6):
+    idx_a = 0
+    n = epsilon.size
+    my_slabs = np.zeros(1) # pre-initialize the slab array
+    for idx_b in range(1,n):
+        f1 = epsilon[idx_a]
+        f2 = epsilon[idx_b]
+        f1m = epsilon_mag[idx_a]
+        f2m = epsilon_mag[idx_b]
 
-    d_last = thickness[-1]
-
-    my_slabs = list()  # list that keeps tracks of layer segmentation indices
-    my_slabs.append(thickness[-1])
-
-    s_min = 0.1
-    delta_d = s_min*0.1  # minimum step size
-    d_current = thickness[0]
-    d_next = d_current + delta_d
-    # computes total variation for real and imaginary of structural and magnetic dielectric constants
-
-    max_epsilon = max(abs(np.diff(real(epsilon))))
-    max_epsilon_mag = max(abs(np.diff(real(epsilon_mag))))
+        delta = np.absolute(f2-f1)
+        delta_m = np.absolute(f2m-f1m)
 
 
-    precision_epsilon = max_epsilon*precision
-    precision_epsilon_mag = max_epsilon_mag*precision
+    print(my_slabs)
 
-    print(delta_d)
-    while (d_next <d_last):
-
-
-        # Computes the precision values based on the average variance over the interval
-        d_next_epsilon = slice_diff_new(tck_epsilon,d_current, s_min, d_next, precision_epsilon)  # structural real component
-        d_next_epsilon_mag = slice_diff_new(tck_epsilon_mag, d_current, s_min, d_next, precision_epsilon_mag)  # magnetic real component
-
-
-        #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
-        d_next = min(d_next_epsilon,  d_next_epsilon_mag)  # use the smallest slice value
-
-        my_slabs.append(d_next)
-
-
-
-        d_current = d_next
-        d_next = d_next + delta_d
-        if d_next > d_last:
-            my_slabs.append(d_next)
-
-
-
-
-
-    return my_slabs
 
 class element:
     def __init__(self, name, stoichiometry):
@@ -1103,7 +1057,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, qz, precision=0.5,s_min = 0.1):
+    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1):
 
         """
         Purpose: Computes the reflectivity
@@ -1152,6 +1106,7 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m )
         epsilon_mag = Q*epsilon*2*(-1)
         my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
+        ALS(thickness, epsilon.real, epsilon_mag.real, precision)
         end = time()
         print("Layer Segmentation: ", end-start)
         start = time()
@@ -1296,7 +1251,6 @@ class slab:
 
             delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
             delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])  # calculates dielectric constant for magnetic component
-
             # definition as described in Lott Dieter Thesis
             n = 1 + np.vectorize(complex)(-delta, beta)
             # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
@@ -1706,14 +1660,14 @@ if __name__ == "__main__":
     p1 = 0.5
     p2 = 1
     start = time()
-    qz, Rtemp, t, e =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
+    qz, Rtemp =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
     end = time()
     print(end-start)
     start = time()
-    qz1, R1temp, t1, e1 = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
+    qz1, R1temp = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
     end = time()
     print(end-start)
-    qz2, R2temp, t2, e2 = sample.reflectivity(E,qz, precision = p2, s_min=0.1)
+    qz2, R2temp = sample.reflectivity(E,qz, precision = p2, s_min=0.1)
 
     #R = np.log10(Rtemp['LC'])
     #R1 = np.log10(R1temp['LC'])
@@ -1749,26 +1703,6 @@ if __name__ == "__main__":
     plt.ylabel("Percent Difference")
 
 
-
-    plt.figure(7)
-    num1 = len(t1[1])-1
-    plt.stem(t1[1], e1[1], markerfmt=" ", linefmt=None, bottom=0.9875)
-    plt.plot(t1[0], e1[0])
-    plt.suptitle(str(p1))
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel('Dielectric Constant (Real)')
-    plt.legend(['Slabs = '+ str(num1)])
-
-    plt.figure(8)
-    num2 = len(t2[1]) - 1
-    plt.stem(t2[1], e2[1], markerfmt=" ", linefmt=None, bottom=0.9875)
-    plt.plot(t2[0], e2[0])
-    plt.suptitle(str(p2))
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel('Dielectric Constant (Real)')
-    plt.legend(['Slabs = ' + str(num2)])
-
-
     max1 = max(abs(R-R1))
     max2 = max(abs(R-R2))
     A1 = simpson(abs(R-R1), qz)
@@ -1798,6 +1732,8 @@ if __name__ == "__main__":
     plt.xlabel('qz')
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
+
+    plt.show()
 
 
 
