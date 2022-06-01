@@ -1229,7 +1229,7 @@ class slab:
         # theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         # theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
         thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
-
+        start = time()
         for E in range(len(energy)):
 
             wavelength = h * c / (energy[E] * 1e-10)  # wavelength m
@@ -1255,9 +1255,11 @@ class slab:
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
 
-
+            my_slabs = ALS(epsilon.real,epsilon_mag.real, precision=1e-5)
+            my_slabs = my_slabs[1:]
+            my_slabs = my_slabs.astype(int)
             #m = len(my_slabs)  # number of slabs
-            m = len(epsilon)
+            m = len(my_slabs)
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
             m_j = 0  # previous slab
             idx = 0  # keeps track of current layer
@@ -1265,7 +1267,7 @@ class slab:
             gamma = 90  # pre-initialize magnetization direction
             phi = 90
 
-            for m_i in range(m-1):
+            for m_i in my_slabs:
                 d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
                 eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
                 eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
@@ -1328,7 +1330,8 @@ class slab:
             else:
                 raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
-
+        end = time()
+        print(end-start)
         return energy, R
 
     def energy_scan_multi(self, Theta, energy, precision=0.5,s_min = 0.1):
