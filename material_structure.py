@@ -122,7 +122,7 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision=1e-6):
     idx_a = 0  # current index
     idx_b = 1  # index of next slice
     n = len(epsilon)  # total number of elements in dielectric constant array
-    my_slabs = np.array([], dtype=int)  # list that keeps tracks of layer segmentation indices
+    my_slabs = list()
     d = thickness[-1]-thickness[0]  # total thickness of the sample
     delta_d = thickness[1]-thickness[0]  # thickness step
     # computes total variation for real and imaginary of structural and magnetic dielectric constants
@@ -150,14 +150,14 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision=1e-6):
 
         #idx_b = min(idx_s_r, idx_s_i, idx_m_r, idx_m_i)  # use the smallest slice value
         idx_b = min(idx_s_r,  idx_m_r)  # use the smallest slice value
-        my_slabs = np.append(my_slabs, idx_b)
+        my_slabs.append(idx_b)
         idx_a = idx_b  # step to next slab
         idx_b = idx_b + 1
 
     return my_slabs
 
 @njit()
-def ALS(thickness, epsilon, epsilon_mag, precision=1e-6):
+def ALS(epsilon, epsilon_mag, precision=1e-6):
     idx_a = 0
     n = epsilon.size
     my_slabs = np.zeros(1) # pre-initialize the slab array
@@ -170,8 +170,11 @@ def ALS(thickness, epsilon, epsilon_mag, precision=1e-6):
         delta = np.absolute(f2-f1)
         delta_m = np.absolute(f2m-f1m)
 
+        if delta>precision or delta_m>precision:
+            my_slabs = np.append(my_slabs, idx_b)  # append slice
+            idx_a = idx_b  # change previous slice location
 
-    print(my_slabs)
+    return my_slabs
 
 
 class element:
@@ -1086,7 +1089,7 @@ class slab:
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
-        start = time()
+
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             sf[e] = find_form_factor(self.find_sf[0][e], E, False)
@@ -1105,9 +1108,14 @@ class slab:
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(beta_m, delta_m )
         epsilon_mag = Q*epsilon*2*(-1)
-        my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
-        ALS(thickness, epsilon.real, epsilon_mag.real, precision)
+        start = time()
+
+        my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = my_slabs.astype(int)  # sets all numbers to integers
+        my_slabs = my_slabs[1:]  # removes first element
         end = time()
+
+
         print("Layer Segmentation: ", end-start)
         start = time()
         m = len(my_slabs)  # number of slabs
@@ -1657,8 +1665,8 @@ if __name__ == "__main__":
 
     F = np.loadtxt('test_example.txt')
     qz = F[:,0]
-    p1 = 0.5
-    p2 = 1
+    p1 = 1e-5
+    p2 = 1e-5
     start = time()
     qz, Rtemp =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
     end = time()
