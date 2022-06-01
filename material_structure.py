@@ -17,17 +17,6 @@ from time import *
 from multiprocessing.pool import ThreadPool
 from numba import *
 
-global opt_comp
-global adapt_comp
-global init_comp
-global R_compt
-
-
-opt_comp = []
-adapt_comp = []
-init_comp = []
-R_compt = []
-
 
 def zero_to_one(func):
     """
@@ -1249,7 +1238,6 @@ class slab:
 
 
             # Non-Magnetic Scattering Factor
-            start_o = time()
             for e in self.find_sf[0].keys():
                 sf[e] = find_form_factor(self.find_sf[0][e], energy[E], False)
             # Magnetic Scattering Factor
@@ -1266,16 +1254,8 @@ class slab:
             # Q = np.vectorize(complex)(delta, beta)
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
-            end_o = time()
-            opt_comp.append(end_o-start_o)
 
-            """
-            start_adapt = time()
-            my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, precision)  # computes the layer segmentation
-            end_adapt = time()
-            adapt_comp.append(end_adapt-start_adapt)
-            """
-            start_init = time()
+
             #m = len(my_slabs)  # number of slabs
             m = len(epsilon)
             A = pr.Generate_structure(m)  # creates object for reflectivity computation
@@ -1331,13 +1311,8 @@ class slab:
                 idx = idx + 1
 
             #Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
-            end_init = time()
-            init_comp.append(end_init-start_init)
 
-            start = time()
             Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-            end = time()
-            R_compt.append(end-start)
 
             if len(Rtemp) == 2:
                 R['S'][E] = Rtemp[0][0]  # s-polarized light
@@ -1353,7 +1328,6 @@ class slab:
             else:
                 raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
-            #print(end-start)
 
         return energy, R
 
