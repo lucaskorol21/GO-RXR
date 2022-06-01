@@ -1250,25 +1250,16 @@ class slab:
             sfm = dict()  # form factors of magnetic components
 
             # Non-Magnetic Scattering Factor
-            start = time()
             for e in self.find_sf[0].keys():
                 sf[e] = find_form_factor(self.find_sf[0][e], energy[E], False)
-            end = time()
-            nonMAG.append(end-start)
+
             # Magnetic Scattering Factor
-            start = time()
             for em in self.find_sf[1].keys():
                 sfm[em] = find_form_factor(self.find_sf[1][em], energy[E], True)
-            end = time()
-            MAG.append(end-start)
 
-            start = time()
             delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
             delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])  # calculates dielectric constant for magnetic component
-            end = time()
-            EPS.append(end-start)
 
-            start_tot = time()
             # definition as described in Lott Dieter Thesis
             n = 1 + np.vectorize(complex)(-delta, beta)
             # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
@@ -1276,9 +1267,6 @@ class slab:
             # Q = np.vectorize(complex)(delta, beta)
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
-            end_tot = time()
-            TOT.append(end_tot-start_tot)
-
 
             my_slabs = ALS(epsilon.real,epsilon_mag.real, precision=1e-5)
             my_slabs = my_slabs[1:]
