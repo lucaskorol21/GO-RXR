@@ -18,36 +18,41 @@ def WriteDataASCII(fname,AScans,AInfo,EScans,EInfo, sample):
 def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     f = h5py.File(fname, 'a')
 
-    data_matrix = np.random.uniform(-1, 1, size=(10, 3))
     grp = f.create_group("experimental_data")
     grpR = grp.create_group("Reflectivity_Scan")
     grpE = grp.create_group("Energy_Scan")
-    #grp.create_dataset('scan1', data=data_matrix)
-    #grp['scan1'].attrs['energy'] = 640
+
     dsNum = 1
     for i in range(len(AScans)):
 
         qz = AScans[i][:][2]
-        R0 = AScan[i][:][3]
+        R0 = AScans[i][:][3]
         dat = np.array([qz, R0])
 
         name = "Scan_" + str(dsNum)
         energy = AInfo[i][3]
-        dsNum = dsNum + 1
-        polarization = AInfo[i][1]
+        if (AInfo[i][1] == "S"):
+            polarization = 'S'
+        elif (AInfo[i][1] == "P"):
+            polarization = 'P'
+        elif (AInfo[i][1] == "L"):
+            polarization = 'LC'
+        elif (AInfo[i][1] == "R"):
+            polarization = 'RC'
         datasetpoints = len(qz)
 
-        grpR.create_dataset(name,data=dat)
-        grpR[name].attrs['Energy'] = energy
-        grpR[name].attrs['Polarization'] = polarization
-        grpR[name].attrs['DataPoints'] = datasetpoints
+        dset = grpR.create_dataset(name, data=dat)
+
+        dset.attrs['Energy'] = float(energy)
+        dset.attrs['Polarization'] = str(polarization)
+        dset.attrs['DataPoints'] = int(datasetpoints)
 
         dsNum = dsNum + 1
         # write asymmetry if possible
         if i > 0:
             if (AInfo[i - 1][3] == AInfo[i][3]):
 
-                name = 'Scan_'+ dsNum
+                name = 'Scan_'+ str(dsNum)
                 qz = AScans[i][:][2]
                 A = (AScans[i - 1][:][3] - AScans[i][:][3]) / (AScans[i - 1][:][3]) + AScans[i][:][3]
                 dat = np.array([qz, A])
@@ -60,85 +65,62 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                     polarization = "AC"
 
                 grpR.create_dataset(name, data=dat)
-                grpR[name].attrs['Energy'] = energy
+                grpR[name].attrs['Energy'] = float(energy)
                 grpR[name].attrs['Polarization'] = polarization
-                grpR[name].attrs['DataPoints'] = datasetpoints
+                grpR[name].attrs['DataPoints'] = int(datasetpoints)
 
                 dsNum = dsNum + 1
 
 
-
-        file.write("datasetnumber = %d \n" % dsNum)
-        name = str(AInfo[i][0]) + "_A_" + AInfo[i][3] + "_" + AInfo[i][1]
-        file.write("datasettitle = %s \n" % name)
-        file.write("datasetenergy = %s \n" % AInfo[i][3])
-        if (AInfo[i][1] == "S"):
-            file.write("polarization = S \n")
-        elif (AInfo[i][1] == "P"):
-            file.write("polarization = P \n")
-        elif (AInfo[i][1] == "L"):
-            file.write("polarization = LC \n")
-        elif (AInfo[i][1] == "R"):
-            file.write("polarization = RC \n")
-
-        file.write("datasetpoints = %d \n" % len(AScans[i][:, 0]))
-
-
     for i in range(len(EScans)):
+        name = "Scan_" + str(dsNum)
 
+        qz = EScans[i][:][2]
+        R0 = EScans[i][:][3]
+        E = EScans[i][:][0]
+        datasetpoints = len(qz)
+        dat = np.array([qz,R0,E])
 
-        file.write("datasetnumber = %d \n" % dsNum)
-        name = str(EInfo[i][0]) + "_E" + str(round(float(EInfo[i][3]), 2)) + "_Th" + str(
-            round(float(EInfo[i][4]), 2)) + "_" + EInfo[i][1]
-        file.write("datasettitle = %s \n" % name)
-        file.write("datasetenergy = %s \n" % EInfo[i][3])
-
+        energy = EInfo[i][3]
         if (EInfo[i][1] == "S"):
-            file.write("polarization = S \n")
-
+            polarization = 'S'
         elif (EInfo[i][1] == "P"):
-            file.write("polarization = P \n")
-
+            polarization = 'P'
         elif (EInfo[i][1] == "L"):
-            file.write("polarization = LC \n")
-
+            polarization = 'LC'
         elif (EInfo[i][1] == "R"):
-            file.write("polarization = RC \n")
+            polarization = 'RC'
 
-        file.write("datasetpoints = %d \n" % len(EScans[i][:, 0]))
-        for j in range(len(EScans[i][:, 0])):
-            file.write("dataset_qz = %f \n" % EScans[i][j][2])
-            file.write("dataset_R0 = %e \n" % EScans[i][j][3])
-            file.write("dataset_eng = %f \n" % EScans[i][j][0])
-        file.write("\n\n")
+        grpE.create_dataset(name, data=dat)
+        grpE[name].attrs['Energy'] = float(energy)
+        grpE[name].attrs['Polarization'] = polarization
+        grpE[name].attrs['DataPoints'] = int(datasetpoints)
         dsNum = dsNum + 1
 
         # write asymmetry if possible
         if i > 0:
             if (abs(float(EInfo[i - 1][3]) - float(EInfo[i][3])) < 0.015 and abs(
                     float(EInfo[i - 1][4]) - float(EInfo[i][4])) < 0.1):
-                file.write("datasetnumber = %d \n" % dsNum)
-                name = str(EInfo[i - 1][0]) + "-" + str(EInfo[i][0]) + "_E" + str(
-                    round(float(EInfo[i][3]), 2)) + "_Th" + str(round(float(EInfo[i][4]), 2)) + "_" + EInfo[i - 1][
-                           1] + "-" + EInfo[i][1] + "_Asymm"
-                file.write("datasettitle = %s \n" % name)
-                file.write("datasetenergy = %s \n" % EInfo[i][3])
+                name = 'Scan_' + str(dsNum)
+                qz = EScans[i][:][2]
+                E = EScans[i][:][0]
+                A = (EScans[i-1][:][2]-EScans[i][:][3])/(EScans[i-1][:][2]+EScans[i][:][3])
+                dat = np.array([qz,A,E])
+                energy = EInfo[i][3]
 
                 if (EInfo[i - 1][1] == "S" or EInfo[i - 1][1] == "P"):
-                    file.write("polarization = AL \n")
+                    polarization = 'AL'
                 elif (EInfo[i - 1][1] == "L" or EInfo[i - 1][1] == "R"):
-                    file.write("polarization = AC \n")
+                    polarization = 'AC'
 
-                for j in range(len(EScans[i][:, 0])):
-                    file.write("dataset_qz = %f \n" % EScans[i][j][2])
-                    file.write("dataset_A = %e \n" % (
-                            (EScans[i - 1][j][3] - EScans[i][j][3]) / (EScans[i - 1][j][3] + EScans[i][j][3])))
-                    file.write("dataset_eng = %f \n" % EScans[i][j][0])
+                grpE.create_dataset(name, data=dat)
+                grpE[name].attrs['Energy'] = float(energy)
+                grpE[name].attrs['Polarization'] = polarization
+                grpE[name].attrs['DataPoints'] = int(datasetpoints)
 
-                file.write("\n\n")
                 dsNum = dsNum + 1
 
-    file.close()
+    f.close()
 
 def sampleFormat(file,sample):
 
@@ -869,6 +851,7 @@ def selectScan(Sinfo, Sscan, sample):
 if __name__ == "__main__":
 
     """
+
     fname = "FGT-1L.all"
 
 
@@ -896,17 +879,19 @@ if __name__ == "__main__":
         #remagxHeader = GetReMagXHeader(names[sam], densities[sam], thicknesses[sam])
 
         #WriteDataASCII(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo, sample)
-        #WriteDataHDF5(samples[sam] + ".hdf5", AsData, AsInfo, EsData, EsInfo, sample)
+        WriteDataHDF5(samples[sam] + ".hdf5", AsData, AsInfo, EsData, EsInfo, sample)
 
         print()
     print('########################### DONE!!!! #######################################')
-    
     """
+
     fname = "FGT-1L.hdf5"
     f = h5py.File(fname, 'r')
     dset = f['experimental_data']
-    scan1 = dset['scan1']
-    print(scan1.attrs['energy'])
+    Reflectivity = dset['Reflectivity_Scan']
+    Energy = dset['Energy_Scan']
+    data = Reflectivity['Scan_1']
+    print(list(data))
     f.close()
 
     #Sscan, Sinfo, sample1 = ReadData(fname)
