@@ -140,3 +140,4 @@ if __name__ == '__main__':
     fname = "FGT-1L.all"
     Sscan, Sinfo, sample1 = ReadData(fname)
     selectScan(Sinfo, Sscan, sample)
+    print('hello')
