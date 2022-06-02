@@ -10,6 +10,7 @@ from material_structure import *
 from time import time
 import pickle
 from numba import *
+from scipy import interpolate
 
 with open('form_factor.pkl', 'rb') as f:
     ff = pickle.load(f)
@@ -17,6 +18,7 @@ with open('form_factor.pkl', 'rb') as f:
 
 with open('form_factor_magnetic.pkl','rb') as f:
     ffm = pickle.load(f)
+
 
 def form_factor(f,E):
     """
@@ -26,18 +28,6 @@ def form_factor(f,E):
     :return: Array contains real and imaginary component of form factor at energy E: f=[real, imaginary]
     """
 
-    from scipy import interpolate
-
-    """
-    #E_axis = f[:,0]
-    # Splice interpolation
-    tck_real = interpolate.splrep(E_axis,f[:,1])
-    f_real = interpolate.splev(E, tck_real)
-
-    tck_imag = interpolate.splrep(E_axis, f[:,2])
-    f_imag = interpolate.splev(E, tck_imag)
-
-    """
     # Linear interpolation
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
@@ -50,7 +40,7 @@ def form_factor(f,E):
         f_real = fr(E)
         f_imag = fi(E)
 
-    return [f_real, f_imag]
+    return np.array([f_real, f_imag])
 
 def find_form_factor(element, E, mag):
 
@@ -90,7 +80,6 @@ def find_form_factors(element, E, mag):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
 
-
 def magnetic_optical_constant(rho, sfm, E):
     """
     Purpose: Calculate the magnetic optical constants
@@ -100,8 +89,6 @@ def magnetic_optical_constant(rho, sfm, E):
     :return: delta_m - magneto-optic dispersive component
              beta_m  - magneto-optic absorptive component
     """
-
-    mag = True  # States that retrieval of form factors is magnetic
 
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
@@ -116,20 +103,13 @@ def magnetic_optical_constant(rho, sfm, E):
     f2 = 0  # for absorptive component computation
 
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
-    """
-    # Retrieve the form factors of each magnetic element
-    F = dict()
-    for element in elements:
-        F[element] = find_form_factor(sf[element], E, mag)
-    """
+
     # Computes the dispersive and absorptive components of the index of refraction
-    if len(elements) == 1:
-        f1 = sfm[elements[0]][0]*rho[elements[0]]
-        f2 = sfm[elements[0]][1] * rho[elements[0]]
-    else:
-        for element in elements:
-            f1 = f1 + sfm[element][0]*rho[element]
-            f2 = f2 + sfm[element][1] * rho[element]
+    for element in elements:
+        f1 = f1 + sfm[element][0] * rho[element]
+        f2 = f2 + sfm[element][1] * rho[element]
+
+
 
     delta_m = constant * f1  # dispersive component
     beta_m = constant * f2  # absorptive component
@@ -169,13 +149,9 @@ def index_of_refraction(rho, sf, E):
         F[ element] = find_form_factor(sf[element],E, mag)
     """
     #  Computes the dispersive and absorptive components
-    if len(elements) == 1:
-        f1 = sf[elements[0]][0]*rho[elements[0]]
-        f2 = sf[elements[0]][1] * rho[elements[0]]
-    else:
-        for element in elements:
-            f1 = f1 + sf[element][0]*rho[element]
-            f2 = f2 + sf[element][1]*rho[element]
+    for element in elements:
+        f1 = f1 + sf[element][0] * rho[element]
+        f2 = f2 + sf[element][1] * rho[element]
 
     delta = f1*constant  # dispersive component
     beta = f2*constant  # absorptive component

@@ -714,9 +714,12 @@ def selectScan(Sinfo, Sscan, sample):
         elif scan_type == 'Energy':
             Theta = info['angle']  # angle of energy scan
             energy = np.array(data[0])  # energy array
+
             start = time()
             energy, R = sample.energy_scan(Theta, energy)  # simulated energy scan
             #energy, R = sample.energy_scan_multi(Theta, energy)  # simulated energy scan
+            end = time()
+            print(end-start)
 
 
             plt.figure(2)

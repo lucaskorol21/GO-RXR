@@ -2,10 +2,12 @@ from data_structure import *
 from material_structure import *
 import matplotlib.pyplot as plt
 import numpy as np
+from numba import *
 
 
 if __name__ == '__main__':
 
+    start = time_ns()
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
@@ -33,11 +35,13 @@ if __name__ == '__main__':
 
     # sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
 
-    sample.plot_density_profile()
+    #sample.plot_density_profile()
+    #start = time()
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
-
+    end = time_ns()
+    print('Setup: ', end-start, ' ns')
     E = 642.2  # eV
-
+    """
     elements = density.keys()
     sf = dict()
     elements_mag = density_magnetic.keys()
@@ -57,24 +61,23 @@ if __name__ == '__main__':
     plt.xlabel('Thickness')
     plt.ylabel('Profile')
     plt.legend(['delta', 'beta'])
-
+    """
     h = 4.1257e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
     y = h * c / (E * 1e-10)  # wavelength m
 
     F = np.loadtxt('test_example.txt')
     qz = F[:, 0]
-    p1 = 1e-5
-    p2 = 1e-5
-    start = time()
-    qz, Rtemp = sample.reflectivity(E, qz, precision=0, s_min=0.1)  # baseline
-    end = time()
-    print(end - start)
-    start = time()
+    p1 = 1e-6
+    p2 = 1e-7
+
+    qz, Rtemp = sample.reflectivity(E, qz, precision=1e-15, s_min=0.1)  # baseline
+
     qz1, R1temp = sample.reflectivity(E, qz, precision=p1, s_min=0.1)
-    end = time()
-    print(end - start)
+
+
     qz2, R2temp = sample.reflectivity(E, qz, precision=p2, s_min=0.1)
+
 
     # R = np.log10(Rtemp['LC'])
     # R1 = np.log10(R1temp['LC'])
@@ -122,22 +125,24 @@ if __name__ == '__main__':
     # I = np.log10(I)
     plt.figure(55)
     plt.plot(q, I, 'k')
-    plt.plot(qz, R, 'r--')
+    plt.plot(qz, R1, 'r--')
     plt.suptitle('Zak Formalism: Asymmetry 642.2 eV (rho=0.5) ')
     plt.xlabel('qz')
     plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
     plt.legend(['ReMagX', 'Lucas'])
 
-    diff_3 = abs(I - R) / abs(I + R)
+    diff_3 = abs(I - R1) / abs(I + R1)
     plt.figure(56)
     plt.plot(q, diff_3, 'k')
     plt.suptitle('Percent Difference: precision = ' + str(0))
     plt.xlabel('qz')
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
+    plt.show()
 
 
-    fname = "FGT-1L.all"
-    Sscan, Sinfo, sample1 = ReadData(fname)
-    selectScan(Sinfo, Sscan, sample)
-    print('hello')
+    #fname = "FGT-1L.all"
+    #Sscan, Sinfo, sample1 = ReadData(fname)
+    #selectScan(Sinfo, Sscan, sample)
+
+

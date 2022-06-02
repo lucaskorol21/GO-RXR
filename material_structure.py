@@ -147,18 +147,31 @@ def layer_segmentation(thickness, epsilon, epsilon_mag, precision=1e-6):
 
 @njit()
 def ALS(epsilon, epsilon_mag, precision=1e-6):
-    idx_a = 0
+    """
+    Purpose: Perform the adaptive layer segmentation
+    :param epsilon: numpy array of real values
+    :param epsilon_mag: numpy array of real values
+    :param precision: precision for slicing
+    :return: my_slabs - contains indices for slicing
+    """
+    epsilon = epsilon/np.linalg.norm(epsilon)  # normalizes epsilon
+    epsilon_mag = epsilon_mag/np.linalg.norm(epsilon)  # normalizes epsilon_mag
+    idx_a = 0  # keeps track of surface of previous slab
     n = epsilon.size
     my_slabs = np.zeros(1) # pre-initialize the slab array
+
     for idx_b in range(1,n):
+
+        # retrieves permittivity values
         f1 = epsilon[idx_a]
         f2 = epsilon[idx_b]
         f1m = epsilon_mag[idx_a]
         f2m = epsilon_mag[idx_b]
 
-        delta = np.absolute(f2-f1)
-        delta_m = np.absolute(f2m-f1m)
+        delta = np.absolute(f2-f1)  # varitation of epsilon
+        delta_m = np.absolute(f2m-f1m)  # variation of epsilon_mag
 
+        # checks if variation is of minimum variation set by 'precision'
         if delta>precision or delta_m>precision:
             my_slabs = np.append(my_slabs, idx_b)  # append slice
             idx_a = idx_b  # change previous slice location
@@ -1073,12 +1086,12 @@ class slab:
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
 
-        thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
+        thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
 
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
-
+        start_new = time_ns()
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             sf[e] = find_form_factor(self.find_sf[0][e], E, False)
@@ -1086,26 +1099,30 @@ class slab:
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
 
-
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
+
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
         #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
         epsilon = n**2
         #Q = np.vectorize(complex)(delta, beta)
-        Q = np.vectorize(complex)(beta_m, delta_m )
+        Q = np.vectorize(complex)(beta_m, delta_m)
         epsilon_mag = Q*epsilon*2*(-1)
-        start = time()
-
+        end_new = time_ns()
         my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
+
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
+
+        #plt.figure()
+        #plt.plot(thickness[my_slabs], epsilon.real[my_slabs], '.')
+        #plt.legend([len(my_slabs)-1])
+        #plt.show()
+
         my_slabs = my_slabs[1:]  # removes first element
-        end = time()
 
-
-        print("Layer Segmentation: ", end-start)
+        print("Layer Segmentation: ", end_new-start_new, " ns")
         start = time()
         m = len(my_slabs)  # number of slabs
         #m = len(epsilon)
@@ -1174,13 +1191,12 @@ class slab:
         end = time()
         print('Reflectivity: ', end-start)
         R = dict()
-
+        print()
         """
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
         plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
         """
-        print(len(Theta))
         if len(Rtemp) == 2:
             R['S'] = Rtemp[0]  # s-polarized light
             R['P'] = Rtemp[1]  # p-polarized light
@@ -1200,7 +1216,7 @@ class slab:
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=0.5,s_min = 0.1):
+    def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1):
         """
                 Purpose: Computes the reflectivity
                 :param E: Energy of reflectivity scan (eV)
@@ -1213,7 +1229,6 @@ class slab:
                     R1 - reflectivity
 
                 """
-
         Elen = len(energy)
         R = {'S': np.zeros(Elen),
              'P': np.zeros(Elen),
@@ -1248,8 +1263,11 @@ class slab:
             for em in self.find_sf[1].keys():
                 sfm[em] = find_form_factor(self.find_sf[1][em], energy[E], True)
 
+
             delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
-            delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])  # calculates dielectric constant for magnetic component
+            delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])   # calculates dielectric constant for magnetic component
+
+
 
             # definition as described in Lott Dieter Thesis
             n = 1 + np.vectorize(complex)(-delta, beta)
@@ -1259,7 +1277,7 @@ class slab:
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
 
-            my_slabs = ALS(epsilon.real,epsilon_mag.real, precision=1e-5)
+            my_slabs = ALS(epsilon.real,epsilon_mag.real, precision=1e-6)
             my_slabs = my_slabs[1:]
             my_slabs = my_slabs.astype(int)
 
@@ -1339,7 +1357,6 @@ class slab:
                 raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
 
-
         return energy, R
 
     def energy_scan_multi(self, Theta, energy, precision=0.5,s_min = 0.1):
@@ -1374,8 +1391,8 @@ class slab:
 
 
         prod = partial(multi_energy_calc,thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision)
-
-        with multiprocessing.Pool() as pool:
+        cores = multiprocessing.cpu_count()
+        with multiprocessing.Pool(cores) as pool:
             result_list = pool.map(prod, energy)
         pool.join()
 
