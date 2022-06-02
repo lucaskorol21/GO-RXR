@@ -7,7 +7,16 @@ import cmath
 from KK_And_Merge import *
 import os
 from material_structure import *
+from time import time
+import pickle
+from numba import *
 
+with open('form_factor.pkl', 'rb') as f:
+    ff = pickle.load(f)
+
+
+with open('form_factor_magnetic.pkl','rb') as f:
+    ffm = pickle.load(f)
 
 def form_factor(f,E):
     """
@@ -41,10 +50,24 @@ def form_factor(f,E):
         f_real = fr(E)
         f_imag = fi(E)
 
-
     return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
+
+    if mag:
+        mag_keys = list(ffm.keys())
+        if element not in mag_keys:
+            raise NameError(element + " not found in magnetic form factors")
+        F = form_factor(ffm[element],E)
+    else:
+        struc_keys = list(ff.keys())
+        if element not in struc_keys:
+            raise NameError(element + " not found in structural form factors")
+        F = form_factor(ff[element], E)
+
+    return F
+
+def find_form_factors(element, E, mag):
     """
     Purpose: Retrieve form factor from database
     :param element: String containing element symbol
@@ -65,8 +88,8 @@ def find_form_factor(element, E, mag):
 
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-
     return F
+
 
 def magnetic_optical_constant(rho, sfm, E):
     """
@@ -124,7 +147,6 @@ def index_of_refraction(rho, sf, E):
              beta - absorptive component of the refractive index
     """
     mag = False  # statement for retrieval of non=magnetic form factors
-
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     #h = 4.1357e-15
