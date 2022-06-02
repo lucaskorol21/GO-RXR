@@ -141,3 +141,4 @@ if __name__ == '__main__':
     Sscan, Sinfo, sample1 = ReadData(fname)
     selectScan(Sinfo, Sscan, sample)
 
+    print('hello')
