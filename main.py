@@ -141,15 +141,3 @@ if __name__ == '__main__':
     Sscan, Sinfo, sample1 = ReadData(fname)
     selectScan(Sinfo, Sscan, sample)
 
-    mag = sum(MAG)
-    non = sum(nonMAG)
-    eps = sum(EPS)
-    calc = sum(TOT)
-
-    tot = mag+non+eps+calc
-    pie = [mag*100/tot,non*100/tot, eps*100/tot, calc*100/tot]
-
-    plt.figure(41)
-    plt.pie(pie)
-    plt.legend(['mag','non','eps','calc'])
-    plt.show()

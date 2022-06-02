@@ -9,6 +9,7 @@ import os
 from material_structure import *
 from time import time
 import pickle
+from numba import *
 
 with open('form_factor.pkl', 'rb') as f:
     ff = pickle.load(f)
@@ -49,7 +50,6 @@ def form_factor(f,E):
         f_real = fr(E)
         f_imag = fi(E)
 
-
     return [f_real, f_imag]
 
 def find_form_factor(element, E, mag):
@@ -89,6 +89,7 @@ def find_form_factors(element, E, mag):
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
+
 
 def magnetic_optical_constant(rho, sfm, E):
     """

@@ -17,15 +17,6 @@ from time import *
 from multiprocessing.pool import ThreadPool
 from numba import *
 
-global MAG
-global nonMAG
-global EPS
-global TOT
-
-MAG = []
-nonMAG = []
-EPS = []
-TOT = []
 
 def zero_to_one(func):
     """
