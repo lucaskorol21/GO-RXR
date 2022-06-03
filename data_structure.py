@@ -71,6 +71,8 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
 
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
 
     grp2 = f.create_group("Experimental_data")
     grpR = grp2.create_group("Reflectivity_Scan")
@@ -81,7 +83,9 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     for i in range(len(AScans)):
         qz = AScans[i][:,2]
         R0 = AScans[i][:,3]
-        dat = np.array([qz, R0])
+        energy = float(AInfo[i][3])
+        Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+        dat = np.array([qz, Theta, R0])
 
         energy = float(AInfo[i][3])
         polarization = 'S'
@@ -109,8 +113,10 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
                 qz = AScans[i][:,2]
                 A = (AScans[i - 1][:,3] - AScans[i][:,3]) / (AScans[i - 1][:,3]) + AScans[i][:,3]
-                dat = np.array([qz, A])
                 energy = float(AInfo[i][3])
+                Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+                dat = np.array([qz, Theta, A])
+
                 datasetpoints = len(qz)
 
                 if (AInfo[i - 1][1] == "S" or AInfo[i - 1][1] == "P"):
@@ -132,8 +138,9 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         qz = EScans[i][:,2]
         R0 = EScans[i][:,3]
         E = EScans[i][:,0]
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
         datasetpoints = len(qz)
-        dat = np.array([qz,R0,E])
+        dat = np.array([qz,Theta,R0,E])
 
 
         energy = float(EInfo[i][3])
@@ -164,7 +171,8 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 qz = EScans[i][:,2]
                 E = EScans[i][:,0]
                 A = (EScans[i-1][:,2]-EScans[i][:,3])/(EScans[i-1][:,2]+EScans[i][:,3])
-                dat = np.array([qz,A,E])
+                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+                dat = np.array([qz, Theta, A,E])
                 energy = float(EInfo[i][3])
 
                 if (EInfo[i - 1][1] == "S" or EInfo[i - 1][1] == "P"):
@@ -254,15 +262,15 @@ def ReadDataHDF5(fname):
 
         if scanType == 'Reflectivity':
             Rdata = list(RS[scanName])
-            qz = Rdata[0]
-            R = Rdata[1]
+            qz = Rdata[1]
+            R = Rdata[2]
             plt.figure()
             plt.plot(qz, np.log10(R))
 
         elif scanType == 'Energy':
             Edata = list(ES[scanName])
-            E = Edata[2]
-            R = Edata[1]
+            E = Edata[3]
+            R = Edata[2]
             plt.figure()
             plt.plot(E,R)
         plt.show()
@@ -999,8 +1007,8 @@ def selectScan(Sinfo, Sscan, sample):
 
 if __name__ == "__main__":
 
-
     """
+
     fname = "FGT-1L.all"
 
 
