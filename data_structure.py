@@ -75,8 +75,13 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     c = 2.99792458e8  # speed of light m/s
 
     grp2 = f.create_group("Experimental_data")
+    grp3 = f.create_group("Simulated_data")
+
     grpR = grp2.create_group("Reflectivity_Scan")
+    subR = grp3.create_group("Reflectivity_Scan")
+
     grpE = grp2.create_group("Energy_Scan")
+    subE = grp3.create_group("Energy_Scan")
 
     #start of loading data
     dsNum = 1
@@ -101,10 +106,19 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
         name = str(AInfo[i][0]) + "_" + str(np.round(energy,2)) + "_" + polarization
         dset = grpR.create_dataset(name, data=dat)
+        dset1 = subR.create_dataset(name,dset.shape, dtype=dset.dtype)
+
         dset.attrs['Energy'] = float(energy)
+        dset1.attrs['Energy'] = float(energy)
+
         dset.attrs['Polarization'] = str(polarization)
+        dset1.attrs['Polarization'] = str(polarization)
+
         dset.attrs['DataPoints'] = int(datasetpoints)
+        dset1.attrs['DataPoints'] = int(datasetpoints)
+
         dset.attrs['DatasetNumber'] = int(dsNum)
+        dset1.attrs['DatasetNumber'] = int(dsNum)
 
         dsNum = dsNum + 1
         # write asymmetry if possible
@@ -125,11 +139,19 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                     polarization = "AC"
                 name = str(AInfo[i-1][0])+ "-" + str(AInfo[i][0]) + "_" + str(np.round(energy,2)) +"_"+ polarization + "_Asymm"
                 dset = grpR.create_dataset(name, data=dat)
-                dset.attrs['Energy'] = float(energy)
-                dset.attrs['Polarization'] = polarization
-                dset.attrs['DataPoints'] = int(datasetpoints)
-                dset.attrs['DatasetNumber'] = int(dsNum)
+                dset1 = subR.create_dataset(name, dset.shape, dtype=dset.dtype)
 
+                dset.attrs['Energy'] = float(energy)
+                dset1.attrs['Energy'] = float(energy)
+
+                dset.attrs['Polarization'] = polarization
+                dset1.attrs['Polarization'] = polarization
+
+                dset.attrs['DataPoints'] = int(datasetpoints)
+                dset1.attrs['DataPoints'] = int(datasetpoints)
+
+                dset.attrs['DatasetNumber'] = int(dsNum)
+                dset1.attrs['DatasetNumber'] = int(dsNum)
                 dsNum = dsNum + 1
 
 
@@ -157,11 +179,22 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
         name = str(EInfo[i][0]) + "_E" + str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + "_" + polarization
         dset = grpE.create_dataset(name, data=dat)
+        dset1 = subE.create_dataset(name, dset.shape, dtype=dset.dtype)
+
         dset.attrs['Energy'] = float(energy)
+        dset1.attrs['Energy'] = float(energy)
+
         dset.attrs['Polarization'] = polarization
+        dset1.attrs['Polarization'] = polarization
+
         dset.attrs['DataPoints'] = int(datasetpoints)
+        dset1.attrs['DataPoints'] = int(datasetpoints)
+
         dset.attrs['Angle'] = float(angle)
+        dset1.attrs['Angle'] = float(angle)
+
         dset.attrs['DatasetNumber'] = int(dsNum)
+        dset1.attrs['DatasetNumber'] = int(dsNum)
         dsNum = dsNum + 1
 
         # write asymmetry if possible
@@ -183,11 +216,23 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 angle = float(EInfo[i][4])
                 name = str(EInfo[i-1][0])+"-"+ str(EInfo[i][0]) + "_E" + str(np.round(energy,2)) + "_Th" + str(np.round(angle, 2)) + "_" + polarization + "_Asymm"
                 dset = grpE.create_dataset(name, data=dat)
+                dset1 = subE.create_dataset(name, dset.shape, dtype=dset.dtype)
+
                 dset.attrs['Energy'] = float(energy)
+                dset1.attrs['Energy'] = float(energy)
+
                 dset.attrs['Polarization'] = polarization
+                dset1.attrs['Polarization'] = polarization
+
                 dset.attrs['Angle'] = float(angle)
+                dset1.attrs['Angle'] = float(angle)
+
                 dset.attrs['DataPoints'] = int(datasetpoints)
+                dset1.attrs['DataPoints'] = int(datasetpoints)
+
                 dset.attrs['DatasetNumber'] = int(dsNum)
+                dset1.attrs['DatasetNumber'] = int(dsNum)
+
                 dsNum = dsNum + 1
 
     f.close()
@@ -1007,8 +1052,8 @@ def selectScan(Sinfo, Sscan, sample):
 
 if __name__ == "__main__":
 
-    """
 
+    """
     fname = "FGT-1L.all"
 
 
@@ -1043,7 +1088,9 @@ if __name__ == "__main__":
 
     """
     fname = "FGT-1L.hdf5"
-    ReadDataHDF5(fname)
+    f = h5py.File(fname, 'r')
+    print(f['Simulated_data/Energy_Scan'].keys())
+    #ReadDataHDF5(fname)
 
 
     #Sscan, Sinfo, sample1 = ReadData(fname)
