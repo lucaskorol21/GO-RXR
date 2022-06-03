@@ -28,7 +28,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
-    grp1.attrs['NumberLayers'] = m
+    grp1.attrs['NumberLayers'] = int(m)
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
@@ -54,7 +54,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
             element.attrs['Thickness'] = my_layer[ele].thickness
             element.attrs['Roughness'] = my_layer[ele].roughness
             element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
-            element.attrs['polymorph'] = my_layer[ele].polymorph
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
             element.attrs['Gamma'] = my_layer[ele].gamma
             element.attrs['Phi'] = my_layer[ele].phi
 
@@ -68,11 +68,11 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
             element.attrs['Position'] = my_layer[ele].position
 
-        layer.attrs['formula'] = formula
+        layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
 
 
-    grp2 = f.create_group("experimental_data")
+    grp2 = f.create_group("Experimental_data")
     grpR = grp2.create_group("Reflectivity_Scan")
     grpE = grp2.create_group("Energy_Scan")
 
@@ -100,7 +100,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         dset.attrs['Energy'] = float(energy)
         dset.attrs['Polarization'] = str(polarization)
         dset.attrs['DataPoints'] = int(datasetpoints)
-        dset.attrs['DatasetNumber'] = int(dsNum)
         dset.attrs['DatasetNumber'] = int(dsNum)
 
         dsNum = dsNum + 1
@@ -182,6 +181,93 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 dset.attrs['DataPoints'] = int(datasetpoints)
                 dset.attrs['DatasetNumber'] = int(dsNum)
                 dsNum = dsNum + 1
+
+    f.close()
+
+def ReadSampleHDF5(fname):
+    f = h5py.File(fname, 'r')
+
+    S = f['Sample']
+
+    # Sample Information
+    m = int(S.attrs['NumberLayers'])
+    sample = slab(m)
+    sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
+    sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
+    sample.layer_magnetized = S.attrs['LayerMagnetized']
+
+
+    for lay_key in S.keys():
+        layer = S[lay_key]
+        formula = layer.attrs['Formula']
+        lay_num = int(layer.attrs['LayerNumber'])
+        sample.addlayer(lay_num, formula,20, density=1)  #pre-initialize parameters to random numbers for each layer
+        for ele_key in layer.keys():
+            element = layer[ele_key]
+            sample.structure[lay_num][ele_key].molar_mass = element.attrs['MolarMass']
+            sample.structure[lay_num][ele_key].density = element.attrs['Density']
+            sample.structure[lay_num][ele_key].thickness = element.attrs['Thickness']
+            sample.structure[lay_num][ele_key].roughness = element.attrs['Roughness']
+            sample.structure[lay_num][ele_key].poly_ratio = element.attrs['PolyRatio']
+            sample.structure[lay_num][ele_key].polymorph = element.attrs['Polymorph']
+            sample.structure[lay_num][ele_key].gamma = element.attrs['Gamma']
+            sample.structure[lay_num][ele_key].phi = element.attrs['Phi']
+            if element.attrs['Magnetic']:
+                sample.structure[lay_num][ele_key].mag_density = element.attrs['MagDensity']
+                sample.structure[lay_num][ele_key].mag_scattering_factor = element.attrs['MagScatteringFactor']
+
+            sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
+            sample.structure[lay_num][ele_key].position = element.attrs['Position']
+
+    sample.link = S.attrs['Links']
+    f.close()
+
+def ReadDataHDF5(fname):
+    f = h5py.File(fname, 'r')
+    experiment = f['Experimental_data']
+    RS = experiment['Reflectivity_Scan']
+    ES = experiment['Energy_Scan']
+
+    data = list()
+    for Rkey in RS.keys():
+        mydata = RS[Rkey]
+        Rdat = [int(mydata.attrs['DatasetNumber']),'Reflectivity', Rkey]
+        data.append(Rdat)
+    for Ekey in ES.keys():
+        mydata = ES[Ekey]
+        Edat = [int(mydata.attrs['DatasetNumber']),'Energy', Ekey]
+        data.append(Edat)
+    data = np.array(data)
+    sort_idx = np.argsort(data[:,0].astype(int))
+    data = data[sort_idx]
+    header = ['#', 'Scan Type', 'Scan']
+    tab = PrettyTable(header)
+    tab.add_rows(data)
+    print(tab)
+
+    val = input('Choose scan # you want to use: ')
+    while val in data[:,0]:
+        idx = int(val)-1
+        myScan = data[idx]
+        scanType = myScan[1]
+        scanName = myScan[2]
+
+        if scanType == 'Reflectivity':
+            Rdata = list(RS[scanName])
+            qz = Rdata[0]
+            R = Rdata[1]
+            plt.figure()
+            plt.plot(qz, np.log10(R))
+
+        elif scanType == 'Energy':
+            Edata = list(ES[scanName])
+            E = Edata[2]
+            R = Edata[1]
+            plt.figure()
+            plt.plot(E,R)
+        plt.show()
+        val = input('Choose scan # you want to use: ')
+
 
     f.close()
 
@@ -946,16 +1032,11 @@ if __name__ == "__main__":
 
         print()
     print('########################### DONE!!!! #######################################')
+
     """
-
     fname = "FGT-1L.hdf5"
-    f = h5py.File(fname, 'r')
-    S = f['Sample']
-    Layer1 = S['Layer_1']
-    element = Layer1['Mn']
+    ReadDataHDF5(fname)
 
-    print(element.attrs['Phi'])
-    f.close()
 
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
