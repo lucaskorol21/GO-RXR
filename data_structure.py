@@ -25,10 +25,58 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         raise OSError("HDF5 file already exists. To write new file remove the old file from the current working directory.")
 
     f = h5py.File(fname, 'a')
-    grp = f.create_group("experimental_data")
-    grpR = grp.create_group("Reflectivity_Scan")
-    grpE = grp.create_group("Energy_Scan")
 
+    grp1 = f.create_group("Sample")
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = m
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['Links'] = np.array(sample.link)
+
+    dsLayer = 0
+    for my_layer in sample.structure:
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+        formula = ''
+        for ele in list(my_layer.keys()):
+            element = layer.create_group(ele)
+
+            stoich = int(my_layer[ele].stoichiometry)
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['Position'] = my_layer[ele].position
+
+        layer.attrs['formula'] = formula
+        dsLayer = dsLayer + 1
+
+
+    grp2 = f.create_group("experimental_data")
+    grpR = grp2.create_group("Reflectivity_Scan")
+    grpE = grp2.create_group("Energy_Scan")
+
+    #start of loading data
     dsNum = 1
     for i in range(len(AScans)):
         qz = AScans[i][:,2]
@@ -865,8 +913,8 @@ def selectScan(Sinfo, Sscan, sample):
 
 if __name__ == "__main__":
 
-    """
 
+    """
     fname = "FGT-1L.all"
 
 
@@ -902,15 +950,11 @@ if __name__ == "__main__":
 
     fname = "FGT-1L.hdf5"
     f = h5py.File(fname, 'r')
-    dset = f['experimental_data']
-    Reflectivity = dset['Reflectivity_Scan']
-    Energy = dset['Energy_Scan']
+    S = f['Sample']
+    Layer1 = S['Layer_1']
+    element = Layer1['Mn']
 
-    testR = Reflectivity[list(Reflectivity.keys())[0]]
-    testE = Energy[list(Energy.keys())[0]]
-
-    print(testR.attrs['DatasetNumber'])
-    print(testE.attrs['DatasetNumber'])
+    print(element.attrs['Phi'])
     f.close()
 
     #Sscan, Sinfo, sample1 = ReadData(fname)
