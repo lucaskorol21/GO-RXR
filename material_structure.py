@@ -1395,17 +1395,19 @@ class slab:
 
 
         prod = partial(multi_energy_calc,thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision)
-        cores = multiprocessing.cpu_count()
-        with multiprocessing.Pool(cores) as pool:
+
+        with multiprocessing.Pool(8) as pool:
             result_list = pool.map(prod, energy)
+
+
+
         pool.join()
-
-
-
+        pool.close()
+        print(result_list)
         return energy, result_list
 
 def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, layer_magnetized, transition, theta, prec , E):
-
+    print('hello')
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
 
@@ -1489,7 +1491,6 @@ def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, 
     # Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
     R = pr.Reflectivity(A, theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-
 
     return R
 
@@ -1640,14 +1641,14 @@ if __name__ == "__main__":
     sample.plot_density_profile()
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
 
-
-
     E = 642.2 # eV
 
     elements = density.keys()
+
     sf = dict()
     elements_mag = density_magnetic.keys()
     sfm = dict()
+
     # Non-Magnetic Scattering Factor
     for e in sample.find_sf[0].keys():
         sf[e] = find_form_factor(sample.find_sf[0][e], E, False)
@@ -1656,7 +1657,6 @@ if __name__ == "__main__":
         sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
 
     delta, beta = index_of_refraction(density, sf, E)
-
 
     plt.figure(2)
     plt.plot(thickness, delta, thickness, beta)
@@ -1672,16 +1672,24 @@ if __name__ == "__main__":
     F = np.loadtxt('test_example.txt')
     qz = F[:,0]
     p1 = 1e-5
-    p2 = 1e-5
-    start = time()
+    p2 = 1e-6
+
     qz, Rtemp =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
-    end = time()
-    print(end-start)
-    start = time()
     qz1, R1temp = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
+    qz2, R2temp = sample.reflectivity(E, qz, precision=p2, s_min=0.1)
+
+    sample.reflectivity(E,qz, precision = p2, s_min=0.1)
+
+    start = time()
+    E, R = sample.energy_scan_multi(30,np.linspace(600,604,1000))
+    end= time()
+    print('Multi Energy Scan: ', end - start)
+
+    start = time()
+    E, R = sample.energy_scan(30, np.linspace(600, 604, 1000))
     end = time()
-    print(end-start)
-    qz2, R2temp = sample.reflectivity(E,qz, precision = p2, s_min=0.1)
+
+    print('Energy Scan: ', end-start)
 
     #R = np.log10(Rtemp['LC'])
     #R1 = np.log10(R1temp['LC'])
@@ -1747,7 +1755,7 @@ if __name__ == "__main__":
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
 
-    plt.show()
+    #plt.show()
 
 
 
