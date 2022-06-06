@@ -1085,7 +1085,7 @@ def selectScan(Sinfo, Sscan, sample):
 if __name__ == "__main__":
 
 
-    """
+
     fname = "FGT-1L.all"
 
 
@@ -1120,12 +1120,12 @@ if __name__ == "__main__":
 
         print()
     print('########################### DONE!!!! #######################################')
-    """
 
-    fname = "FGT-2L.hdf5"
+
+    #fname = "FGT-2L.hdf5"
     #f = h5py.File(fname, 'r')
     #print(f['Simulated_data/Energy_Scan'].keys())
-    ReadDataHDF5(fname)
+    #ReadDataHDF5(fname)
 
 
     #Sscan, Sinfo, sample1 = ReadData(fname)

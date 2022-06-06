@@ -158,8 +158,9 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
     epsilon_mag = epsilon_mag/np.linalg.norm(epsilon)  # normalizes epsilon_mag
     idx_a = 0  # keeps track of surface of previous slab
     n = epsilon.size
-    my_slabs = np.zeros(1) # pre-initialize the slab array
+    my_slabs = np.zeros(n) # pre-initialize the slab array
 
+    dsSlab = 1
     for idx_b in range(1,n):
 
         # retrieves permittivity values
@@ -173,9 +174,12 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
 
         # checks if variation is of minimum variation set by 'precision'
         if delta>precision or delta_m>precision:
-            my_slabs = np.append(my_slabs, idx_b)  # append slice
+            #my_slabs = np.append(my_slabs, idx_b)  # append slice
+            my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
+            dsSlab = dsSlab + 1
 
+    my_slabs = my_slabs[:dsSlab]
     return my_slabs
 
 
