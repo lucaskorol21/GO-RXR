@@ -32,6 +32,11 @@ def form_factor(f,E):
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
 
+    if type(E) == int:  # handle single energy case
+        F = np.array([fr(E), fi(E)] if E>f[0,0] or E<f[-1, 0] else np.array([0,0]))
+    else:  # handle multiple energy case
+        F = [np.array([fr(x), fi(x)]) if x>f[0,0] or x<f[-1,0] else np.array([0,0]) for x in E]
+    """
     # Check if energy within form factor energy range
     if f[0,0] > E or f[-1,0] < E:
         f_real = 0
@@ -39,8 +44,10 @@ def form_factor(f,E):
     else:
         f_real = fr(E)
         f_imag = fi(E)
-
+    
     return np.array([f_real, f_imag])
+    """
+    return F
 
 def find_form_factor(element, E, mag):
 

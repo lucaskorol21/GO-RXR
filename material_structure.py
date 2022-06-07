@@ -13,6 +13,7 @@ from tabulate import tabulate
 from scipy import interpolate
 import multiprocessing
 from functools import partial
+from itertools import repeat
 from time import *
 from multiprocessing.pool import ThreadPool
 from numba import *
@@ -1394,20 +1395,28 @@ class slab:
 
 
 
-        prod = partial(multi_energy_calc,thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision)
-
+        args = [thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision]
+        prod = partial(multi_energy_calc, args)
         with multiprocessing.Pool(8) as pool:
-            result_list = pool.map(prod, energy)
-
-
-
+            #result_list = pool.starmap_async(prod, energy)
+            result_list = pool.map_async(prod, args).get()
+        print(result_list)
         pool.join()
         pool.close()
-        print(result_list)
+
         return energy, result_list
 
-def multi_energy_calc(thickness, density, density_magnetic, find_sf, structure, layer_magnetized, transition, theta, prec , E):
-    print('hello')
+def multi_energy_calc(args , E):
+    thickness = args[0]
+    density = args[1]
+    density_magnetic = args[2]
+    find_sf = args[3]
+    structure = args[4]
+    layer_magnetized = args[5]
+    transition = args[6]
+    theta = args[7]
+    prec = args[8]
+
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
 
@@ -1681,12 +1690,13 @@ if __name__ == "__main__":
     sample.reflectivity(E,qz, precision = p2, s_min=0.1)
 
     start = time()
-    E, R = sample.energy_scan_multi(30,np.linspace(600,604,1000))
+    E, R = sample.energy_scan_multi(30,np.linspace(600,604,1500))
     end= time()
     print('Multi Energy Scan: ', end - start)
 
     start = time()
-    E, R = sample.energy_scan(30, np.linspace(600, 604, 1000))
+    E, R = sample.energy_scan(30, np.linspace(600, 604, 1500))
+    #print(R)
     end = time()
 
     print('Energy Scan: ', end-start)

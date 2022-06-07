@@ -6,7 +6,7 @@ from numba import *
 
 
 if __name__ == '__main__':
-
+    """
     start = time_ns()
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     end = time_ns()
     print('Setup: ', end-start, ' ns')
     E = 642.2  # eV
-    """
+    
     elements = density.keys()
     sf = dict()
     elements_mag = density_magnetic.keys()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     plt.xlabel('Thickness')
     plt.ylabel('Profile')
     plt.legend(['delta', 'beta'])
-    """
+    
     h = 4.1257e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
     y = h * c / (E * 1e-10)  # wavelength m
@@ -145,4 +145,10 @@ if __name__ == '__main__':
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
 
-
+    """
+    E = np.linspace(600, 610, 143)
+    #E = 601
+    start = time()
+    find_form_factor('Mn', E, False)
+    end = time()
+    print(end-start)
