@@ -145,15 +145,7 @@ if __name__ == '__main__':
 
     start = time()
     E,R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
-    E, R = sample.energy_scan(5.0, E)
+    print(R)
     end = time()
     print(end-start)
     R = R['S']

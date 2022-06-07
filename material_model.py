@@ -134,7 +134,7 @@ def magnetic_optical_constant(rho, sfm, E):
 
     return delta_m, beta_m
 
-def IDR(rho,sf,E):
+def IoR(rho,sf,E):
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]

@@ -183,6 +183,80 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
     my_slabs = my_slabs[:dsSlab]
     return my_slabs
 
+def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
+    m = len(my_slabs)  # number of slabs
+    # m = len(epsilon)
+    A = pr.Generate_structure(m)  # creates object for reflectivity computation
+    m_j = 0  # previous slab
+    idx = 0  # keeps track of current layer
+    layer = 0
+    gamma = 90  # pre-initialize magnetization direction
+    phi = 90
+
+    for m_i in my_slabs:
+        d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
+        eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
+        eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
+
+        # Determines the magnetization direction of the first layer
+        if layer == 0:
+            if layer_magnetized[0]:
+                for ele in structure[layer].keys():
+                    if structure[0][ele].mag_scattering_factor != None:
+                        gamma = structure[0][ele].gamma
+                        phi = structure[0][ele].phi
+
+        # Determines the magnetization direction of the other layers
+        if transition[layer] <= thickness[m_j] and layer < len(transition) - 1:
+            layer = layer + 1
+            if layer_magnetized[layer]:
+                for ele in structure[layer].keys():
+                    if structure[layer][ele].mag_scattering_factor != None:
+                        gamma = structure[layer][ele].gamma
+                        phi = structure[layer][ele].phi
+
+        # sets the magnetization direction based on the input angles
+        if layer_magnetized[layer]:
+
+            if gamma == 90 and phi == 90:
+                A[idx].setmag('y')
+            elif gamma == 0 and phi == 90:
+                A[idx].setmag('x')
+            elif gamma == 0 and phi == 0:
+                A[idx].setmag('z')
+            else:
+                raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
+
+            A[idx].seteps([eps, eps, eps, eps_mag])  # sets dielectric tensor for magnetic layer
+        else:
+            A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+
+        if idx != 0:
+            A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
+
+        # move onto the next layer
+        m_j = m_i
+        idx = idx + 1
+
+        return A
+
+def energy_reflectivity(A, Theta, wavelength, R, E):
+    Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+
+    if len(Rtemp) == 2:
+        R['S'][E] = Rtemp[0][0]  # s-polarized light
+        R['P'][E] = Rtemp[1][0]  # p-polarized light
+        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])  # Asymmetry linear polarized
+    elif len(Rtemp) == 4:
+        R['S'][E] = Rtemp[0][0]
+        R['P'][E] = Rtemp[1][0]
+        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])
+        R['LC'][E] = Rtemp[2][0]
+        R['RC'][E] = Rtemp[3][0]
+        R['AC'][E] = (Rtemp[2][0] - Rtemp[3][0]) / (Rtemp[2][0] + Rtemp[3][0])
+    else:
+        raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
+    return R
 
 class element:
     def __init__(self, name, stoichiometry):
@@ -1223,17 +1297,23 @@ class slab:
 
     def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1):
         """
-                Purpose: Computes the reflectivity
-                :param E: Energy of reflectivity scan (eV)
-                :param qi: Starting momentum transfer
-                :param qf: End momentum transfer
-                :param precision: Precision value
-                :param s_min: Minimum step size (None indicates using default value)
-                :return:
-                    qz - momentum transfer
-                    R1 - reflectivity
+        Purpose: Compute the energy scan spectra
+        :param Theta: Grazing angle in degrees
+        :param energy: List or numpy array containing the energies in the energy scan
+        :param precision: parameter used in adaptive layer segmentation
+        :param s_min: minimum slab slice
+        :return: energy, R
+                    - energy: exact energy array that user input
+                    - R: dictionary containing the reflectivity calculation
+                        'S' - s-polarization
+                        'P' - p-polarized
+                        'AL' - asymmetry linear
+                        'RC' - right circular
+                        'LC' - left circular
+                        'AC' - asymmetry circular
 
-                """
+        """
+        # initializes the reflectivity array to be returned
         Elen = len(energy)
         R = {'S': np.zeros(Elen),
              'P': np.zeros(Elen),
@@ -1245,114 +1325,36 @@ class slab:
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
 
-        # wavelength = 19.366478131833802
-        # requires angle for reflectivity computation and minimum slab thickness
-        # theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
-        # theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-
         thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
 
         # Magnetic Scattering Factor
-        temp_sfm = dict()
-        temp_sf = dict()
+        sfm = dict()
+        sf = dict()
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            temp_sf[e] = find_form_factor(self.find_sf[0][e], energy, False)
+            sf[e] = find_form_factor(self.find_sf[0][e], energy, False)
         for em in self.find_sf[1].keys():
-            temp_sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
+            sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
 
-        delta, beta = IDR(density, temp_sf, energy)
+        delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+        n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
+        epsilon = n ** 2  # permittivity
+        delta_m, beta_m = MOC(density_magnetic, sfm,energy)  # absorptive and dispersive components for magnetic components
+        Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
         # definition as described in Lott Dieter Thesis
-        n = 1 + np.vectorize(complex)(-delta, beta)
-        # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
-        epsilon = n ** 2
-        delta_m, beta_m = MOC(density_magnetic, temp_sfm,energy)
-        Q = np.vectorize(complex)(beta_m, delta_m)
         epsilon_mag = Q * epsilon * 2 * (-1)
 
-        for E in range(len(energy)):
+        # retrieves the slabs at each energy
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
 
-            wavelength = h * c / (energy[E] * 1e-10)  # wavelength m
+        # initializes the object for reflectivity computation
+        Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
 
+        wavelength = h * c / (energy * 1e-10)
 
-            my_slabs = ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)
-            my_slabs = my_slabs[1:]
-            my_slabs = my_slabs.astype(int)
-
-
-
-
-            m = len(my_slabs)  # number of slabs
-
-            A = pr.Generate_structure(m)  # creates object for reflectivity computation
-            m_j = 0  # previous slab
-            idx = 0  # keeps track of current layer
-            layer = 0
-            gamma = 90  # pre-initialize magnetization direction
-            phi = 90
-
-            for m_i in my_slabs:
-                d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-                eps = (epsilon[E][m_i] + epsilon[E][m_j]) / 2  # computes the dielectric constant value to use
-                eps_mag = (epsilon_mag[E][m_i] + epsilon_mag[E][m_j]) / 2  # computes the magnetic dielectric constant
-
-                # Determines the magnetization direction of the first layer
-                if layer == 0:
-                    if self.layer_magnetized[0]:
-                        for ele in self.structure[layer].keys():
-                            if self.structure[0][ele].mag_scattering_factor != None:
-                                gamma = self.structure[0][ele].gamma
-                                phi = self.structure[0][ele].phi
-
-                # Determines the magnetization direction of the other layers
-                if self.transition[layer] <= thickness[m_j] and layer < len(self.transition) - 1:
-                    layer = layer + 1
-                    if self.layer_magnetized[layer]:
-                        for ele in self.structure[layer].keys():
-                            if self.structure[layer][ele].mag_scattering_factor != None:
-                                gamma = self.structure[layer][ele].gamma
-                                phi = self.structure[layer][ele].phi
-
-                # sets the magnetization direction based on the input angles
-                if self.layer_magnetized[layer]:
-
-                    if gamma == 90 and phi == 90:
-                        A[idx].setmag('y')
-                    elif gamma == 0 and phi == 90:
-                        A[idx].setmag('x')
-                    elif gamma == 0 and phi == 0:
-                        A[idx].setmag('z')
-                    else:
-                        raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
-
-                    A[idx].seteps([eps, eps, eps, eps_mag])  # sets dielectric tensor for magnetic layer
-                else:
-                    A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
-
-                if idx != 0:
-                    A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
-
-                # move onto the next layer
-                m_j = m_i
-                idx = idx + 1
-
-
-            #Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
-            Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-
-            if len(Rtemp) == 2:
-                R['S'][E] = Rtemp[0][0]  # s-polarized light
-                R['P'][E] = Rtemp[1][0]  # p-polarized light
-                R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])  # Asymmetry linear polarized
-            elif len(Rtemp) == 4:
-                R['S'][E] = Rtemp[0][0]
-                R['P'][E] = Rtemp[1][0]
-                R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])
-                R['LC'][E] = Rtemp[2][0]
-                R['RC'][E] = Rtemp[3][0]
-                R['AC'][E] = (Rtemp[2][0] - Rtemp[3][0]) / (Rtemp[2][0] + Rtemp[3][0])
-            else:
-                raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
+        # reflectivity computation
+        R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E)) for E in range(len(all_slabs))]
+        R = R[0]
 
         return energy, R
 
