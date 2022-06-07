@@ -1184,10 +1184,12 @@ class slab:
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
+        #n = 1 - delta + 1j*beta
         #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
         epsilon = n**2
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(beta_m, delta_m)
+        #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
         end_new = time_ns()
         my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
@@ -1336,20 +1338,30 @@ class slab:
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
 
+
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
-        n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
-        epsilon = n ** 2  # permittivity
+
         delta_m, beta_m = MOC(density_magnetic, sfm,energy)  # absorptive and dispersive components for magnetic components
-        Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
+
+        #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
+        #n = 1 - delta + 1j*beta
+
+        #epsilon = n ** 2  # permittivity
+        epsilon = 1 + -2*delta + 1j*beta*2
+
+        #Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
+        Q = beta_m + 1j*delta_m
+
         # definition as described in Lott Dieter Thesis
+
         epsilon_mag = Q * epsilon * 2 * (-1)
 
         # retrieves the slabs at each energy
         all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
 
+
         # initializes the object for reflectivity computation
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
-
         wavelength = h * c / (energy * 1e-10)
 
         # reflectivity computation
