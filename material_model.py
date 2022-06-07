@@ -27,26 +27,14 @@ def form_factor(f,E):
     :param E: Desired energy
     :return: Array contains real and imaginary component of form factor at energy E: f=[real, imaginary]
     """
-
     # Linear interpolation
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
 
-    if type(E) == int:  # handle single energy case
-        F = np.array([fr(E), fi(E)] if E>f[0,0] or E<f[-1, 0] else np.array([0,0]))
-    else:  # handle multiple energy case
-        F = [np.array([fr(x), fi(x)]) if x>f[0,0] or x<f[-1,0] else np.array([0,0]) for x in E]
-    """
-    # Check if energy within form factor energy range
-    if f[0,0] > E or f[-1,0] < E:
-        f_real = 0
-        f_imag = 0
-    else:
-        f_real = fr(E)
-        f_imag = fi(E)
-    
-    return np.array([f_real, f_imag])
-    """
+    if isinstance(E, list) or isinstance(E, np.ndarray):  # handle multiple energy case
+        F = np.array([np.array([fr(x), fi(x)]) if x > f[0, 0] and x < f[-1, 0] else np.array([0, 0]) for x in E])
+    else:  # handle single energy case
+        F = np.array([fr(E), fi(E)]) if E>f[0,0] and E<f[-1,0] else np.array([0,0])
     return F
 
 def find_form_factor(element, E, mag):
@@ -87,6 +75,28 @@ def find_form_factors(element, E, mag):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
 
+def MOC(rho, sfm, E):
+    # Constants
+    h = 4.135667696e-15  # Plank's Constant [eV s]
+    c = 2.99792450e10  # Speed of light in vacuum [cm/s]
+    re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
+    avocado = 6.02214076e23  # avagoadro's number
+    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+
+    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+
+
+    elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
+    delta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+    beta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+
+    # Computes the dispersive and absorptive components of the index of refraction
+    for element in elements:
+        delta_m = delta_m + np.array([constant[x]*sfm[element][x,0]*rho[element] for x in range(len(sfm[element][:,0]))])
+        beta_m = beta_m + np.array([constant[x]*sfm[element][x, 1]*rho[element] for x in range(len(sfm[element][:, 1]))])
+
+    return delta_m, beta_m
+
 def magnetic_optical_constant(rho, sfm, E):
     """
     Purpose: Calculate the magnetic optical constants
@@ -124,6 +134,26 @@ def magnetic_optical_constant(rho, sfm, E):
 
     return delta_m, beta_m
 
+def IDR(rho,sf,E):
+    # Constants
+    h = 4.135667696e-15  # Plank's Constant [eV s]
+    c = 2.99792450e10  # Speed of light in vacuum [cm/s]
+    re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
+    avocado = 6.02214076e23  # avagoadro's number
+    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+
+    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+
+    elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
+    delta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+    beta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+
+    # Computes the dispersive and absorptive components of the index of refraction
+    for element in elements:
+        delta = delta + np.array([constant[x] * sf[element][x, 0] * rho[element] for x in range(len(sf[element][:, 0]))])
+        beta = beta + np.array([constant[x] * sf[element][x, 1] * rho[element] for x in range(len(sf[element][:, 1]))])
+
+    return delta, beta
 def index_of_refraction(rho, sf, E):
     """
     Purpose: Calculates the dispersive and absorptive components of the index of refraction

@@ -6,7 +6,7 @@ from numba import *
 
 
 if __name__ == '__main__':
-    """
+
     start = time_ns()
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     plt.xlabel('Thickness')
     plt.ylabel('Profile')
     plt.legend(['delta', 'beta'])
-    
+
     h = 4.1257e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
     y = h * c / (E * 1e-10)  # wavelength m
@@ -138,17 +138,29 @@ if __name__ == '__main__':
     plt.xlabel('qz')
     plt.ylabel('Percent Difference')
     plt.legend(['ReMagX', 'Lucas'])
+    #plt.show()
+
+    hello = np.loadtxt('energy_test.txt')
+    E = hello[:,0]
+
+    start = time()
+    E,R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
+    end = time()
+    print(end-start)
+    R = R['S']
+    plt.figure(89)
+    plt.plot(E,R)
     plt.show()
-
-
     #fname = "FGT-1L.all"
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
 
-    """
-    E = np.linspace(600, 610, 143)
-    #E = 601
-    start = time()
-    find_form_factor('Mn', E, False)
-    end = time()
-    print(end-start)

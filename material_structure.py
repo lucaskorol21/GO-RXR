@@ -1252,37 +1252,30 @@ class slab:
 
         thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
 
+        # Magnetic Scattering Factor
+        temp_sfm = dict()
+        temp_sf = dict()
+        # Non-Magnetic Scattering Factor
+        for e in self.find_sf[0].keys():
+            temp_sf[e] = find_form_factor(self.find_sf[0][e], energy, False)
+        for em in self.find_sf[1].keys():
+            temp_sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
 
+        delta, beta = IDR(density, temp_sf, energy)
+        # definition as described in Lott Dieter Thesis
+        n = 1 + np.vectorize(complex)(-delta, beta)
+        # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+        epsilon = n ** 2
+        delta_m, beta_m = MOC(density_magnetic, temp_sfm,energy)
+        Q = np.vectorize(complex)(beta_m, delta_m)
+        epsilon_mag = Q * epsilon * 2 * (-1)
 
         for E in range(len(energy)):
 
             wavelength = h * c / (energy[E] * 1e-10)  # wavelength m
-            sf = dict()  # form factors of non-magnetic components
-            sfm = dict()  # form factors of magnetic components
-
-            # Non-Magnetic Scattering Factor
-            for e in self.find_sf[0].keys():
-                sf[e] = find_form_factor(self.find_sf[0][e], energy[E], False)
-
-            # Magnetic Scattering Factor
-            for em in self.find_sf[1].keys():
-                sfm[em] = find_form_factor(self.find_sf[1][em], energy[E], True)
 
 
-            delta, beta = index_of_refraction(density, sf, energy[E])  # calculates dielectric constant for structural component
-            delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, energy[E])   # calculates dielectric constant for magnetic component
-
-
-
-            # definition as described in Lott Dieter Thesis
-            n = 1 + np.vectorize(complex)(-delta, beta)
-            # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
-            epsilon = n ** 2
-            # Q = np.vectorize(complex)(delta, beta)
-            Q = np.vectorize(complex)(beta_m, delta_m)
-            epsilon_mag = Q * epsilon * 2 * (-1)
-
-            my_slabs = ALS(epsilon.real,epsilon_mag.real, precision=1e-6)
+            my_slabs = ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)
             my_slabs = my_slabs[1:]
             my_slabs = my_slabs.astype(int)
 
@@ -1300,8 +1293,8 @@ class slab:
 
             for m_i in my_slabs:
                 d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-                eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
-                eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
+                eps = (epsilon[E][m_i] + epsilon[E][m_j]) / 2  # computes the dielectric constant value to use
+                eps_mag = (epsilon_mag[E][m_i] + epsilon_mag[E][m_j]) / 2  # computes the magnetic dielectric constant
 
                 # Determines the magnetization direction of the first layer
                 if layer == 0:
@@ -1360,7 +1353,6 @@ class slab:
                 R['AC'][E] = (Rtemp[2][0] - Rtemp[3][0]) / (Rtemp[2][0] + Rtemp[3][0])
             else:
                 raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
-
 
         return energy, R
 
@@ -1645,8 +1637,8 @@ if __name__ == "__main__":
     sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
-
     """
+
     sample.plot_density_profile()
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
 
