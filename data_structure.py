@@ -328,7 +328,7 @@ def ReadDataHDF5(fname):
         if scanType == 'Reflectivity':
             Rdata = list(RS[scanName])
             Rsim = list(SimR[scanName])
-            qz = Rdata[1]
+            qz = Rdata[0]
             R = Rdata[2]
             Rs = Rsim[2]
             plt.figure()
@@ -353,6 +353,90 @@ def ReadDataHDF5(fname):
         plt.show()
         val = input('Choose scan # you want to use: ')
 
+
+    f.close()
+
+def WriteSampleHDF5(fname, sample):
+    with h5py.File(fname, "a") as f:
+        del f['Sample']
+    f.close()
+
+    f = h5py.File(fname, "a")
+    grp1 = f.create_group('Sample')
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = int(m)
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['Links'] = np.array(sample.link)
+
+    dsLayer = 0
+    for my_layer in sample.structure:
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+        formula = ''
+        for ele in list(my_layer.keys()):
+            element = layer.create_group(ele)
+
+            stoich = int(my_layer[ele].stoichiometry)
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['Position'] = my_layer[ele].position
+
+        layer.attrs['Formula'] = formula
+        dsLayer = dsLayer + 1
+
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
+
+    grp2 = f["Simulated_data"]
+
+    grpR = grp2["Reflectivity_Scan"]
+    grpE = grp2["Energy_Scan"]
+
+    # start of loading data
+    dsNum = 1
+    for key in list(grpR.keys()):
+        dset = grpR[key]
+        Rdata = list(dset)
+        qz = np.array(Rdata[0])
+        E = float(dset.attrs['Energy'])
+        polarization = dset.attrs['Polarization']
+
+        qz, R = sample.reflectivity(E, qz)
+        Rdata[2] = R[polarization]
+        dset[...] = Rdata
+
+    for key in list(grpE.keys()):
+        dset = grpE[key]
+        Edata = list(dset)
+        E = Edata[3]
+        theta = dset.attrs['Angle']
+        polarization = dset.attrs['Polarization']
+        E, R = sample.energy_scan(theta, E)
+        Edata[2] = R[polarization]
+        dset[...] = Edata
 
     f.close()
 
@@ -1084,7 +1168,7 @@ def selectScan(Sinfo, Sscan, sample):
 
 if __name__ == "__main__":
 
-
+    """
 
     fname = "FGT-1L.all"
 
@@ -1096,9 +1180,6 @@ if __name__ == "__main__":
     sample.addlayer(1, 'LaMnO3', 10, density=6.5, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
-
-
-
 
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
@@ -1120,13 +1201,23 @@ if __name__ == "__main__":
 
         print()
     print('########################### DONE!!!! #######################################')
-
+    """
 
     fname = "FGT-1L.hdf5"
     #f = h5py.File(fname, 'r')
     #print(f['Simulated_data/Energy_Scan'].keys())
-    ReadDataHDF5(fname)
+    #ReadDataHDF5(fname)
 
+    sample = slab(2)
+
+    sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
+
+    sample.addlayer(1, 'LaMnO3', 20, density=5.5, roughness=2)
+    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5, 0.5], sf=['Mn', 'Fe'])
+    sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
+    WriteSampleHDF5(fname, sample)
+
+    ReadDataHDF5(fname)
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
     #sample.plot_density_profile(fig=1)

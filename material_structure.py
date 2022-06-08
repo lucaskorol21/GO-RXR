@@ -1345,26 +1345,24 @@ class slab:
 
         #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
         #n = 1 - delta + 1j*beta
-
         #epsilon = n ** 2  # permittivity
-        epsilon = 1 + -2*delta + 1j*beta*2
+        epsilon = 1 + -2*delta + 1j*beta*2  # permittivity
 
         #Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
-        Q = beta_m + 1j*delta_m
+        Q = beta_m + 1j*delta_m  # magneto-optical constant
 
         # definition as described in Lott Dieter Thesis
+        epsilon_mag = Q * epsilon * 2 * (-1)  # magneto-optical permittivity
 
-        epsilon_mag = Q * epsilon * 2 * (-1)
-
-        # retrieves the slabs at each energy
+        # retrieves the slabs at each energy using list comprehension
         all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
 
 
-        # initializes the object for reflectivity computation
+        # initializes the object for reflectivity computation using list comprehension
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
         wavelength = h * c / (energy * 1e-10)
 
-        # reflectivity computation
+        # reflectivity computation using list comprehension
         R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E)) for E in range(len(all_slabs))]
         R = R[0]
 
