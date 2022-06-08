@@ -38,6 +38,13 @@ def form_factor(f,E):
     return F
 
 def find_form_factor(element, E, mag):
+    """
+    Purpose: Return the magnetic or non-magnetic form factor of a selected element and energy
+    :param element: String containing element symbol
+    :param E: Energy in electron volts
+    :param mag: Boolean specifying if the magnetic form factor is desired
+    :return:
+    """
 
     if mag:
         mag_keys = list(ffm.keys())
@@ -76,6 +83,13 @@ def find_form_factors(element, E, mag):
     return F
 
 def MOC(rho, sfm, E):
+    """
+    Purpose: computes the magneto-optical constant for the energy scan
+    :param rho: dictionary containing the element symbol as the key and a numpy array as the value
+    :param sfm: dictionary that contains the element symbol as the key and the absorptive and dispersive form factor components
+    :param E: a numpy array containing energy values in eV
+    :return: The absorptive and dispersive magnetic-optical constants
+    """
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -87,10 +101,10 @@ def MOC(rho, sfm, E):
 
 
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
-    delta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
-    beta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+    delta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # pre-initialization
+    beta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # pre-initialization
 
-    # Computes the dispersive and absorptive components of the index of refraction
+    # Computes the dispersive and absorptive components of the magnetic-optical constant using list comprehensions
     for element in elements:
         delta_m = delta_m + np.array([constant[x]*sfm[element][x,0]*rho[element] for x in range(len(sfm[element][:,0]))])
         beta_m = beta_m + np.array([constant[x]*sfm[element][x, 1]*rho[element] for x in range(len(sfm[element][:, 1]))])
@@ -135,6 +149,13 @@ def magnetic_optical_constant(rho, sfm, E):
     return delta_m, beta_m
 
 def IoR(rho,sf,E):
+    """
+    Purpose: compute the refractive index for multiple energies
+    :param rho: dictionary containing element symbol as key and numpy array as value
+    :param sf: dictionary containing element symbol as key and numpy array of dispersive and absorptive form factors
+    :param E: numpy array of energies (eV)
+    :return: The absorptive and dispersive components of the refractive index
+    """
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
@@ -145,15 +166,16 @@ def IoR(rho,sf,E):
     constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
-    delta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
-    beta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])
+    delta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # initialization
+    beta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # initialization
 
-    # Computes the dispersive and absorptive components of the index of refraction
+    # Computes the dispersive and absorptive components of the index of refraction using list comprehensions
     for element in elements:
         delta = delta + np.array([constant[x] * sf[element][x, 0] * rho[element] for x in range(len(sf[element][:, 0]))])
         beta = beta + np.array([constant[x] * sf[element][x, 1] * rho[element] for x in range(len(sf[element][:, 1]))])
 
     return delta, beta
+
 def index_of_refraction(rho, sf, E):
     """
     Purpose: Calculates the dispersive and absorptive components of the index of refraction
