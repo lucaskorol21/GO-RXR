@@ -7,7 +7,6 @@ from numba import *
 
 if __name__ == '__main__':
 
-    start = time_ns()
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
@@ -38,8 +37,6 @@ if __name__ == '__main__':
     #sample.plot_density_profile()
     #start = time()
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
-    end = time_ns()
-    print('Setup: ', end-start, ' ns')
     E = 642.2  # eV
     
     elements = density.keys()
@@ -116,9 +113,9 @@ if __name__ == '__main__':
     A1 = simpson(abs(R - R1), qz)
     A2 = simpson(abs(R - R2), qz)
 
-    print()
-    print()
-    print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
+    #print()
+    #print()
+    #print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
 
     q = F[:, 0]
     I = F[:, 1]

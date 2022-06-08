@@ -1170,7 +1170,6 @@ class slab:
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
-        start_new = time_ns()
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             sf[e] = find_form_factor(self.find_sf[0][e], E, False)
@@ -1203,8 +1202,7 @@ class slab:
 
         my_slabs = my_slabs[1:]  # removes first element
 
-        print("Layer Segmentation: ", end_new-start_new, " ns")
-        start = time()
+
         m = len(my_slabs)  # number of slabs
         #m = len(epsilon)
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
@@ -1265,14 +1263,8 @@ class slab:
 
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
-        end = time()
-        print('Initialization: ', end-start)
-        start = time()
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-        end = time()
-        print('Reflectivity: ', end-start)
         R = dict()
-        print()
         """
         # Used to demonstrate how sample is being segmented
         plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
@@ -1338,25 +1330,22 @@ class slab:
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
 
-
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
-
         delta_m, beta_m = MOC(density_magnetic, sfm,energy)  # absorptive and dispersive components for magnetic components
+
 
         #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
         #n = 1 - delta + 1j*beta
         #epsilon = n ** 2  # permittivity
-        epsilon = 1 + -2*delta + 1j*beta*2  # permittivity
-
+        #epsilon = 1 - 2*delta + 1j*beta*2  # permittivity
+        epsilon = np.add((1-2*delta), 1j*beta*2)
         #Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
-        Q = beta_m + 1j*delta_m  # magneto-optical constant
 
         # definition as described in Lott Dieter Thesis
-        epsilon_mag = Q * epsilon * 2 * (-1)  # magneto-optical permittivity
-
+        Q = beta_m + 1j*delta_m  # magneto-optical constant
+        epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
         all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
-
 
         # initializes the object for reflectivity computation using list comprehension
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]

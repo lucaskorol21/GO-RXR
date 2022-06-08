@@ -1215,8 +1215,10 @@ if __name__ == "__main__":
     sample.addlayer(1, 'LaMnO3', 20, density=5.5, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5, 0.5], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
+    start = time()
     WriteSampleHDF5(fname, sample)
-
+    end = time()
+    print(end - start)
     ReadDataHDF5(fname)
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
