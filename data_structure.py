@@ -1010,7 +1010,7 @@ def ConvertASCIItoHDF5(fname):
 
 
 def ReadDataASCII(fname):
-    print()
+    print('bye')
     """
     Purpose: Read .all file that contains sample and experimental information
     :param fname: Name of file contatining related information
