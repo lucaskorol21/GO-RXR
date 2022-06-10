@@ -842,7 +842,172 @@ def createNewDict():
     return my_dict
 
 def ConvertASCIItoHDF5(fname):
-    print('Hello')
+    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
+
+
+    if fname.endswith('.all'):
+        fname = fname[:-4]
+        fname = fname + '.hdf5'
+    else:
+        raise NameError('File name must be a .all file type')
+
+    cwd = os.getcwd()
+    path = cwd + '/' + fname
+
+    if os.path.exists(path):
+        raise OSError(
+            "HDF5 file already exists. To write new file remove the old file from the current working directory.")
+
+    f = h5py.File(fname, 'a')
+
+
+    grp1 = f.create_group("Sample")
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = int(m)
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['Links'] = np.array(sample.link)
+
+    dsLayer = 0
+    for my_layer in sample.structure:
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+        formula = ''
+        for ele in list(my_layer.keys()):
+
+            element = layer.create_group(ele)
+
+            stoich = int(my_layer[ele].stoichiometry)
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['Position'] = my_layer[ele].position
+
+        layer.attrs['Formula'] = formula
+        dsLayer = dsLayer + 1
+
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
+
+    grp2 = f.create_group("Experimental_data")
+    grp3 = f.create_group("Simulated_data")
+
+    grpR = grp2.create_group("Reflectivity_Scan")
+    subR = grp3.create_group("Reflectivity_Scan")
+
+    grpE = grp2.create_group("Energy_Scan")
+    subE = grp3.create_group("Energy_Scan")
+
+    name = ''
+    # start of loading data
+    dsNum = 1
+    for i in range(len(Sinfo)):
+        info = Sinfo[i]
+        data = Sscan[i]
+        simData = SimScan[i]
+
+        scanType = info['scanType']
+        if scanType == "Reflectivity":
+            qz = np.array(data[0])
+            R0 = np.array(data[0])
+            R0sim = np.array(simData[0])
+            energy = info['energy']
+            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+            dat = np.array([qz, Theta, R0])
+            sim = np.array([qz, Theta, R0sim])
+
+            polarization = info['polarization']
+
+            if polarization == 'S' or polarization == 'P' or polarization == 'LC' or polarization == 'RC':
+                name = str(info['dataNumber']) + "_" + str(np.round(energy,2)) + "_" + info['polarization']
+            elif polarization == 'AL' or polarization == 'AC':
+                name = str(info['dataNumber']) + "_" +str(np.round(energy,2)) + "_" + info['polarization'] +"_Asymm"
+
+            datasetpoints = len(qz)
+
+            dset = grpR.create_dataset(name, data=dat)
+            dset1 = subR.create_dataset(name, data=sim)
+
+
+            dset.attrs['Energy'] = float(energy)
+            dset1.attrs['Energy'] = float(energy)
+
+            dset.attrs['Polarization'] = polarization
+            dset1.attrs['Polarization'] = polarization
+
+            dset.attrs['DataPoints'] = int(datasetpoints)
+            dset1.attrs['DataPoints'] = int(datasetpoints)
+
+            dset.attrs['DatasetNumber'] = int(dsNum)
+            dset1.attrs['DatasetNumber'] = int(dsNum)
+
+            dsNum = dsNum + 1
+        elif scanType == 'Energy':
+            E = np.array(data[0])
+            R = np.array(data[1])
+            Rsim = np.array(simData[1])
+            print(len(data))
+            qz = np.array(data[2])
+            energy = info['energy']
+            angle = info['angle']
+            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+
+            dat = np.array([qz, Theta, R, E])
+            sim = np.array([qz, Theta, Rsim, E])
+
+            polarization = info['polarization']
+
+            if polarization == 'S' or polarization == 'P' or polarization == 'LC' or polarization == 'RC':
+                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + info['polarization']
+            elif polarization == 'AL' or polarization == 'AC':
+                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + info['polarization'] + "_Asymm"
+
+            datasetpoints = len(E)
+            dset = grpE.create_dataset(name, data=dat)
+            dset1 = subE.create_dataset(name, data=sim)
+
+            dset.attrs['Energy'] = float(energy)
+            dset1.attrs['Energy'] = float(energy)
+
+            dset.attrs['Polarization'] = polarization
+            dset1.attrs['Polarization'] = polarization
+
+            dset.attrs['DataPoints'] = int(datasetpoints)
+            dset1.attrs['DataPoints'] = int(datasetpoints)
+
+            dset.attrs['Angle'] = float(angle)
+            dset1.attrs['Angle'] = float(angle)
+
+            dset.attrs['DatasetNumber'] = int(dsNum)
+            dset1.attrs['DatasetNumber'] = int(dsNum)
+            dsNum = dsNum + 1
+
+
+    f.close()
+
 
 def ReadDataASCII(fname):
     """
@@ -854,7 +1019,7 @@ def ReadDataASCII(fname):
     """
 
     file = open(fname)
-    structure = False
+    Structure = False
     experimental_data = False
     simulation = False
     for line in file:
@@ -897,6 +1062,8 @@ def ReadDataASCII(fname):
                     # initialization of parameters
                     x_axis = list()
                     y_axis = list()
+                    theta = list()
+                    energy_qz = list()
                     scan_number = 0
                     scanType = 0
                     angle = 0
@@ -920,6 +1087,7 @@ def ReadDataASCII(fname):
                     # initialization of parameters
                     x_axis = list()
                     y_axis = list()
+                    energy_qz = list()
                     scan_number = 0
                     scanType = 0
                     angle = 0
@@ -977,30 +1145,36 @@ def ReadDataASCII(fname):
                     elif line[0] == 'element':
                         element = line[1]
                         new_element = True
+                        sample.structure[layer][element].name = element
 
                     if new_element:
                         if line[0] == 'molarmass':
                             molarmass= float(line[1])
+                            sample.structure[layer][element].molar_mass = molarmass
+
                         elif line[0] == 'density':
                             density = float(line[1])
+                            sample.structure[layer][element].density = density
                         elif line[0] == 'thickness':
                             thickness = float(line[1])
+                            sample.structure[layer][element].thickness = thickness
                         elif line[0] == 'roughness':
                             roughness = float(line[1])
+                            sample.structure[layer][element].roughness = roughness
                         elif line[0] == 'scatteringfactor':
                             line.pop(0)
                             if len(line) == 1:
                                 scatteringfactor = line[0]
                             else:
                                 scatteringfactor = line
-
+                            sample.structure[layer][element].scattering_factor = scatteringfactor
                         elif line[0] == 'polymorph':
                             line.pop(0)
                             if len(line) == 0:
                                 polymorph = []
                             else:
                                 polymorph = line
-
+                            sample.structure[layer][element].polymorph = polymorph
                         elif line[0] == 'polyratio':
                             line.pop(0)
                             if len(line) == 0:
@@ -1008,50 +1182,49 @@ def ReadDataASCII(fname):
                             else:
                                 for rat in line:
                                     polyratio.append(float(rat))
+
+                            sample.structure[layer][element].poly_ratio = np.array(polyratio)
                         elif line[0] == 'gamma':
-                            gamma = line[1]
+                            gamma = float(line[1])
+                            sample.structure[layer][element].gamma = gamma
                         elif line[0] == 'phi':
-                            phi = line[1]
+                            phi = float(line[1])
+                            sample.structure[layer][element].phi = phi
                         elif line[0] == 'magdensity':
+                            magdensity = []
                             line.pop(0)
                             if len(line) == 0:
                                 magdensity = []
+
                             if len(line) == 1:
                                 magdensity = float(line[0])
+
                             else:
                                 for mag in line:
                                     magdensity.append(float(mag))
 
+                            sample.structure[layer][element].mag_density = magdensity
+                            if element == 'Mn':
+                                print(sample.structure[layer]['La'].mag_density)
                         elif line[0] == 'magscatteringfactor':
                             line.pop(0)
                             if len(line)==0:
                                 magscatteringfactor = None
                             else:
                                 magscatteringfactor = line
-                        elif line[0] == 'position':
-                            position = int(line[1])
-
-                            # End of arguments to load in
-                            sample.structure[layer][element].name = element
-                            sample.structure[layer][element].molar_mass = molarmass
-                            sample.structure[layer][element].density = density
-                            sample.structure[layer][element].thickness = thickness
-                            sample.structure[layer][element].roughness = roughness
-                            sample.structure[layer][element].poly_ratio = np.array(polyratio)
-                            sample.structure[layer][element].polymorph = polymorph
-                            sample.structure[layer][element].gamma = gamma
-                            sample.structure[layer][element].phi = phi
-                            sample.structure[layer][element].mag_density = magdensity
-                            sample.structure[layer][element].scattering_factor = scatteringfactor
                             sample.structure[layer][element].mag_scattering_factor = magscatteringfactor
+                        elif line[0] == 'position':
+
+                            position = int(line[1])
                             sample.structure[layer][element].position = position
+
+
                             polyratio = []
+
                             new_element=False  # make sure we do not enter this if statement
 
 
                 elif experimental_data:
-
-
                     #line = line.split()
                     if '=' not in line:
                         raise SyntaxError('Data file is improperly initialized.')
@@ -1080,6 +1253,7 @@ def ReadDataASCII(fname):
                             Sinfo.append(createNewDict())
                             x_axis = list()
                             y_axis = list()
+                            energy_qz = list()
                             scan_number = None
                             scanType = None
                             angle = None
@@ -1117,6 +1291,9 @@ def ReadDataASCII(fname):
                         if info == 'dataset_eng':
                             data = float(data)
                             x_axis.append(data)
+                        if info == 'dataset_qz':
+                            data = float(data)
+                            energy_qz.append(data)
                     elif scanType == 'Reflectivity':
                         if info == 'datasetenergy':
                             energy = float(data)
@@ -1135,6 +1312,7 @@ def ReadDataASCII(fname):
                             y_axis.append(data)
 
                 elif simulation:
+
                     # line = line.split()
                     if '=' not in line:
                         raise SyntaxError('Data file is improperly initialized.')
@@ -1163,6 +1341,7 @@ def ReadDataASCII(fname):
                             SimInfo.append(createNewDict())
                             x_axis = list()
                             y_axis = list()
+                            energy_qz = list()
                             scan_number = None
                             scanType = None
                             angle = None
@@ -1198,6 +1377,9 @@ def ReadDataASCII(fname):
                         if info == 'dataset_eng':
                             data = float(data)
                             x_axis.append(data)
+                        if info == 'dataset_qz':
+                            data = float(data)
+                            energy_qz.append(data)
                     elif scanType == 'Reflectivity':
                         if info == 'datasetenergy':
                             energy = float(data)
@@ -1215,22 +1397,32 @@ def ReadDataASCII(fname):
                             data = float(data)
                             y_axis.append(data)
 
-    if experimental_data:
-        Sinfo[idx]['scanNumber'] = scan_number
-        Sinfo[idx]['scanType'] = scanType
-        Sinfo[idx]['angle'] = angle
-        Sinfo[idx]['energy'] = energy
-        Sinfo[idx]['polarization'] = polarization
-        Sinfo[idx]['numberPoints'] = numberPoints
-        Sscan.append([x_axis, y_axis])
-    elif simulation:
-        SimInfo[idx]['scanNumber'] = scan_number
-        SimInfo[idx]['scanType'] = scanType
-        SimInfo[idx]['angle'] = angle
-        SimInfo[idx]['energy'] = energy
-        SimInfo[idx]['polarization'] = polarization
-        SimInfo[idx]['numberPoints'] = numberPoints
-        SimScan.append([x_axis, y_axis])
+
+        if experimental_data:
+            Sinfo[idx]['scanNumber'] = scan_number
+            Sinfo[idx]['scanType'] = scanType
+            Sinfo[idx]['angle'] = angle
+            Sinfo[idx]['energy'] = energy
+            Sinfo[idx]['polarization'] = polarization
+            Sinfo[idx]['numberPoints'] = numberPoints
+            print(energy_qz)
+            if scanType == 'Energy':
+                Sscan.append([x_axis, y_axis, energy_qz])
+            elif scanType == 'Reflectivity':
+                Sscan.append([x_axis, y_axis])
+        elif simulation:
+            SimInfo[idx]['scanNumber'] = scan_number
+            SimInfo[idx]['scanType'] = scanType
+            SimInfo[idx]['angle'] = angle
+            SimInfo[idx]['energy'] = energy
+            SimInfo[idx]['polarization'] = polarization
+            SimInfo[idx]['numberPoints'] = numberPoints
+            if scanType == 'Energy':
+                SimScan.append([x_axis, y_axis, energy_qz])
+            elif scanType == 'Reflectivity':
+                SimScan.append([x_axis, y_axis])
+
+    f.close()
 
     return Sinfo, Sscan, SimInfo, SimScan, sample
 
@@ -1342,8 +1534,8 @@ if __name__ == "__main__":
 
         print()
     print('########################### DONE!!!! #######################################')
-
     """
+
     #fname = "FGT-1L.hdf5"
     fname = "FGT-1L.all"
     #f = h5py.File(fname, 'r')
@@ -1361,7 +1553,8 @@ if __name__ == "__main__":
     #WriteSampleHDF5(fname, sample)
     #ReadDataHDF5(fname)
     #Sscan, Sinfo, SimScan, SimInfo, sample1 = ReadDataASCII(fname)
-    selectScan(fname)
+    #selectScan(fname)
+    ConvertASCIItoHDF5(fname)
     #sample.plot_density_profile(fig=1)
     #sample1.plot_density_profile(fig=2)
     #plt.show()
