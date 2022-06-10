@@ -1010,7 +1010,6 @@ def ConvertASCIItoHDF5(fname):
 
 
 def ReadDataASCII(fname):
-    print('bye')
     """
     Purpose: Read .all file that contains sample and experimental information
     :param fname: Name of file contatining related information
@@ -1399,29 +1398,30 @@ def ReadDataASCII(fname):
                             y_axis.append(data)
 
 
-        if experimental_data:
-            Sinfo[idx]['scanNumber'] = scan_number
-            Sinfo[idx]['scanType'] = scanType
-            Sinfo[idx]['angle'] = angle
-            Sinfo[idx]['energy'] = energy
-            Sinfo[idx]['polarization'] = polarization
-            Sinfo[idx]['numberPoints'] = numberPoints
-            print(energy_qz)
-            if scanType == 'Energy':
-                Sscan.append([x_axis, y_axis, energy_qz])
-            elif scanType == 'Reflectivity':
-                Sscan.append([x_axis, y_axis])
-        elif simulation:
-            SimInfo[idx]['scanNumber'] = scan_number
-            SimInfo[idx]['scanType'] = scanType
-            SimInfo[idx]['angle'] = angle
-            SimInfo[idx]['energy'] = energy
-            SimInfo[idx]['polarization'] = polarization
-            SimInfo[idx]['numberPoints'] = numberPoints
-            if scanType == 'Energy':
-                SimScan.append([x_axis, y_axis, energy_qz])
-            elif scanType == 'Reflectivity':
-                SimScan.append([x_axis, y_axis])
+    if experimental_data:
+        Sinfo[idx]['scanNumber'] = scan_number
+        Sinfo[idx]['scanType'] = scanType
+        Sinfo[idx]['angle'] = angle
+        Sinfo[idx]['energy'] = energy
+        Sinfo[idx]['polarization'] = polarization
+        Sinfo[idx]['numberPoints'] = numberPoints
+        if scanType == 'Energy':
+            Sscan.append([x_axis, y_axis, energy_qz])
+
+        elif scanType == 'Reflectivity':
+            Sscan.append([x_axis, y_axis])
+
+    elif simulation:
+        SimInfo[idx]['scanNumber'] = scan_number
+        SimInfo[idx]['scanType'] = scanType
+        SimInfo[idx]['angle'] = angle
+        SimInfo[idx]['energy'] = energy
+        SimInfo[idx]['polarization'] = polarization
+        SimInfo[idx]['numberPoints'] = numberPoints
+        if scanType == 'Energy':
+            SimScan.append([x_axis, y_axis, energy_qz])
+        elif scanType == 'Reflectivity':
+            SimScan.append([x_axis, y_axis])
 
     f.close()
 
