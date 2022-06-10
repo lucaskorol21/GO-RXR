@@ -140,8 +140,10 @@ if __name__ == '__main__':
     hello = np.loadtxt('energy_test.txt')
     E = hello[:,0]
 
-
+    start = time()
     E,R = sample.energy_scan(5.0, E)
+    end = time()
+    print(end-start)
 
     R = R['S']
     plt.figure(89)
