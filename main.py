@@ -140,14 +140,19 @@ if __name__ == '__main__':
     hello = np.loadtxt('energy_test.txt')
     E = hello[:,0]
 
+    R = np.array(R)
+
     start = time()
-    E,R = sample.energy_scan(5.0, E)
+    E, R = sample.energy_scan(5.0, E)
     end = time()
     print(end-start)
-
     R = R['S']
+
+    #R = R['P']
     plt.figure(89)
-    plt.plot(E,R, E, hello[:,1])
+    plt.plot(E,R,'.')
+    plt.plot(E, hello[:,1])
+    plt.legend(['Simulation', 'Data'])
     plt.show()
     #fname = "FGT-1L.all"
     #Sscan, Sinfo, sample1 = ReadData(fname)

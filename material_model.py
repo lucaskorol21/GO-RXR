@@ -158,7 +158,6 @@ def IoR(rho,sf,E):
     :param E: numpy array of energies (eV)
     :return: The absorptive and dispersive components of the refractive index
     """
-    # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
     re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
@@ -173,9 +172,8 @@ def IoR(rho,sf,E):
 
     # Computes the dispersive and absorptive components of the index of refraction using list comprehensions
     for element in elements:
-        delta = delta + np.array([constant[x] * sf[element][x, 0] * rho[element] for x in range(len(sf[element][:, 0]))])
+        delta = delta + np.array([constant[x]*sf[element][x, 0] * rho[element] for x in range(len(sf[element][:, 0]))])
         beta = beta + np.array([constant[x] * sf[element][x, 1] * rho[element] for x in range(len(sf[element][:, 1]))])
-
     return delta, beta
 
 def index_of_refraction(rho, sf, E):

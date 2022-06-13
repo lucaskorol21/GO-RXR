@@ -179,12 +179,17 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
+        elif idx_b == n-1:
+            my_slabs[dsSlab] = idx_b
+            dsSlab = dsSlab + 1
+
 
     my_slabs = my_slabs[:dsSlab]
     return my_slabs
 
 def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
     m = len(my_slabs)  # number of slabs
+    print(my_slabs)
     # m = len(epsilon)
     A = pr.Generate_structure(m)  # creates object for reflectivity computation
     m_j = 0  # previous slab
@@ -241,6 +246,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
         return A
 
 def energy_reflectivity(A, Theta, wavelength, R, E):
+
     Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
     if len(Rtemp) == 2:
@@ -1213,6 +1219,7 @@ class slab:
         phi = 90
 
         for m_i in my_slabs:
+
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
@@ -1337,8 +1344,8 @@ class slab:
         #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
         #n = 1 - delta + 1j*beta
         #epsilon = n ** 2  # permittivity
-        #epsilon = 1 - 2*delta + 1j*beta*2  # permittivity
-        epsilon = np.add((1-2*delta), 1j*beta*2)
+        epsilon = 1 - 2*delta + 1j*beta*2  # permittivity
+        #epsilon = np.add((1-2*delta), 1j*beta*2)
         #Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
 
         # definition as described in Lott Dieter Thesis
@@ -1350,9 +1357,9 @@ class slab:
         # initializes the object for reflectivity computation using list comprehension
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
         wavelength = h * c / (energy * 1e-10)
-
         # reflectivity computation using list comprehension
         R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E)) for E in range(len(all_slabs))]
+
         R = R[0]
 
         return energy, R
