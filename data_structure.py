@@ -446,10 +446,7 @@ def WriteSampleASCII(file,sample):
     file.write("polyelements = %s \n" % str(sample.poly_elements))
     file.write("magelements = %s \n" % str(sample.mag_elements))
 
-    laymag = sample.layer_magnetized
-    layermagnetized = ''
-    for lm in laymag:
-        layermagnetized = layermagnetized + str(lm) + " "
+    layermagnetized = sample.layer_magnetized
     file.write("layermagnetized = %s \n\n" % layermagnetized)
 
     num_lay = 0
@@ -483,12 +480,7 @@ def WriteSampleASCII(file,sample):
         file.write("formula = %s \n" % formula)
 
 
-
-        my_link = ''
-
-        for li in link[num_lay]:
-            my_link = my_link + str(li) + " "
-
+        my_link = link[num_lay]
         file.write("link = %s \n\n" % my_link)
 
         for ele in layer.keys():
@@ -503,22 +495,11 @@ def WriteSampleASCII(file,sample):
             sf = ''
 
             scatfact = layer[ele].scattering_factor
-
-            if type(scatfact) == list:
-                for s in scatfact:
-                    sf =sf + s + " "
-            else:
-                sf = scatfact
-
+            sf = layer[ele].scattering_factor
             file.write("scatteringfactor = %s \n" % sf)
 
-            for poly in layer[ele].polymorph:
-                poly_names = poly_names + poly + " "
-
-            if type(layer[ele].poly_ratio) != int:
-                for rat in layer[ele].poly_ratio:
-                    poly_ratio = poly_ratio + str(rat)+ " "
-
+            poly_names = layer[ele].polymorph
+            poly_ratio = layer[ele].poly_ratio
 
             file.write("polymorph = %s \n" % poly_names)
             file.write("polyratio = %s \n" % poly_ratio)
@@ -527,17 +508,10 @@ def WriteSampleASCII(file,sample):
             file.write("gamma = %f \n" % layer[ele].gamma)
             file.write("phi = %f \n" % layer[ele].phi)
 
-            mag_density = ''
-            if len(layer[ele].mag_density) != 0:
-                for md in layer[ele].mag_density:
-                    mag_density = mag_density + str(md) + " "
-
+            mag_density = layer[ele].mag_density
             file.write("magdensity = %s \n" % mag_density)
 
-            sfm = ''
-            if layer[ele].mag_scattering_factor != None:
-                for magscat in layer[ele].mag_scattering_factor:
-                    sfm = sfm + magscat + " "
+            sfm = layer[ele].mag_scattering_factor
             file.write("magscatteringfactor = %s \n" % sfm)
             file.write("position = %s \n" % layer[ele].position)
             file.write("\n")
@@ -1503,7 +1477,7 @@ def selectScan(fname):
 
 if __name__ == "__main__":
 
-    """
+
     fname = "FGT-1L.all"
 
 
@@ -1535,7 +1509,7 @@ if __name__ == "__main__":
 
         print()
     print('########################### DONE!!!! #######################################')
-    """
+
 
     #fname = "FGT-1L.hdf5"
     fname = "FGT-1L.all"
@@ -1555,7 +1529,7 @@ if __name__ == "__main__":
     #ReadDataHDF5(fname)
     #Sscan, Sinfo, SimScan, SimInfo, sample1 = ReadDataASCII(fname)
     #selectScan(fname)
-    ConvertASCIItoHDF5(fname)
+    #ConvertASCIItoHDF5(fname)
     #sample.plot_density_profile(fig=1)
     #sample1.plot_density_profile(fig=2)
     #plt.show()
