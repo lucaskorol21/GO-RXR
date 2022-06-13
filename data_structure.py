@@ -447,7 +447,10 @@ def WriteSampleASCII(file,sample):
     file.write("magelements = %s \n" % str(sample.mag_elements))
 
     layermagnetized = sample.layer_magnetized
-    file.write("layermagnetized = %s \n\n" % layermagnetized)
+    file.write("layermagnetized = %s \n" % layermagnetized)
+
+    link = sample.link
+    file.write("link =  %s \n\n" % link)
 
     num_lay = 0
     molarmass = 0
@@ -477,11 +480,7 @@ def WriteSampleASCII(file,sample):
                 formula = formula + ele + str(stoich)
 
 
-        file.write("formula = %s \n" % formula)
-
-
-        my_link = link[num_lay]
-        file.write("link = %s \n\n" % my_link)
+        file.write("formula = %s \n\n" % formula)
 
         for ele in layer.keys():
             file.write("element = %s \n" % ele)
@@ -500,6 +499,9 @@ def WriteSampleASCII(file,sample):
 
             poly_names = layer[ele].polymorph
             poly_ratio = layer[ele].poly_ratio
+            if type(poly_ratio) != int:
+                poly_ratio = [str(poly) for poly in poly_ratio]
+
 
             file.write("polymorph = %s \n" % poly_names)
             file.write("polyratio = %s \n" % poly_ratio)
@@ -509,8 +511,8 @@ def WriteSampleASCII(file,sample):
             file.write("phi = %f \n" % layer[ele].phi)
 
             mag_density = layer[ele].mag_density
+            mag_density = [str(x) for x in mag_density]
             file.write("magdensity = %s \n" % mag_density)
-
             sfm = layer[ele].mag_scattering_factor
             file.write("magscatteringfactor = %s \n" % sfm)
             file.write("position = %s \n" % layer[ele].position)
@@ -518,7 +520,7 @@ def WriteSampleASCII(file,sample):
 
         num_lay = num_lay + 1
 
-def WriteExperimentalData(file, AScans,AInfo,EScans,EInfo):
+def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
     """
     Purpose: Write experimental data to .all file for program use
     :param fname: Name of data file
@@ -583,8 +585,8 @@ def WriteExperimentalData(file, AScans,AInfo,EScans,EInfo):
 
     for i in range(len(EScans)):
         file.write("datasetnumber = %d \n" % dsNum)
-        name = str(EInfo[i][0]) + "_E" + str(round(float(EInfo[i][3]), 2)) + "_Th" + str(
-            round(float(EInfo[i][4]), 2)) + "_" + EInfo[i][1]
+        name = str(EInfo[i][0]) + "_E" + str(round(float(EInfo[i][3]), 2)) + "_Th" + str(round(float(EInfo[i][4]), 2)) + "_" + EInfo[i - 1][
+                   1] + "-" + EInfo[i][1]
         file.write("datasettitle = %s \n" % name)
         file.write("datasetenergy = %s \n" % EInfo[i][3])
 
@@ -735,8 +737,8 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
         E, R = sample.energy_scan(float(EInfo[i][4]), E)
         R = R[polarization]
         for j in range(len(E)):
-            file.write("dataset_R0 = %e \n" % E[j])
-            file.write("dataset_eng = %f \n" % R[j])
+            file.write("dataset_R0 = %e \n" % R[j])
+            file.write("dataset_eng = %f \n" % E[j])
         file.write("\n\n")
         dsNum = dsNum + 1
 
@@ -762,8 +764,8 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
                 E, R = sample.energy_scan(float(EInfo[i][4]), E)
                 R = R[polarization]
                 for j in range(len(E)):
-                    file.write("dataset_A = %e \n" % E[j])
-                    file.write("dataset_eng = %f \n" % R[j])
+                    file.write("dataset_A = %e \n" % R[j])
+                    file.write("dataset_eng = %f \n" % E[j])
 
                 file.write("\n\n")
                 dsNum = dsNum + 1
@@ -773,7 +775,7 @@ def WriteDataASCII(fname,AScans,AInfo,EScans,EInfo, sample):
 
     file = open(fname, "w")
     WriteSampleASCII(file, sample)
-    WriteExperimentalData(file, AScans,AInfo,EScans,EInfo)
+    WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo)
     WriteSimulationASCII(file, AScans, AInfo, EScans, EInfo, sample)
     f.close()
 
@@ -816,8 +818,8 @@ def createNewDict():
     return my_dict
 
 def ConvertASCIItoHDF5(fname):
-    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
 
+    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
 
     if fname.endswith('.all'):
         fname = fname[:-4]
@@ -830,7 +832,7 @@ def ConvertASCIItoHDF5(fname):
 
     if os.path.exists(path):
         raise OSError(
-            "HDF5 file already exists. To write new file remove the old file from the current working directory.")
+            "HDF5 file already exists. To write new HDF5 file remove the old file from the current working directory.")
 
     f = h5py.File(fname, 'a')
 
@@ -898,6 +900,7 @@ def ConvertASCIItoHDF5(fname):
     name = ''
     # start of loading data
     dsNum = 1
+
     for i in range(len(Sinfo)):
         info = Sinfo[i]
         data = Sscan[i]
@@ -906,12 +909,12 @@ def ConvertASCIItoHDF5(fname):
         scanType = info['scanType']
         if scanType == "Reflectivity":
             qz = np.array(data[0])
-            R0 = np.array(data[0])
-            R0sim = np.array(simData[0])
+            R0 = np.array(data[1])
+            R0sim = np.array(simData[1])
             energy = info['energy']
             Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
-            dat = np.array([qz, Theta, R0])
-            sim = np.array([qz, Theta, R0sim])
+            dat = [qz, Theta, R0]
+            sim = [qz, Theta, R0sim]
 
             polarization = info['polarization']
 
@@ -943,21 +946,22 @@ def ConvertASCIItoHDF5(fname):
             E = np.array(data[0])
             R = np.array(data[1])
             Rsim = np.array(simData[1])
-            print(len(data))
             qz = np.array(data[2])
             energy = info['energy']
             angle = info['angle']
             Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
 
-            dat = np.array([qz, Theta, R, E])
-            sim = np.array([qz, Theta, Rsim, E])
-
+            dat = [qz, Theta, R, E]
+            sim = [qz, Theta, Rsim, E]
+            plt.figure()
+            plt.plot(E,Rsim)
+            plt.show()
             polarization = info['polarization']
 
             if polarization == 'S' or polarization == 'P' or polarization == 'LC' or polarization == 'RC':
-                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + info['polarization']
+                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + "_" + info['polarization']
             elif polarization == 'AL' or polarization == 'AC':
-                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + info['polarization'] + "_Asymm"
+                name = str(info['dataNumber']) + "_E" +str(np.round(energy,2)) + "_Th" + str(np.round(angle,2)) + "_" + info['polarization'] + "_Asymm"
 
             datasetpoints = len(E)
             dset = grpE.create_dataset(name, data=dat)
@@ -1024,6 +1028,19 @@ def ReadDataASCII(fname):
                     position = 0
 
                 elif line[1] == 'Experimental_Data':
+
+                    if simulation:
+                        SimInfo[idx]['scanNumber'] = scan_number
+                        SimInfo[idx]['scanType'] = scanType
+                        SimInfo[idx]['angle'] = angle
+                        SimInfo[idx]['energy'] = energy
+                        SimInfo[idx]['polarization'] = polarization
+                        SimInfo[idx]['numberPoints'] = numberPoints
+                        if scanType == 'Energy':
+                            SimScan.append([x_axis, y_axis, energy_qz])
+                        elif scanType == 'Reflectivity':
+                            SimScan.append([x_axis, y_axis])
+
                     Structure = False
                     experimental_data = True
                     simulation = False
@@ -1049,6 +1066,19 @@ def ReadDataASCII(fname):
                     first = True
                     # Read in each line one at a time
                 elif line[1] == 'Simulation':
+                    # Attaches last experiment element
+                    if experimental_data:
+                        Sinfo[idx]['scanNumber'] = scan_number
+                        Sinfo[idx]['scanType'] = scanType
+                        Sinfo[idx]['angle'] = angle
+                        Sinfo[idx]['energy'] = energy
+                        Sinfo[idx]['polarization'] = polarization
+                        Sinfo[idx]['numberPoints'] = numberPoints
+                        if scanType == 'Energy':
+                            Sscan.append([x_axis, y_axis, energy_qz])
+                        elif scanType == 'Reflectivity':
+                            Sscan.append([x_axis, y_axis])
+
                     Structure = False
                     experimental_data = False
                     simulation = True
@@ -1091,30 +1121,24 @@ def ReadDataASCII(fname):
                         line = ''.join(line)
                         magelements = ast.literal_eval(line)
                         sample.mag_elements = magelements
+
+                    elif line[0] == 'layermagnetized':
+                        line.pop(0)
+                        line = ''.join(line)
+                        layermagnetized = ast.literal_eval(line)
+                        sample.layer_magnetized = layermagnetized
+                    elif line[0] == 'link':
+                        line.pop(0)
+                        line = ''.join(line)
+                        link = ast.literal_eval(line)
+                        sample.link = link
                     elif line[0] == 'layer':
                         layer = int(line[1])
                     elif line[0] == 'formula':
                         formula = line[1]
-                    elif line[0] == 'layermagnetized':
-                        line.pop(0)
-                        for laymag in line:
-                            if laymag == 'False':
-                                layermagnetized.append(False)
-                            elif laymag == 'True':
-                                layermagnetized.append(True)
-                    elif line[0] == 'link':
-                        line.pop(0)
-                        for val in line:
-                            if val == 'True':
-                                my_link.append(True)
-                            elif val == 'False':
-                                my_link.append(False)
-                        thickness = 20
-                        sample.addlayer(layer,formula,thickness,link=my_link)
-                        sample.layer_magnetized = layermagnetized
-                        my_link = []
-                        layermagnetized = []
 
+                        thickness = 20  # temporary assignment of the layer thickness
+                        sample.addlayer(layer, formula, thickness)  # add layer
 
                     elif line[0] == 'element':
                         element = line[1]
@@ -1140,23 +1164,20 @@ def ReadDataASCII(fname):
                             if len(line) == 1:
                                 scatteringfactor = line[0]
                             else:
-                                scatteringfactor = line
+                                scatteringfactor = ast.literal_eval(''.join(line))
                             sample.structure[layer][element].scattering_factor = scatteringfactor
+
                         elif line[0] == 'polymorph':
                             line.pop(0)
-                            if len(line) == 0:
-                                polymorph = []
-                            else:
-                                polymorph = line
+                            polymorph = ast.literal_eval(''.join(line))
                             sample.structure[layer][element].polymorph = polymorph
                         elif line[0] == 'polyratio':
                             line.pop(0)
-                            if len(line) == 0:
+                            if len(line) == 1:
                                 polyratio = 1
                             else:
-                                for rat in line:
-                                    polyratio.append(float(rat))
-
+                                polyratio = ast.literal_eval(''.join(line))
+                                polyratio = np.array([float(poly) for poly in polyratio])
                             sample.structure[layer][element].poly_ratio = np.array(polyratio)
                         elif line[0] == 'gamma':
                             gamma = float(line[1])
@@ -1165,40 +1186,26 @@ def ReadDataASCII(fname):
                             phi = float(line[1])
                             sample.structure[layer][element].phi = phi
                         elif line[0] == 'magdensity':
-                            magdensity = []
                             line.pop(0)
-                            if len(line) == 0:
-                                magdensity = []
-
-                            if len(line) == 1:
-                                magdensity = float(line[0])
-
-                            else:
-                                for mag in line:
-                                    magdensity.append(float(mag))
-
+                            magdensity = ast.literal_eval(''.join(line))
+                            if len(magdensity) != 0:
+                                magdensity = np.array([float(mag) for mag in magdensity])
                             sample.structure[layer][element].mag_density = magdensity
-                            if element == 'Mn':
-                                print(sample.structure[layer]['La'].mag_density)
+
                         elif line[0] == 'magscatteringfactor':
                             line.pop(0)
                             if len(line)==0:
                                 magscatteringfactor = None
                             else:
-                                magscatteringfactor = line
+                                magscatteringfactor = ast.literal_eval(''.join(line))
                             sample.structure[layer][element].mag_scattering_factor = magscatteringfactor
                         elif line[0] == 'position':
-
                             position = int(line[1])
                             sample.structure[layer][element].position = position
-
-
-                            polyratio = []
-
-                            new_element=False  # make sure we do not enter this if statement
-
+                            new_element = False  # make sure we do not enter this if statement
 
                 elif experimental_data:
+
                     #line = line.split()
                     if '=' not in line:
                         raise SyntaxError('Data file is improperly initialized.')
@@ -1209,7 +1216,6 @@ def ReadDataASCII(fname):
 
                     # retrieves the datasetnumber
                     if info == 'datasetnumber':
-
                         if first:
                             data = int(data)
                             Sinfo[idx]['dataNumber'] = data
@@ -1221,7 +1227,13 @@ def ReadDataASCII(fname):
                             Sinfo[idx]['energy'] = energy
                             Sinfo[idx]['polarization'] = polarization
                             Sinfo[idx]['numberPoints'] = numberPoints
-                            Sscan.append([x_axis, y_axis])
+
+                            # Attaches appropriate dataset for different scan types
+                            if scanType == 'Energy':
+                                Sscan.append([x_axis, y_axis, energy_qz])
+                            elif scanType == 'Reflectivity':
+                                Sscan.append([x_axis, y_axis])
+
 
                             # resets all parameters when new scan
                             Sinfo.append(createNewDict())
@@ -1309,7 +1321,13 @@ def ReadDataASCII(fname):
                             SimInfo[idx]['energy'] = energy
                             SimInfo[idx]['polarization'] = polarization
                             SimInfo[idx]['numberPoints'] = numberPoints
-                            SimScan.append([x_axis, y_axis])
+
+                            # Attaches different elements for different scan types
+                            if scanType == 'Energy':
+                                SimScan.append([x_axis, y_axis, energy_qz])
+                            elif scanType == 'Reflectivity':
+                                SimScan.append([x_axis, y_axis])
+
 
                             # resets all parameters when new scan
                             SimInfo.append(createNewDict())
@@ -1381,7 +1399,6 @@ def ReadDataASCII(fname):
         Sinfo[idx]['numberPoints'] = numberPoints
         if scanType == 'Energy':
             Sscan.append([x_axis, y_axis, energy_qz])
-
         elif scanType == 'Reflectivity':
             Sscan.append([x_axis, y_axis])
 
@@ -1488,7 +1505,6 @@ if __name__ == "__main__":
     sample.addlayer(1, 'LaMnO3', 10, density=6.5, roughness=2)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
-
     fnameCorr = "FGT-2L"
     samples = ["FGT-2L", "FGT-1L"]
 
@@ -1526,10 +1542,10 @@ if __name__ == "__main__":
     sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
 
     #WriteSampleHDF5(fname, sample)
-    #ReadDataHDF5(fname)
     #Sscan, Sinfo, SimScan, SimInfo, sample1 = ReadDataASCII(fname)
     #selectScan(fname)
-    #ConvertASCIItoHDF5(fname)
+    ConvertASCIItoHDF5(fname)
+    ReadDataHDF5("FGT-1L.hdf5")
     #sample.plot_density_profile(fig=1)
     #sample1.plot_density_profile(fig=2)
     #plt.show()

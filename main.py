@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     R = R['S']
     plt.figure(89)
-    plt.plot(E,R)
+    plt.plot(E,R, E, hello[:,1])
     plt.show()
     #fname = "FGT-1L.all"
     #Sscan, Sinfo, sample1 = ReadData(fname)
