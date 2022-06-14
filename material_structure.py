@@ -256,6 +256,15 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     return A
 
 def energy_reflectivity(A, Theta, wavelength, R, E):
+    """
+    Purpose: Compute the reflectivity of a specific energy for the energy scan
+    :param A: Structure object as defined by pythonreflectivity
+    :param Theta: Angle of energy scan in degrees
+    :param wavelength: Wavelength of photon energy
+    :param R: Pre-initialized numpy array
+    :param E: Integer that defined energy location for pre-initialized reflectivity dicitonary R
+    :return: Reflectivity R
+    """
 
     Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
