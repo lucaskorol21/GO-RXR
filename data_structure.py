@@ -1,5 +1,3 @@
-from SpecFileProcessing import *
-from FGT_RXR_Processing import *
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 import os
@@ -162,10 +160,10 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         qz = EScans[i][:,2]
         R0 = EScans[i][:,3]
         E = EScans[i][:,0]
+
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
         datasetpoints = len(qz)
         dat = np.array([qz,Theta,R0,E])
-
 
         energy = float(EInfo[i][3])
         polarization = 'S'
@@ -284,6 +282,7 @@ def ReadSampleHDF5(fname):
 
     sample.link = S.attrs['Links']
     f.close()
+    return sample
 
 def ReadDataHDF5(fname):
     f = h5py.File(fname, 'r')
@@ -1495,57 +1494,33 @@ def selectScan(fname):
 if __name__ == "__main__":
 
 
-    fname = "FGT-1L.all"
 
+    sample = slab(7)
 
-    sample = slab(2)
+    sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=4)
+    sample.addlayer(1, 'SrTiO3', 5.28602, density=5.12, roughness=2)
 
-    sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
+    sample.addlayer(2, 'LaMnO3', 18.84,density = 5, roughness=3.77)
+    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.9,0.1], sf =['Mn', 'Fe'])
+    sample.magnetization(2, ['Mn2+', 'Mn3+'], [0.00023,0], ['Co', 'Ni'])
 
-    sample.addlayer(1, 'LaMnO3', 10, density=6.5, roughness=2)
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
-    fnameCorr = "FGT-2L"
-    samples = ["FGT-2L", "FGT-1L"]
+    sample.addlayer(3, 'LaMnO3', 7.73, roughness= 4.54)
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.9, 0.1], sf=['Mn', 'Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.001, 0], ['Co', 'Ni'])
 
-    fnameCorr = "FGT-2L"
-    samples = ["FGT-2L", "FGT-1L"]
-    for sam in range(len(samples)):
-        EScan, AScan, ECal, Geo, Corr = GetSampleInfo(datadir + fnameCorr, datadir + samples[sam])
-        AsData, AsInfo = ProcessRXR(datadir + samples[sam], AScan, ECal, Geo, Corr, "A")
-        EsData, EsInfo = ProcessRXR(datadir + samples[sam], EScan, ECal, Geo, Corr, "E")
+    sample.addlayer(4, 'LaMnO3', 3.51, roughness=0.788804)
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.9, 0.1], sf=['Mn', 'Fe'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.024, 0], ['Co', 'Ni'])
 
-        #remagxHeader = GetReMagXHeader(names[sam], densities[sam], thicknesses[sam])
+    sample.addlayer(5, 'LaMnO3', 2.43, roughness=1.3591)
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
 
-        start = time()
-        WriteDataASCII(samples[sam] + ".all", AsData, AsInfo, EsData, EsInfo, sample)
-        #WriteDataHDF5(samples[sam] + ".hdf5", AsData, AsInfo, EsData, EsInfo, sample)
-        end= time()
-        print('Writing Data: ', end-start)
+    sample.addlayer(6, 'LaMnO3', 3.86, roughness=0.8215)
+    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.5, 0.5], sf=['Mn', 'Fe'])
+    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.005, 0], ['Co', 'Ni'])
 
-        print()
-    print('########################### DONE!!!! #######################################')
+    fname = "Pim10uc.hdf5"
+    WriteSampleHDF5(fname, sample)
+    ReadDataHDF5(fname)
 
-
-    #fname = "FGT-1L.hdf5"
-    fname = "FGT-1L.all"
-    #f = h5py.File(fname, 'r')
-    #print(f['Simulated_data/Energy_Scan'].keys())
-    #ReadDataHDF5(fname)
-
-    sample = slab(2)
-
-    sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=2)
-
-    sample.addlayer(1, 'LaMnO3', 20, density=5.5, roughness=2)
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5, 0.5], sf=['Mn', 'Fe'])
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [0.5, 0], ['Co', 'Ni'])
-
-    #WriteSampleHDF5(fname, sample)
-    #Sscan, Sinfo, SimScan, SimInfo, sample1 = ReadDataASCII(fname)
-    #selectScan(fname)
-    ConvertASCIItoHDF5(fname)
-    ReadDataHDF5("FGT-1L.hdf5")
-    #sample.plot_density_profile(fig=1)
-    #sample1.plot_density_profile(fig=2)
-    #plt.show()

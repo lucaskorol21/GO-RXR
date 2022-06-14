@@ -198,7 +198,6 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     phi = 90
 
     for m_i in my_slabs:
-        print(m_i)
         d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
         eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
         eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant

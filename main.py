@@ -154,7 +154,9 @@ if __name__ == '__main__':
     plt.plot(E, hello[:,1])
     plt.legend(['Simulation', 'Data'])
     plt.show()
-    #fname = "FGT-1L.all"
+
+    fname = "Pim7uc.hdf5"
+    ReadDataHDF5(fname)
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
 

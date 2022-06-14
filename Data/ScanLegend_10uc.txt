@@ -1,0 +1,96 @@
+----------------------------------------
+Non-Resonant Fixed E
+
+ScanNum    Pol.    Energy     Magnetized?
+09         LV      400        No
+14         LV      500        No
+19         LV      600        No
+24         LV      700        No
+29         LV      800        No
+34         LV      900        No
+106        LV      800        Yes
+129        LV      800        Yes
+
+----------------------------------------
+Resonant Fixed E
+
+ScanNum    Pol.    Energy    Magnetized?
+39/40       LV/LH   456.0        No
+45/46       LV/LH   460.0        No
+51/52       LV/LH   640.0        No
+57/58       LV/LH   642.0        No
+63          LV      834.0        No
+64          LV      836.2        No
+79/80       CL/CR   640.0        No
+85/86       CL/CR   642.0        No
+111/112     LC/CR   640.0        Yes
+117/118     LC/CR   642.0        Yes
+
+
+----------------------------------------
+Ti Fixed Angle
+
+ScanNum   Pol     Angle    Magnetized?
+
+59/60     LV/LH    5        No
+47/48     LV/LH   10        No
+35/36     LV/LH   15        No
+25/26     LV/LH   20        No
+15/16     LV/LH   25        No
+10/11     LV/LH   30        No
+20/21     LV/LH   35        No
+30/31     LV/LH   40        No
+41/42     LV/LH   45        No
+53/54     LV/LH   50        No
+65/66     LV/LH   55        No
+
+
+
+----------------------------------------
+Mn fixed Angle
+
+61/62     LV/LH    5        No
+49/50     LV/LH   10        No
+37/38     LV/LH   15        No
+27/28     LV/LH   20        No
+17/18     LV/LH   25        No
+12/13     LV/LH   30        No
+22/23     LV/LH   35        No
+32/33     LV/LH   40        No
+43/44     LV/LH   45        No
+55/56     LV/LH   50        No
+67/68     LV/LH   55        No
+
+95/96     CL/CR    5        No
+93/94     CL/CR   10        No
+89/90     CL/CR   15        No
+83/84     CL/CR   20        No
+77/78     CL/CR   25        No
+75/76     CL/CR   30        No
+81/82     CL/CR   35        No
+87/88     CL/CR   40        No
+91/92     CL/CR   45        No
+
+127/128     CL/CR    5        Yes
+125/126     CL/CR   10        Yes
+121/122     CL/CR   15        Yes
+115/116     CL/CR   20        Yes
+109/110     CL/CR   25        Yes
+107/108     CL/CR   30        Yes
+113/114     CL/CR   35        Yes
+119/120     CL/CR   40        Yes
+123/124     CL/CR   45        Yes
+
+
+
+----------------------------------------
+La Fixed Angle
+
+69       LV       10       No
+70       LV       25       No
+
+----------------------------------------
+Ox Fixed Angle
+
+71/72    LV/LH    5       No
+73/74    LV/LH   20       No
