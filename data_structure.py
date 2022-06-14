@@ -1495,7 +1495,7 @@ if __name__ == "__main__":
 
 
 
-    sample = slab(7)
+    sample = slab(8)
 
     sample.addlayer(0, 'SrTiO3', 50, density=5.12, roughness=4)
     sample.addlayer(1, 'SrTiO3', 5.28602, density=5.12, roughness=2)
@@ -1520,7 +1520,10 @@ if __name__ == "__main__":
     sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.5, 0.5], sf=['Mn', 'Fe'])
     sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.005, 0], ['Co', 'Ni'])
 
-    fname = "Pim10uc.hdf5"
-    WriteSampleHDF5(fname, sample)
-    ReadDataHDF5(fname)
+    sample.addlayer(7, 'CCO', 4, density = 2.5, roughness = 2)
+
+
+    #fname = "Pim10uc.hdf5"
+    #WriteSampleHDF5(fname, sample)
+    #ReadDataHDF5(fname)
 
