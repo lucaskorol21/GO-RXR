@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     #R = R['P']
     plt.figure(89)
-    plt.plot(E,R,'.')
+    plt.plot(E,R)
     plt.plot(E, hello[:,1])
     plt.legend(['Simulation', 'Data'])
     plt.show()

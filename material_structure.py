@@ -189,7 +189,6 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
 
 def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
     m = len(my_slabs)  # number of slabs
-    print(my_slabs)
     # m = len(epsilon)
     A = pr.Generate_structure(m)  # creates object for reflectivity computation
     m_j = 0  # previous slab
@@ -199,6 +198,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     phi = 90
 
     for m_i in my_slabs:
+        print(m_i)
         d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
         eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
         eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
@@ -243,7 +243,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
         m_j = m_i
         idx = idx + 1
 
-        return A
+    return A
 
 def energy_reflectivity(A, Theta, wavelength, R, E):
 
