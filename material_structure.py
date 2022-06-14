@@ -188,6 +188,17 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
     return my_slabs
 
 def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
+    """
+    Purpose: Generate the object structure as defined by pythonreflectivity
+    :param thickness: thickness numpy array of length n
+    :param structure: Array of length m containing information of each layer
+    :param my_slabs: Slab indices for adaptive layer segmentation
+    :param epsilon: permittivity numpy array of length n
+    :param epsilon_mag: magnetic permittivity numpy array of length n
+    :param layer_magnetized: numpy array of length m containing booleans that define if layer is magnetized
+    :param transition: array that containes the thickness at which a layer transition occurs
+    :return: The object structure as defined by pythonreflectivity
+    """
     m = len(my_slabs)  # number of slabs
     # m = len(epsilon)
     A = pr.Generate_structure(m)  # creates object for reflectivity computation
