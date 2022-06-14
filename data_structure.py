@@ -11,15 +11,26 @@ import h5py
 
 
 def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
+    """
+    Purpose: Take in data and sample model and save it as an hdf5 file
+    :param fname: File name with .hdf5 file extension
+    :param AScans: Reflectivity scan data from ProcessRXR
+    :param AInfo: Reflectivity scan information from ProcessRXR
+    :param EScans: Energy scan data from Process RXR
+    :param EInfo: Energy scan information from Process RXR
+    :param sample: sample object
+    :return:
+    """
 
+    # Checking if fname already exists
     cwd = os.getcwd()
     path = cwd + '/' + fname
-
     if os.path.exists(path):
         raise OSError("HDF5 file already exists. To write new file remove the old file from the current working directory.")
 
-    f = h5py.File(fname, 'a')
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
 
+    # creating group that will contain the sample information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
@@ -28,15 +39,19 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
     grp1.attrs['Links'] = np.array(sample.link)
 
+    # Retrieve the sample information of each layer
     dsLayer = 0
     for my_layer in sample.structure:
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
         formula = ''
+
+        # retrieve the sample information for each element in each layer
         for ele in list(my_layer.keys()):
             element = layer.create_group(ele)
 
+            # reconstructs the formula
             stoich = int(my_layer[ele].stoichiometry)
             if stoich == 1:
                 formula = formula + ele
@@ -65,6 +80,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
 
+    # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
 
@@ -77,12 +93,12 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grpE = grp2.create_group("Energy_Scan")
     subE = grp3.create_group("Energy_Scan")
 
-    #start of loading data
+    #Loading reflectivity scans
     dsNum = 1
     for i in range(len(AScans)):
-        qz = AScans[i][:,2]
-        R0 = AScans[i][:,3]
-        energy = float(AInfo[i][3])
+        qz = AScans[i][:,2]  # momentum transfer
+        R0 = AScans[i][:,3]  # reflectivity
+        energy = float(AInfo[i][3])  # energy of scan
         Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
         dat = np.array([qz, Theta, R0])
 
