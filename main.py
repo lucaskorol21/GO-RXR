@@ -3,10 +3,12 @@ from material_structure import *
 import matplotlib.pyplot as plt
 import numpy as np
 from numba import *
+from tqdm import tqdm
+from time import sleep
 
 
 if __name__ == '__main__':
-
+    """
     # Example 2: Simple sample creation
     sample = slab(6)  # Initializing four layers
     s = 0.1
@@ -159,15 +161,7 @@ if __name__ == '__main__':
     #ReadDataHDF5(fname)
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
-    Theta= 25
-    #E = 845
-    #angle = np.linspace(0.1,89.9,899)
-    #qz = np.sin(angle*pi/180)*E*(0.001013546247)
-    E = np.linspace(600,604, 100)
-    new_sample = slab(2)
 
-    new_sample.addlayer(0, 'SrTiO3', 50)
-    new_sample.addlayer(1,'LaMnO3',20)
-    #new_sample.reflectivity(E, qz)
-    E, R = new_sample.energy_scan(Theta, E)
-
+    """
+    ConvertASCIItoHDF5("Pim7uc.all")
+    ReadDataHDF5("Pim7uc.hdf5")

@@ -474,10 +474,15 @@ def WriteSampleHDF5(fname, sample):
     f.close()
 
 def WriteSampleASCII(file,sample):
+    """
+    Purpose: Write the sample as an ASCII file
+    :param file: File name
+    :param sample: sample information as a slab object
+    :return:
+    """
 
     file.write("# Structure \n")
     n = len(sample.structure)
-    link = sample.link
 
     file.write("numberlayers = %s \n" % str(n))
     file.write("polyelements = %s \n" % str(sample.poly_elements))
@@ -490,17 +495,7 @@ def WriteSampleASCII(file,sample):
     file.write("link =  %s \n\n" % link)
 
     num_lay = 0
-    molarmass = 0
-    density = 0
-    thickness = 0
-    roughness = 0
-    polymorph = 0
-    poly_ratio = 0
-    gamma = 0
-    phi = 0
-    mag_density = 0
-    scattering_factor = 0
-    position = 0
+
     for layer in sample.structure:
 
         file.write("layer = %s \n" % str(num_lay))
@@ -526,11 +521,6 @@ def WriteSampleASCII(file,sample):
             file.write("thickness = %f \n" % layer[ele].thickness)
             file.write("roughness = %f \n" % layer[ele].roughness)
 
-            poly_names = ''
-            poly_ratio = ''
-            sf = ''
-
-            scatfact = layer[ele].scattering_factor
             sf = layer[ele].scattering_factor
             file.write("scatteringfactor = %s \n" % sf)
 
@@ -990,9 +980,7 @@ def ConvertASCIItoHDF5(fname):
 
             dat = [qz, Theta, R, E]
             sim = [qz, Theta, Rsim, E]
-            plt.figure()
-            plt.plot(E,Rsim)
-            plt.show()
+
             polarization = info['polarization']
 
             if polarization == 'S' or polarization == 'P' or polarization == 'LC' or polarization == 'RC':
@@ -1046,23 +1034,9 @@ def ReadDataASCII(fname):
                     experimental_data = False
                     simulation = False
                     layer = 0
-                    layermagnetized = []
-                    formula = ''
-                    my_link = []
-                    polyelements = dict()
-                    magelements = dict()
+
                     new_element = False
                     element = ''
-                    thickness = 20
-                    roughness = 0
-                    scatteringfactor = []
-                    polymorph = []
-                    polyratio = []
-                    gamma = 90
-                    phi = 90
-                    magdensity = []
-                    magscatteringfactor = []
-                    position = 0
 
                 elif line[1] == 'Experimental_Data':
 
@@ -1090,7 +1064,6 @@ def ReadDataASCII(fname):
                     # initialization of parameters
                     x_axis = list()
                     y_axis = list()
-                    theta = list()
                     energy_qz = list()
                     scan_number = 0
                     scanType = 0
@@ -1099,7 +1072,7 @@ def ReadDataASCII(fname):
                     polarization = 0
                     numberPoints = 0
 
-                    NewScan = False  # determines if we have a new scan
+                    #NewScan = False  # determines if we have a new scan
                     first = True
                     # Read in each line one at a time
                 elif line[1] == 'Simulation':
@@ -1136,7 +1109,6 @@ def ReadDataASCII(fname):
                     polarization = 0
                     numberPoints = 0
 
-                    NewScan = False  # determines if we have a new scan
                     first = True
                     # Read in each line one at a time
             else:
@@ -1243,7 +1215,6 @@ def ReadDataASCII(fname):
 
                 elif experimental_data:
 
-                    #line = line.split()
                     if '=' not in line:
                         raise SyntaxError('Data file is improperly initialized.')
                     line.remove('=')  # removes the equal sign
@@ -1286,16 +1257,11 @@ def ReadDataASCII(fname):
                             data = int(data)
                             Sinfo[idx]['dataNumber'] = data
 
-
-
                     # retrieves the data set title
                     if info == 'datasettitle':
                         scan_number, scanType, angle = getScanInfo(data)
-                        #Sinfo[idx]['scanNumber'] = scan_number
-                        #Sinfo[idx]['scanType'] = scanType
                         if angle != None:
                             angle = float(angle)
-                            #Sinfo[idx]['angle'] = angle
 
                     # sets parameters based on scan type
                     if scanType == 'Energy':
@@ -1336,7 +1302,6 @@ def ReadDataASCII(fname):
 
                 elif simulation:
 
-                    # line = line.split()
                     if '=' not in line:
                         raise SyntaxError('Data file is improperly initialized.')
                     line.remove('=')  # removes the equal sign
@@ -1383,11 +1348,8 @@ def ReadDataASCII(fname):
                     # retrieves the data set title
                     if info == 'datasettitle':
                         scan_number, scanType, angle = getScanInfo(data)
-                        # Sinfo[idx]['scanNumber'] = scan_number
-                        # Sinfo[idx]['scanType'] = scanType
                         if angle != None:
                             angle = float(angle)
-                            # Sinfo[idx]['angle'] = angle
 
                     # sets parameters based on scan type
                     if scanType == 'Energy':
@@ -1557,7 +1519,6 @@ if __name__ == "__main__":
     sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.005, 0], ['Co', 'Ni'])
 
     sample.addlayer(7, 'CCO', 4, density = 2.5, roughness = 2)
-
 
     fname = "Pim10uc.hdf5"
     #WriteSampleHDF5(fname, sample)
