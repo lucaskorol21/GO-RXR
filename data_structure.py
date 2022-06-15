@@ -39,25 +39,19 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
     grp1.attrs['Links'] = np.array(sample.link)
 
-    # Retrieve the sample information of each layer
     dsLayer = 0
     for my_layer in sample.structure:
+
+        # Layer information
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
-        formula = ''
+        layer.attrs['Formula'] = my_layer.formula
 
-        # retrieve the sample information for each element in each layer
         for ele in list(my_layer.keys()):
             element = layer.create_group(ele)
 
-            # reconstructs the formula
-            stoich = int(my_layer[ele].stoichiometry)
-            if stoich == 1:
-                formula = formula + ele
-            else:
-                formula = formula + ele + str(stoich)
-
+            # Element information
             element.attrs['MolarMass'] = my_layer[ele].molar_mass
             element.attrs['Density'] = my_layer[ele].density
             element.attrs['Thickness'] = my_layer[ele].thickness
@@ -67,6 +61,8 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
             element.attrs['Gamma'] = my_layer[ele].gamma
             element.attrs['Phi'] = my_layer[ele].phi
 
+            # May be changed in the future as layermagnetized also contains this information
+            # Original implemented to avoid problem of trying to load in the magnetic data that does not exist
             if len(my_layer[ele].mag_density) == 0:
                 element.attrs['Magnetic'] = False
             else:
@@ -77,7 +73,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
             element.attrs['Position'] = my_layer[ele].position
 
-        layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
 
     # Loading in the experimental data and simulated data
@@ -118,7 +113,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         qz, R = sample.reflectivity(energy, qz)
         sim = np.array([qz, Theta, R[polarization]])
         dset = grpR.create_dataset(name, data=dat)
-        #dset1 = subR.create_dataset(name,dset.shape, dtype=dset.dtype)
         dset1 = subR.create_dataset(name, data=sim)
 
         dset.attrs['Energy'] = float(energy)
@@ -155,7 +149,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 qz, R = sample.reflectivity(energy, qz)
                 sim = np.array([qz,Theta,R[polarization]])
                 dset1 = subR.create_dataset(name,data = sim)
-                #dset1 = subR.create_dataset(name, dset.shape, dtype=dset.dtype)
 
                 dset.attrs['Energy'] = float(energy)
                 dset1.attrs['Energy'] = float(energy)
@@ -198,7 +191,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         sim = np.array([qz, Theta, R[polarization], E])
 
         dset = grpE.create_dataset(name, data=dat)
-        #dset1 = subE.create_dataset(name, dset.shape, dtype=dset.dtype)
         dset1 = subE.create_dataset(name, data=sim)
 
         dset.attrs['Energy'] = float(energy)
@@ -239,7 +231,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 sim = np.array([qz, Theta, R[polarization], E])
 
                 dset = grpE.create_dataset(name, data=dat)
-                #dset1 = subE.create_dataset(name, dset.shape, dtype=dset.dtype)
                 dset1 = subE.create_dataset(name, data=sim)
 
                 dset.attrs['Energy'] = float(energy)
@@ -262,23 +253,31 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     f.close()
 
 def ReadSampleHDF5(fname):
+    """
+    Purpose: Read the sample info from hdf5 file and recreate the sample object
+    :param fname: File name
+    :return: sample - the recreated sample object
+    """
     f = h5py.File(fname, 'r')
 
     S = f['Sample']
 
-    # Sample Information
+    # Retieves the general information of the sample
     m = int(S.attrs['NumberLayers'])
     sample = slab(m)
     sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
     sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
     sample.layer_magnetized = S.attrs['LayerMagnetized']
+    sample.link = S.attrs['Links']
 
-
+    # Retrieves the general layer information
     for lay_key in S.keys():
         layer = S[lay_key]
         formula = layer.attrs['Formula']
         lay_num = int(layer.attrs['LayerNumber'])
         sample.addlayer(lay_num, formula,20, density=1)  #pre-initialize parameters to random numbers for each layer
+
+        # retrieves the information for each element
         for ele_key in layer.keys():
             element = layer[ele_key]
             sample.structure[lay_num][ele_key].molar_mass = element.attrs['MolarMass']
@@ -296,7 +295,6 @@ def ReadSampleHDF5(fname):
             sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
             sample.structure[lay_num][ele_key].position = element.attrs['Position']
 
-    sample.link = S.attrs['Links']
     f.close()
     return sample
 
@@ -1508,8 +1506,6 @@ def selectScan(fname):
 
 
 if __name__ == "__main__":
-
-
 
     sample = slab(8)
 
