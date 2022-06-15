@@ -299,6 +299,12 @@ def ReadSampleHDF5(fname):
     return sample
 
 def ReadDataHDF5(fname):
+    """
+    Purpose: Reads in the experimental and simulated data from hdf5 file and then plots spectrum chosen by user
+    :param fname: File name
+    :return:
+    """
+
     f = h5py.File(fname, 'r')
     experiment = f['Experimental_data']
     simulated = f['Simulated_data']
@@ -309,6 +315,7 @@ def ReadDataHDF5(fname):
     ES = experiment['Energy_Scan']
     SimE = simulated['Energy_Scan']
 
+    # Collects data information to print to terminal
     data = list()
     for Rkey in RS.keys():
         mydata = RS[Rkey]
@@ -319,51 +326,62 @@ def ReadDataHDF5(fname):
         Edat = [int(mydata.attrs['DatasetNumber']),'Energy', Ekey]
         data.append(Edat)
 
+    # Sorts data in appropriate order
     data = np.array(data)
     sort_idx = np.argsort(data[:,0].astype(int))
     data = data[sort_idx]
+
+    # Sets up and prints scan table
     header = ['#', 'Scan Type', 'Scan']
     tab = PrettyTable(header)
     tab.add_rows(data)
     print(tab)
 
+    # Loop that continuously asks user which scan they want to have shown
     val = input('Choose scan # you want to use: ')
     while val in data[:,0]:
-        idx = int(val)-1
+        idx = int(val)-1  # retrieve the proper indices
         myScan = data[idx]
         scanType = myScan[1]
         scanName = myScan[2]
 
         if scanType == 'Reflectivity':
-            Rdata = list(RS[scanName])
-            Rsim = list(SimR[scanName])
-            qz = Rdata[0]
-            R = Rdata[2]
-            Rs = Rsim[2]
+            Rdata = list(RS[scanName])  # experimental data
+            Rsim = list(SimR[scanName])  # simulated data
+            qz = Rdata[0]  # momentum transfer
+            R = Rdata[2]  # experimental data reflectivity
+            Rs = Rsim[2]  # simulated data reflectivity
+
+            # plotting of reflectivity scan
             plt.figure()
             plt.plot(qz, R)
             plt.plot(qz, Rs)
-            plt.yscale('log')
+
+            # yscale is set to log only and only if scan is not an asymmetry scan
             if not(RS[scanName].attrs['Polarization'] == 'AL') and not(RS[scanName].attrs['Polarization'] == 'AC'):
                 plt.yscale('log')
 
             plt.legend(['Data', 'Simulation'])
 
         elif scanType == 'Energy':
-            Edata = list(ES[scanName])
-            ESim = list(SimE[scanName])
-            E = Edata[3]
-            R = Edata[2]
-            Rs = ESim[2]
+            Edata = list(ES[scanName])  # experimental data
+            ESim = list(SimE[scanName])  # simulated data
+            E = Edata[3]  # energy array
+            R = Edata[2]  # experimental reflectivity data
+            Rs = ESim[2]  # simulated reflectivity data
+
+            # plotting the energy scan
             plt.figure()
             plt.plot(E,R)
             plt.plot(E, Rs)
             plt.legend(['Data','Simulation'])
+
         plt.show()
-        val = input('Choose scan # you want to use: ')
+        val = input('Choose another scan # you want to use: ')  # Choose another scan
 
 
     f.close()
+
 
 def WriteSampleHDF5(fname, sample):
     with h5py.File(fname, "a") as f:
