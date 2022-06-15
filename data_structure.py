@@ -384,12 +384,22 @@ def ReadDataHDF5(fname):
 
 
 def WriteSampleHDF5(fname, sample):
+    """
+    Purpose: Write a new sample to the hdf5 file fname
+    :param fname: File name
+    :param sample: new sample information as sample type
+    :return:
+    """
+
+    # deletes the previous sample information
     with h5py.File(fname, "a") as f:
         del f['Sample']
     f.close()
 
     f = h5py.File(fname, "a")
     grp1 = f.create_group('Sample')
+
+    # Sets the general sample information
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
@@ -397,20 +407,17 @@ def WriteSampleHDF5(fname, sample):
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
     grp1.attrs['Links'] = np.array(sample.link)
 
+    # Sets the information for each layer
     dsLayer = 0
     for my_layer in sample.structure:
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
-        formula = ''
+        layer.attrs['Formula'] = my_layer.formula
+
+        # Sets the information for each element
         for ele in list(my_layer.keys()):
             element = layer.create_group(ele)
-
-            stoich = int(my_layer[ele].stoichiometry)
-            if stoich == 1:
-                formula = formula + ele
-            else:
-                formula = formula + ele + str(stoich)
 
             element.attrs['MolarMass'] = my_layer[ele].molar_mass
             element.attrs['Density'] = my_layer[ele].density
@@ -431,7 +438,6 @@ def WriteSampleHDF5(fname, sample):
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
             element.attrs['Position'] = my_layer[ele].position
 
-        layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
 
     h = 4.135667696e-15  # Plank's constant eV*s
@@ -442,28 +448,28 @@ def WriteSampleHDF5(fname, sample):
     grpR = grp2["Reflectivity_Scan"]
     grpE = grp2["Energy_Scan"]
 
-    # start of loading data
-    dsNum = 1
+    # Recalculate the simulated reflectivity scan data
     for key in list(grpR.keys()):
-        dset = grpR[key]
-        Rdata = list(dset)
-        qz = np.array(Rdata[0])
-        E = float(dset.attrs['Energy'])
-        polarization = dset.attrs['Polarization']
+        dset = grpR[key]  # retrieves the old data set
+        Rdata = list(dset)  # gets the dataset information
+        qz = np.array(Rdata[0])  # retrieves the momentum transfer
+        E = float(dset.attrs['Energy'])  # retrieves the energy
+        polarization = dset.attrs['Polarization']  # retrieves the polarization
 
-        qz, R = sample.reflectivity(E, qz)
-        Rdata[2] = R[polarization]
-        dset[...] = Rdata
+        qz, R = sample.reflectivity(E, qz)  # computes reflecticity
+        Rdata[2] = R[polarization]  # retrieves appropriate reflectivity for the correct polarization
+        dset[...] = Rdata  # overwrites previous dataset with new data
 
+    # Recalculates the simulated energy scan data
     for key in list(grpE.keys()):
-        dset = grpE[key]
-        Edata = list(dset)
-        E = Edata[3]
-        theta = dset.attrs['Angle']
-        polarization = dset.attrs['Polarization']
-        E, R = sample.energy_scan(theta, E)
-        Edata[2] = R[polarization]
-        dset[...] = Edata
+        dset = grpE[key]  # retrieves the old data set
+        Edata = list(dset)  # gets the dataset information
+        E = Edata[3]  # retrieves the numpy energy array
+        theta = dset.attrs['Angle']  # retrieves the angle
+        polarization = dset.attrs['Polarization']  # retrieves the polarization
+        E, R = sample.energy_scan(theta, E)  # recomputes the energy scan
+        Edata[2] = R[polarization]  # retrieves appropriate reflectivity with the correct polarization
+        dset[...] = Edata  # overwrites previous data with new data
 
     f.close()
 
