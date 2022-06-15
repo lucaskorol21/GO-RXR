@@ -849,12 +849,9 @@ def getScanInfo(title):
     :param title: title/label of the scan
     :return:
     """
-    title = title.split('_')
+    title = title.split('_')  # split title into an array
 
-    scanType = None
     angle = None
-
-
     scan_number = title[0]
 
     # Determines the scan type
