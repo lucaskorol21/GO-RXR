@@ -686,16 +686,18 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
         :return:
         """
 
-    file.write("# Simulation \n")
+    file.write("# Simulation \n")  # header that states start of simulation data
     qz = list()
+
+    # Writing reflectivity data
     dsNum = 1
     polarization = 'S'
     for i in range(len(AScans)):
+        # General information
         file.write("datasetnumber = %d \n" % dsNum)
         name = str(AInfo[i][0]) + "_A_" + AInfo[i][3] + "_" + AInfo[i][1]
         file.write("datasettitle = %s \n" % name)
         file.write("datasetenergy = %s \n" % AInfo[i][3])
-
         if (AInfo[i][1] == "S"):
             polarization = 'S'
             file.write("polarization = S \n")
@@ -708,38 +710,42 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
         elif (AInfo[i][1] == "R"):
             polarization = 'RC'
             file.write("polarization = RC \n")
-
         file.write("datasetpoints = %d \n" % len(AScans[i][:, 0]))
-        qz = AScans[i][:,2]
-        qz, R = sample.reflectivity(float(AInfo[i][3]), qz)
-        R = R[polarization]
+
+        qz = AScans[i][:,2]  # retrieves momentum transfer
+        qz, R = sample.reflectivity(float(AInfo[i][3]), qz)  # computes the reflectivity
+        R = R[polarization]  # retrieves the reflectivity of the correct polarization
+
+        # Writes the simulated data
         for j in range(len(qz)):
-            file.write("dataset_qz = %f \n" % qz[j])
-            file.write("dataset_R0 = %e \n" % R[j])
-            # file.write("dataset_eng = %f \n" % AScans[i][j][0])
+            file.write("dataset_qz = %f \n" % qz[j])  # momentum transfer
+            file.write("dataset_R0 = %e \n" % R[j])  # reflectivity
+
         file.write("\n\n")
         dsNum = dsNum + 1
 
         # write asymmetry if possible
         if i > 0:
             if (AInfo[i - 1][3] == AInfo[i][3]):
+                # General information
                 file.write("datasetnumber = %d \n" % dsNum)
                 name = str(AInfo[i - 1][0]) + "-" + str(AInfo[i][0]) + "_A_" + AInfo[i][3] + "_" + AInfo[i - 1][
                     1] + "-" + AInfo[i][1] + "_Asymm"
                 file.write("datasettitle = %s \n" % name)
                 file.write("datasetenergy = %s \n" % AInfo[i][3])
-
                 if (AInfo[i - 1][1] == "S" or AInfo[i - 1][1] == "P"):
                     polarization = 'AL'
                     file.write("polarization = AL \n")
                 elif (AInfo[i - 1][1] == "L" or AInfo[i - 1][1] == "R"):
                     polarization = 'AC'
                     file.write("polarization = AC \n")
-
                 file.write("datasetpoints = %d \n" % len(AScans[i][:, 0]))
-                qz = AScans[i][:,2]
-                qz, R = sample.reflectivity(float(AInfo[i][3]), qz)
-                R = R[polarization]
+
+                qz = AScans[i][:,2]  # retrieves the momentum transfer
+                qz, R = sample.reflectivity(float(AInfo[i][3]), qz)  # computes reflectivity
+                R = R[polarization]  # retrieves the reflectivity of the correct polarization
+
+                # Writes the simulated data
                 for j in range(len(qz)):
                     file.write("dataset_qz = %f \n" % qz[j])
                     # print(AScans[i-1][j][3]+AScans[i][j][3])
@@ -748,13 +754,14 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
                 file.write("\n\n")
                 dsNum = dsNum + 1
 
+    # Writing the energy scan simulation data
     for i in range(len(EScans)):
+        # General information
         file.write("datasetnumber = %d \n" % dsNum)
         name = str(EInfo[i][0]) + "_E" + str(round(float(EInfo[i][3]), 2)) + "_Th" + str(
             round(float(EInfo[i][4]), 2)) + "_" + EInfo[i][1]
         file.write("datasettitle = %s \n" % name)
         file.write("datasetenergy = %s \n" % EInfo[i][3])
-
         if (EInfo[i][1] == "S"):
             polarization = 'S'
             file.write("polarization = S \n")
@@ -768,12 +775,15 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
             polarization = 'S'
             file.write("polarization = RC \n")
         file.write("datasetpoints = %d \n" % len(EScans[i][:, 0]))
-        E = EScans[i][:,0]
-        E, R = sample.energy_scan(float(EInfo[i][4]), E)
-        R = R[polarization]
+
+        E = EScans[i][:,0]  # numpy energy array
+        E, R = sample.energy_scan(float(EInfo[i][4]), E)  # computes the energy scan
+        R = R[polarization]  # retrieves the energy scan for the correct polarization
+
+        # Writes the energy scan data
         for j in range(len(E)):
-            file.write("dataset_R0 = %e \n" % R[j])
-            file.write("dataset_eng = %f \n" % E[j])
+            file.write("dataset_R0 = %e \n" % R[j])  # reflectivity
+            file.write("dataset_eng = %f \n" % E[j])  # energy
         file.write("\n\n")
         dsNum = dsNum + 1
 
@@ -781,13 +791,13 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
         if i > 0:
             if (abs(float(EInfo[i - 1][3]) - float(EInfo[i][3])) < 0.015 and abs(
                     float(EInfo[i - 1][4]) - float(EInfo[i][4])) < 0.1):
+                #General information
                 file.write("datasetnumber = %d \n" % dsNum)
                 name = str(EInfo[i - 1][0]) + "-" + str(EInfo[i][0]) + "_E" + str(
                     round(float(EInfo[i][3]), 2)) + "_Th" + str(round(float(EInfo[i][4]), 2)) + "_" + EInfo[i - 1][
                            1] + "-" + EInfo[i][1] + "_Asymm"
                 file.write("datasettitle = %s \n" % name)
                 file.write("datasetenergy = %s \n" % EInfo[i][3])
-
                 if (EInfo[i - 1][1] == "S" or EInfo[i - 1][1] == "P"):
                     polarization = 'AL'
                     file.write("polarization = AL \n")
@@ -795,12 +805,14 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
                     polarization = 'AC'
                     file.write("polarization = AC \n")
 
-                E = EScans[i][:,0]
-                E, R = sample.energy_scan(float(EInfo[i][4]), E)
-                R = R[polarization]
+                E = EScans[i][:,0]  # numpy energy array
+                E, R = sample.energy_scan(float(EInfo[i][4]), E)  # compute energy scan
+                R = R[polarization]  # retrieve energy scan with correct polarization
+
+                # write energy scan data
                 for j in range(len(E)):
-                    file.write("dataset_A = %e \n" % R[j])
-                    file.write("dataset_eng = %f \n" % E[j])
+                    file.write("dataset_A = %e \n" % R[j])  # reflectivity
+                    file.write("dataset_eng = %f \n" % E[j])  # energy
 
                 file.write("\n\n")
                 dsNum = dsNum + 1
