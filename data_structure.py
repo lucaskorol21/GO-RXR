@@ -46,7 +46,15 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
-        layer.attrs['Formula'] = my_layer.formula
+
+        formula = ''
+        for ele in list(my_layer.keys()):
+            stoich = my_layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+        layer.attrs['Formula'] = formula
 
         for ele in list(my_layer.keys()):
             element = layer.create_group(ele)
@@ -413,7 +421,16 @@ def WriteSampleHDF5(fname, sample):
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
-        layer.attrs['Formula'] = my_layer.formula
+        ### Need to change back to previous version
+
+        formula = ''
+        for ele in list(my_layer.keys()):
+            stoich = my_layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+        layer.attrs['Formula'] = formula
 
         # Sets the information for each element
         for ele in list(my_layer.keys()):
@@ -481,56 +498,46 @@ def WriteSampleASCII(file,sample):
     :return:
     """
 
-    file.write("# Structure \n")
+    file.write("# Structure \n")  # header defining that the sample information is starting
     n = len(sample.structure)
 
+    # General information for the sample model
     file.write("numberlayers = %s \n" % str(n))
     file.write("polyelements = %s \n" % str(sample.poly_elements))
     file.write("magelements = %s \n" % str(sample.mag_elements))
+    file.write("layermagnetized = %s \n" % sample.layer_magnetized)
+    file.write("link =  %s \n\n" % sample.link)
 
-    layermagnetized = sample.layer_magnetized
-    file.write("layermagnetized = %s \n" % layermagnetized)
-
-    link = sample.link
-    file.write("link =  %s \n\n" % link)
-
+    # writing the layer and element information
     num_lay = 0
-
     for layer in sample.structure:
 
+        # General layer information
         file.write("layer = %s \n" % str(num_lay))
+
+        # Reconstructing the chemical formula
         formula = ''
-
-        # retieves the chemical formula
-        for ele in layer.keys():
-
-            # retrieve the chemical formula
+        for ele in list(layer.keys()):
             stoich = layer[ele].stoichiometry
             if stoich == 1:
                 formula = formula + ele
             else:
                 formula = formula + ele + str(stoich)
-
-
         file.write("formula = %s \n\n" % formula)
 
+        # writing the element information
         for ele in layer.keys():
             file.write("element = %s \n" % ele)
             file.write("molarmass = %f \n" % layer[ele].molar_mass)
             file.write("density = %f \n" % layer[ele].density)
             file.write("thickness = %f \n" % layer[ele].thickness)
             file.write("roughness = %f \n" % layer[ele].roughness)
+            file.write("scatteringfactor = %s \n" % layer[ele].scattering_factor)
+            file.write("polymorph = %s \n" % layer[ele].polymorph)
 
-            sf = layer[ele].scattering_factor
-            file.write("scatteringfactor = %s \n" % sf)
-
-            poly_names = layer[ele].polymorph
             poly_ratio = layer[ele].poly_ratio
             if type(poly_ratio) != int:
                 poly_ratio = [str(poly) for poly in poly_ratio]
-
-
-            file.write("polymorph = %s \n" % poly_names)
             file.write("polyratio = %s \n" % poly_ratio)
 
 
