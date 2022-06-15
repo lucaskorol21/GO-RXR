@@ -879,9 +879,16 @@ def createNewDict():
     return my_dict
 
 def ConvertASCIItoHDF5(fname):
+    """
+    Purpose: Converts and ASCII file to an hdf5 file with the proper format
+    :param fname: File name of the ASCII file
+    :return:
+    Current implementation does not allow user to change the hdf5 file name from the ASCII file name
+    """
 
-    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
+    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)  # retrieves information form ASCII file
 
+    # changes file extension
     if fname.endswith('.all'):
         fname = fname[:-4]
         fname = fname + '.hdf5'
