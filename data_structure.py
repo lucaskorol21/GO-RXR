@@ -819,11 +819,28 @@ def WriteSimulationASCII(file, AScans,AInfo,EScans,EInfo, sample):
 
 
 def WriteDataASCII(fname,AScans,AInfo,EScans,EInfo, sample):
+    """
+    Purpose: Write experimental, simulated data, and sample info to an ASCII file with .all extension
+    :param fname: File name
+    :param AScans: Array that contains the reflectivity scan experimental data
+    :param AInfo: Array that contains the information related to each reflecitivty scan
+    :param EScans: Array that contains the energy scan experimental data
+    :param EInfo: Array that contains the information related to each energy scan
+    :param sample: Slab object containing sample information
+    :return:
+    """
+    # If you decide to use your own functions to create an ASCII file you must include the following headers before
+    # you write the data
+    #  - # Structure
+    #  - # Experimental_Data
+    #  - # Simulation
 
-    file = open(fname, "w")
-    WriteSampleASCII(file, sample)
-    WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo)
-    WriteSimulationASCII(file, AScans, AInfo, EScans, EInfo, sample)
+    # Information for the data fitting and neural network parameters will be added later on
+
+    file = open(fname, "w")  # creating a new file with name fname
+    WriteSampleASCII(file, sample)  # writes the sample information
+    WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo)  # writes the experimental data
+    WriteSimulationASCII(file, AScans, AInfo, EScans, EInfo, sample)  # writes the simulation data
     f.close()
 
 def getScanInfo(title):
