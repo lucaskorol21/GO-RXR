@@ -1539,7 +1539,7 @@ if __name__ == "__main__":
     sample.addlayer(7, 'CCO', 4, density = 2.5, roughness = 2)
 
 
-    #fname = "Pim10uc.hdf5"
+    fname = "Pim10uc.hdf5"
     #WriteSampleHDF5(fname, sample)
-    #ReadDataHDF5(fname)
+    ReadDataHDF5(fname)
 
