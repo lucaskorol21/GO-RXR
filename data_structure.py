@@ -567,10 +567,13 @@ def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
     """
 
 
-    file.write("# Experimental_Data \n")
+    file.write("# Experimental_Data \n")  # header that states writing experimental data
 
+    # Writing the reflectivity scan data
     dsNum = 1
     for i in range(len(AScans)):
+
+        # Writing the general information of each scan
         file.write("datasetnumber = %d \n" % dsNum)
         name = str(AInfo[i][0]) + "_A_" + AInfo[i][3] + "_" + AInfo[i][1]
         file.write("datasettitle = %s \n" % name)
@@ -583,12 +586,12 @@ def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
             file.write("polarization = LC \n")
         elif (AInfo[i][1] == "R"):
             file.write("polarization = RC \n")
-
-
         file.write("datasetpoints = %d \n" % len(AScans[i][:, 0]))
+
+        # writing the data of each scan
         for j in range(len(AScans[i][:, 0])):
-            file.write("dataset_qz = %f \n" % AScans[i][j][2])
-            file.write("dataset_R0 = %e \n" % AScans[i][j][3])
+            file.write("dataset_qz = %f \n" % AScans[i][j][2])  # momentum transfer
+            file.write("dataset_R0 = %e \n" % AScans[i][j][3])  # reflectivity
             # file.write("dataset_eng = %f \n" % AScans[i][j][0])
         file.write("\n\n")
         dsNum = dsNum + 1
@@ -596,48 +599,45 @@ def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
         # write asymmetry if possible
         if i > 0:
             if (AInfo[i - 1][3] == AInfo[i][3]):
+                # General info of each scan
                 file.write("datasetnumber = %d \n" % dsNum)
                 name = str(AInfo[i - 1][0]) + "-" + str(AInfo[i][0]) + "_A_" + AInfo[i][3] + "_" + AInfo[i - 1][
                     1] + "-" + AInfo[i][1] + "_Asymm"
                 file.write("datasettitle = %s \n" % name)
                 file.write("datasetenergy = %s \n" % AInfo[i][3])
-
                 if (AInfo[i-1][1] == "S" or AInfo[i-1][1] =="P"):
                     file.write("polarization = AL \n")
                 elif (AInfo[i-1][1] == "L" or AInfo[i-1][1] == "R"):
                     file.write("polarization = AC \n")
-
                 file.write("datasetpoints = %d \n" % len(AScans[i][:, 0]))
+
+                # writing data
                 for j in range(len(AScans[i][:, 0])):
-                    file.write("dataset_qz = %f \n" % AScans[i][j][2])
-                    # print(AScans[i-1][j][3]+AScans[i][j][3])
+                    file.write("dataset_qz = %f \n" % AScans[i][j][2])  # momentum transfer
                     file.write("dataset_A = %e \n" % (
                                 (AScans[i - 1][j][3] - AScans[i][j][3]) / (AScans[i - 1][j][3] + AScans[i][j][3])))
-                    # file.write("dataset_eng = %f \n" % AScans[i][j][0])
+
                 file.write("\n\n")
                 dsNum = dsNum + 1
 
+    # Writing energy scan data
     for i in range(len(EScans)):
         file.write("datasetnumber = %d \n" % dsNum)
         name = str(EInfo[i][0]) + "_E" + str(round(float(EInfo[i][3]), 2)) + "_Th" + str(round(float(EInfo[i][4]), 2)) + "_" + EInfo[i - 1][
                    1] + "-" + EInfo[i][1]
         file.write("datasettitle = %s \n" % name)
         file.write("datasetenergy = %s \n" % EInfo[i][3])
-
         if (EInfo[i][1] == "S"):
             file.write("polarization = S \n")
-
         elif (EInfo[i][1] == "P"):
             file.write("polarization = P \n")
-
         elif (EInfo[i][1] == "L"):
             file.write("polarization = LC \n")
-
         elif (EInfo[i][1] == "R"):
             file.write("polarization = RC \n")
-
-
         file.write("datasetpoints = %d \n" % len(EScans[i][:, 0]))
+
+        # Writing the data for each energy scan
         for j in range(len(EScans[i][:, 0])):
             file.write("dataset_qz = %f \n" % EScans[i][j][2])
             file.write("dataset_R0 = %e \n" % EScans[i][j][3])
@@ -649,21 +649,22 @@ def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
         if i > 0:
             if (abs(float(EInfo[i - 1][3]) - float(EInfo[i][3])) < 0.015 and abs(
                     float(EInfo[i - 1][4]) - float(EInfo[i][4])) < 0.1):
+
+                # General information
                 file.write("datasetnumber = %d \n" % dsNum)
                 name = str(EInfo[i - 1][0]) + "-" + str(EInfo[i][0]) + "_E" + str(
                     round(float(EInfo[i][3]), 2)) + "_Th" + str(round(float(EInfo[i][4]), 2)) + "_" + EInfo[i - 1][
                            1] + "-" + EInfo[i][1] + "_Asymm"
                 file.write("datasettitle = %s \n" % name)
                 file.write("datasetenergy = %s \n" % EInfo[i][3])
-
                 if (EInfo[i-1][1] == "S" or EInfo[i-1][1] =="P"):
                     file.write("polarization = AL \n")
                 elif (EInfo[i-1][1] == "L" or EInfo[i-1][1] == "R"):
                     file.write("polarization = AC \n")
 
-
+                # Writing the data for each energy scan
                 for j in range(len(EScans[i][:, 0])):
-                    file.write("dataset_qz = %f \n" % EScans[i][j][2])
+                    file.write("dataset_qz = %f \n" % EScans[i][j][2])  # momentum transfer
                     file.write("dataset_A = %e \n" % (
                                 (EScans[i - 1][j][3] - EScans[i][j][3]) / (EScans[i - 1][j][3] + EScans[i][j][3])))
                     file.write("dataset_eng = %f \n" % EScans[i][j][0])
