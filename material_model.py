@@ -82,7 +82,7 @@ def find_form_factors(element, E, mag):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
 
-def MOC(rho, sfm, E):
+def MOC(rho, sfm, E, n):
     """
     Purpose: computes the magneto-optical constant for the energy scan
     :param rho: dictionary containing the element symbol as the key and a numpy array as the value
@@ -103,13 +103,15 @@ def MOC(rho, sfm, E):
 
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
 
-    delta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # pre-initialization
-    beta_m = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # pre-initialization
-
+    delta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
+    beta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
     # Computes the dispersive and absorptive components of the magnetic-optical constant using list comprehensions
     for element in elements:
-        delta_m = delta_m + np.array([constant[x]*sfm[element][x,0]*rho[element] for x in range(len(sfm[element][:,0]))])
-        beta_m = beta_m + np.array([constant[x]*sfm[element][x, 1]*rho[element] for x in range(len(sfm[element][:, 1]))])
+        delta_m = delta_m + np.array(
+            [constant[x] * sfm[element][x, 0] * rho[element] for x in range(len(sfm[element][:, 0]))])
+        beta_m = beta_m + np.array(
+            [constant[x] * sfm[element][x, 1] * rho[element] for x in range(len(sfm[element][:, 1]))])
+
 
     return delta_m, beta_m
 

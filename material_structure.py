@@ -1184,7 +1184,7 @@ class slab:
 
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
-        wavelength = h * c / (E * 1e-10)  # wavelength m
+        wavelength = h * c / (E * 1e-10)  # wavelength
         #wavelength = 19.366478131833802
         # requires angle for reflectivity computation and minimum slab thickness
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
@@ -1215,7 +1215,7 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m)
         #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
-        end_new = time_ns()
+
         my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
@@ -1346,7 +1346,6 @@ class slab:
         c = 2.99792458e8  # speed of light m/s
 
         thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
-
         # Magnetic Scattering Factor
         sfm = dict()
         sf = dict()
@@ -1356,8 +1355,9 @@ class slab:
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
 
+        d_len = len(thickness)
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
-        delta_m, beta_m = MOC(density_magnetic, sfm,energy)  # absorptive and dispersive components for magnetic components
+        delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
 
 
         #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index

@@ -137,26 +137,37 @@ if __name__ == '__main__':
     plt.legend(['ReMagX', 'Lucas'])
     #plt.show()
 
-    hello = np.loadtxt('energy_test.txt')
-    E = hello[:,0]
+    #hello = np.loadtxt('energy_test.txt')
+    #E = hello[:,0]
 
-    R = np.array(R)
+    #R = np.array(R)
 
-    start = time()
-    E, R = sample.energy_scan(5.0, E)
-    end = time()
-    print(end-start)
-    R = R['S']
+    #start = time()
+    #E, R = sample.energy_scan(5.0, E)
+    #end = time()
+    #print(end-start)
+    #R = R['S']
 
     #R = R['P']
-    plt.figure(89)
-    plt.plot(E,R)
-    plt.plot(E, hello[:,1])
-    plt.legend(['Simulation', 'Data'])
-    plt.show()
+    #plt.figure(89)
+    #plt.plot(E,R)
+    #plt.plot(E, hello[:,1])
+    #plt.legend(['Simulation', 'Data'])
+    #plt.show()
 
-    fname = "Pim7uc.hdf5"
-    ReadDataHDF5(fname)
+    #fname = "Pim7uc.hdf5"
+    #ReadDataHDF5(fname)
     #Sscan, Sinfo, sample1 = ReadData(fname)
     #selectScan(Sinfo, Sscan, sample)
+    Theta= 25
+    #E = 845
+    #angle = np.linspace(0.1,89.9,899)
+    #qz = np.sin(angle*pi/180)*E*(0.001013546247)
+    E = np.linspace(600,604, 100)
+    new_sample = slab(2)
+
+    new_sample.addlayer(0, 'SrTiO3', 50)
+    new_sample.addlayer(1,'LaMnO3',20)
+    #new_sample.reflectivity(E, qz)
+    E, R = new_sample.energy_scan(Theta, E)
 
