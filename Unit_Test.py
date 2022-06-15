@@ -1,6 +1,7 @@
 
 from material_structure import *
-
+from data_structure import *
+from Process_LMO import *
 import matplotlib
 import numpy as np
 
@@ -9,14 +10,14 @@ if __name__ == "__main__":
     # ---------------------------------------Class: element----------------------------------------------------------- #
     Success = True
 
-    test_00 = [{'input':['Fe', 1], 'output': ['Fe', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'Fe', None, None], 'reason': 0},
-               {'input': ['Sr', 7], 'output': ['Sr', 0, 0, 0, 0, 7, 1, [], 0, 0, None, 'Sr', None, None], 'reason': 0},
-               {'input': ['K', 1], 'output': ['K', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'K', None, None], 'reason': 0},
-               {'input': ['C', 2], 'output': ['C', 0, 0, 0, 0, 2, 1, [], 0, 0, None, 'C', None, None], 'reason': 0},
-               {'input':['Ga', 25], 'output': ['Ga', 0, 0, 0, 0, 25, 1, [], 0, 0, None, 'Ga', None, None], 'reason': 0},
-               {'input':['V', 1], 'output': ['V', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'V', None, None], 'reason': 0},
-               {'input':['N', 1], 'output': ['N', 0, 0, 0, 0, 1, 1, [], 0, 0, None, 'N', None, None], 'reason': 0},
-               {'input':['Hg', 184], 'output': ['Hg', 0, 0, 0, 0, 184, 1, [], 0, 0, None, 'Hg', None, None], 'reason': 0}]
+    test_00 = [{'input':['Fe', 1], 'output': ['Fe', 0, 0, 0, 0, 1, 1, [], 90, 90, [], 'Fe', [], None], 'reason': 0},
+               {'input': ['Sr', 7], 'output': ['Sr', 0, 0, 0, 0, 7, 1, [], 90, 90, [], 'Sr', [], None], 'reason': 0},
+               {'input': ['K', 1], 'output': ['K', 0, 0, 0, 0, 1, 1, [], 90, 90, [], 'K', [], None], 'reason': 0},
+               {'input': ['C', 2], 'output': ['C', 0, 0, 0, 0, 2, 1, [], 90, 90, [], 'C', [], None], 'reason': 0},
+               {'input':['Ga', 25], 'output': ['Ga', 0, 0, 0, 0, 25, 1, [], 90, 90, [], 'Ga', [], None], 'reason': 0},
+               {'input':['V', 1], 'output': ['V', 0, 0, 0, 0, 1, 1, [], 90, 90, [], 'V', [], None], 'reason': 0},
+               {'input':['N', 1], 'output': ['N', 0, 0, 0, 0, 1, 1, [], 90, 90, [], 'N', [], None], 'reason': 0},
+               {'input':['Hg', 184], 'output': ['Hg', 0, 0, 0, 0, 184, 1, [], 90, 90, [], 'Hg', [], None], 'reason': 0}]
 
     for test in test_00:
         test_element = element(test['input'][0], test['input'][1])
@@ -46,13 +47,13 @@ if __name__ == "__main__":
             print('Element polymorph not initialized properly')
             Success = False
         elif test_element.gamma != test['output'][8]:
-            print('Element magnetization direction theta not initialized properly')
+            print('Element magnetization direction gamma not initialized properly')
             Success = False
         elif test_element.phi != test['output'][9]:
             print('Element magnetization direction phi not initialized properly')
             Success = False
         elif test_element.mag_density != test['output'][10]:
-            print('Element magnetization density not initialized properly')
+            print('Element magnetization mag density not initialized properly')
             Success = False
         elif test_element.scattering_factor != test['output'][11]:
             print('Element scattering factor not initialized properly')
@@ -377,20 +378,21 @@ if __name__ == "__main__":
                     print('Magnetic theta of element scattering factor ' + ele + ' incorrect initialized')
                     Success = False
             else:
-                if layer[ele].mag_density != None:
+                if layer[ele].mag_density != []:
                     print('Non-magnetic element ' + ele + ' incorrectly initialized')
                     Success = False
                 if layer[ele].mag_scattering_factor != None:
                     print('Non-magnetic scattering factor of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].gamma != 0:
+                if layer[ele].gamma != 90:
                     print('Non-magnetic phi of element ' + ele + ' incorrect initialized')
                     Success = False
-                if layer[ele].phi != 0:
+                if layer[ele].phi != 90:
                     print('Non-magnetic theta of element ' + ele + ' incorrect initialized')
                     Success = False
 
     print('9. magnetization testing complete')
+
     if Success:
         print()
         print()
