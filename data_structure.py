@@ -878,7 +878,7 @@ def createNewDict():
     my_dict['numberPoints'] = None
     return my_dict
 
-def ConvertASCIItoHDF5(fname):
+def ConvertASCIItoHDF5(fascii, fhdf5):
     """
     Purpose: Converts and ASCII file to an hdf5 file with the proper format
     :param fname: File name of the ASCII file
@@ -886,25 +886,24 @@ def ConvertASCIItoHDF5(fname):
     Current implementation does not allow user to change the hdf5 file name from the ASCII file name
     """
 
-    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)  # retrieves information form ASCII file
-
-    # changes file extension
-    if fname.endswith('.all'):
-        fname = fname[:-4]
-        fname = fname + '.hdf5'
-    else:
+    # checks to make sure file type of ASCII and HDF5 files are correct
+    if not(fascii.endswith('.all')):
+        raise NameError('File name must be a .all file type')
+    if not(fhdf5.endswith('.hdf5')):
         raise NameError('File name must be a .all file type')
 
-    cwd = os.getcwd()
-    path = cwd + '/' + fname
+    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fascii)  # retrieves information from ASCII file
 
+    # checking to make sure that the HDF5 file asked for does not already exist
+    cwd = os.getcwd()
+    path = cwd + '/' + fhdf5
     if os.path.exists(path):
         raise OSError(
             "HDF5 file already exists. To write new HDF5 file remove the old file from the current working directory.")
 
-    f = h5py.File(fname, 'a')
+    f = h5py.File(fhdf5, 'a')  # creates a new HDF5 file
 
-
+    # Sample conversion of general information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
@@ -913,16 +912,18 @@ def ConvertASCIItoHDF5(fname):
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
     grp1.attrs['Links'] = np.array(sample.link)
 
+    # general layer information
     dsLayer = 0
     for my_layer in sample.structure:
+
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
+
+        # reconstructing the chemical formula input by user
         formula = ''
         for ele in list(my_layer.keys()):
-
             element = layer.create_group(ele)
-
             stoich = int(my_layer[ele].stoichiometry)
             if stoich == 1:
                 formula = formula + ele
@@ -938,11 +939,10 @@ def ConvertASCIItoHDF5(fname):
             element.attrs['Gamma'] = my_layer[ele].gamma
             element.attrs['Phi'] = my_layer[ele].phi
 
-
+            # Magnetic element check
             if len(my_layer[ele].mag_density) == 0:
                 element.attrs['Magnetic'] = False
             else:
-
                 element.attrs['Magnetic'] = True
                 element.attrs['MagDensity'] = my_layer[ele].mag_density
                 element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
@@ -952,6 +952,8 @@ def ConvertASCIItoHDF5(fname):
 
         layer.attrs['Formula'] = formula
         dsLayer = dsLayer + 1
+
+    # Experimental and simulated data conversion
 
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
@@ -966,15 +968,16 @@ def ConvertASCIItoHDF5(fname):
     subE = grp3.create_group("Energy_Scan")
 
     name = ''
-    # start of loading data
-    dsNum = 1
 
+    dsNum = 1
     for i in range(len(Sinfo)):
         info = Sinfo[i]
         data = Sscan[i]
         simData = SimScan[i]
 
         scanType = info['scanType']
+
+        # Reflectivity scans
         if scanType == "Reflectivity":
             qz = np.array(data[0])
             R0 = np.array(data[1])
@@ -1010,6 +1013,7 @@ def ConvertASCIItoHDF5(fname):
             dset1.attrs['DatasetNumber'] = int(dsNum)
 
             dsNum = dsNum + 1
+
         elif scanType == 'Energy':
             E = np.array(data[0])
             R = np.array(data[1])

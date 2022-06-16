@@ -163,5 +163,5 @@ if __name__ == '__main__':
     #selectScan(Sinfo, Sscan, sample)
 
     """
-    ConvertASCIItoHDF5("Pim7uc.all")
+    ConvertASCIItoHDF5("Pim7uc.all", "Pim7uc.hdf5")
     ReadDataHDF5("Pim7uc.hdf5")
