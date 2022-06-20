@@ -897,8 +897,8 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1].linked_roughness:
-                                sigma = self.structure[layer+1].linked_roughness
+                            if self.structure[layer+1][ele].linked_roughness:
+                                sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
                                 previous_element = list(self.structure[layer].keys())[position]
@@ -982,8 +982,8 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1].linked_roughness:
-                                sigma = self.structure[layer+1].linked_roughness
+                            if self.structure[layer+1][ele].linked_roughness:
+                                sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
                                 previous_element = list(self.structure[layer].keys())[position]

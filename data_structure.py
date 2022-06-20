@@ -37,7 +37,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['Links'] = np.array(sample.link)
 
     dsLayer = 0
     for my_layer in sample.structure:
@@ -64,6 +63,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
             element.attrs['Density'] = my_layer[ele].density
             element.attrs['Thickness'] = my_layer[ele].thickness
             element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
             element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
             element.attrs['Polymorph'] = my_layer[ele].polymorph
             element.attrs['Gamma'] = my_layer[ele].gamma
@@ -276,7 +276,6 @@ def ReadSampleHDF5(fname):
     sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
     sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
     sample.layer_magnetized = S.attrs['LayerMagnetized']
-    sample.link = S.attrs['Links']
 
     # Retrieves the general layer information
     for lay_key in S.keys():
@@ -292,6 +291,7 @@ def ReadSampleHDF5(fname):
             sample.structure[lay_num][ele_key].density = element.attrs['Density']
             sample.structure[lay_num][ele_key].thickness = element.attrs['Thickness']
             sample.structure[lay_num][ele_key].roughness = element.attrs['Roughness']
+            sample.structure[lay_num][ele_key].linked_roughness = element.attrs['LinkedRoughness']
             sample.structure[lay_num][ele_key].poly_ratio = element.attrs['PolyRatio']
             sample.structure[lay_num][ele_key].polymorph = element.attrs['Polymorph']
             sample.structure[lay_num][ele_key].gamma = element.attrs['Gamma']
@@ -413,7 +413,6 @@ def WriteSampleHDF5(fname, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['Links'] = np.array(sample.link)
 
     # Sets the information for each layer
     dsLayer = 0
@@ -440,6 +439,7 @@ def WriteSampleHDF5(fname, sample):
             element.attrs['Density'] = my_layer[ele].density
             element.attrs['Thickness'] = my_layer[ele].thickness
             element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
             element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
             element.attrs['Polymorph'] = my_layer[ele].polymorph
             element.attrs['Gamma'] = my_layer[ele].gamma
@@ -505,8 +505,7 @@ def WriteSampleASCII(file,sample):
     file.write("numberlayers = %s \n" % str(n))
     file.write("polyelements = %s \n" % str(sample.poly_elements))
     file.write("magelements = %s \n" % str(sample.mag_elements))
-    file.write("layermagnetized = %s \n" % sample.layer_magnetized)
-    file.write("link =  %s \n\n" % sample.link)
+    file.write("layermagnetized = %s \n\n" % sample.layer_magnetized)
 
     # writing the layer and element information
     num_lay = 0
@@ -532,6 +531,7 @@ def WriteSampleASCII(file,sample):
             file.write("density = %f \n" % layer[ele].density)
             file.write("thickness = %f \n" % layer[ele].thickness)
             file.write("roughness = %f \n" % layer[ele].roughness)
+            file.write("linkedroughness = %f \n" % layer[ele].linked_roughness)
             file.write("scatteringfactor = %s \n" % layer[ele].scattering_factor)
             file.write("polymorph = %s \n" % layer[ele].polymorph)
 
@@ -910,7 +910,6 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['Links'] = np.array(sample.link)
 
     # general layer information
     dsLayer = 0
@@ -934,6 +933,7 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
             element.attrs['Density'] = my_layer[ele].density
             element.attrs['Thickness'] = my_layer[ele].thickness
             element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
             element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
             element.attrs['Polymorph'] = my_layer[ele].polymorph
             element.attrs['Gamma'] = my_layer[ele].gamma

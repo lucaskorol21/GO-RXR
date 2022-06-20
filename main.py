@@ -164,13 +164,13 @@ if __name__ == '__main__':
 
     """
     #ConvertASCIItoHDF5("Pim7uc.all", "Pim7uc.hdf5")
-    #ReadDataHDF5("Pim7uc.hdf5")
+    ReadDataHDF5("Pim7uc.hdf5")
 
-    sample = slab(2)
+    #sample = slab(2)
 
-    sample.addlayer(0,'SrTiO3',50, roughness=2)
+    #sample.addlayer(0,'SrTiO3',50)
 
-    sample.addlayer(1,'LaMnO3', 20, roughness=2)
+    #sample.addlayer(1,'LaMnO3', 20)
 
-    sample.plot_density_profile(1)
-    plt.show()
+    #sample.plot_density_profile(1)
+    #plt.show()
