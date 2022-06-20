@@ -157,28 +157,6 @@ def energy_reflectivity(A, Theta, wavelength, R, E):
         raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
     return R
 
-class element:
-    def __init__(self, name, stoichiometry):
-        """
-        Purpose: Used in class slab. Used to keep track of elemental properties of each layer
-        :param name: Element Symbol
-        :param stoichiometry: The stoichiometric relation of the chemical formula as input into the class slab
-        """
-        self.name = name  # Element Symbol
-        self.molar_mass = 0  # Total molar mass of all elements in slab layer
-        self.density = 0  # Density of the molecule (g/cm^3)
-        self.thickness = 0  # Thickness of the layer (Angstrom)
-        self.roughness = 0  # Roughness of the surface (Angstrom)
-        self.stoichiometry = stoichiometry  # Stoichiometry of the element
-        self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
-        self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.gamma = 90  #
-        self.phi = 90  #
-        self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
-        self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-        self.mag_scattering_factor = None
-        self.position = None
-
 
 def get_number(string):
     """
@@ -357,6 +335,29 @@ def error_function(t, sigma1, sigma2, offset1, offset2):
     result = result1*result2
     return result
 
+class element:
+    def __init__(self, name, stoichiometry):
+        """
+        Purpose: Used in class slab. Used to keep track of elemental properties of each layer
+        :param name: Element Symbol
+        :param stoichiometry: The stoichiometric relation of the chemical formula as input into the class slab
+        """
+        self.name = name  # Element Symbol
+        self.molar_mass = 0  # Total molar mass of all elements in slab layer
+        self.density = 0  # Density of the molecule (g/cm^3)
+        self.thickness = 0  # Thickness of the layer (Angstrom)
+        self.roughness = 0  # Roughness of the surface (Angstrom)
+        self.linked_roughness = None
+        self.stoichiometry = stoichiometry  # Stoichiometry of the element
+        self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
+        self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
+        self.gamma = 90  #
+        self.phi = 90  #
+        self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
+        self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
+        self.mag_scattering_factor = None
+        self.position = None
+
 class slab:
     def __init__(self, num_layers):
         """
@@ -383,7 +384,7 @@ class slab:
         self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
 
 
-    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0, link=None):
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None):
         """
         Purpose: Add layer to sample material
         :param num_layer: Layer number (0 indicates substrate layer)
@@ -436,23 +437,31 @@ class slab:
             warnings.warn('Layer ' +str(num_layer)+': The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
 
         # Checks Roughness
-        if type(roughness) != int and type(roughness) != float:
-            raise TypeError('Layer ' +str(num_layer)+': Roughness must be of float or integer type.')
-        elif roughness < 0:
-            roughness = abs(roughness)
-            warnings.warn('Layer ' +str(num_layer)+': Roughness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+        if type(roughness) == int or type(roughness) == float:
+            temp_roughness = [roughness for i in range(num_elements)]
+            roughness = temp_roughness
+        if type(roughness) != list and type(roughness) != np.ndarray:
+            raise TypeError('Layer ' +str(num_layer)+': Roughness must be of float, integer, list, or numpy.ndarray type.')
+        else:
+            for idx in range(len(roughness)):
+                if roughness[idx] < 0:
+                    roughness[idx] = abs(roughness[idx])
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                if roughness[idx]>15:
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness is much larger than expected')
 
-        if roughness > 15:
-            warnings.warn('Layer ' +str(num_layer)+': Roughness is much larger than expected')
 
-        if link == None:
-            pass
-        elif type(link) != list:
-            raise TypeError('Variable link must be a list')
-        elif len(link) != num_elements:
-            raise RuntimeError('Layer ' +str(num_layer)+'Length of link must match number of elements in formula')
-        elif len(set([type(x) for x in link])) != 1:
-            raise TypeError('Layer ' +str(num_layer)+ ': All elements in link list must be booleans')
+
+        # Determine if current layer is linked to the previous layer
+        if linked_roughness == None:  # if no inputs set an array with False booleans with length num_elements
+            linked_roughness = [False for i in range(num_elements)]
+        elif type(linked_roughness) != list and type(linked_roughness) != np.ndarray and type(linked_roughness) != int and type(linked_roughness) != float:
+            raise TypeError('Variable linked_roughness must be of type int, float, list,  or numpy.ndarray.')
+        elif type(linked_roughness) ==  float or type(linked_roughness) == int:
+            temp_linked_roughness = [linked_roughness for i in range(num_elements)]
+            linked_roughness = temp_linked_roughness
+        elif len(linked_roughness) != num_elements:
+            ValueError('linked_roughness must have the same number of elements as chemical formula.')
 
         # -------------------------------------------------------------------------------------------------------------#
         # Retrieve the element info
@@ -461,7 +470,6 @@ class slab:
         # Computes the total molar mass of perovskite material
         for key in list(elements.keys()):
             molar_mass = molar_mass + atomic_mass(elements[key].name)*elements[key].stoichiometry
-
 
 
         # ------------------------------------------------------------------------------------------------------------ #
@@ -481,21 +489,14 @@ class slab:
 
             elements[key].density = density  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
-            elements[key].roughness = roughness  # Order of Angstrom
+            elements[key].roughness = roughness[position]  # Order of Angstrom
+            elements[key].linked_roughness = linked_roughness[position]  # sets the linked roughness for each element
             elements[key].molar_mass = molar_mass  # Molar mass of perovskite material
             elements[key].position = position
             position = position + 1
 
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
-        # Determines if A/B site is linked to the A/B site on the next layer
-        if self.number_layers == num_layer-1:  # Roughness link not required for last layer
-            link = None
-        elif link == None:
-            mylink = [True for i in range(num_elements)]
-            self.link.append(mylink)
-        else:
-            self.link.append(link)
 
     def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
         """
@@ -764,7 +765,6 @@ class slab:
             # structural elements (none polymorphous or magnetic)
             if ele in struct_keys:
 
-
                 density_struct[ele] = np.zeros(len(thickness))  # sets array same length as thickness array full of zeros
 
                 # Initializations so python is happy
@@ -776,7 +776,8 @@ class slab:
                 # Loops through all layers
                 for layer in range(n):
                     offset = transition[layer]
-                    # The current layer
+
+                    # Element is found in the current layer (ignore linked roughness)
                     if ele in list(self.structure[layer].keys()):
 
                         # saves scattering factor to be used in computation
@@ -785,7 +786,8 @@ class slab:
 
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                        current_density = self.structure[layer][ele].stoichiometry* self.structure[layer][ele].density/ self.structure[layer][ele].molar_mass  # current density
+
+                        current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density/ self.structure[layer][ele].molar_mass  # current density
                         if layer == n - 1:  # Last layer
                             next_density = 0  # density of element in next layer
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
@@ -797,21 +799,25 @@ class slab:
                         if layer == 0:
                             begin = 1
 
-
-
                         const = (next_density - current_density) / 2
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         density_struct[ele] = density_struct[ele] + const*erf_func + begin*current_density
+
+                    # Element is not found in the current layer (must take care of linked roughness)
                     else:
                         current_density = 0
                         if layer == n - 1:  # Last layer
                             next_density = current_density
                             sigma = 0
-                        elif ele in list(self.structure[layer+1].keys()):
-                            position = self.structure[layer+1][ele].position  # position of element
+                        elif ele in list(self.structure[layer+1].keys()):  # element in next layer
+                            if self.structure[layer+1][ele].linked_roughness:  # roughness is NOT linked to the previous site
+                                sigma = self.structure[layer+1][ele].linked_roughness
+                            else:  # roughness is linked to the previous site
+                                position = self.structure[layer + 1][ele].position  # position of element
+                                previous_element = list(self.structure[layer].keys())[position]
+                                sigma = self.structure[layer][previous_element].roughness
+
                             next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass # next layer density
-                            previous_element = list(self.structure[layer].keys())[position]
-                            sigma = self.structure[layer][previous_element].roughness
                         else:
                             next_density = 0
                             sigma = 0
@@ -821,6 +827,7 @@ class slab:
                         density_struct[ele] = density_struct[ele] + const * erf_func
                         density_struct[ele][density_struct[ele]<0] = 0
 
+            # Polymorph element
             pn=0
             if ele in poly_keys:
 
@@ -890,11 +897,15 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            position = self.structure[layer + 1][ele].position  # position of element
-                            previous_element = list(self.structure[layer].keys())[position]
+                            if self.structure[layer+1].linked_roughness:
+                                sigma = self.structure[layer+1].linked_roughness
+                            else:
+                                position = self.structure[layer + 1][ele].position  # position of element
+                                previous_element = list(self.structure[layer].keys())[position]
+                                sigma = self.structure[layer][previous_element].roughness
+
                             next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density * self.structure[layer+1][ele].poly_ratio / self.structure[layer + 1][ele].molar_mass  # next layer density
 
-                            sigma = self.structure[layer][previous_element].roughness
                         else:
                             next_density = np.zeros(pn)
                             sigma = 0
@@ -971,11 +982,14 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            position = self.structure[layer + 1][ele].position  # position of element
-                            previous_element = list(self.structure[layer].keys())[position]
+                            if self.structure[layer+1].linked_roughness:
+                                sigma = self.structure[layer+1].linked_roughness
+                            else:
+                                position = self.structure[layer + 1][ele].position  # position of element
+                                previous_element = list(self.structure[layer].keys())[position]
+                                sigma = self.structure[layer][previous_element].roughness
                             #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)*np.array(self.structure[layer + 1][ele].density) / self.structure[layer + 1][ele].molar_mass  # next layer density
                             next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
-                            sigma = self.structure[layer][previous_element].roughness
                         else:
                             next_density = current_density
                             sigma = 0
