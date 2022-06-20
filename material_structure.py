@@ -423,18 +423,20 @@ class slab:
         # Checks Density
         if density == None:
             pass
-        elif type(density) != int and type(density) != float:
-            raise TypeError('Layer ' +str(num_layer)+': Density must be entered in as a float or integer type')
-        elif density < 0:
-            warnings.warn('Layer ' +str(num_layer)+': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
-            density = abs(density)
-        #elif density == 0:
-        #    raise ValueError('Layer ' +str(num_layer)+': The density of a material can not be zero')
+        elif type(density) != int and type(density) != float and type(density) != list and type(density) == np.ndarray:
+            raise TypeError('Layer ' +str(num_layer)+': Density must be entered in as a float, integer, list, or numpy.ndarray')
+        elif type(density) == int or type(density) == float:
+            if density < 0:
+                warnings.warn('Layer ' + str(num_layer) + ': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                density = abs(density)
+            elif density >20:
+                warnings.warn('Layer ' + str(num_layer) + ': The density of ' + str(
+                    density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+        elif type(density) == list or type(density) == np.ndarray:
+            if len(density) != num_elements:
+                raise ValueError('Density array must have same number of elements as does chemical formula')
 
-        if density == None:
-            pass
-        elif density > 20:
-            warnings.warn('Layer ' +str(num_layer)+': The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+
 
         # Checks Roughness
         if type(roughness) == int or type(roughness) == float:
@@ -486,8 +488,13 @@ class slab:
 
             if density == None:
                 density = perovskite_density(formula)
+                elements[key].density = density * elements[key].stoichiometry / molar_mass  # sets density  (g/cm^3)
+            elif type(density) == float or type(density) == int:
+                elements[key].density = density* elements[key].stoichiometry / molar_mass # sets density  (g/cm^3)
+            elif type(density) == list or type(density) == np.ndarray:
+                elements[key].density = density[position]
 
-            elements[key].density = density  # sets density  (g/cm^3)
+            #elements[key].density = density[position]*elements[key].stoichiometry/molar_mass  # sets density  (g/cm^3)
             elements[key].thickness = thickness  # sets thickness  (Angstrom)
             elements[key].roughness = roughness[position]  # Order of Angstrom
             elements[key].linked_roughness = linked_roughness[position]  # sets the linked roughness for each element
@@ -787,11 +794,11 @@ class slab:
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
 
-                        current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density/ self.structure[layer][ele].molar_mass  # current density
+                        current_density = self.structure[layer][ele].density  # current density
                         if layer == n - 1:  # Last layer
                             next_density = 0  # density of element in next layer
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
-                            next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass
+                            next_density = self.structure[layer+1][ele].density
                         else:  # element not in the next layer
                             next_density = 0
 
@@ -817,7 +824,7 @@ class slab:
                                 previous_element = list(self.structure[layer].keys())[position]
                                 sigma = self.structure[layer][previous_element].roughness
 
-                            next_density = self.structure[layer+1][ele].stoichiometry* self.structure[layer+1][ele].density/ self.structure[layer+1][ele].molar_mass # next layer density
+                            next_density = self.structure[layer+1][ele].density # next layer density
                         else:
                             next_density = 0
                             sigma = 0
@@ -860,12 +867,12 @@ class slab:
 
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
-                        current_density = self.structure[layer][ele].stoichiometry * self.structure[layer][ele].density*self.structure[layer][ele].poly_ratio / self.structure[layer][ele].molar_mass  # current density
+                        current_density = self.structure[layer][ele].density*self.structure[layer][ele].poly_ratio  # current density
 
                         if layer == n - 1:  # On last layer
                             next_density = np.zeros(pn)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
-                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density* self.structure[layer+1][ele].poly_ratio/ self.structure[layer + 1][ele].molar_mass
+                            next_density = self.structure[layer + 1][ele].density* self.structure[layer+1][ele].poly_ratio
                         else:  # element not in the next layer
                             next_density = np.zeros(pn)
 
@@ -904,7 +911,7 @@ class slab:
                                 previous_element = list(self.structure[layer].keys())[position]
                                 sigma = self.structure[layer][previous_element].roughness
 
-                            next_density = self.structure[layer + 1][ele].stoichiometry * self.structure[layer + 1][ele].density * self.structure[layer+1][ele].poly_ratio / self.structure[layer + 1][ele].molar_mass  # next layer density
+                            next_density = self.structure[layer + 1][ele].density * self.structure[layer+1][ele].poly_ratio  # next layer density
 
                         else:
                             next_density = np.zeros(pn)
@@ -948,12 +955,12 @@ class slab:
                         position = self.structure[layer][ele].position  # position of element
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
                         #current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density) * np.array(self.structure[layer][ele].density) / self.structure[layer][ele].molar_mass  # current density
-                        current_density = self.structure[layer][ele].stoichiometry * np.array(self.structure[layer][ele].mag_density)
+                        current_density = np.array(self.structure[layer][ele].mag_density)
                         if layer == n - 1:  # Last layer
                             next_density = np.zeros(pm)  # density of element in next layer
                         elif ele in list(self.structure[layer + 1].keys()):  # element in next layer
                             #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density) * np.array(self.structure[layer + 1][ele].density) / self.structure[layer + 1][ele].molar_mass
-                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
+                            next_density = np.array(self.structure[layer + 1][ele].mag_density)
                         else:  # element not in the next layer
                             next_density = np.zeros(pm)
 
@@ -989,7 +996,7 @@ class slab:
                                 previous_element = list(self.structure[layer].keys())[position]
                                 sigma = self.structure[layer][previous_element].roughness
                             #next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)*np.array(self.structure[layer + 1][ele].density) / self.structure[layer + 1][ele].molar_mass  # next layer density
-                            next_density = self.structure[layer + 1][ele].stoichiometry * np.array(self.structure[layer + 1][ele].mag_density)
+                            next_density = np.array(self.structure[layer + 1][ele].mag_density)
                         else:
                             next_density = current_density
                             sigma = 0
