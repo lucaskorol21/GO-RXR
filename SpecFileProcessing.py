@@ -205,22 +205,15 @@ def ReadSDDFile(fname):
         specNum = int(fdata[iter].split()[1])
         specIdx = specNum - 1
         
-      
-      
-      
+        
       if(fdata[iter].startswith("#@CALIB")):
         sddData.append(dict())
         tdata = []
         iter = iter + 1
-        
-
-        
-        
-        while(iter < len(fdata) and len(fdata[iter]) > 1 and ((not fdata[iter].startswith("#")) or ("injection" in fdata[iter]) or ("communication" in fdata[iter]))):
+        while(iter < len(fdata) and len(fdata[iter]) > 3 and ((not fdata[iter].startswith("#")) or ("injection" in fdata[iter]) or ("communication" in fdata[iter]))):
           if(("injection" not in fdata[iter]) and ("communication" not in fdata[iter])):
             tdata.append(float(fdata[iter]))
             iter = iter + 1
-            
         sddData[specIdx]["ESDD"] = np.array(tdata)
         
 
@@ -875,8 +868,8 @@ def GetDirBeamCorrection(corrInfo):
   cInfo,cData = ReadSpecFile(corrInfo[0])
   corr = dict()
   for i in range(1,len(corrInfo)):
-    cData[corrInfo[i][0]-1]["PicoAm2"] = cData[corrInfo[i][0]-1]["PicoAm2"] / (cData[corrInfo[i][0]-1]["I0_BD3_Amp"] / cData[corrInfo[i][0]-1]["Seconds"])
-    tcorr = np.transpose(np.array([cData[corrInfo[i][0]-1]["MonoEngy"], cData[corrInfo[i][0]-1]["PicoAm2"]]))
+    cData[corrInfo[i][0]-1]["PicoAm3"] = cData[corrInfo[i][0]-1]["PicoAm3"] / (cData[corrInfo[i][0]-1]["I0_BD3"] )
+    tcorr = np.transpose(np.array([cData[corrInfo[i][0]-1]["MonoEngy"], cData[corrInfo[i][0]-1]["PicoAm3"]]))
     
     if(corrInfo[i][1] in corr):
       corr[corrInfo[i][1]] = np.vstack((corr[corrInfo[i][1]],tcorr))
@@ -956,9 +949,9 @@ def GetRXREScanData(inData,inInfo,inScans):
       tr1 = inScans[np.nonzero(inScans[:,0] == i+1),1][0][0] #inScans[inScans[:,0].index(i+1),1]
       tr2 = inScans[np.nonzero(inScans[:,0] == i+1),2][0][0] #inScans[inScans[:,0].index(i+1),2]
       if(tr2 == 0):
-        retList.append(np.transpose(np.array([inData[i]["MonoEngy"][tr1:],0*inData[i]["MonoEngy"][tr1:],0*inData[i]["MonoEngy"][tr1:],inData[i]["PicoAm2"][tr1:]])))
+        retList.append(np.transpose(np.array([inData[i]["MonoEngy"][tr1:],0*inData[i]["MonoEngy"][tr1:],0*inData[i]["MonoEngy"][tr1:],inData[i]["PicoAm3"][tr1:]])))
       else:
-        retList.append(np.transpose(np.array([inData[i]["MonoEngy"][tr1:-tr2],0*inData[i]["MonoEngy"][tr1:-tr2],0*inData[i]["MonoEngy"][tr1:-tr2],inData[i]["PicoAm2"][tr1:-tr2]])))
+        retList.append(np.transpose(np.array([inData[i]["MonoEngy"][tr1:-tr2],0*inData[i]["MonoEngy"][tr1:-tr2],0*inData[i]["MonoEngy"][tr1:-tr2],inData[i]["PicoAm3"][tr1:-tr2]])))
       
       retList[len(retList)-1][:,1] = inInfo[i]["Theta"]
       retList[len(retList)-1][:,2] = 0.001013546247 * retList[len(retList)-1][:,0] * math.sin(inInfo[i]["Theta"]*math.pi/180) 
@@ -990,9 +983,9 @@ def GetRXRAScanData(inData,inInfo,inScans):
       tr1 = inScans[np.nonzero(inScans[:,0] == i+1),1][0][0] #inScans[inScans[:,0].index(i+1),1]
       tr2 = inScans[np.nonzero(inScans[:,0] == i+1),2][0][0] #inScans[inScans[:,0].index(i+1),2]
       if(tr2 == 0):
-        retList.append(np.transpose(np.array([0*inData[i]["Theta"][tr1:],inData[i]["Theta"][tr1:],0*inData[i]["Theta"][tr1:],inData[i]["PicoAm2"][tr1:]])))
+        retList.append(np.transpose(np.array([0*inData[i]["Theta"][tr1:],inData[i]["Theta"][tr1:],0*inData[i]["Theta"][tr1:],inData[i]["PicoAm3"][tr1:]])))
       else:
-        retList.append(np.transpose(np.array([0*inData[i]["Theta"][tr1:-tr2],inData[i]["Theta"][tr1:-tr2],0*inData[i]["Theta"][tr1:-tr2],inData[i]["PicoAm2"][tr1:-tr2]])))
+        retList.append(np.transpose(np.array([0*inData[i]["Theta"][tr1:-tr2],inData[i]["Theta"][tr1:-tr2],0*inData[i]["Theta"][tr1:-tr2],inData[i]["PicoAm3"][tr1:-tr2]])))
       
       
       retList[len(retList)-1][:,0] = inInfo[i]["MonoEngy"]
@@ -1103,21 +1096,20 @@ def ApplyGeometryCorrection(inScans,geoData):
   
 
 def RemoveBadPoints(inData,scanNums,mons):  
-  jump = 1.5
   for i in range(len(inData)):
     if(i+1 in scanNums):
       for m in mons:
         if(m in inData[i]):
           for k in range(0,len(inData[i][m])):
             if(k==0 and len(inData[i][m]) > 2):
-              if((inData[i][m][k]/(inData[i][m][k+1]+1e-20) > jump or inData[i][m][k]/(inData[i][m][k+1]+1e-20) < 1/jump) and (inData[i][m][k+1]/(inData[i][m][k+2]+1e-20) > jump or inData[i][m][k+1]/(inData[i][m][k+2]+1e-20) < 1/jump)):   
+              if((inData[i][m][k]/(inData[i][m][k+1]+1e-20) > 2 or inData[i][m][k]/(inData[i][m][k+1]+1e-20) < 0.5) and (inData[i][m][k+1]/(inData[i][m][k+2]+1e-20) > 2 or inData[i][m][k+1]/(inData[i][m][k+2]+1e-20) < 0.5)):   
                 inData[i][m][k] = inData[i][m][k+1]
             elif(k==(len(inData[i][m])-1) and len(inData[i][m]) > 2):
-              if((inData[i][m][k]/(inData[i][m][k-1]+1e-20) > jump or inData[i][m][k]/(inData[i][m][k-1]+1e-20) < 1/jump) and (inData[i][m][k-1]/(inData[i][m][k-2]+1e-20) > jump or inData[i][m][k-1]/(inData[i][m][k-2]+1e-20) < 1/jump)):   
+              if((inData[i][m][k]/(inData[i][m][k-1]+1e-20) > 2 or inData[i][m][k]/(inData[i][m][k-1]+1e-20) < 0.5) and (inData[i][m][k-1]/(inData[i][m][k-2]+1e-20) > 2 or inData[i][m][k-1]/(inData[i][m][k-2]+1e-20) < 0.5)):   
                 inData[i][m][k] = inData[i][m][k-1]
             elif(len(inData[i][m]) > 2):
-              if((inData[i][m][k]/(inData[i][m][k-1]+1e-20) > jump or inData[i][m][k]/(inData[i][m][k-1]+1e-20) < 1/jump) and (inData[i][m][k]/(inData[i][m][k+1]+1e-20) > jump or inData[i][m][k]/(inData[i][m][k+1]+1e-20) < 1/jump)):   
-                print(m,i+1,k, len(inData[i][m]))
+              if((inData[i][m][k]/(inData[i][m][k-1]+1e-20) > 2 or inData[i][m][k]/(inData[i][m][k-1]+1e-20) < 0.5) and (inData[i][m][k]/(inData[i][m][k+1]+1e-20) > 2 or inData[i][m][k]/(inData[i][m][k+1]+1e-20) < 0.5)):   
+                #print(k, len(inData[i][m]))
                 inData[i][m][k] = (inData[i][m][k-1] + inData[i][m][k+1])/2
           
   return inData
@@ -1133,7 +1125,7 @@ def XASSubBG(inData,monE,mons,scanNums,elow,ehigh):
       m = np.sum((inData[i][monE][idx]-xmean) * (inData[i][mon][idx]-ymean))/ np.sum((inData[i][monE][idx]-xmean)**2)
       b = ymean - m*xmean
       inData[i][mon] = inData[i][mon] - (m*inData[i][monE]+b)
-  return inData
+  return 
 
   
   
@@ -1165,7 +1157,6 @@ def XASNormRegion(inData,mons,scanNums,elow,ehigh):
 
   for i in range(len(inData)):
     if(i+1 in scanNums):
-      #print(i+1, elow, ehigh)
       for m in mons:
         if(m in inData[i]):
           inData[i][m] = inData[i][m] / np.average(inData[i][m][np.where((inData[i]["MonoEngy"] > elow) & (inData[i]["MonoEngy"] < ehigh) )])
@@ -1175,7 +1166,7 @@ def XASNormRegion(inData,mons,scanNums,elow,ehigh):
 def ProcessXAS(fname,scanNums,mon,ECal,eVals,sum):
 
   sInfo, sData = ReadSpecFile(fname)
-  sData = NormByMonitor(sData,scanNums,[mon],"I0_BD3_Amp")
+  sData = NormByMonitor(sData,scanNums,[mon],"I0_BD3")
   sData = ECalPoly(sData,scanNums,[0,1,0.00])
   
   sData = XASSubBG(sData,[mon],scanNums,eVals[0],eVals[1])
@@ -1202,8 +1193,8 @@ def ProcessRXR(fname,sScans,ECal,Geo,Corr,sType):
   
   scanNums = sScans[:,0]
   sInfo, sData = ReadSpecFile(fname)
-  sData = NormByMonitor(sData,scanNums,["I0_BD3_Amp"],"Seconds")
-  sData = NormByMonitor(sData,scanNums,["TEY","MCP","PicoAm2"],"I0_BD3_Amp")
+  #sData = NormByMonitor(sData,scanNums,["I0_BD3_Amp"],"Seconds")
+  sData = NormByMonitor(sData,scanNums,["TEY_REIXS","MCP_REIXS","PicoAm3"],"I0_BD3")
   sData = ECalPoly(sData,scanNums,ECal)
   corrData = GetDirBeamCorrection(Corr)
   
