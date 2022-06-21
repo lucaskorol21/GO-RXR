@@ -367,7 +367,7 @@ def ReadDataHDF5(fname):
 
             # yscale is set to log only and only if scan is not an asymmetry scan
             if not(RS[scanName].attrs['Polarization'] == 'AL') and not(RS[scanName].attrs['Polarization'] == 'AC'):
-                plt.yscale('log')
+                plt.yscale('log', base=20)
 
             plt.legend(['Data', 'Simulation'])
 
