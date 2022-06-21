@@ -889,7 +889,7 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
     # checks to make sure file type of ASCII and HDF5 files are correct
     if not(fascii.endswith('.all')):
         raise NameError('File name must be a .all file type')
-    if not(fhdf5.endswith('.hdf5')):
+    if not(fhdf5.endswith('.h5')):
         raise NameError('File name must be a .all file type')
 
     Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fascii)  # retrieves information from ASCII file
