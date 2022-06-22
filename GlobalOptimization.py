@@ -76,6 +76,44 @@ def selectOptimize(fname):
             cont = input('Would you like to select another scan (y/n)?')
 
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
+    print()
+    print('PARAMETER SELECTION')
+    print()
+    number_layers = len(sample.structure)
+    layer = input('Select layer you would like to optimize (0-'+str(number_layers-1)+"): ")
+    while int(layer) < 0 or int(layer)>number_layers-1:
+        layer = input('Please select a layer between 0 and ' + str(number_layers-1) + " : ")
+
+    elements = list(sample.structure[int(layer)].keys())
+
+    element = input('Select element you would like to optimize ' + str(elements)+ " : ")
+    while element not in elements:
+        element = input('Please select an element from the list ' + str(elements) + ' : ')
+
+
+    s = 'structure'
+    ele = sample.structure[int(layer)][element]
+
+    if len(ele.polymorph) != 0:
+        s = s + '/polymorph'
+
+    if len(ele.mag_density) != 0:
+        s = s + '/magnetic'
+
+    whatKind = input('Select property you would like to optimize ('+s+') : ')
+    while whatKind.upper() != 'STRUCTURE' and whatKind.upper() != 'POLYMORPH' and whatKind.upper() != 'MAGNETIC':
+        whatKind = input('Please enter property as ' + s + ' : ')
+
+    if whatKind.upper() == 'STRUCTURE':
+        print('hello')
+    elif whatKind.upper() == 'POLYMORPH':
+        print(1)
+    elif whatKind.upper() == 'MAGNETIC':
+        print()
+
+
+
+
     my_params = list()
     my_params.append(int(input('Please select layer you would like to optimize: ')))
     my_params.append(input('Select element you want to optimize: '))
