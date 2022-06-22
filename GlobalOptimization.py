@@ -30,95 +30,248 @@ def selectOptimize(fname):
     tab.add_rows(data_info)
     print(tab)
 
-    scans = list()
+
     sample_params = list()
-    sample_values = list()
     upperbound = list()
     lowerbound = list()
 
     # ------------------------------------------ Scan Selection ------------------------------------------------------ #
     print('SCAN SELECTION')
     print()
+    scans = input('Input scans from '+str(data_info[0,0])+' to '+ str(data_info[-1,0]) + ' for global optimization. Separate each scan using a space: ')
+    if scans.upper() == 'EXIT':
+        quit()
+    scans = scans.split()
+    scans = list(dict.fromkeys(scans))  # removes any duplicates
+    for scan in scans:
+        if scan not in data_info[:,0]:
+            val = input('This scan number ' + scan + ' does not exist. Would you like to select another scan (y/n)?')
+            if val.upper() == 'EXIT':
+                quit()
+            scans.remove(scan)
+            if val.upper() == 'Y':
+                scan = input('Input the new scan number: ')
+                if scan.upper() == 'EXIT':
+                    quit()
+                while scan not in data_info[:,0]:
+                    scan = input('Please input a scan that lies on the interval '+str(data_info[0,0])+' to '+ str(data_info[-1,0])+' : ')
+                    if scan.upper() == 'EXIT':
+                        quit()
+                scans.append(scan)
+    scans = [int(scan) for scan in scans]
+    print(scans)
 
-    scan = input("Select a scan for global optimization ("+data_info[0,0]+"-"+data_info[-1,0] + "): ")
-    scans.append(int(scan))
-    print()
 
-    # Requires user to select a new scan
-    while scan not in data_info[:,0]:
-        scan = input("Please select a scan from " + data_info[0,0]+" to "+data_info[-1,0])
-
-    print()
-    cont = input('Would you like to select another scan (y/n)?')
-
-    while(cont.upper() == 'Y'):
-        scan = input('Select another scan: ')
-
-        # Checks to make sure there are no repeats
-        while scan in scans:
-            scan = input("Scan "+ scan+" has already been selected. Please select a different scan or typ \'n\' if you no longer want to enter a new scan: ")
-            if scan.upper() == 'N':
-                break
-        if scan.upper() == 'N':
-            break
-
-        # Checks to make sure scan exists
-        while scan not in data_info[:,0]:
-            scan = input("Please select a scan from " + data_info[0,0]+" to "+data_info[-1,0]+ ". If you no longer want to select another scan please enter \'n\': ")
-
-            if scan.upper() == 'N':
-                break
-        if scan.upper() == 'N':
-            break
-        else:
-            scans.append(scan)
-            print()
-            cont = input('Would you like to select another scan (y/n)?')
 
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
     print()
     print('PARAMETER SELECTION')
     print()
+
     number_layers = len(sample.structure)
-    layer = input('Select layer you would like to optimize (0-'+str(number_layers-1)+"): ")
-    while int(layer) < 0 or int(layer)>number_layers-1:
-        layer = input('Please select a layer between 0 and ' + str(number_layers-1) + " : ")
 
-    elements = list(sample.structure[int(layer)].keys())
+    cont = 'y'
+    while cont.upper() == 'Y':
+        layer = input('Select layer you would like to optimize (0-'+str(number_layers-1)+"): ")
+        if layer.upper() == 'EXIT':
+            quit()
 
-    element = input('Select element you would like to optimize ' + str(elements)+ " : ")
-    while element not in elements:
-        element = input('Please select an element from the list ' + str(elements) + ' : ')
+        poly = list()
+        mag = list()
+
+        structural = True
+        polymorphous = False
+        magnetic = False
+
+        layer = int(layer)
+        elements = list(sample.structure[layer].keys())
+        for ele in elements:
+            if len(sample.structure[layer][ele].polymorph) > 0:
+                poly.append(ele)
+                polymorphous = True
+            if len(sample.structure[layer][ele].mag_density) > 0:
+                mag.append(ele)
+                magnetic = True
+
+        s = 'structural'
+        if polymorphous:
+            s = s + "/polymorphous"
+        if magnetic:
+            s = s + "/magnetic"
+
+        prop = input('Select the property you would like to vary ('+ s + ') : ')
+        if prop.upper() == 'EXIT':
+            quit()
+        while prop.upper() != 'STRUCTURAL' and prop.upper() != 'POLYMORPHOUS' and prop.upper() != 'MAGNETIC':
+            prop = input('Please select one of the properties (' + s + ') : ')
+            if prop.upper() == 'EXIT':
+                quit()
+
+        if prop.upper() == 'STRUCTURAL':
+            mode = input('Select mode (element/compound): ')
+            if mode.upper() == 'EXIT':
+                quit()
+            while mode.upper() != 'ELEMENT' and mode.upper() != 'COMPOUND':
+                mode = input('Please select (element/compound): ')
+                if mode.upper() == 'EXIT':
+                    quit()
+
+            if mode.upper() == 'COMPOUND':
+                char_list = ['THICKNESS','DENSITY', 'ROUGHNESS', 'LINKED ROUGHNESS']
+                val = 'y'
+                while val.upper() == 'Y' and len(char_list) > 0:
+                    characteristic = input('Select characteristic (' + '/'.join([char.lower() for char in char_list]) + '): ')
+                    if characteristic.upper() == 'EXIT':
+                        quit()
+                    while characteristic.upper() != 'THICKNESS' and characteristic.upper() != 'DENSITY' and characteristic.upper() != 'ROUGHNESS' and characteristic.upper() != 'LINKED ROUGHNESS':
+                        characteristic = input('Select characteristic (' + '/'.join([char.lower() for char in char_list]) + '): ')
+                        if characteristic.upper() == 'EXIT':
+                            quit()
+
+                    if characteristic.upper() == 'THICKNESS' and 'THICKNESS' in char_list:
+                        char_list.remove('THICKNESS')
+                        lw = 1
+                        up = 0
+                        while float(lw) > float(up):
+                            lw = input('Select lower bound in units of Angstrom: ')
+                            if lw.upper() == 'EXIT':
+                                quit()
+                            up = input('Select upper bound in units of Angstrom: ')
+                            if up.upper() == 'EXIT':
+                                quit()
+
+                        lowerbound.append(lw)
+                        upperbound.append(up)
+                    if characteristic.upper() == 'DENSITY' and 'DENSITY' in char_list:
+                        char_list.remove('DENSITY')
+                        lw = 1
+                        up = 0
+                        while float(lw) > float(up):
+                            lw = input('Select lower bound in units of g/cm^3: ')
+                            if lw.upper() == 'EXIT':
+                                quit()
+                            up = input('Select upper bound in units of g/cm^3: ')
+                            if up.upper() == 'EXIT':
+                                quit()
+                        lowerbound.append(lw)
+                        upperbound.append(up)
+                    if characteristic.upper() == 'ROUGHNESS' and 'ROUGHNESS' in char_list:
+                        char_list.remove('ROUGHNESS')
+                        lw = 1
+                        up = 0
+                        while float(lw) > float(up):
+                            lw = input('Select lower bound in units of Angstrom: ')
+                            if lw.upper() == 'EXIT':
+                                quit()
+                            up = input('Select upper bound in units of Angstrom: ')
+                            if up.upper() == 'EXIT':
+                                quit()
+                        lowerbound.append(lw)
+                        upperbound.append(up)
+                    if characteristic.upper() == 'LINKED ROUGHNESS' and 'LINKED ROUGHNESS' in char_list:
+                        char_list.remove('LINKED ROUGHNESS')
+                        lw = 1
+                        up = 0
+                        while float(lw) > float(up):
+                            lw = input('Select lower bound in units of Angstrom: ')
+                            if lw.upper() == 'EXIT':
+                                quit()
+                            up = input('Select upper bound in units of Angstrom: ')
+                            if up.upper() == 'EXIT':
+                                quit()
+                        lowerbound.append(lw)
+                        upperbound.append(up)
+
+                    sample_params.append([layer,prop.upper(),mode.upper(),characteristic.upper()])
+
+                    if len(char_list) > 0:
+                        val = input('Would you like to select another characteristic (y/n)?')
+                    else:
+                        val = 'N'
 
 
-    s = 'structure'
-    ele = sample.structure[int(layer)][element]
+            elif mode.upper() == 'ELEMENT':
+                char_list = ['THICKNESS','DENSITY', 'ROUGHNESS', 'LINKED ROUGHNESS']
+                val = 'y'
+                while val.upper() == 'Y':
+                    element = input('Select element (' + str(elements) + ") : ")
+                    while element not in elements:
+                        element = input('Please select element in list (' + str(elements) + ") : ")
 
-    if len(ele.polymorph) != 0:
-        s = s + '/polymorph'
+                    again = 'y'
+                    while again.upper() == 'Y' and len(char_list)>0:
+                        characteristic = input('Select characteristic (' + '/'.join([char.lower() for char in char_list]) + '): ')
+                        while characteristic.upper() != 'THICKNESS' and characteristic.upper() != 'DENSITY' and characteristic.upper() != 'ROUGHNESS' and characteristic.upper() != 'LINKED ROUGHNESS':
+                            characteristic = input('Select characteristic (' + '/'.join([char.lower() for char in char_list]) + '): ')
 
-    if len(ele.mag_density) != 0:
-        s = s + '/magnetic'
+                        if characteristic.upper() == 'THICKNESS' and 'THICKNESS' in char_list:
+                            char_list.remove('THICKNESS')
+                            lw = 1
+                            up = 0
+                            while float(lw) > float(up):
+                                lw = input('Select lower bound in units of Angstrom: ')
+                                if lw.upper() == 'EXIT':
+                                    quit()
+                                up = input('Select upper bound in units of Angstrom: ')
+                                if up.upper() == 'EXIT':
+                                    quit()
+                            lowerbound.append(lw)
+                            upperbound.append(up)
+                        if characteristic.upper() == 'DENSITY' and 'DENSITY' in char_list:
+                            char_list.remove('DENSITY')
+                            lw = 1
+                            up = 0
+                            while float(lw) > float(up):
+                                lw = input('Select lower bound in units of mol/cm^3: ')
+                                if lw.upper() == 'EXIT':
+                                    quit()
+                                up = input('Select upper bound in units of mol/cm^3: ')
+                                if up.upper() == 'EXIT':
+                                    quit()
+                            lowerbound.append(lw)
+                            upperbound.append(up)
+                        if characteristic.upper() == 'ROUGHNESS' and 'ROUGHNESS' in char_list:
+                            char_list.remove('ROUGHNESS')
+                            lw = 1
+                            up = 0
+                            while float(lw) > float(up):
+                                lw = input('Select lower bound in units of Angstrom: ')
+                                if lw.upper() == 'EXIT':
+                                    quit()
+                                up = input('Select upper bound in units of Angstrom: ')
+                                if up.upper() == 'EXIT':
+                                    quit()
+                            lowerbound.append(lw)
+                            upperbound.append(up)
+                        if characteristic.upper() == 'LINKED ROUGHNESS' and 'LINKED ROUGHNESS' in char_list:
+                            char_list.remove('LINKED ROUGHNESS')
+                            lw = 1
+                            up = 0
+                            while float(lw) > float(up):
+                                lw = input('Select lower bound in units of Angstrom: ')
+                                if lw.upper() == 'EXIT':
+                                    quit()
+                                up = input('Select upper bound in units of Angstrom: ')
+                                if up.upper() == 'EXIT':
+                                    quit()
+                            lowerbound.append(lw)
+                            upperbound.append(up)
 
-    whatKind = input('Select property you would like to optimize ('+s+') : ')
-    while whatKind.upper() != 'STRUCTURE' and whatKind.upper() != 'POLYMORPH' and whatKind.upper() != 'MAGNETIC':
-        whatKind = input('Please enter property as ' + s + ' : ')
+                        sample_params.append([layer,prop.upper(),mode.upper(),element, characteristic.upper()])
+                        if len(char_list) > 0:
+                            again = input('Would you liked to select another characteristic for '+ element+" (y/n): ")
+                        else:
+                            again = 'N'
+                    val = input('Would you like to select another element (y/n)?')
 
-    if whatKind.upper() == 'STRUCTURE':
-        print('hello')
-    elif whatKind.upper() == 'POLYMORPH':
-        print(1)
-    elif whatKind.upper() == 'MAGNETIC':
-        print()
+        cont = input('Would you liked to select another layer (y/n): ')
 
 
 
 
-    my_params = list()
-    my_params.append(int(input('Please select layer you would like to optimize: ')))
-    my_params.append(input('Select element you want to optimize: '))
-    my_params.append(input('Which parameters would you like to optimize (struct/poly/mag)?'))
-    my_params.append(input)
+
+
+    return
 
 
 if __name__ == "__main__":
