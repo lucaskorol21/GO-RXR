@@ -325,12 +325,20 @@ def ReadDataHDF5(fname):
 
     # Collects data information to print to terminal
     data = list()
+    data_dict = dict()
+    sim_dict = dict()
+
     for Rkey in RS.keys():
         mydata = RS[Rkey]
+        data_dict[Rkey] = RS[Rkey]
+        sim_dict[Rkey] = SimR[Rkey]
         Rdat = [int(mydata.attrs['DatasetNumber']),'Reflectivity', Rkey]
         data.append(Rdat)
+
     for Ekey in ES.keys():
         mydata = ES[Ekey]
+        data_dict[Ekey] = ES[Ekey]
+        sim_dict[Ekey] = ES[Ekey]
         Edat = [int(mydata.attrs['DatasetNumber']),'Energy', Ekey]
         data.append(Edat)
 
@@ -339,12 +347,9 @@ def ReadDataHDF5(fname):
     sort_idx = np.argsort(data[:,0].astype(int))
     data = data[sort_idx]
 
-    # Sets up and prints scan table
-    header = ['#', 'Scan Type', 'Scan']
-    tab = PrettyTable(header)
-    tab.add_rows(data)
-    print(tab)
 
+
+    """
     # Loop that continuously asks user which scan they want to have shown
     val = input('Choose scan # you want to use: ')
     while val in data[:,0]:
@@ -387,8 +392,10 @@ def ReadDataHDF5(fname):
         plt.show()
         val = input('Choose another scan # you want to use: ')  # Choose another scan
 
-
+    
     f.close()
+    """
+    return data, data_dict, sim_dict
 
 
 def WriteSampleHDF5(fname, sample):
