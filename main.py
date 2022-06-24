@@ -40,3 +40,7 @@ if __name__ == '__main__':
     sample.plot_density_profile(1)
     plt.show()
 
+    E = 642.2
+    data = np.loadtxt('test_example.txt')
+
+

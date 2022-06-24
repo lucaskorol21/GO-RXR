@@ -2,10 +2,11 @@ from scipy import optimize
 from material_structure import *
 import numpy as np
 from data_structure import *
+import matplotlib.pyplot as plt
 
 
 # Begin with creating a function that I can use global optimization on!
-def global_optimization():
+def global_optimization(scans, data, sims, params, lb, ub):
     # The idea for this would be to allow the user to select the scans they would like to
     # use in the global optimization algorithm
 
@@ -16,9 +17,106 @@ def global_optimization():
 
     print('good try')
 
-def brute_force_optimization():
-    # This function will use the brute optimization technique on our system
-    print('hello')
+def scanCompute(x, *args):
+
+    least_square = 0  # what we will use to determine some values
+
+    sample = args[0]
+    scans = args[1]
+    data = args[2]
+    sims = args[3]
+    parameters = args[4]
+
+    #sample changes
+    for p in range(len(parameters)):
+        params = parameters[p]
+        layer = params[0]
+        property = params[1]
+        if property == 'STRUCTURAL':
+            mode = params[2]
+            if mode == 'COMPOUND':
+                characteristic = params[3]
+                for ele in list(sample.structure[layer].keys()):
+                    if characteristic == 'THICKNESS':
+                        sample.structure[layer][ele].thickness = x[p]
+                    elif characteristic == 'DENSITY':
+                        sample.structure[layer][ele].density = x[p]
+                    elif characteristic == 'ROUGHNESS':
+                        sample.structure[layer][ele].roughness = x[p]
+                    elif characteristic == 'LINKED ROUGHNESS':
+                        sample.structure[layer][ele].linked_roughness = x[p]
+
+            elif mode == 'ELEMENT':
+                element = params[3]
+                characteristic = params[4]
+                if characteristic == 'THICKNESS':
+                    sample.structure[layer][element].thickness = x[p]
+                elif characteristic == 'DENSITY':
+                    sample.structure[layer][element].density = x[p]
+                elif characteristic == 'ROUGHNESS':
+                    sample.structure[layer][element].roughness = x[p]
+                elif characteristic == 'LINKED ROUGHNESS':
+                    sample.structure[layer][element].linked_roughness = x[p]
+
+        elif property == 'POLYMORPHOUS':
+            element = params[3]
+            polymorph = params[4]
+
+            ratio = 1 - x[p]
+
+            poly = np.where(sample.structure[layer][element].polymorph == polymorph)
+
+            if poly == 0:
+                sample.structure[layer][element].poly_ratio[0] = x[p]
+                sample.structure[layer][element].poly_ratio[1] = ratio
+            elif poly == 1:
+                sample.structure[layer][element].poly_ratio[0] = x[p]
+                sample.structure[layer][element].poly_ratio[1] = ratio
+
+        elif property == 'MAGNETIC':
+            element = params[3]
+
+            if len(params) == 3:
+                sample.structure[layer][element].mag_density[0] = x[p]
+            else:
+                polymorph = params[4]
+                poly = np.where(sample.structure[layer][element].polymorph == polymorph)
+                sample.structure[layer][element].mag_density[poly] = x[p]
+
+
+    for scan in scans:
+        scanType = scan[1]
+        name = scan[2]
+        if scanType == 'Reflectivity':
+            myDataScan = data[name]
+            myData = list(myDataScan)
+            E = myDataScan.attrs['Energy']
+            pol = myDataScan.attrs['Polarization']
+            qz = np.array(myData[0])
+
+            Rdat = np.array(qz[2])
+            qz, Rsim = sample.reflectivity(E, qz)
+            Rsim = Rsim[pol]
+            least_square = least_square + sum((Rdat-Rsim)**2/Rdat)
+
+
+        elif scanType == 'Energy':
+            myDataScan = data[name]
+            myData = list(myDataScan)
+            Theta = myDataScan.attrs['Angle']
+            E = np.array(myData[3])
+            pol = myDataScan.attrs['Polarization']
+
+            Rdat = np.array(myData[2])
+            Rsim = sample.energy_scan(Theta, E)
+            Rsim = Rsim[pol]
+
+            least_square = least_square + sum((Rdat-Rsim)**2)
+    print(least_square)
+    return least_square
+
+
+
 
 def selectOptimize(fname):
     sample = ReadSampleHDF5(fname)  # import the sample information
@@ -60,7 +158,6 @@ def selectOptimize(fname):
                 scans.append(scan)
     scans = [int(scan) for scan in scans]
 
-    print(data_info[:, 2][scans])
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
     print()
     print('PARAMETER SELECTION')
@@ -506,5 +603,22 @@ def selectOptimize(fname):
 
 
 if __name__ == "__main__":
+
     fname = 'Pim10uc.h5'
-    selectOptimize(fname)
+    sample = ReadSampleHDF5(fname)  # import the sample information
+
+    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+
+    scans = data_info[[1,2]]
+    parameters = [[0, 'STRUCTURAL', 'ELEMENT', 'Sr', 'DENSITY'],
+                  [0, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'],
+                  [1, 'STRUCTURAL', 'ELEMENT', 'La', 'DENSITY'],
+                  [1, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS']]
+
+    params = [sample, scans, data, sims, parameters]
+    lw = [0.02, 0.1, 0.02, 0]
+    up = [0.03, 5, 0.03, 5]
+    bounds = list(zip(lw,up))
+
+    ret = optimize.differential_evolution(scanCompute,bounds, args=params, maxiter=1, popsize=2)
+    print(ret.x, ret.fun)

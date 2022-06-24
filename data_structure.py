@@ -392,9 +392,9 @@ def ReadDataHDF5(fname):
         plt.show()
         val = input('Choose another scan # you want to use: ')  # Choose another scan
 
-    
-    f.close()
     """
+    #f.close()
+
     return data, data_dict, sim_dict
 
 
@@ -1572,7 +1572,7 @@ if __name__ == "__main__":
 
     sample.addlayer(7, 'CCO', 4, density = 2.5, roughness = 2)
 
-    fname = "Pim10uc.hdf5"
+    fname = "Pim10uc.h5"
     #WriteSampleHDF5(fname, sample)
     ReadDataHDF5(fname)
 
