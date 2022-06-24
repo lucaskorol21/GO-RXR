@@ -60,14 +60,38 @@ def selectOptimize(fname):
                 scans.append(scan)
     scans = [int(scan) for scan in scans]
 
-
-
-
+    print(data_info[:, 2][scans])
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
     print()
     print('PARAMETER SELECTION')
     print()
 
+    layer_formula = list()
+    idx = 0
+    for temp_layer in sample.structure:
+        P = list()
+        M = list()
+        formula = ''
+        for key in list(temp_layer.keys()):
+            stoich = temp_layer[key].stoichiometry
+            if stoich == 1:
+                formula = formula + key
+            else:
+                formula = formula + key + str(stoich)
+            if len(temp_layer[key].polymorph) > 0:
+                P.append(key)
+            if len(temp_layer[key].mag_density) > 0:
+                M.append(key)
+
+        layer_formula.append([idx, formula, P, M])
+        idx = idx + 1
+
+        # Sets up and prints scan table
+    header = ['Layer', 'Formula', 'Polymorphs', 'Magnetic']
+    tab = PrettyTable(header)
+    tab.add_rows(layer_formula)
+    print(tab)
+    print()
     number_layers = len(sample.structure)
 
     cont = 'Y'
@@ -75,6 +99,23 @@ def selectOptimize(fname):
         layer = input('Select layer you would like to optimize (0-'+str(number_layers-1)+"): ")
         if layer.upper() == 'EXIT':
             quit()
+        while layer.upper() == 'SHOW':
+            print(tab)
+            print()
+            layer = input('Select layer you would like to optimize (0-' + str(number_layers - 1) + "): ")
+            if layer.upper() == 'EXIT':
+                quit()
+
+        while int(layer) < 0 or int(layer) > number_layers -1:
+            layer = input('Select layer you would like to optimize (0-' + str(number_layers - 1) + "): ")
+            if layer.upper() == 'EXIT':
+                quit()
+            while layer.upper() == 'SHOW':
+                print(tab)
+                print()
+                layer = input('Select layer you would like to optimize (0-' + str(number_layers - 1) + "): ")
+                if layer.upper() == 'EXIT':
+                    quit()
 
         poly = list()
         mag = list()
@@ -182,6 +223,7 @@ def selectOptimize(fname):
                         lowerbound.append(lw)
                         upperbound.append(up)
 
+                    print()
                     sample_params.append([layer,prop.upper(),mode.upper(),characteristic.upper()])
 
                     if len(char_list) > 0:
@@ -257,6 +299,7 @@ def selectOptimize(fname):
                             lowerbound.append(lw)
                             upperbound.append(up)
 
+                        print()
                         sample_params.append([layer,prop.upper(),mode.upper(),element, characteristic.upper()])
                         if len(char_list) > 0:
                             again = input('Would you liked to select another characteristic for '+ element+" (y/n): ")
@@ -320,7 +363,7 @@ def selectOptimize(fname):
 
                 sample_params.append([layer, prop.upper(), poly_ele, whichPoly])
                 # As of right now we will assume that we can have a maximum of 2 polymorphs
-
+                print()
                 if len(b) != 0:
                     b.remove(poly_ele)
                     poly_cont = input('Would you like to vary another polymorph in the same layer (y/n): ')
@@ -372,6 +415,7 @@ def selectOptimize(fname):
                         upperbound.append(up)
 
                         sample_params.append([layer, prop.upper(), mag_ele, whichMag])
+                        print()
                         if len(mag_poly) != 0:
                             mag_poly_cont = input('Would you like to vary another polymorph magnetic density (y/n)?')
                             if mag_poly_cont.upper() == 'EXIT':
@@ -394,6 +438,7 @@ def selectOptimize(fname):
                             quit()
                     lowerbound.append(lw)
                     upperbound.append(up)
+                    print()
                     sample_params.append([layer, prop.upper(), mag_ele])
                 if len(my_mag) != 0:
                     my_mag.remove(mag_ele)
@@ -404,6 +449,58 @@ def selectOptimize(fname):
         cont = input('Would you liked to select another layer (y/n): ')
 
 
+    # printing the chosen elements
+    my_params = list()
+
+    for sp in range(len(sample_params)):
+        temp_list = list()
+        params = sample_params[sp]
+        lw = lowerbound[sp]
+        up = upperbound[sp]
+
+        temp_list.append(params[0])  # Layer info
+        temp_list.append(params[1])  # Property
+
+        if params[1] == 'STRUCTURAL':
+            mode = params[2]  # mode
+            if mode == 'COMPOUND':
+                formula = layer_formula[sp][1]  # formula
+                characteristic = params[3]
+                temp_list.append(formula)
+                temp_list.append('N/A')
+                temp_list.append(characteristic)
+            else:
+                element = params[3]
+                characteristic = params[4]
+                temp_list.append(element)
+                temp_list.append('N/A')
+                temp_list.append(characteristic)
+        elif params[1] == 'POLYMORPHOUS':
+            temp_list.append(params[2])  # poly element
+            temp_list.append(params[3])  # which poly
+            temp_list.append('DENSITY RATIO')
+        elif params[1] == 'MAGNETIC':
+            if len(params) == 3:
+                temp_list.append(params[2])  # element
+                temp_list.append('N/A')
+                temp_list.append('MAGNETIC DENSITY')
+            else:
+                temp_list.append(params[2])  # poly element
+                temp_list.append(params[3])  # polymorph
+                temp_list.append('MAGNETIC DENSITY')
+
+        temp_list.append(lw)
+        temp_list.append(up)
+        my_params.append(temp_list)
+
+    print()
+    print('The list of scans you requested are:' + str(scans))
+    print()
+    print(my_params)
+    header = ['Layer', 'Property', 'Element(s)', 'Polymorph', 'Characteristic', 'Upper Bound', 'Lower Bound']
+    Ntab = PrettyTable(header)
+    Ntab.add_rows(my_params)
+    print(Ntab)
 
     return data_info[scans], data, sims, sample_params, lowerbound, upperbound
 
