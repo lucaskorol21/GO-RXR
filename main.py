@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     sample = slab(8)
 
-    sample.addlayer(0, 'SrTiO3', 50, density =[0.027904,0.027904,0.083712], roughness=[7.58207,4.03102,5.77093])
+    sample.addlayer(0, 'SrTiO3', 50, density =[0.027904,0.027904,0.083712], roughness=[7.58207,False,5.77093])
     sample.addlayer(1, 'SrTiO3', 5, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
 
     sample.addlayer(2,'LaMnO3', 5, density=[0.021798,0.0209,0.084], roughness=[3.77764,2,2],linked_roughness=[False, 0.5, False])
@@ -37,10 +37,39 @@ if __name__ == '__main__':
     sample.addlayer(7,'CCO', 10.1373, density =[0.05,0.05,0.01], roughness=2, linked_roughness=[3,1.5,False])
 
 
-    sample.plot_density_profile(1)
-    plt.show()
+    fname = 'Pim10uc.h5'
 
-    E = 642.2
-    data = np.loadtxt('test_example.txt')
+
+
+    f = h5py.File(fname, 'a')
+    experiment = f['Experimental_data']
+    simulated = f['Simulated_data']
+
+    RS = experiment['Reflectivity_Scan']
+    SimR = simulated['Reflectivity_Scan']
+
+    ES = experiment['Energy_Scan']
+    SimE = simulated['Energy_Scan']
+
+    # Collects data information to print to terminal
+    data = list()
+    data_dict = dict()
+    sim_dict = dict()
+
+    for Rkey in RS.keys():
+        sim = np.array(list(SimR[Rkey])[2])
+        new = sim + sim*np.random.rand(len(sim))
+        RS[Rkey][2] = new
+
+
+    for Ekey in ES.keys():
+        sim = np.array(list(SimE[Ekey])[2])
+        new = sim + sim * np.random.rand(len(sim))
+        ES[Ekey][2] = new
+
+    f.close()
+
+
+
 
 

@@ -127,11 +127,11 @@ def scanCompute(x, *args):
     return least_square
 
 
-# Begin with creating a function that I can use global optimization on!
 def global_optimization(fname, scan, parameters, bounds, algorithm = 'differential_evolution'):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+
 
     # makes sure that scan is a list
     if type(scan) != list or type(scan) != np.ndarray:
@@ -157,10 +157,47 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
     else:
         raise NameError('Parameter algorithm not set properly')
 
-    print(x,fun)
-    #sample = changeSampleParams(x, parameters, sample)
 
-    # We want to show the scans now.
+    sample = changeSampleParams(x, parameters, sample)
+
+
+    #WriteSampleHDF5(fname, sample)
+    for scan in scans:
+        scanType = scan[1]
+        name = scan[2]
+        if scanType == 'Reflectivity':
+            myDataScan = data[name]
+            myData = list(myDataScan)
+            E = myDataScan.attrs['Energy']
+            pol = myDataScan.attrs['Polarization']
+            qz = np.array(myData[0])
+
+            Rdat = np.array(myData[2])
+            qz, Rsim = sample.reflectivity(E, qz)
+            Rsim = Rsim[pol]
+
+            plt.figure()
+            plt.plot(qz,np.log10(Rdat))
+            plt.plot(qz, np.log10(Rsim))
+            plt.legend(['Data','Simulation'])
+            plt.show()
+
+
+
+
+        elif scanType == 'Energy':
+            myDataScan = data[name]
+            myData = list(myDataScan)
+            Theta = myDataScan.attrs['Angle']
+            E = np.array(myData[3])
+            pol = myDataScan.attrs['Polarization']
+
+            Rdat = np.array(myData[2])
+            Rsim = sample.energy_scan(Theta, E)
+            Rsim = Rsim[pol]
+
+
+
     f.close()
 
 def selectOptimize(fname):
@@ -653,8 +690,8 @@ if __name__ == "__main__":
 
     parameters = [[0, 'STRUCTURAL', 'ELEMENT', 'Sr', 'DENSITY'],
                   [0, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'],
-                  [1, 'STRUCTURAL', 'ELEMENT', 'La', 'DENSITY'],
-                  [1, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS']]
+                  [2, 'STRUCTURAL', 'ELEMENT', 'La', 'DENSITY'],
+                  [2, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS']]
 
     lw = [0.01, 0.1, 0.02, 0]
     up = [0.04, 7, 0.03, 7]
