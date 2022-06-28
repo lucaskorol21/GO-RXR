@@ -28,11 +28,11 @@ def changeSampleParams(x, parameters, sample):
                 characteristic = params[3]  # thickness/density/roughness/linked roughness
                 for ele in list(sample.structure[layer].keys()):
                     if characteristic == 'THICKNESS':
+                        sample.structure[layer][ele].thickness = x[p]
+                    elif characteristic == 'DENSITY':
                         stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
                         molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
-                        sample.structure[layer][ele].thickness = x[p]*stoich/molar_mass  # set density
-                    elif characteristic == 'DENSITY':
-                        sample.structure[layer][ele].density = x[p]
+                        sample.structure[layer][ele].density = x[p]*stoich/molar_mass  # set density
                     elif characteristic == 'ROUGHNESS':
                         sample.structure[layer][ele].roughness = x[p]
                     elif characteristic == 'LINKED ROUGHNESS':
@@ -103,10 +103,10 @@ def scanCompute(x, *args):
             pol = myDataScan.attrs['Polarization']
             qz = np.array(myData[0])
 
-            Rdat = np.array(myData[2])
+            Rdat = np.log10(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
-            Rsim = Rsim[pol]
-            least_square = least_square + sum((Rdat-Rsim)**2/Rdat)
+            Rsim = np.log10(Rsim[pol])
+            least_square = least_square + sum((Rdat-Rsim)**2/abs(Rdat))
 
 
 
@@ -117,11 +117,11 @@ def scanCompute(x, *args):
             E = np.array(myData[3])
             pol = myDataScan.attrs['Polarization']
 
-            Rdat = np.array(myData[2])
+            Rdat = np.log10(np.array(myData[2]))
             Rsim = sample.energy_scan(Theta, E)
-            Rsim = Rsim[pol]
+            Rsim = np.log10(Rsim[pol])
 
-            least_square = least_square + sum((Rdat-Rsim)**2/Rdat)
+            least_square = least_square + sum((Rdat-Rsim)**2/abs(Rdat))
 
 
     return least_square
@@ -143,21 +143,18 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
 
     if algorithm == 'differential_evolution':
         # This line will be used to select and use different global optimization algorithms
-        ret = optimize.differential_evolution(scanCompute, bounds, args=params)
+        ret = optimize.differential_evolution(scanCompute, bounds, args=params, maxiter=2, popsize=15, strategy='currenttobest1exp')
         x = ret.x
         fun = ret.fun
-    elif algorithm == 'brute':
-        ret = optimize.brute(scanCompute, bounds, args=tuple(params), full_output=True, finish=optimize.fmin, workers=8)
-        x = ret[0]
-        fun = ret[1]
     elif algorithm == 'shgo':
-        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=3)
+        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=1)
         x = ret.x
         fun = ret.fun
     else:
         raise NameError('Parameter algorithm not set properly')
 
-
+    print('Chi: ' + str(fun))
+    print('Fitting parameters: ', x)
     sample = changeSampleParams(x, parameters, sample)
 
 
@@ -685,18 +682,52 @@ def selectOptimize(fname):
 
 
 if __name__ == "__main__":
+    sample = slab(8)
+
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.027904, 0.027904, 0.083712], roughness=[7.58207, False, 5.77093])
+    sample.addlayer(1, 'SrTiO3', 5.5, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
+
+    sample.addlayer(2, 'LaMnO3', 4.5, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2],
+                    linked_roughness=[False, 0.5, False])
+    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(2, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
+
+    sample.addlayer(3, 'LaMnO3', 17, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
+
+    sample.addlayer(4, 'LaMnO3', 12, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
+
+    sample.addlayer(5, 'LaMnO3', 2, density=[0.025, 0.024, 0.05], roughness=[0.25, 0.25, 2])
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
+
+    sample.addlayer(6, 'LaMnO3', 5, density=[0.025, 0.042, 0.04], roughness=[0.25, 0.25, 2])
+    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
+    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.0053, 0], ['Co', 'Ni'])
+
+    sample.addlayer(7, 'CCO', 9.8, density=[0.05, 0.05, 0.01], roughness=2, linked_roughness=[3, 1.5, False])
 
     fname = 'Pim10uc.h5'
 
-    parameters = [[0, 'STRUCTURAL', 'ELEMENT', 'Sr', 'DENSITY'],
-                  [0, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'],
-                  [2, 'STRUCTURAL', 'ELEMENT', 'La', 'DENSITY'],
-                  [2, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS']]
+    #WriteSampleHDF5(fname, sample)
 
-    lw = [0.01, 0.1, 0.02, 0]
-    up = [0.04, 7, 0.03, 7]
+    parameters = [[1,'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [5, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [6, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
+
+
+    lw = [3,3,15,7,1,2,7]
+    up = [7,7,20,13,7,8,13]
     bounds = list(zip(lw, up))
+    scans = [1,2,3,4,5,6,7]
 
-    scans = [1, 2]
 
-    global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
+    global_optimization(fname, scans, parameters, bounds, algorithm='shgo')
+
