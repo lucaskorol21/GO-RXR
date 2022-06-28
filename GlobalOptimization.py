@@ -5,17 +5,79 @@ from data_structure import *
 import matplotlib.pyplot as plt
 
 
-# Begin with creating a function that I can use global optimization on!
-def global_optimization(scans, data, sims, params, lb, ub):
-    # The idea for this would be to allow the user to select the scans they would like to
-    # use in the global optimization algorithm
-
-    # We will then ask the user which parameters they would like to vary, along with the range
-
-    # We may need a very complex function to perform the optimization...
 
 
-    print('good try')
+
+def changeSampleParams(x, parameters, sample):
+    """
+    Purpose: Change the parameters for the input sample for x-values
+    :param x: A list that contains the new parameters values
+    :param parameters: A list that defines which parameter to change in the sample definition
+    :param sample: A slab object class
+    :return: The new sample
+    """
+    # Loop through each sample parameter
+    for p in range(len(parameters)):
+        params = parameters[p]
+        layer = params[0]  # Determine which layer to change
+        property = params[1]  # structural/polymorphous/magnetic
+        if property == 'STRUCTURAL':
+            mode = params[2]
+            # Determine if user wants to use compound or element mode
+            if mode == 'COMPOUND':
+                characteristic = params[3]  # thickness/density/roughness/linked roughness
+                for ele in list(sample.structure[layer].keys()):
+                    if characteristic == 'THICKNESS':
+                        stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
+                        molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
+                        sample.structure[layer][ele].thickness = x[p]*stoich/molar_mass  # set density
+                    elif characteristic == 'DENSITY':
+                        sample.structure[layer][ele].density = x[p]
+                    elif characteristic == 'ROUGHNESS':
+                        sample.structure[layer][ele].roughness = x[p]
+                    elif characteristic == 'LINKED ROUGHNESS':
+                        sample.structure[layer][ele].linked_roughness = x[p]
+
+            elif mode == 'ELEMENT':
+                element = params[3]  # determines the element to change
+                characteristic = params[4]  # thickness/density/roughness/linked roughness
+                if characteristic == 'THICKNESS':
+                    sample.structure[layer][element].thickness = x[p]
+                elif characteristic == 'DENSITY':
+                    sample.structure[layer][element].density = x[p]
+                elif characteristic == 'ROUGHNESS':
+                    sample.structure[layer][element].roughness = x[p]
+                elif characteristic == 'LINKED ROUGHNESS':
+                    sample.structure[layer][element].linked_roughness = x[p]
+
+        elif property == 'POLYMORPHOUS':
+            element = params[3]  # determines the element that contains the polymorph
+            polymorph = params[4]  # determines the polymorph to change
+
+            ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
+
+            poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
+
+            # sets poly_ratio value making sure sum equals to 1
+            if poly == 0:
+                sample.structure[layer][element].poly_ratio[0] = x[p]
+                sample.structure[layer][element].poly_ratio[1] = ratio
+            elif poly == 1:
+                sample.structure[layer][element].poly_ratio[0] = x[p]
+                sample.structure[layer][element].poly_ratio[1] = ratio
+
+        elif property == 'MAGNETIC':
+            element = params[3]  # determines the magnetic element to use
+
+            # determines if magnetic element is polymorphous
+            if len(params) == 3:
+                sample.structure[layer][element].mag_density[0] = x[p]  # non-polymorphous case
+            else:
+                polymorph = params[4]  # polymorphous case
+                poly = np.where(sample.structure[layer][element].polymorph == polymorph)
+                sample.structure[layer][element].mag_density[poly] = x[p]
+
+    return sample
 
 def scanCompute(x, *args):
 
@@ -27,61 +89,8 @@ def scanCompute(x, *args):
     sims = args[3]
     parameters = args[4]
 
-    #sample changes
-    for p in range(len(parameters)):
-        params = parameters[p]
-        layer = params[0]
-        property = params[1]
-        if property == 'STRUCTURAL':
-            mode = params[2]
-            if mode == 'COMPOUND':
-                characteristic = params[3]
-                for ele in list(sample.structure[layer].keys()):
-                    if characteristic == 'THICKNESS':
-                        sample.structure[layer][ele].thickness = x[p]
-                    elif characteristic == 'DENSITY':
-                        sample.structure[layer][ele].density = x[p]
-                    elif characteristic == 'ROUGHNESS':
-                        sample.structure[layer][ele].roughness = x[p]
-                    elif characteristic == 'LINKED ROUGHNESS':
-                        sample.structure[layer][ele].linked_roughness = x[p]
+    sample = changeSampleParams(x, parameters, sample)
 
-            elif mode == 'ELEMENT':
-                element = params[3]
-                characteristic = params[4]
-                if characteristic == 'THICKNESS':
-                    sample.structure[layer][element].thickness = x[p]
-                elif characteristic == 'DENSITY':
-                    sample.structure[layer][element].density = x[p]
-                elif characteristic == 'ROUGHNESS':
-                    sample.structure[layer][element].roughness = x[p]
-                elif characteristic == 'LINKED ROUGHNESS':
-                    sample.structure[layer][element].linked_roughness = x[p]
-
-        elif property == 'POLYMORPHOUS':
-            element = params[3]
-            polymorph = params[4]
-
-            ratio = 1 - x[p]
-
-            poly = np.where(sample.structure[layer][element].polymorph == polymorph)
-
-            if poly == 0:
-                sample.structure[layer][element].poly_ratio[0] = x[p]
-                sample.structure[layer][element].poly_ratio[1] = ratio
-            elif poly == 1:
-                sample.structure[layer][element].poly_ratio[0] = x[p]
-                sample.structure[layer][element].poly_ratio[1] = ratio
-
-        elif property == 'MAGNETIC':
-            element = params[3]
-
-            if len(params) == 3:
-                sample.structure[layer][element].mag_density[0] = x[p]
-            else:
-                polymorph = params[4]
-                poly = np.where(sample.structure[layer][element].polymorph == polymorph)
-                sample.structure[layer][element].mag_density[poly] = x[p]
 
 
     for scan in scans:
@@ -94,10 +103,11 @@ def scanCompute(x, *args):
             pol = myDataScan.attrs['Polarization']
             qz = np.array(myData[0])
 
-            Rdat = np.array(qz[2])
+            Rdat = np.array(myData[2])
             qz, Rsim = sample.reflectivity(E, qz)
             Rsim = Rsim[pol]
             least_square = least_square + sum((Rdat-Rsim)**2/Rdat)
+
 
 
         elif scanType == 'Energy':
@@ -111,12 +121,47 @@ def scanCompute(x, *args):
             Rsim = sample.energy_scan(Theta, E)
             Rsim = Rsim[pol]
 
-            least_square = least_square + sum((Rdat-Rsim)**2)
-    print(least_square)
+            least_square = least_square + sum((Rdat-Rsim)**2/Rdat)
+
+
     return least_square
 
 
+# Begin with creating a function that I can use global optimization on!
+def global_optimization(fname, scan, parameters, bounds, algorithm = 'differential_evolution'):
+    sample = ReadSampleHDF5(fname)  # import the sample information
 
+    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+
+    # makes sure that scan is a list
+    if type(scan) != list or type(scan) != np.ndarray:
+        scan = [scan]
+
+    scans = data_info[tuple(scan)]
+
+    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+
+    if algorithm == 'differential_evolution':
+        # This line will be used to select and use different global optimization algorithms
+        ret = optimize.differential_evolution(scanCompute, bounds, args=params)
+        x = ret.x
+        fun = ret.fun
+    elif algorithm == 'brute':
+        ret = optimize.brute(scanCompute, bounds, args=tuple(params), full_output=True, finish=optimize.fmin, workers=8)
+        x = ret[0]
+        fun = ret[1]
+    elif algorithm == 'shgo':
+        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=3)
+        x = ret.x
+        fun = ret.fun
+    else:
+        raise NameError('Parameter algorithm not set properly')
+
+    print(x,fun)
+    #sample = changeSampleParams(x, parameters, sample)
+
+    # We want to show the scans now.
+    f.close()
 
 def selectOptimize(fname):
     sample = ReadSampleHDF5(fname)  # import the sample information
@@ -605,20 +650,16 @@ def selectOptimize(fname):
 if __name__ == "__main__":
 
     fname = 'Pim10uc.h5'
-    sample = ReadSampleHDF5(fname)  # import the sample information
 
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
-
-    scans = data_info[[1,2]]
     parameters = [[0, 'STRUCTURAL', 'ELEMENT', 'Sr', 'DENSITY'],
                   [0, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'],
                   [1, 'STRUCTURAL', 'ELEMENT', 'La', 'DENSITY'],
                   [1, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS']]
 
-    params = [sample, scans, data, sims, parameters]
-    lw = [0.02, 0.1, 0.02, 0]
-    up = [0.03, 5, 0.03, 5]
-    bounds = list(zip(lw,up))
+    lw = [0.01, 0.1, 0.02, 0]
+    up = [0.04, 7, 0.03, 7]
+    bounds = list(zip(lw, up))
 
-    ret = optimize.differential_evolution(scanCompute,bounds, args=params, maxiter=1, popsize=2)
-    print(ret.x, ret.fun)
+    scans = [1, 2]
+
+    global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
