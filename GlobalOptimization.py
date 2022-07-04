@@ -144,11 +144,11 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
 
     if algorithm == 'differential_evolution':
         # This line will be used to select and use different global optimization algorithms
-        ret = optimize.differential_evolution(scanCompute, bounds, args=params, maxiter=2, popsize=15, strategy='currenttobest1exp')
+        ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy='currenttobest1exp', maxiter=3600, tol=0.00001, disp=True)
         x = ret.x
         fun = ret.fun
     elif algorithm == 'shgo':
-        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=1)
+        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=3)
         x = ret.x
         fun = ret.fun
     else:
@@ -173,13 +173,14 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
             Rdat = np.array(myData[2])
             qz, Rsim = sample.reflectivity(E, qz)
             Rsim = Rsim[pol]
-            """
+
             plt.figure()
+            plt.suptitle('Fit: ' + name)
             plt.plot(qz,np.log10(Rdat))
             plt.plot(qz, np.log10(Rsim))
             plt.legend(['Data','Simulation'])
             plt.show()
-            """
+
 
 
 
@@ -687,45 +688,53 @@ if __name__ == "__main__":
     sample = slab(8)
 
     sample.addlayer(0, 'SrTiO3', 50, density=[0.027904, 0.027904, 0.083712], roughness=[7.58207, False, 5.77093])
-    sample.addlayer(1, 'SrTiO3', 5, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
+    sample.addlayer(1, 'SrTiO3', 6, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
 
-    sample.addlayer(2, 'LaMnO3', 5, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2],
+    sample.addlayer(2, 'LaMnO3', 4, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2],
                     linked_roughness=[False, 0.5, False])
     sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(2, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
 
-    sample.addlayer(3, 'LaMnO3', 17, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.addlayer(3, 'LaMnO3', 17.8, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
     sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
 
-    sample.addlayer(4, 'LaMnO3', 12, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.addlayer(4, 'LaMnO3', 9, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
     sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
 
-    sample.addlayer(5, 'LaMnO3', 3, density=[0.025, 0.024, 0.05], roughness=[0.25, 0.25, 2])
+    sample.addlayer(5, 'LaMnO3', 2.5, density=[0.025, 0.024, 0.05], roughness=[0.25, 0.25, 2])
     sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
     sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
 
-    sample.addlayer(6, 'LaMnO3', 4, density=[0.025, 0.042, 0.04], roughness=[0.25, 0.25, 2])
+    sample.addlayer(6, 'LaMnO3', 4.5, density=[0.025, 0.042, 0.04], roughness=[0.25, 0.25, 2])
     sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
     sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.0053, 0], ['Co', 'Ni'])
 
-    sample.addlayer(7, 'CCO', 10.1373, density=[0.05, 0.05, 0.01], roughness=2, linked_roughness=[3, 1.5, False])
+    sample.addlayer(7, 'CCO', 11.1, density=[0.05, 0.05, 0.01], roughness=2, linked_roughness=[3, 1.5, False])
 
     fname = 'Pim10uc.h5'
 
     #WriteSampleHDF5(fname, sample)
+    #ReadDataHDF5(fname)
 
-    parameters = [[3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
+
+    parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [5, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [6, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
 
 
-    lw = [15]
-    up = [20]
+    lw = [3.5,3.5,17.3,8.5,2,3,8.6]
+    up = [6.5,6.5,19.8,11.5,4,5,11.6]
     bounds = list(zip(lw, up))
-    scans = [1,2,3,4,5,6,7]
+    scans = [0,1,2,3,4,5,6]
 
     start = time()
-    global_optimization(fname, scans, parameters, bounds, algorithm='shgo')
+    global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
     end = time()
     print(end-start)
 

@@ -348,7 +348,6 @@ def ReadDataHDF5(fname):
     data = data[sort_idx]
 
 
-
     """
     # Loop that continuously asks user which scan they want to have shown
     val = input('Choose scan # you want to use: ')
@@ -364,7 +363,7 @@ def ReadDataHDF5(fname):
             qz = Rdata[0]  # momentum transfer
             R = Rdata[2]  # experimental data reflectivity
             Rs = Rsim[2]  # simulated data reflectivity
-
+            
             # plotting of reflectivity scan
             plt.figure()
             plt.plot(qz, R)
@@ -375,6 +374,7 @@ def ReadDataHDF5(fname):
                 plt.yscale('log', base=20)
 
             plt.legend(['Data', 'Simulation'])
+            plt.suptitle(scanName)
 
         elif scanType == 'Energy':
             Edata = list(ES[scanName])  # experimental data
@@ -392,9 +392,9 @@ def ReadDataHDF5(fname):
         plt.show()
         val = input('Choose another scan # you want to use: ')  # Choose another scan
 
-    """
-    #f.close()
 
+    #f.close()
+    """
     return data, data_dict, sim_dict
 
 
