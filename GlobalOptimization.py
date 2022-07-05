@@ -82,7 +82,7 @@ def changeSampleParams(x, parameters, sample):
 
 def scanCompute(x, *args):
 
-    least_square = 0  # what we will use to determine some values
+    chi2 = 0  # what we will use to determine some values
 
     sample = args[0]
     scans = args[1]
@@ -104,10 +104,10 @@ def scanCompute(x, *args):
             pol = myDataScan.attrs['Polarization']
             qz = np.array(myData[0])
 
-            Rdat = np.log10(np.array(myData[2]))
+            Rdat = np.log(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
-            Rsim = np.log10(Rsim[pol])
-            least_square = least_square + sum((Rdat-Rsim)**2/abs(Rdat))
+            Rsim = np.log(Rsim[pol])
+            chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
 
 
@@ -118,14 +118,14 @@ def scanCompute(x, *args):
             E = np.array(myData[3])
             pol = myDataScan.attrs['Polarization']
 
-            Rdat = np.log10(np.array(myData[2]))
+            Rdat = np.log(np.array(myData[2]))
             Rsim = sample.energy_scan(Theta, E)
-            Rsim = np.log10(Rsim[pol])
+            Rsim = np.log(Rsim[pol])
 
-            least_square = least_square + sum((Rdat-Rsim)**2/abs(Rdat))
+            chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
 
-    return least_square
+    return chi2
 
 
 def global_optimization(fname, scan, parameters, bounds, algorithm = 'differential_evolution'):
@@ -149,6 +149,10 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
         fun = ret.fun
     elif algorithm == 'shgo':
         ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=3)
+        x = ret.x
+        fun = ret.fun
+    elif algorithm == 'dual_annealing':
+        ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=3)
         x = ret.x
         fun = ret.fun
     else:
@@ -734,7 +738,7 @@ if __name__ == "__main__":
     scans = [0,1,2,3,4,5,6]
 
     start = time()
-    global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
+    global_optimization(fname, scans, parameters, bounds, algorithm='dual_annealing')
     end = time()
     print(end-start)
 
