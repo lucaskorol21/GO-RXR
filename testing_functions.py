@@ -1,3 +1,4 @@
+import tkinter
 from math import sin
 import numpy as np
 from scipy import interpolate
@@ -6,193 +7,180 @@ import Pythonreflectivity as pr
 from material_model import *
 
 
+import tkinter as tk
+from tkinter import ttk
+
+
+def showSampleParameters(sample):
+
+    parameters = ['Thickness', 'Density', 'Roughness', 'Linked Roughness',
+                  'Stoichiometry', 'Polymorph', 'Gamma', 'Phi', 'Magnetic Density',
+                  'Scattering Factor', 'Magnetic Scattering Factor']
+    root = tk.Tk()
+    root.title('Sample Information')
+    root.geometry("900x900")
+    tree = ttk.Treeview(root)
+    ttk.Style().configure('Treeview', rowheight=30)
+
+    structure = sample.structure
+
+    # Loop through all the different elements
+    for layer in range(len(structure)):
+        if layer == 0:
+            layer_name = 'Substrate'
+        else:
+            layer_name = 'Layer ' + str(layer)
+        tree.insert("",layer, layer_name, text=layer_name)  # adding the layer to the tree
+
+        elements = list(structure[layer].keys())
+
+        for e in range(len(elements)):
+            element = elements[e]
+            element_name = element + " " + str(layer)
+            tree.insert(layer_name,e,element_name,text=element)
+
+            for param in parameters:
+                if param == 'Thickness':
+                    thick_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name,1,thick_name,text=param)
+                    thick_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(thick_name, 1, thick_data_name, text=str(structure[layer][element].thickness) + " (A)")
+                elif param == 'Density':
+                    density_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 2, density_name, text=param)
+                    density_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(density_name, 1, density_data_name, text=str(structure[layer][element].density) + " (mol/cm^3)")
+                elif param == 'Roughness':
+                    rough_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 3, rough_name, text=param)
+                    rough_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(rough_name, 1, rough_data_name, text=str(structure[layer][element].roughness)) + " (A)"
+                elif param == 'Linked Roughness':
+                    link_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 4, link_name, text=param)
+                    link_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(link_name, 1, link_data_name, text=str(structure[layer][element].linked_roughness)) + " (A)"
+                elif param == 'Stoichiometry':
+                    stoich_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 5, stoich_name, text=param)
+                    stoich_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(stoich_name, 1, stoich_data_name, text=structure[layer][element].stoichiometry)
+                elif param == 'Polymorph':
+                    polymorphs = structure[layer][element].polymorph
+                    if len(polymorphs) != 0:
+                        polymorphs_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 6, polymorphs_name, text=param)
+                        for poly in range(len(polymorphs)):
+                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                            tree.insert(polymorphs_name, poly, poly_name, text=polymorphs[poly])
+                            poly_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                            poly_data = 'Ratio = ' + str(structure[layer][element].poly_ratio[poly])
+                            tree.insert(poly_name, 1, poly_density_name, text=poly_data)
+                elif param == 'Gamma':
+                    gamma_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 7, gamma_name, text=param)
+                    gamma_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(gamma_name, 1, gamma_data_name, text=str(structure[layer][element].gamma) + " degrees")
+                elif param == 'Phi':
+                    phi_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 8, phi_name, text=param)
+                    phi_data_name = param + " " + element + " " + str(layer) + " data"
+                    tree.insert(phi_name, 1, phi_data_name, text=str(structure[layer][element].phi) + " degrees")
+                elif param == 'Magnetic Density':
+                    polymorphs = structure[layer][element].polymorph
+                    if len(polymorphs) != 0:
+                        magnetic_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 9, magnetic_name, text=param)
+                        for poly in range(len(polymorphs)):
+                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                            tree.insert(magnetic_name, poly, poly_name, text=polymorphs[poly])
+                            mag_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                            poly_data = str(structure[layer][element].mag_density[poly]) + " mol/cm^3"
+                            tree.insert(poly_name, 1, mag_density_name, text=poly_data)
+                elif param == 'Scattering Factor':
+                    polymorphs = structure[layer][element].polymorph
+                    if len(polymorphs) != 0:
+                        scat_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 9, scat_name, text=param)
+                        for poly in range(len(polymorphs)):
+                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                            tree.insert(scat_name, poly, poly_name, text=polymorphs[poly])
+                            scat_fact_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                            poly_data = str(structure[layer][element].scattering_factor[poly]) + " mol/cm^3"
+                            tree.insert(poly_name, 1, scat_fact_name, text=poly_data)
+                    else:
+                        print('bye')
+                elif param == 'Magnetic Scattering Factor':
+                    scat_name = param + " " + element + " " + str(layer)
+                    tree.insert(element_name, 9, scat_name, text=param)
+                    #scat_fact_name = param + " " + element +
+
+    tree.pack(expand=True, fill='both')
+    root.mainloop()
+
+    """
+    root = tk.Tk()
+    root.title('Sample Information')
+    root.geometry("900x900")
+    tree = ttk.Treeview(root)
+    ttk.Style().configure('Treeview', rowheight=30)
+
+    def add_node(k, v):
+        if isinstance(v, dict):
+            for i, j in v.items():
+                if tree.exists(j):
+                    tree.insert(k, 1, i, text=i)
+                    add_node(i, j)
+                else:
+                    tree.insert(k, 1, i, text=i)
+                    add_node(i, j)
+
+    for k, v in hierarchy.items():
+        tree.insert("", 1, k, text=k)
+        add_node(k, v)
+
+    tree.pack(expand=True, fill='both')
+    root.mainloop()
+    """
+
+
+
 
 
 
 
 if __name__ == "__main__":
+    sample = slab(8)
 
-    E = 642.2  # eV
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.027904, 0.027904, 0.083712], roughness=[7.58207, False, 5.77093])
+    sample.addlayer(1, 'SrTiO3', 6, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
 
-    mag_optical_profile = np.loadtxt('mag_optical_profile')
-    optical_profile = np.loadtxt('optical_constant')
-    spectra = np.loadtxt('test_example.txt')
+    sample.addlayer(2, 'LaMnO3', 4, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2],
+                    linked_roughness=[False, 0.5, False])
+    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(2, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
 
-    # optical profile
-    t = optical_profile[:,0]  # thickness
-    delta = optical_profile[:, 1]  # delta
-    beta = optical_profile[:, 3]  # beta
+    sample.addlayer(3, 'LaMnO3', 17.8, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
 
-    # magnetic optical profile
-    tm = mag_optical_profile[:, 0]  # thickness
-    delta_m = mag_optical_profile[:, 1]  # delta
-    beta_m = mag_optical_profile[:, 3]  # beta
+    sample.addlayer(4, 'LaMnO3', 9, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
+    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
 
-    n = 1 + np.vectorize(complex)(-delta, beta)
-    #epsilon = 1 + np.vectorize(complex)(-2*delta,2*beta)
-    epsilon = n**2
-    Q = np.vectorize(complex)(beta_m, delta_m)
-    epsilon_mag = Q*epsilon*2
+    sample.addlayer(5, 'LaMnO3', 2.5, density=[0.025, 0.024, 0.05], roughness=[0.25, 0.25, 2])
+    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
+    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
 
-    m = len(t)-1
+    sample.addlayer(6, 'LaMnO3', 4.5, density=[0.025, 0.042, 0.04], roughness=[0.25, 0.25, 2])
+    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
+    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.0053, 0], ['Co', 'Ni'])
 
-    A = pr.Generate_structure(m)  # initializes structure
-
-    for idx in range(m):
-        d = t[idx+1] - t[idx]
-        eps = (epsilon[idx+1]+epsilon[idx])/2
-        #eps = epsilon[idx+2]
-        eps_mag = (epsilon_mag[idx+1]+epsilon_mag[idx])/2
-        #eps_mag = epsilon_mag[idx+2]
-
-        A[idx].setmag('y')
-        A[idx].seteps([eps,eps,eps,eps_mag])
+    sample.addlayer(7, 'CCO', 11.1, density=[0.05, 0.05, 0.01], roughness=2, linked_roughness=[3, 1.5, False])
 
 
-        A[idx].setd(d)
+    showSampleParameters(sample)
 
 
-    qz = spectra[:,0]
-    qi = qz[0]
-    qf = qz[-1]
-    length_qz = len(qz)
-
-    h = 4.135667696e-15  # Plank's constant eV*s
-    c = 2.99792458e8  # speed of light m/s
-    wavelength = h * c / (E * 1e-10)  # wavelength m
-    #wavelength = 12398/E
-
-    theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
-    theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-    delta_theta = (theta_f - theta_i) / (1000)  # sets step size
-    Theta = np.arange(theta_i, theta_f + delta_theta, delta_theta)  # Angle array
-    Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
 
-    R = pr.Reflectivity(A, Theta, wavelength,MagneticCutoff=1e-10)
-    Rs = R[0]
-    Rp = R[1]
-    Rl = R[2]
-    Rr = R[3]
-    Ra = (Rl-Rr)/(Rl+Rr)  # asymmetry
-
-    Rs = np.log10(Rs)
-    Rp = np.log10(Rp)
-    Rl = np.log10(Rl)
-    Rr = np.log10(Rr)
-
-    Re = np.log10(spectra[:, 1])  # ReMagX Spectra
-    Rea = spectra[:,1]
-    qz_temp = (0.001013546247) * E * sin(Theta * pi / 180)  # transforms angle back into momentum transfer
-    qz_temp = qz
-
-    # Interpolation
-    #itr = interpolate.splrep(qz_temp, Ra)
-    #R_fit = interpolate.splev(qz, itr)
-    R_diff = abs(Ra-Rea)/abs(Ra+Rea)*100
-
-    fig, (ax1, ax2) = plt.subplots(2,1, sharex=True)
-    #fig.suptitle(r"$No\;\;Magnetic\;\;Cutoff:\;\;Left\;\;Circular\;\;for\;\;E = 640.2eV\;\;and\;\;\rho=0.001\;\;mol/cm^3$")
-    fig.suptitle('Altered')
-    ax1.plot(qz_temp, Ra,'k')
-    ax1.plot(qz, Rea,'r--')
-    ax1.legend(['Lucas','ReMagX'])
-    ax1.set_title("Reflectivity Spectra")
-    ax1.set_ylabel(r"$log_{10}(R)y$")
-
-    ax2.plot(qz, R_diff)
-    ax2.set_title("Percent Difference")
-    ax2.set_xlabel(r"$Momentum\;\;Transfer\;\;(q_z)$")
-    ax2.set_ylabel(r"$\frac{|R_L-R_R|}{|R_L+R_R|}x100\%$")
-    plt.subplots_adjust(hspace=0.3,top=0.8)
-
-
-    # Testing Optical profile Ratios
-
-    # Example 2: Simple sample creation
-    sample = slab(2)  # Initializing four layers
-    s = 0.1
-    mag_dense = 0.5
-    # Substrate Layer
-    # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
-
-    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
-
-
-    thickness, density, density_magnetic = sample.density_profile(step=0.1)
-
-    elements = density.keys()
-    sf = dict()
-    elements_mag = density_magnetic.keys()
-    sfm = dict()
-    # Non-Magnetic Scattering Factor
-    for e in sample.find_sf[0].keys():
-        sf[e] = find_form_factor(sample.find_sf[0][e], E, False)
-    # Magnetic Scattering Factor
-    for em in sample.find_sf[1].keys():
-        sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
-
-    d, b = index_of_refraction(density, sf,E)  # calculates dielectric constant for structural component
-
-    dm, bm = magnetic_optical_constant(density_magnetic, sfm,E)  # calculates dielectric constant for magnetic component
-    dm = dm*(-1)
-    bm = bm*(-1)
-
-    itr_d = interpolate.splrep(thickness, d)
-    d_fit = interpolate.splev(t, itr_d)
-    d_diff = abs(d_fit-delta)
-    d_rat = d_fit/delta
-
-    itr_b = interpolate.splrep(thickness, b)
-    b_fit = interpolate.splev(t, itr_b)
-    b_diff = abs(b_fit - beta)
-    b_rat = b_fit/beta
-
-    itr_dm = interpolate.splrep(thickness, dm)
-    dm_fit = interpolate.splev(t, itr_dm)
-    dm_diff = abs(dm_fit - delta_m)/abs(dm_fit+delta_m)
-    dm_rat = dm_fit/delta_m
-
-    itr_bm = interpolate.splrep(thickness, bm)
-    bm_fit = interpolate.splev(t, itr_bm)
-    bm_diff = abs(bm_fit - beta_m)
-    bm_rat = bm_fit/beta_m
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    fig.suptitle(r"$Optical\;\;Profile\;\;Comparison\;\;(\delta_m)\;\;for\;\;\rho=0.01\;\;mol/cm^3$")
-    ax1.plot(t, d_rat)
-    ax1.set_title("Ratio")
-    ax1.set_ylabel(r"$\delta_m^{L}/\delta_m^{R}$", fontsize=14)
-
-    ax2.plot(t, dm_diff)
-    ax2.set_title("Difference")
-    ax2.set_xlabel("Thickness (A)")
-    ax2.set_ylabel(r"$|\delta_m^{L}=\delta_m^{R}|$", fontsize=14)
-    plt.subplots_adjust(hspace=0.3, top=0.85)
-    plt.show()
-
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2)
-    fig.suptitle('Optical Profile Comparison')
-    ax1.plot(t, d_fit,'k')
-    ax1.plot(t,delta,'r--')
-    ax1.set_title(r"$\delta$")
-    ax1.legend(['Lucas','ReMagX'],loc='upper right', fontsize=8)
-
-    ax2.plot(t,b_fit, 'k')
-    ax2.plot(t, beta, 'r--')
-    ax2.set_title(r"$\beta$")
-
-    ax3.plot(t, dm_fit,'k')
-    ax3.plot(t, delta_m,'r--')
-    ax3.set_title(r"$\delta_m$")
-
-    ax4.plot(t, bm_fit,'k')
-    ax4.plot(t, beta_m,'r--')
-    ax4.set_title(r"$\beta_m$")
-    plt.subplots_adjust(hspace=0.3, wspace=0.3)
-
-
-    plt.show()

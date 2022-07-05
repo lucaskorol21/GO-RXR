@@ -20,6 +20,7 @@ from numba import *
 
 
 
+
 @njit()
 def ALS(epsilon, epsilon_mag, precision=1e-6):
     """

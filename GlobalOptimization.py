@@ -4,9 +4,7 @@ import numpy as np
 from data_structure import *
 import matplotlib.pyplot as plt
 from time import time
-
-
-
+from tkinter import *
 
 
 def changeSampleParams(x, parameters, sample):
@@ -64,8 +62,8 @@ def changeSampleParams(x, parameters, sample):
                 sample.structure[layer][element].poly_ratio[0] = x[p]
                 sample.structure[layer][element].poly_ratio[1] = ratio
             elif poly == 1:
-                sample.structure[layer][element].poly_ratio[0] = x[p]
-                sample.structure[layer][element].poly_ratio[1] = ratio
+                sample.structure[layer][element].poly_ratio[1] = x[p]
+                sample.structure[layer][element].poly_ratio[0] = ratio
 
         elif property == 'MAGNETIC':
             element = params[3]  # determines the magnetic element to use
@@ -144,7 +142,7 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
 
     if algorithm == 'differential_evolution':
         # This line will be used to select and use different global optimization algorithms
-        ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy='currenttobest1exp', maxiter=3600, tol=0.00001, disp=True)
+        ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy='currenttobest1exp', maxiter=10, tol=0.00001, disp=True)
         x = ret.x
         fun = ret.fun
     elif algorithm == 'shgo':
@@ -152,7 +150,7 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
         x = ret.x
         fun = ret.fun
     elif algorithm == 'dual_annealing':
-        ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=3)
+        ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=300)
         x = ret.x
         fun = ret.fun
     else:
@@ -203,6 +201,7 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
 
 
     f.close()
+    return x, fun
 
 def selectOptimize(fname):
     sample = ReadSampleHDF5(fname)  # import the sample information
@@ -738,7 +737,12 @@ if __name__ == "__main__":
     scans = [0,1,2,3,4,5,6]
 
     start = time()
-    global_optimization(fname, scans, parameters, bounds, algorithm='dual_annealing')
+    x, fun = global_optimization(fname, scans, parameters, bounds, algorithm='shgo')
     end = time()
     print(end-start)
+
+    x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
+
+    Var = sum((x-x_expected)**2)/len(x_expected)
+    print(Var)
 
