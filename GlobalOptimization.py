@@ -718,6 +718,8 @@ if __name__ == "__main__":
 
     fname = 'Pim10uc.h5'
 
+    sample.plot_density_profile(1)
+    plt.show()
     #WriteSampleHDF5(fname, sample)
     #ReadDataHDF5(fname)
 
@@ -736,8 +738,9 @@ if __name__ == "__main__":
     bounds = list(zip(lw, up))
     scans = [0,1,2,3,4,5,6]
 
+
     start = time()
-    x, fun = global_optimization(fname, scans, parameters, bounds, algorithm='shgo')
+    x, fun = global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
     end = time()
     print(end-start)
 

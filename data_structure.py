@@ -392,10 +392,10 @@ def ReadDataHDF5(fname):
         plt.show()
         val = input('Choose another scan # you want to use: ')  # Choose another scan
 
-
-    #f.close()
     """
-    return data, data_dict, sim_dict
+    #f.close()
+
+    return f, data, data_dict, sim_dict
 
 
 def WriteSampleHDF5(fname, sample):
@@ -1574,5 +1574,12 @@ if __name__ == "__main__":
 
     fname = "Pim10uc.h5"
     #WriteSampleHDF5(fname, sample)
-    ReadDataHDF5(fname)
+    f, data, data_dict, sim_dict = ReadDataHDF5(fname)
+
+    name = data[0][2]
+    my_data = list(data_dict[name])
+    qz = my_data[0]
+    R = np.log10(my_data[2])
+
+
 
