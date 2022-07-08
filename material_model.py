@@ -37,6 +37,15 @@ def resetAlteredSF():
     with open('ff_Altered.pkl', 'wb') as handle:
         pickle.dump(ff, handle)
 
+def resetSF():
+    """
+        Purpose: Reset original form factors to original values
+        :return:
+        """
+    with open('ff_Altered.pkl.pkl', 'rb') as f:
+        ff = pickle.load(f)
+
+
 
 def resetAlteredSFM():
     """
@@ -51,6 +60,18 @@ def resetAlteredSFM():
 
     f.close()
     handle.close()
+
+def resetSFM():
+    """
+        Purpose: Reset original form factors to original values
+        :return:
+        """
+    with open('ff_Altered.pkl.pkl', 'rb') as f:
+        ffm = pickle.load(f)
+
+#def ffEnergyShift(element, dE):
+#    resetSF()
+#    ff = ff[element][:,0] + dE
 
 def form_factor(f,E):
     """
