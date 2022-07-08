@@ -385,6 +385,8 @@ class slab:
         self.find_sf = [dict(), dict()]  # [structural, magnetic]
         self.transition = None
         self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
+        self.scaling_factor = 1
+        self.background_shift = 0
 
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None):
