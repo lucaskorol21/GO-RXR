@@ -11,8 +11,11 @@ from time import time
 import pickle
 from numba import *
 from scipy import interpolate
-import os
-import shutil
+
+
+# Global variables required for increase in speed
+global ff
+global ffm
 
 # Loads all scattering factors when program imported
 with open('ff_Altered.pkl', 'rb') as f:
@@ -21,21 +24,25 @@ with open('ff_Altered.pkl', 'rb') as f:
 # Loads all scattering factors when program imported
 with open('form_factor_magnetic.pkl','rb') as f:
     ffm = pickle.load(f)
-f.close()
-
 
 
 def resetAlteredSF():
+    """
+    Purpose: Reset original form factors to original values
+    :return:
+    """
     with open('form_factor.pkl', 'rb') as f:
         ff = pickle.load(f)
 
     with open('ff_Altered.pkl', 'wb') as handle:
         pickle.dump(ff, handle)
 
-    f.close()
-    handle.close()
 
 def resetAlteredSFM():
+    """
+    Purpose: Reset original form factors to original value
+    :return:
+    """
     with open('form_factor_magnetic.pkl', 'rb') as f:
         ffm = pickle.load(f)
 
