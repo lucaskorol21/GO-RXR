@@ -11,6 +11,7 @@ from scipy import signal
 
 if __name__ == '__main__':
 
+    # Set up data analysis of the structural components (no magnetization)
     sample = slab(8)
 
     sample.addlayer(0, 'SrTiO3', 50, density =[0.027904,0.027904,0.083712], roughness=[7.58207,False,5.77093])
@@ -40,61 +41,7 @@ if __name__ == '__main__':
 
 
     fname = "Pim10uc.h5"
-    # WriteSampleHDF5(fname, sample)
-    f, data, data_dict, sim_dict = ReadDataHDF5(fname)
-    sample = ReadSampleHDF5(fname)
-    sample.plot_density_profile(8)
-    name = data[6][2]
-    print(name)
-    my_data = list(data_dict[name])
-    qz = my_data[0]
-    R = my_data[2]
 
 
-
-    tck = interpolate.splrep(qz, np.log10(R), s=0)
-    qz_new = np.arange(qz[0],qz[-1]+min(np.diff(qz)), min(np.diff(qz)))
-    R_interp = interpolate.splev(qz_new,tck)
-
-    spl = UnivariateSpline(qz_new, R_interp, k=3)
-    figure(4)
-    plt.plot(qz_new, R_interp)
-    plt.plot(qz_new, spl(qz_new))
-    Rnew = R_interp - spl(qz_new)
-
-    N = len(qz_new)
-    T = min(np.diff(qz))
-    Rf = fft(Rnew)
-    qzf = fftfreq(N,T)
-    qzf = fftshift(qzf)
-    Rfplot = fftshift(Rf)
-    plt.figure(1)
-    plt.plot(qzf, 1.0/N*np.abs(Rfplot))
-
-    plt.figure(2)
-    plt.plot(qz_new, Rnew)
-
-    f.close()
-    val = 101
-    window = np.zeros(N)
-    M = val//2
-    w = signal.windows.blackman(val)
-    window[N//2-M:N-N//2+M] = w
-
-    Rf_new = np.multiply(window, Rfplot)
-
-    R_filtered = ifft(ifftshift(Rf_new))
-    plt.figure(3)
-    plt.plot(R_filtered)
-    plt.show()
-
-    plt.figure(7)
-    plt.suptitle('Noise Removal')
-    plt.plot(qz_new, R_interp)
-    plt.plot(qz_new, R_filtered+spl(qz_new))
-    plt.legend(['Original', 'Filtered'])
-    plt.xlabel("Momentum Transfer (A^{-1})")
-    plt.ylabel("log10(R)")
-    plt.show()
 
 

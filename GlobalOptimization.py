@@ -18,63 +18,70 @@ def changeSampleParams(x, parameters, sample):
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
-        layer = params[0]  # Determine which layer to change
-        property = params[1]  # structural/polymorphous/magnetic
-        if property == 'STRUCTURAL':
-            mode = params[2]
-            # Determine if user wants to use compound or element mode
-            if mode == 'COMPOUND':
-                characteristic = params[3]  # thickness/density/roughness/linked roughness
-                for ele in list(sample.structure[layer].keys()):
+        if len(params) == 1:
+            if params[0] == "SCALING FACTOR":
+                sample.scaling_factor = x[p]
+            elif params[0] == "BACKGROUND SHIFT":
+                sample.background_shift = x[p]
+        else:
+            layer = params[0]  # Determine which layer to change
+            property = params[1]  # structural/polymorphous/magnetic
+            if property == 'STRUCTURAL':
+                mode = params[2]
+                # Determine if user wants to use compound or element mode
+                if mode == 'COMPOUND':
+                    characteristic = params[3]  # thickness/density/roughness/linked roughness
+                    for ele in list(sample.structure[layer].keys()):
+                        if characteristic == 'THICKNESS':
+                            sample.structure[layer][ele].thickness = x[p]
+                        elif characteristic == 'DENSITY':
+                            stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
+                            molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
+                            sample.structure[layer][ele].density = x[p]*stoich/molar_mass  # set density
+                        elif characteristic == 'ROUGHNESS':
+                            sample.structure[layer][ele].roughness = x[p]
+                        elif characteristic == 'LINKED ROUGHNESS':
+                            sample.structure[layer][ele].linked_roughness = x[p]
+
+                elif mode == 'ELEMENT':
+                    element = params[3]  # determines the element to change
+                    characteristic = params[4]  # thickness/density/roughness/linked roughness
                     if characteristic == 'THICKNESS':
-                        sample.structure[layer][ele].thickness = x[p]
+                        sample.structure[layer][element].thickness = x[p]
                     elif characteristic == 'DENSITY':
-                        stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
-                        molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
-                        sample.structure[layer][ele].density = x[p]*stoich/molar_mass  # set density
+                        sample.structure[layer][element].density = x[p]
                     elif characteristic == 'ROUGHNESS':
-                        sample.structure[layer][ele].roughness = x[p]
+                        sample.structure[layer][element].roughness = x[p]
                     elif characteristic == 'LINKED ROUGHNESS':
-                        sample.structure[layer][ele].linked_roughness = x[p]
+                        sample.structure[layer][element].linked_roughness = x[p]
 
-            elif mode == 'ELEMENT':
-                element = params[3]  # determines the element to change
-                characteristic = params[4]  # thickness/density/roughness/linked roughness
-                if characteristic == 'THICKNESS':
-                    sample.structure[layer][element].thickness = x[p]
-                elif characteristic == 'DENSITY':
-                    sample.structure[layer][element].density = x[p]
-                elif characteristic == 'ROUGHNESS':
-                    sample.structure[layer][element].roughness = x[p]
-                elif characteristic == 'LINKED ROUGHNESS':
-                    sample.structure[layer][element].linked_roughness = x[p]
+            elif property == 'POLYMORPHOUS':
+                element = params[3]  # determines the element that contains the polymorph
+                polymorph = params[4]  # determines the polymorph to change
 
-        elif property == 'POLYMORPHOUS':
-            element = params[3]  # determines the element that contains the polymorph
-            polymorph = params[4]  # determines the polymorph to change
+                ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
 
-            ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
+                poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
 
-            poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
+                # sets poly_ratio value making sure sum equals to 1
+                if poly == 0:
+                    sample.structure[layer][element].poly_ratio[0] = x[p]
+                    sample.structure[layer][element].poly_ratio[1] = ratio
+                elif poly == 1:
+                    sample.structure[layer][element].poly_ratio[1] = x[p]
+                    sample.structure[layer][element].poly_ratio[0] = ratio
 
-            # sets poly_ratio value making sure sum equals to 1
-            if poly == 0:
-                sample.structure[layer][element].poly_ratio[0] = x[p]
-                sample.structure[layer][element].poly_ratio[1] = ratio
-            elif poly == 1:
-                sample.structure[layer][element].poly_ratio[1] = x[p]
-                sample.structure[layer][element].poly_ratio[0] = ratio
+            elif property == 'MAGNETIC':
+                element = params[3]  # determines the magnetic element to use
 
-        elif property == 'MAGNETIC':
-            element = params[3]  # determines the magnetic element to use
+                # determines if magnetic element is polymorphous
+                if len(params) == 3:
+                    sample.structure[layer][element].mag_density[0] = x[p]  # non-polymorphous case
+                else:
+                    polymorph = params[4]  # polymorphous case
+                    poly = np.where(sample.structure[layer][element].polymorph == polymorph)
+                    sample.structure[layer][element].mag_density[poly] = x[p]
 
-            # determines if magnetic element is polymorphous
-            if len(params) == 3:
-                sample.structure[layer][element].mag_density[0] = x[p]  # non-polymorphous case
-            else:
-                polymorph = params[4]  # polymorphous case
-                poly = np.where(sample.structure[layer][element].polymorph == polymorph)
-                sample.structure[layer][element].mag_density[poly] = x[p]
 
     return sample
 
@@ -104,8 +111,9 @@ def scanCompute(x, *args):
 
             Rdat = np.log(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
-            Rsim = np.log(Rsim[pol])
+            Rsim = np.log10(Rsim[pol]*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift)
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
+
 
 
 
@@ -129,7 +137,7 @@ def scanCompute(x, *args):
 def global_optimization(fname, scan, parameters, bounds, algorithm = 'differential_evolution'):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
 
     # makes sure that scan is a list
@@ -718,10 +726,10 @@ if __name__ == "__main__":
 
     fname = 'Pim10uc.h5'
 
-    sample.plot_density_profile(1)
-    plt.show()
+    #sample.plot_density_profile(1)
+    #plt.show()
     #WriteSampleHDF5(fname, sample)
-    #ReadDataHDF5(fname)
+    #print(ReadDataHDF5(fname))
 
 
     parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
@@ -730,11 +738,13 @@ if __name__ == "__main__":
                   [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [5, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [6, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
+                  [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+                  'SCALING FACTOR',
+                  'BACKGROUND SHIFT']
 
 
-    lw = [3.5,3.5,17.3,8.5,2,3,8.6]
-    up = [6.5,6.5,19.8,11.5,4,5,11.6]
+    lw = [3.5,3.5,17.3,8.5,2,3,8.6,0.8, -5e-7]
+    up = [6.5,6.5,19.8,11.5,4,5,11.6,1.2, 5e-7]
     bounds = list(zip(lw, up))
     scans = [0,1,2,3,4,5,6]
 
@@ -744,8 +754,8 @@ if __name__ == "__main__":
     end = time()
     print(end-start)
 
-    x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
+    #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
 
-    Var = sum((x-x_expected)**2)/len(x_expected)
-    print(Var)
+    #Var = sum((x-x_expected)**2)/len(x_expected)
+    #print(Var)
 
