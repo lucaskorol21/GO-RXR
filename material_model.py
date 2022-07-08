@@ -11,14 +11,39 @@ from time import time
 import pickle
 from numba import *
 from scipy import interpolate
+import os
+import shutil
 
-with open('form_factor.pkl', 'rb') as f:
+# Loads all scattering factors when program imported
+with open('ff_Altered.pkl', 'rb') as f:
     ff = pickle.load(f)
 
-
+# Loads all scattering factors when program imported
 with open('form_factor_magnetic.pkl','rb') as f:
     ffm = pickle.load(f)
+f.close()
 
+
+
+def resetAlteredSF():
+    with open('form_factor.pkl', 'rb') as f:
+        ff = pickle.load(f)
+
+    with open('ff_Altered.pkl', 'wb') as handle:
+        pickle.dump(ff, handle)
+
+    f.close()
+    handle.close()
+
+def resetAlteredSFM():
+    with open('form_factor_magnetic.pkl', 'rb') as f:
+        ffm = pickle.load(f)
+
+    with open('ffm_Altered.pkl', 'wb') as handle:
+        pickle.dump(ffm, handle)
+
+    f.close()
+    handle.close()
 
 def form_factor(f,E):
     """
@@ -258,7 +283,10 @@ if __name__ == "__main__":
     plt.title('ReMagX vs. Python Script (800 eV)')
     plt.show()
     """
-    my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
-    file = my_dir + "\\" + "Ni.txt"
-    print(file)
-    np.loadtxt(file)
+    #my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
+    #file = my_dir + "\\" + "Ni.txt"
+    #print(file)
+    #np.loadtxt(file)
+
+    resetAlteredSFM()
+
