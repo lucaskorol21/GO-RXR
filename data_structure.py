@@ -37,6 +37,8 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
+    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
 
     dsLayer = 0
     for my_layer in sample.structure:
@@ -276,6 +278,8 @@ def ReadSampleHDF5(fname):
     sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
     sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
     sample.layer_magnetized = S.attrs['LayerMagnetized']
+    sample.scaling_factor = S.attrs['ScalingFactor']
+    sample.background_shift = S.attrs['BackgroundShift']
 
     # Retrieves the general layer information
     for lay_key in S.keys():
@@ -420,6 +424,8 @@ def WriteSampleHDF5(fname, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
+    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
 
     # Sets the information for each layer
     dsLayer = 0
@@ -512,7 +518,9 @@ def WriteSampleASCII(file,sample):
     file.write("numberlayers = %s \n" % str(n))
     file.write("polyelements = %s \n" % str(sample.poly_elements))
     file.write("magelements = %s \n" % str(sample.mag_elements))
-    file.write("layermagnetized = %s \n\n" % sample.layer_magnetized)
+    file.write("layermagnetized = %s \n" % sample.layer_magnetized)
+    file.write("scalingfactor = %s \n" % str(sample.scaling_factor))
+    file.write("backgroundshift = %s \n\n" % str(sample.background_shift))
 
     # writing the layer and element information
     num_lay = 0
@@ -917,6 +925,9 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
+    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
+
 
     # general layer information
     dsLayer = 0
@@ -1188,11 +1199,12 @@ def ReadDataASCII(fname):
                         line = ''.join(line)
                         layermagnetized = ast.literal_eval(line)
                         sample.layer_magnetized = layermagnetized
-                    elif line[0] == 'link':
-                        line.pop(0)
-                        line = ''.join(line)
-                        link = ast.literal_eval(line)
-                        sample.link = link
+                    elif line[0] == 'scalingfactor':
+                        scaling_factor = float(line[1])
+                        sample.scaling_factor = scaling_factor
+                    elif line[0] == 'backgroundshift':
+                        background_shift = float(line[1])
+                        sample.background_shift = background_shift
                     elif line[0] == 'layer':
                         layer = int(line[1])
                     elif line[0] == 'formula':
@@ -1220,6 +1232,9 @@ def ReadDataASCII(fname):
                         elif line[0] == 'roughness':
                             roughness = float(line[1])
                             sample.structure[layer][element].roughness = roughness
+                        elif line[0] == 'linkedroughness':
+                            linked_roughness = float(line[1])
+                            sample.structure[layer][element].linked_roughness = linked_roughness
                         elif line[0] == 'scatteringfactor':
                             line.pop(0)
                             if len(line) == 1:
