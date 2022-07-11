@@ -40,7 +40,7 @@ if __name__ == '__main__':
     sample.addlayer(7,'CCO', 10.1373, density =[0.05,0.05,0.01], roughness=2, linked_roughness=[3,1.5,False])
 
 
-    fname = "Pim10uc.h5"
+
 
 
 

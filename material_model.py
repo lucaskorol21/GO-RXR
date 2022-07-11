@@ -13,16 +13,15 @@ from numba import *
 from scipy import interpolate
 
 
-# Global variables required for increase in speed
-global ff
-global ffm
 
 # Loads all scattering factors when program imported
 with open('ff_Altered.pkl', 'rb') as f:
+    global ff
     ff = pickle.load(f)
 
 # Loads all scattering factors when program imported
-with open('form_factor_magnetic.pkl','rb') as f:
+with open('ffm_Altered.pkl','rb') as f:
+    global ffm
     ffm = pickle.load(f)
 
 
@@ -31,6 +30,7 @@ def resetAlteredSF():
     Purpose: Reset original form factors to original values
     :return:
     """
+    global ff
     with open('form_factor.pkl', 'rb') as f:
         ff = pickle.load(f)
 
@@ -42,7 +42,8 @@ def resetSF():
         Purpose: Reset original form factors to original values
         :return:
         """
-    with open('ff_Altered.pkl.pkl', 'rb') as f:
+    global ff
+    with open('ff_Altered.pkl', 'rb') as f:
         ff = pickle.load(f)
 
 
@@ -52,28 +53,73 @@ def resetAlteredSFM():
     Purpose: Reset original form factors to original value
     :return:
     """
+    global ffm
     with open('form_factor_magnetic.pkl', 'rb') as f:
         ffm = pickle.load(f)
 
     with open('ffm_Altered.pkl', 'wb') as handle:
         pickle.dump(ffm, handle)
 
-    f.close()
-    handle.close()
 
 def resetSFM():
     """
-        Purpose: Reset original form factors to original values
-        :return:
-        """
-    with open('ff_Altered.pkl.pkl', 'rb') as f:
+    Purpose: Reset original form factors to original values
+    :return:
+    """
+    global ffm
+    with open('ffm_Altered.pkl', 'rb') as f:
         ffm = pickle.load(f)
 
-#def ffEnergyShift(element, dE):
-#    resetSF()
-#    ff = ff[element][:,0] + dE
+def FfEnergyShift(element, dE, opt=False):
+    """
+    Purpose: set the energy shift for the form factor of a specified element
+    :param element: the element symbol
+    :param dE: the energy shift in eV
+    :param opt: boolean that determines if you want to optimize the energy shift
+                    True - use the optimization capability
+                    False - set the form factor to the new shifted value
+    :return:
+    """
+    if opt:  # no optimization
+        global ff
+        ff[element][:,0] = ff[element][:,0] + dE  #energy shift
+
+        # save shifted value to file
+        with open('ff_Altered.pkl') as f:
+            pickle.dump(ff, f)
+        f.close()
+    else:  # optimization
+        resetSF()
+        global ff
+        ff[element][:,0] = ff[element][:,0] + dE
+
+
+
+def FfmEnergyShift(element,dE, opt = False):
+    """
+    Purpose: set the energy shift for the magnetic scattering factor
+    :param element: symbol for desired element to shift
+    :param dE: desired energy shift
+    :param opt: boolean that specifies if energy shift will be optimized
+                    True - optimization
+                    False - no-optimization and save to altered form factor file
+    :return:
+    """
+
+    if opt: # non-optimization
+        global ffm
+        ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
+
+        with open("ffm_Altered.pkl") as f:  # save shifted magnetic form factor to altered file
+            pickle.dump(ffm, f)
+        f.close()
+    else:  # optimization
+        resetSFM()
+        global ffm
+        ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
 
 def form_factor(f,E):
+
     """
     Purpose: Determines form factors with energy E using linear interpolation
     :param f: List of form factors
@@ -98,7 +144,8 @@ def find_form_factor(element, E, mag):
     :param mag: Boolean specifying if the magnetic form factor is desired
     :return:
     """
-
+    global ffm
+    global ff
     if mag:
         mag_keys = list(ffm.keys())
         if element not in mag_keys:
@@ -316,5 +363,5 @@ if __name__ == "__main__":
     #print(file)
     #np.loadtxt(file)
 
-    resetAlteredSFM()
+    resetAlteredSF()
 
