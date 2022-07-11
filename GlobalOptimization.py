@@ -1,10 +1,11 @@
 from scipy import optimize
-from material_structure import *
+#from material_structure import *
 import numpy as np
 from data_structure import *
 import matplotlib.pyplot as plt
 from time import time
 from tkinter import *
+from material_model import *
 
 
 def changeSampleParams(x, parameters, sample):
@@ -55,6 +56,7 @@ def changeSampleParams(x, parameters, sample):
                     elif characteristic == 'LINKED ROUGHNESS':
                         sample.structure[layer][element].linked_roughness = x[p]
 
+
             elif property == 'POLYMORPHOUS':
                 element = params[3]  # determines the element that contains the polymorph
                 polymorph = params[4]  # determines the polymorph to change
@@ -81,6 +83,17 @@ def changeSampleParams(x, parameters, sample):
                     polymorph = params[4]  # polymorphous case
                     poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
+
+            elif property == 'SCATTERING FACTOR':
+
+                mode = params[2]
+                element = params[3]
+                dE = x[p]
+
+                if mode == 'STRUCTURAL':
+                    FfEnergyShift(element, dE, opt=True)
+                elif mode == 'MAGNETIC':
+                    FfmEnergyShift(element, dE, opt=True)
 
 
     return sample
@@ -739,12 +752,13 @@ if __name__ == "__main__":
                   [5, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [6, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  'SCALING FACTOR',
-                  'BACKGROUND SHIFT']
+                  ['SCALING FACTOR'],
+                  ['BACKGROUND SHIFT'],
+                  ['SCATTERING FACTOR','STRUCTURAL','La']]
 
 
-    lw = [3.5,3.5,17.3,8.5,2,3,8.6,0.8, -5e-7]
-    up = [6.5,6.5,19.8,11.5,4,5,11.6,1.2, 5e-7]
+    lw = [3.5,3.5,17.3,8.5,2,3,8.6,0.8, -5e-7, -0.5]
+    up = [6.5,6.5,19.8,11.5,4,5,11.6,1.2, 5e-7, 0.5]
     bounds = list(zip(lw, up))
     scans = [0,1,2,3,4,5,6]
 
