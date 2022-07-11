@@ -143,12 +143,10 @@ def scanCompute(x, *args):
 
     return chi2
 
-
-def global_optimization(fname, scan, parameters, bounds, algorithm = 'differential_evolution'):
+def differential_evolution(fname,scan, parameters, bounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.01, display=False):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
     f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
-
 
     # makes sure that scan is a list
     if type(scan) != list or type(scan) != np.ndarray:
@@ -158,64 +156,68 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
 
     params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
 
-    if algorithm == 'differential_evolution':
-        # This line will be used to select and use different global optimization algorithms
-        ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy='currenttobest1exp', maxiter=10, tol=0.00001, disp=True)
-        x = ret.x
-        fun = ret.fun
-    elif algorithm == 'shgo':
-        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=64, iters=3)
-        x = ret.x
-        fun = ret.fun
-    elif algorithm == 'dual_annealing':
-        ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=300)
-        x = ret.x
-        fun = ret.fun
-    else:
-        raise NameError('Parameter algorithm not set properly')
+
+    # This line will be used to select and use different global optimization algorithms
+    ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=strat,
+                                          maxiter=mIter, tol=tolerance, disp=display)
+    x = ret.x
+    fun = ret.fun
+
 
     print('Chi: ' + str(fun))
     print('Fitting parameters: ', x)
-    sample = changeSampleParams(x, parameters, sample)
-
-
-    #WriteSampleHDF5(fname, sample)
-    for scan in scans:
-        scanType = scan[1]
-        name = scan[2]
-        if scanType == 'Reflectivity':
-            myDataScan = data[name]
-            myData = list(myDataScan)
-            E = myDataScan.attrs['Energy']
-            pol = myDataScan.attrs['Polarization']
-            qz = np.array(myData[0])
-
-            Rdat = np.array(myData[2])
-            qz, Rsim = sample.reflectivity(E, qz)
-            Rsim = Rsim[pol]
-
-            plt.figure()
-            plt.suptitle('Fit: ' + name)
-            plt.plot(qz,np.log10(Rdat))
-            plt.plot(qz, np.log10(Rsim))
-            plt.legend(['Data','Simulation'])
-            plt.show()
-
-        elif scanType == 'Energy':
-            myDataScan = data[name]
-            myData = list(myDataScan)
-            Theta = myDataScan.attrs['Angle']
-            E = np.array(myData[3])
-            pol = myDataScan.attrs['Polarization']
-
-            Rdat = np.array(myData[2])
-            Rsim = sample.energy_scan(Theta, E)
-            Rsim = Rsim[pol]
-
-
 
     f.close()
     return x, fun
+
+def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
+    sample = ReadSampleHDF5(fname)  # import the sample information
+
+    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+
+    # makes sure that scan is a list
+    if type(scan) != list or type(scan) != np.ndarray:
+        scan = [scan]
+
+    scans = data_info[tuple(scan)]
+
+    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+
+    ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=N, iters=iterations)
+    x = ret.x
+    fun = ret.fun
+
+    print('Chi: ' + str(fun))
+    print('Fitting parameters: ', x)
+
+    f.close()
+    return x, fun
+
+def dual_annealing(fname, scan, parameters, bounds, mIter=300):
+    sample = ReadSampleHDF5(fname)  # import the sample information
+
+    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+
+    # makes sure that scan is a list
+    if type(scan) != list or type(scan) != np.ndarray:
+        scan = [scan]
+
+    scans = data_info[tuple(scan)]
+
+    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+
+
+    ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=mIter)
+    x = ret.x
+    fun = ret.fun
+
+
+    print('Chi: ' + str(fun))
+    print('Fitting parameters: ', x)
+
+    f.close()
+    return x, fun
+
 
 def selectOptimize(fname):
     sample = ReadSampleHDF5(fname)  # import the sample information
@@ -752,7 +754,7 @@ if __name__ == "__main__":
 
 
     start = time.time()
-    x, fun = global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
+    x, fun = differential_evolution(fname, scans, parameters, bounds)
     end = time.time()
     print(end-start)
 
