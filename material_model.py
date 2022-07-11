@@ -1,28 +1,20 @@
-import cython
-import Pythonreflectivity as pr
-import numpy
-import numpy as np
-import matplotlib.pyplot as plt
-import cmath
-from KK_And_Merge import *
-import os
 from material_structure import *
-from time import time
 import pickle
 from numba import *
 from scipy import interpolate
-
 
 
 # Loads all scattering factors when program imported
 with open('ff_Altered.pkl', 'rb') as f:
     global ff
     ff = pickle.load(f)
+f.close()
 
 # Loads all scattering factors when program imported
 with open('ffm_Altered.pkl','rb') as f:
     global ffm
     ffm = pickle.load(f)
+f.close()
 
 
 def resetAlteredSF():
@@ -80,8 +72,8 @@ def FfEnergyShift(element, dE, opt=False):
                     False - set the form factor to the new shifted value
     :return:
     """
-    if opt:  # no optimization
-        global ff
+    global ff
+    if not(opt):  # no optimization
         ff[element][:,0] = ff[element][:,0] + dE  #energy shift
 
         # save shifted value to file
@@ -90,7 +82,6 @@ def FfEnergyShift(element, dE, opt=False):
         f.close()
     else:  # optimization
         resetSF()
-        global ff
         ff[element][:,0] = ff[element][:,0] + dE
 
 
@@ -106,8 +97,8 @@ def FfmEnergyShift(element,dE, opt = False):
     :return:
     """
 
-    if opt: # non-optimization
-        global ffm
+    global ffm
+    if not(opt): # non-optimization
         ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
 
         with open("ffm_Altered.pkl") as f:  # save shifted magnetic form factor to altered file
@@ -115,7 +106,6 @@ def FfmEnergyShift(element,dE, opt = False):
         f.close()
     else:  # optimization
         resetSFM()
-        global ffm
         ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
 
 def form_factor(f,E):

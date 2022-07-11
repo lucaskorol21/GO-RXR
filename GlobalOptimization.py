@@ -1,9 +1,9 @@
 from scipy import optimize
-#from material_structure import *
+from material_structure import *
 import numpy as np
 from data_structure import *
 import matplotlib.pyplot as plt
-from time import time
+import time
 from tkinter import *
 from material_model import *
 
@@ -19,11 +19,20 @@ def changeSampleParams(x, parameters, sample):
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
-        if len(params) == 1:
-            if params[0] == "SCALING FACTOR":
-                sample.scaling_factor = x[p]
-            elif params[0] == "BACKGROUND SHIFT":
-                sample.background_shift = x[p]
+
+        if params[0] == "SCALING FACTOR":
+            sample.scaling_factor = x[p]
+        elif params[0] == "BACKGROUND SHIFT":
+            sample.background_shift = x[p]
+        elif params[0] == 'SCATTERING FACTOR':
+            mode =params[1]
+            element = params[2]
+            dE = x[p]
+
+            if mode == 'STRUCTURAL':
+                FfEnergyShift(element, dE, opt=True)
+            elif mode == 'MAGNETIC':
+                FfmEnergyShift(element, dE, opt=True)
         else:
             layer = params[0]  # Determine which layer to change
             property = params[1]  # structural/polymorphous/magnetic
@@ -84,18 +93,6 @@ def changeSampleParams(x, parameters, sample):
                     poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
-            elif property == 'SCATTERING FACTOR':
-
-                mode = params[2]
-                element = params[3]
-                dE = x[p]
-
-                if mode == 'STRUCTURAL':
-                    FfEnergyShift(element, dE, opt=True)
-                elif mode == 'MAGNETIC':
-                    FfmEnergyShift(element, dE, opt=True)
-
-
     return sample
 
 def scanCompute(x, *args):
@@ -124,7 +121,7 @@ def scanCompute(x, *args):
 
             Rdat = np.log(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
-            Rsim = np.log10(Rsim[pol]*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift)
+            Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
 
@@ -203,10 +200,6 @@ def global_optimization(fname, scan, parameters, bounds, algorithm = 'differenti
             plt.plot(qz, np.log10(Rsim))
             plt.legend(['Data','Simulation'])
             plt.show()
-
-
-
-
 
         elif scanType == 'Energy':
             myDataScan = data[name]
@@ -749,23 +742,18 @@ if __name__ == "__main__":
                   [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  [5, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  [6, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  [7, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  ['SCALING FACTOR'],
-                  ['BACKGROUND SHIFT'],
-                  ['SCATTERING FACTOR','STRUCTURAL','La']]
+                  ['SCATTERING FACTOR', 'STRUCTURAL', 'La']]
 
 
-    lw = [3.5,3.5,17.3,8.5,2,3,8.6,0.8, -5e-7, -0.5]
-    up = [6.5,6.5,19.8,11.5,4,5,11.6,1.2, 5e-7, 0.5]
+    lw = [3.5,3.5,17.3,8.5,-0.5]
+    up = [6.5,6.5,19.8,11.5,0.5]
     bounds = list(zip(lw, up))
     scans = [0,1,2,3,4,5,6]
 
 
-    start = time()
+    start = time.time()
     x, fun = global_optimization(fname, scans, parameters, bounds, algorithm='differential_evolution')
-    end = time()
+    end = time.time()
     print(end-start)
 
     #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])

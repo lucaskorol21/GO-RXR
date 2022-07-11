@@ -1,25 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import math
-from collections import OrderedDict
-from scipy.special import erf
-from scipy.integrate import simpson
-import scipy.optimize as optimize
-import warnings
 from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
-from tabulate import tabulate
-from scipy import interpolate
-import multiprocessing
-from functools import partial
-from itertools import repeat
-from time import *
-from multiprocessing.pool import ThreadPool
 from numba import *
 import tkinter as tk
 from tkinter import ttk
-
+from collections import OrderedDict
+from scipy.special import erf
 
 
 
