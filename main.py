@@ -1,5 +1,6 @@
 from data_structure import *
 from material_structure import *
+from GlobalOptimization import *
 import matplotlib.pyplot as plt
 import numpy as np
 from numba import *
@@ -11,7 +12,7 @@ from scipy import signal
 
 if __name__ == '__main__':
 
-    # Set up data analysis of the structural components (no magnetization)
+    # Define the sample model
     sample = slab(8)
 
     sample.addlayer(0, 'SrTiO3', 50, density =[0.027904,0.027904,0.083712], roughness=[7.58207,False,5.77093])
@@ -39,7 +40,12 @@ if __name__ == '__main__':
 
     sample.addlayer(7,'CCO', 10.1373, density =[0.05,0.05,0.01], roughness=2, linked_roughness=[3,1.5,False])
 
+    # save new sample model to current file
+    fname = 'Pim10uc.h5'
+    WriteSampleHDF5(fname, sample)
 
+    # View experimental scans and simulated scans
+    #f, data, data_dict, sim_dict = ReadDataHDF5(fname)
 
 
 

@@ -1270,126 +1270,124 @@ class slab:
 
         return energy, R
 
+    def showSampleParameters(self):
 
+        parameters = ['Thickness', 'Density', 'Roughness', 'Linked Roughness',
+                      'Stoichiometry', 'Polymorph', 'Gamma', 'Phi', 'Magnetic Density',
+                      'Scattering Factor', 'Magnetic Scattering Factor']
+        root = tk.Tk()
+        root.title('Sample Information')
+        root.geometry("900x900")
+        tree = ttk.Treeview(root)
+        ttk.Style().configure('Treeview', rowheight=30)
 
-def showSampleParameters(sample):
+        structure = self.structure
 
-    parameters = ['Thickness', 'Density', 'Roughness', 'Linked Roughness',
-                  'Stoichiometry', 'Polymorph', 'Gamma', 'Phi', 'Magnetic Density',
-                  'Scattering Factor', 'Magnetic Scattering Factor']
-    root = tk.Tk()
-    root.title('Sample Information')
-    root.geometry("900x900")
-    tree = ttk.Treeview(root)
-    ttk.Style().configure('Treeview', rowheight=30)
+        # Loop through all the different elements
+        for layer in range(len(structure)):
+            if layer == 0:
+                layer_name = 'Substrate'
+            else:
+                layer_name = 'Layer ' + str(layer)
+            tree.insert("",layer, layer_name, text=layer_name)  # adding the layer to the tree
 
-    structure = sample.structure
+            elements = list(structure[layer].keys())
 
-    # Loop through all the different elements
-    for layer in range(len(structure)):
-        if layer == 0:
-            layer_name = 'Substrate'
-        else:
-            layer_name = 'Layer ' + str(layer)
-        tree.insert("",layer, layer_name, text=layer_name)  # adding the layer to the tree
+            for e in range(len(elements)):
+                element = elements[e]
+                element_name = element + " " + str(layer)
+                tree.insert(layer_name,e,element_name,text=element)
 
-        elements = list(structure[layer].keys())
-
-        for e in range(len(elements)):
-            element = elements[e]
-            element_name = element + " " + str(layer)
-            tree.insert(layer_name,e,element_name,text=element)
-
-            for param in parameters:
-                if param == 'Thickness':
-                    thick_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name,1,thick_name,text=param)
-                    thick_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(thick_name, 1, thick_data_name, text=str(structure[layer][element].thickness) + " (A)")
-                elif param == 'Density':
-                    density_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 2, density_name, text=param)
-                    density_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(density_name, 1, density_data_name, text=str(structure[layer][element].density) + " (mol/cm^3)")
-                elif param == 'Roughness':
-                    rough_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 3, rough_name, text=param)
-                    rough_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(rough_name, 1, rough_data_name, text=str(structure[layer][element].roughness)) + " (A)"
-                elif param == 'Linked Roughness':
-                    link_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 4, link_name, text=param)
-                    link_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(link_name, 1, link_data_name, text=str(structure[layer][element].linked_roughness)) + " (A)"
-                elif param == 'Stoichiometry':
-                    stoich_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 5, stoich_name, text=param)
-                    stoich_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(stoich_name, 1, stoich_data_name, text=structure[layer][element].stoichiometry)
-                elif param == 'Polymorph':
-                    polymorphs = structure[layer][element].polymorph
-                    if len(polymorphs) != 0:
-                        polymorphs_name = param + " " + element + " " + str(layer)
-                        tree.insert(element_name, 6, polymorphs_name, text=param)
-                        for poly in range(len(polymorphs)):
-                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
-                            tree.insert(polymorphs_name, poly, poly_name, text=polymorphs[poly])
-                            poly_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
-                            poly_data = 'Ratio = ' + str(structure[layer][element].poly_ratio[poly])
-                            tree.insert(poly_name, 1, poly_density_name, text=poly_data)
-                elif param == 'Gamma':
-                    gamma_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 7, gamma_name, text=param)
-                    gamma_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(gamma_name, 1, gamma_data_name, text=str(structure[layer][element].gamma) + " degrees")
-                elif param == 'Phi':
-                    phi_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 8, phi_name, text=param)
-                    phi_data_name = param + " " + element + " " + str(layer) + " data"
-                    tree.insert(phi_name, 1, phi_data_name, text=str(structure[layer][element].phi) + " degrees")
-                elif param == 'Magnetic Density':
-                    polymorphs = structure[layer][element].polymorph
-                    if len(polymorphs) != 0:
-                        magnetic_name = param + " " + element + " " + str(layer)
-                        tree.insert(element_name, 9, magnetic_name, text=param)
-                        for poly in range(len(polymorphs)):
-                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
-                            tree.insert(magnetic_name, poly, poly_name, text=polymorphs[poly])
-                            mag_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
-                            poly_data = str(structure[layer][element].mag_density[poly]) + " mol/cm^3"
-                            tree.insert(poly_name, 1, mag_density_name, text=poly_data)
-                elif param == 'Scattering Factor':
-                    polymorphs = structure[layer][element].polymorph
-                    scat_name = param + " " + element + " " + str(layer)
-                    tree.insert(element_name, 9, scat_name, text=param)
-                    if len(polymorphs) != 0:
-                        for poly in range(len(polymorphs)):
-                            poly_name = param + " " + polymorphs[poly] + " " + str(layer)
-                            tree.insert(scat_name, poly, poly_name, text=polymorphs[poly])
-                            scat_fact_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
-                            poly_data = str(structure[layer][element].scattering_factor[poly])
-                            tree.insert(poly_name, 1, scat_fact_name, text=poly_data)
-                    else:
-                        scat_fact_name = param + " " + element + " " +str(layer) + " " + "data"
-                        tree.insert(scat_name, 1, scat_fact_name, text=structure[layer][element].scattering_factor)
-                elif param == 'Magnetic Scattering Factor':
-                    polymorphs = structure[layer][element].polymorph
-                    if len(structure[layer][element].mag_density) != 0:
-                        mag_scat_name = param + " " + element + " " + str(layer)
-                        tree.insert(element_name, 9, mag_scat_name, text=param)
+                for param in parameters:
+                    if param == 'Thickness':
+                        thick_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name,1,thick_name,text=param)
+                        thick_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(thick_name, 1, thick_data_name, text=str(structure[layer][element].thickness) + " (A)")
+                    elif param == 'Density':
+                        density_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 2, density_name, text=param)
+                        density_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(density_name, 1, density_data_name, text=str(structure[layer][element].density) + " (mol/cm^3)")
+                    elif param == 'Roughness':
+                        rough_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 3, rough_name, text=param)
+                        rough_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(rough_name, 1, rough_data_name, text=str(structure[layer][element].roughness)) + " (A)"
+                    elif param == 'Linked Roughness':
+                        link_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 4, link_name, text=param)
+                        link_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(link_name, 1, link_data_name, text=str(structure[layer][element].linked_roughness)) + " (A)"
+                    elif param == 'Stoichiometry':
+                        stoich_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 5, stoich_name, text=param)
+                        stoich_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(stoich_name, 1, stoich_data_name, text=structure[layer][element].stoichiometry)
+                    elif param == 'Polymorph':
+                        polymorphs = structure[layer][element].polymorph
+                        if len(polymorphs) != 0:
+                            polymorphs_name = param + " " + element + " " + str(layer)
+                            tree.insert(element_name, 6, polymorphs_name, text=param)
+                            for poly in range(len(polymorphs)):
+                                poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                                tree.insert(polymorphs_name, poly, poly_name, text=polymorphs[poly])
+                                poly_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                                poly_data = 'Ratio = ' + str(structure[layer][element].poly_ratio[poly])
+                                tree.insert(poly_name, 1, poly_density_name, text=poly_data)
+                    elif param == 'Gamma':
+                        gamma_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 7, gamma_name, text=param)
+                        gamma_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(gamma_name, 1, gamma_data_name, text=str(structure[layer][element].gamma) + " degrees")
+                    elif param == 'Phi':
+                        phi_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 8, phi_name, text=param)
+                        phi_data_name = param + " " + element + " " + str(layer) + " data"
+                        tree.insert(phi_name, 1, phi_data_name, text=str(structure[layer][element].phi) + " degrees")
+                    elif param == 'Magnetic Density':
+                        polymorphs = structure[layer][element].polymorph
+                        if len(polymorphs) != 0:
+                            magnetic_name = param + " " + element + " " + str(layer)
+                            tree.insert(element_name, 9, magnetic_name, text=param)
+                            for poly in range(len(polymorphs)):
+                                poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                                tree.insert(magnetic_name, poly, poly_name, text=polymorphs[poly])
+                                mag_density_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                                poly_data = str(structure[layer][element].mag_density[poly]) + " mol/cm^3"
+                                tree.insert(poly_name, 1, mag_density_name, text=poly_data)
+                    elif param == 'Scattering Factor':
+                        polymorphs = structure[layer][element].polymorph
+                        scat_name = param + " " + element + " " + str(layer)
+                        tree.insert(element_name, 9, scat_name, text=param)
                         if len(polymorphs) != 0:
                             for poly in range(len(polymorphs)):
                                 poly_name = param + " " + polymorphs[poly] + " " + str(layer)
-                                tree.insert(mag_scat_name, poly, poly_name, text=polymorphs[poly])
-                                mag_scat_fact_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
-                                poly_data = str(structure[layer][element].mag_scattering_factor[poly])
-                                tree.insert(poly_name, 1, mag_scat_fact_name, text=poly_data)
+                                tree.insert(scat_name, poly, poly_name, text=polymorphs[poly])
+                                scat_fact_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                                poly_data = str(structure[layer][element].scattering_factor[poly])
+                                tree.insert(poly_name, 1, scat_fact_name, text=poly_data)
                         else:
-                            scat_fact_name = param + " " + element + " " + str(layer) + " " + "data"
-                            tree.insert(mag_scat_name, 1, scat_fact_name, text=structure[layer][element].mag_scattering_factor)
+                            scat_fact_name = param + " " + element + " " +str(layer) + " " + "data"
+                            tree.insert(scat_name, 1, scat_fact_name, text=structure[layer][element].scattering_factor)
+                    elif param == 'Magnetic Scattering Factor':
+                        polymorphs = structure[layer][element].polymorph
+                        if len(structure[layer][element].mag_density) != 0:
+                            mag_scat_name = param + " " + element + " " + str(layer)
+                            tree.insert(element_name, 9, mag_scat_name, text=param)
+                            if len(polymorphs) != 0:
+                                for poly in range(len(polymorphs)):
+                                    poly_name = param + " " + polymorphs[poly] + " " + str(layer)
+                                    tree.insert(mag_scat_name, poly, poly_name, text=polymorphs[poly])
+                                    mag_scat_fact_name = param + " " + polymorphs[poly] + " " + str(layer) + " " + "data"
+                                    poly_data = str(structure[layer][element].mag_scattering_factor[poly])
+                                    tree.insert(poly_name, 1, mag_scat_fact_name, text=poly_data)
+                            else:
+                                scat_fact_name = param + " " + element + " " + str(layer) + " " + "data"
+                                tree.insert(mag_scat_name, 1, scat_fact_name, text=structure[layer][element].mag_scattering_factor)
 
-    tree.pack(expand=True, fill='both')
-    root.mainloop()
+        tree.pack(expand=True, fill='both')
+        root.mainloop()
 
 if __name__ == "__main__":
     print('Nope')
