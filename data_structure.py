@@ -342,7 +342,7 @@ def ReadDataHDF5(fname):
     for Ekey in ES.keys():
         mydata = ES[Ekey]
         data_dict[Ekey] = ES[Ekey]
-        sim_dict[Ekey] = ES[Ekey]
+        sim_dict[Ekey] = SimE[Ekey]
         Edat = [int(mydata.attrs['DatasetNumber']),'Energy', Ekey]
         data.append(Edat)
 
