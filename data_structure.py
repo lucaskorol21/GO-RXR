@@ -225,7 +225,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                     float(EInfo[i - 1][4]) - float(EInfo[i][4])) < 0.1):
                 qz = EScans[i][:,2]
                 E = EScans[i][:,0]
-                A = (EScans[i-1][:,2]-EScans[i][:,3])/(EScans[i-1][:,2]+EScans[i][:,3])
+                A = (EScans[i-1][:,3]-EScans[i][:,3])/(EScans[i-1][:,3]+EScans[i][:,3])
                 Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
                 dat = np.array([qz, Theta, A,E])
                 energy = float(EInfo[i][3])

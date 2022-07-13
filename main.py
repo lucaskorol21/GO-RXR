@@ -24,6 +24,8 @@ def getInfo(val):
     data_dict = val[1]
     sim_dict = val[2]
 
+    scanNumberList = list(data[:,0])
+
     scans = list()
     # select the scan you would like to view
     #   provide option if they want to skip this step and simply just select the scans
@@ -32,7 +34,7 @@ def getInfo(val):
         scan_number = input("Select which scan you would like to view? ")
         if scan_number.upper() == "EXIT":
             exit()
-        while scan_number not in data[:, 0]:
+        while scan_number not in scanNumberList:
             scan_number = input("Scan number not in dataset. Please select another scan to view: ")
             if scan_number.upper() == 'EXIT':
                 exit()
@@ -63,6 +65,7 @@ def getInfo(val):
                 plt.xlabel('Momentum Transfer, qz (A^{-1})')
                 plt.ylabel('Reflectivity')
                 plt.yscale('log')
+                plt.legend(['Data', 'Simulation'])
                 plt.show()
             else:
 
@@ -72,10 +75,38 @@ def getInfo(val):
                 plt.suptitle('Dataset ' + name + " : " + "Reflectivity Scan")
                 plt.xlabel('Momentum Transfer, qz (A^{-1})')
                 plt.ylabel('Reflectivity')
+                plt.legend(['Data', 'Simulation'])
                 plt.show()
 
         if scanType.upper() == 'ENERGY':
-            print('bye')
+
+            temp_data = list(dat)
+            qz_data = temp_data[3]
+            Rdata = temp_data[2]
+
+            temp_sim = list(sim)
+            qz_sim = temp_sim[3]
+            Rsim = temp_sim[2]
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.yscale('log')
+                plt.show()
+            else:
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.legend(['Data', 'Simulation'])
+                plt.show()
 
 
 
@@ -91,6 +122,8 @@ def getInfo(val):
 
         if my_scan.upper() == 'Y' or my_scan.upper == 'YES':
             scans.append(int(scan_number))
+            scanNumberList.remove(scan_number)
+
         select_scan = input('Would you like to select another scan (y/n)?')
         if select_scan.upper() != 'Y' and select_scan.upper() != 'YES' and select_scan.upper() != 'N' and select_scan.upper() != 'NO':
             select_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
