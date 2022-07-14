@@ -293,7 +293,6 @@ if __name__ == '__main__':
     data_dict = hdf5ToDict(data_dict)
     sim_dict = hdf5ToDict(sim_dict)
 
-    print(data_dict)
     # show the current scans
     scans = [1,2,3,4,5]
 
@@ -308,9 +307,11 @@ if __name__ == '__main__':
     p5 = mp.Process(target=selectOptimize(sample))
     p5.start()
 
-    p4.join()
+    p3.terminate()
+    p4.terminate()
     p5.join()
-    p3.join()
+    p3.terminate()
+    p4.terminate()
 
     #p3 = mp.Process(target=f3)
     #p3.start()

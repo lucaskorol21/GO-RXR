@@ -264,7 +264,8 @@ def selectOptimize(sample):
     while cont.upper() == 'Y':
         layer = input('Select layer you would like to optimize (0-'+str(number_layers-1)+"): ")
         if layer.upper() == 'EXIT':
-            quit()
+            return
+            #quit()
         while layer.upper() == 'SHOW':
             print(tab)
             print()
