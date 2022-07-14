@@ -1555,8 +1555,17 @@ def selectScan(fname):
         val = input('Select scan # you would like to use: ')
 
 
+def hdf5ToDict(hform):
 
+    mydict = dict()
+    for key in hform.keys():
+        mydict[key] = dict()
+        mydict[key]['Data'] = list(hform[key])
 
+        for attrskey,val in hform[key].attrs.items():
+            mydict[key][attrskey] = val
+
+    return mydict
 
 if __name__ == "__main__":
 

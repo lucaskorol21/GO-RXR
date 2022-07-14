@@ -18,17 +18,72 @@ import multiprocessing as mp
 import functools
 
 
+def plotScans(scans, data, data_dict, sim_dict):
 
+
+    my_index = list()
+    for s in scans:
+        my_index.append((data[:, 0].astype(int).tolist().index(s)))
+
+    my_scans = data[my_index]
+    # plot the sample model
+    fig_idx = 1
+    for s in my_scans:
+        name = s[2]
+        scanType = s[1]
+        scan_num = s[0]
+        dat = data_dict[name]
+        sim = sim_dict[name]
+        pol = dat['Polarization']
+
+        if scanType.upper() == 'REFLECTIVITY':
+            qz = dat['Data'][0]
+            R = dat['Data'][2]
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
+            plt.plot(qz, R)
+            plt.plot(qz, Rsim)
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Momentum Transfer, qz (A^{-1})')
+            plt.legend(['Experiment', 'Simulation'])
+
+        elif scanType.upper() == 'ENERGY':
+            E = dat['Data'][3]
+            R = dat['Data'][2]
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
+            plt.plot(E, R)
+            plt.plot(E, Rsim)
+
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Energy, E (eV)')
+            plt.legend(['Experiment', 'Simulation'])
+
+        fig_idx = fig_idx + 1
+
+    plt.show()
 def getInfo(val):
     data = val[0]
     data_dict = val[1]
     sim_dict = val[2]
+    queue = val[3]
 
     scanNumberList = list(data[:,0])
 
     scans = list()
     # select the scan you would like to view
     #   provide option if they want to skip this step and simply just select the scans
+
     select_scan = 'Y'
     while select_scan.upper() == 'Y' or select_scan.upper() == 'YES':
         scan_number = input("Select which scan you would like to view? ")
@@ -45,9 +100,7 @@ def getInfo(val):
 
         dat = data_dict[name]
         sim = sim_dict[name]
-        print(name, dat)
         pol = dat.attrs['Polarization']
-        print(scanType)
         if scanType.upper() == 'REFLECTIVITY':
             temp_data = list(dat)
             qz_data = temp_data[0]
@@ -130,6 +183,7 @@ def getInfo(val):
         if select_scan.upper() == 'EXIT':
             exit()
 
+    queue.put(scans)
 
 def createTable(data):
     # View the different scans
@@ -219,18 +273,51 @@ if __name__ == '__main__':
     f, data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
 
 
+    """
     # Running the two tasks at once
     f1 = functools.partial(createTable, data)
     f2 = functools.partial(getInfo, [data, data_dict, sim_dict])
-
+    queue = mp.Queue()
     p1 = mp.Process(target=f1)
     p1.start()
 
-    p2 = mp.Process(target=getInfo([data, data_dict, sim_dict]))
+    p2 = mp.Process(target=getInfo([data, data_dict, sim_dict,queue]))
     p2.start()
 
+    p1.terminate()
     p2.join()
-    p1.join()
+
+    scans = queue.get()
+    """
+
+    data_dict = hdf5ToDict(data_dict)
+    sim_dict = hdf5ToDict(sim_dict)
+
+    print(data_dict)
+    # show the current scans
+    scans = [1,2,3,4,5]
+
+    f3 = functools.partial(plotScans, scans, data, data_dict, sim_dict)
+
+    p4 = mp.Process(target=sample.showSampleParameters)
+    p4.start()
+
+    p3 = mp.Process(target=f3)
+    p3.start()
+
+    p5 = mp.Process(target=selectOptimize(sample))
+    p5.start()
+
+    p4.join()
+    p5.join()
+    p3.join()
+
+    #p3 = mp.Process(target=f3)
+    #p3.start()
+    #p3.join()
+
+
+
 
 
 

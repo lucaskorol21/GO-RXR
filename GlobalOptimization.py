@@ -219,45 +219,13 @@ def dual_annealing(fname, scan, parameters, bounds, mIter=300):
     return x, fun
 
 
-def selectOptimize(fname):
-    sample = ReadSampleHDF5(fname)  # import the sample information
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
-
-    # Sets up and prints scan table
-    header = ['#', 'Scan Type', 'Scan']
-    tab = PrettyTable(header)
-    tab.add_rows(data_info)
-    print(tab)
-
+def selectOptimize(sample):
 
     sample_params = list()
     upperbound = list()
     lowerbound = list()
 
-    # ------------------------------------------ Scan Selection ------------------------------------------------------ #
-    print('SCAN SELECTION')
-    print()
-    scans = input('Input scans from '+str(data_info[0,0])+' to '+ str(data_info[-1,0]) + ' for global optimization. Separate each scan using a space: ')
-    if scans.upper() == 'EXIT':
-        quit()
-    scans = scans.split()
-    scans = list(dict.fromkeys(scans))  # removes any duplicates
-    for scan in scans:
-        if scan not in data_info[:,0]:
-            val = input('This scan number ' + scan + ' does not exist. Would you like to select another scan (y/n)?')
-            if val.upper() == 'EXIT':
-                quit()
-            scans.remove(scan)
-            if val.upper() == 'Y':
-                scan = input('Input the new scan number: ')
-                if scan.upper() == 'EXIT':
-                    quit()
-                while scan not in data_info[:,0]:
-                    scan = input('Please input a scan that lies on the interval '+str(data_info[0,0])+' to '+ str(data_info[-1,0])+' : ')
-                    if scan.upper() == 'EXIT':
-                        quit()
-                scans.append(scan)
-    scans = [int(scan) for scan in scans]
+
 
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
     print()
@@ -700,7 +668,7 @@ def selectOptimize(fname):
     Ntab.add_rows(my_params)
     print(Ntab)
 
-    return data_info[scans], data, sims, sample_params, lowerbound, upperbound
+
 
 
 if __name__ == "__main__":
