@@ -881,7 +881,54 @@ def selectOptimize(sample, queue):
     queue.put(my_params)
 
 def getGlobOptParams(fname):
-    print(fname)
+    # Load in the sample information
+    sample = ReadSampleHDF5(fname)
+
+    # load in the data and simulation data
+    data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+
+    data_dict = hdf5ToDict(data_dict)
+    sim_dict = hdf5ToDict(sim_dict)
+    f.close()
+
+    # Running the two tasks at once
+    f1 = functools.partial(createTable, data)
+    queue = mp.Queue()
+
+    p1 = mp.Process(target=f1)
+    p1.start()
+
+    p2 = mp.Process(target=getInfo(data, data_dict, sim_dict, queue))
+    p2.start()
+
+    p2.join()
+    p1.terminate()
+
+    scans = queue.get()
+
+    queue1 = mp.Queue()
+    # show the current scans
+    # scans = [1,2,3,4,5]
+
+    f3 = functools.partial(plotScans, scans, data, data_dict, sim_dict)
+
+    p4 = mp.Process(target=sample.showSampleParameters)
+    p4.start()
+
+    p3 = mp.Process(target=f3)
+    p3.start()
+
+    p5 = mp.Process(target=selectOptimize(sample, queue1))
+    p5.start()
+
+    p5.join()
+    p3.terminate()
+    p4.terminate()
+
+    parameters = queue1.get()
+
+    print(scans)
+    print(parameters)
 
 
 if __name__ == "__main__":
