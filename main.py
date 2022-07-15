@@ -46,7 +46,7 @@ if __name__ == '__main__':
     fname = 'Pim10uc.h5'
     #WriteSampleHDF5(fname, sample)
 
-
+    getGlobOptParams(fname)
 
 
 

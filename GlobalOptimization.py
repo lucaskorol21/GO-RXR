@@ -12,31 +12,43 @@ import multiprocessing as mp
 import functools
 
 def plotScans(scans, data, data_dict, sim_dict):
+    """
+    Purpose: Plot the all the selected scans
+    :param scans: An array containing the scans that you want to plot
+    :param data: The two dimensional list that contains scan number and name
+    :param data_dict: Data dictionary
+    :param sim_dict: Simulation dictionary
+    :return:
+    """
 
-
-    my_index = list()
+    my_index = list()  # contains the indices of the appropriate scans
+    # Finds the indices of each scan
     for s in scans:
         my_index.append((data[:, 0].astype(int).tolist().index(s)))
 
-    my_scans = data[my_index]
+    my_scans = data[my_index] # gets all the appropriate scans
+
     # plot the sample model
     fig_idx = 1
     for s in my_scans:
-        name = s[2]
-        scanType = s[1]
-        scan_num = s[0]
+
+        name = s[2]  # name of the scan
+        scanType = s[1]  # scan type
+        scan_num = s[0]  # scan number
         dat = data_dict[name]
         sim = sim_dict[name]
         pol = dat['Polarization']
 
         if scanType.upper() == 'REFLECTIVITY':
-            qz = dat['Data'][0]
-            R = dat['Data'][2]
+            qz = dat['Data'][0]  # momentum transfer
+            R = dat['Data'][2]  # reflectivity
             Rsim = sim['Data'][2]
             plt.figure(fig_idx)
             plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
-            plt.plot(qz, R)
-            plt.plot(qz, Rsim)
+            plt.plot(qz, R)  # data
+            plt.plot(qz, Rsim)  # simulation
+
+            # Change log scale for non-asymmetry scans
             if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
                 plt.yscale('log')
                 plt.ylabel('log(R)')
@@ -46,14 +58,15 @@ def plotScans(scans, data, data_dict, sim_dict):
             plt.legend(['Experiment', 'Simulation'])
 
         elif scanType.upper() == 'ENERGY':
-            E = dat['Data'][3]
-            R = dat['Data'][2]
+            E = dat['Data'][3]  # Energy
+            R = dat['Data'][2]  # Reflectivity
             Rsim = sim['Data'][2]
             plt.figure(fig_idx)
             plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
-            plt.plot(E, R)
-            plt.plot(E, Rsim)
+            plt.plot(E, R)  # data
+            plt.plot(E, Rsim)  # simulation
 
+            # Changes the yscale depending on if scan is an asymmetry scan
             if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
                 plt.yscale('log')
                 plt.ylabel('log(R)')
@@ -65,30 +78,39 @@ def plotScans(scans, data, data_dict, sim_dict):
         fig_idx = fig_idx + 1
 
     plt.show()
+    return
 
-def getInfo(data, data_dict, sim_dict, queue):
+def getScans(data, data_dict, sim_dict, queue):
+    """
+    Purpose: Asks user what scans they would like to see and use for global optimization.
+    :param data: array containing scan number, scan type, and scan name
+    :param data_dict: data dictionary
+    :param sim_dict: simulation dictionary
+    :param queue: multiprocessing queue used to store scans
+    :return:
+    """
 
 
-    scanNumberList = list(data[:,0])
+    scanNumberList = list(data[:,0])  # get the scan number list
 
     scans = list()
-    # select the scan you would like to view
-    #   provide option if they want to skip this step and simply just select the scans
 
+    # enter a while loop that asks user which scan they would like to view and if they would like to optimize that scan
     select_scan = 'Y'
     while select_scan.upper() == 'Y' or select_scan.upper() == 'YES':
         scan_number = input("Select which scan you would like to view? ")
         if scan_number.upper() == "EXIT":
-            exit()
+            return
         while scan_number not in scanNumberList:
             scan_number = input("Scan number not in dataset. Please select another scan to view: ")
             if scan_number.upper() == 'EXIT':
-                exit()
+                return
 
-        # Plotting the Scan
+        # Plot the scan
         name = data[int(scan_number) - 1][2]
         scanType = data[int(scan_number) - 1][1]
 
+        # Plotting  the selected scan
         dat = data_dict[name]
         sim = sim_dict[name]
         pol = dat['Polarization']
@@ -142,7 +164,6 @@ def getInfo(data, data_dict, sim_dict, queue):
                 plt.yscale('log')
                 plt.show()
             else:
-
                 plt.figure()
                 plt.plot(qz_data, Rdata)
                 plt.plot(qz_sim, Rsim)
@@ -157,12 +178,12 @@ def getInfo(data, data_dict, sim_dict, queue):
         # Questions for the user
         my_scan = input('Would you like to add scan ' + str(scan_number) + ' to data optimization (y/n)?')
         if my_scan.upper() == 'EXIT':
-            exit()
+            return
 
         while my_scan.upper() != 'Y' and my_scan.upper() != 'YES' and my_scan.upper() != 'N' and my_scan.upper() != 'NO':
             my_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
             if my_scan.upper() == 'EXIT':
-                exit()
+                return
 
         if my_scan.upper() == 'Y' or my_scan.upper == 'YES':
             scans.append(int(scan_number))
@@ -172,9 +193,10 @@ def getInfo(data, data_dict, sim_dict, queue):
         if select_scan.upper() != 'Y' and select_scan.upper() != 'YES' and select_scan.upper() != 'N' and select_scan.upper() != 'NO':
             select_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
         if select_scan.upper() == 'EXIT':
-            exit()
+            return
 
     queue.put(scans)
+    return
 
 def createTable(data):
     # View the different scans
@@ -845,13 +867,11 @@ def selectOptimize(sample, queue):
                 formula = layer_formula[sp][1]  # formula
                 characteristic = params[3]
                 temp_list.append(formula)
-                temp_list.append('N/A')
                 temp_list.append(characteristic)
             else:
                 element = params[3]
                 characteristic = params[4]
                 temp_list.append(element)
-                temp_list.append('N/A')
                 temp_list.append(characteristic)
         elif params[1] == 'POLYMORPHOUS':
             temp_list.append(params[2])  # poly element
@@ -887,10 +907,6 @@ def getGlobOptParams(fname):
     # load in the data and simulation data
     data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
 
-    data_dict = hdf5ToDict(data_dict)
-    sim_dict = hdf5ToDict(sim_dict)
-    f.close()
-
     # Running the two tasks at once
     f1 = functools.partial(createTable, data)
     queue = mp.Queue()
@@ -898,7 +914,7 @@ def getGlobOptParams(fname):
     p1 = mp.Process(target=f1)
     p1.start()
 
-    p2 = mp.Process(target=getInfo(data, data_dict, sim_dict, queue))
+    p2 = mp.Process(target=getScans(data, data_dict, sim_dict, queue))
     p2.start()
 
     p2.join()
@@ -927,9 +943,7 @@ def getGlobOptParams(fname):
 
     parameters = queue1.get()
 
-    print(scans)
-    print(parameters)
-
+    return
 
 if __name__ == "__main__":
     sample = slab(8)
