@@ -199,30 +199,30 @@ def getScans(data, data_dict, sim_dict, queue):
     return
 
 def createTable(data):
-    # View the different scans
-    ws = Tk()
-    ws.title('PythonGuides')
-    ws.geometry('700x250')
-    ws['bg'] = '#AC99F2'
+    """
+    Purpose: create a table that shows the scan number and it's info in a new window
+    :param data: array containing scan number, scan type, and scan name
+    :return:
+    """
+    # Create a tkinter tree
+    ws = Tk()  # create a new window
+    ws.title('Scan info')
+    ws.geometry('700x250')  # geometry of the new window
+    ws['bg'] = '#AC99F2'  # colour of the window
 
-    data_frame = Frame(ws)
-    data_frame.pack()
+    data_frame = Frame(ws)  # creates a new data frame
+    data_frame.pack()  # packs the new data frame
 
-    # scrollbar
+    # initializes the scrollbar
     data_scroll = Scrollbar(data_frame)
     data_scroll.pack(side=RIGHT, fill=Y)
 
-    # data_scroll = Scrollbar(data_frame, orient='horizontal')
-    # data_scroll.pack(side=BOTTOM, fill=X)
-
+    # sets the scrollbar configurations
     my_data = ttk.Treeview(data_frame, yscrollcommand=data_scroll.set, xscrollcommand=data_scroll.set)
     my_data.pack()
-
-    # data_scroll.config(command=my_data.yview)
     data_scroll.config(command=my_data.xview)
 
     # define our column
-
     my_data['columns'] = ('Scan Number', 'Scan Type', 'Scan Name')
 
     # format our column
@@ -237,12 +237,13 @@ def createTable(data):
     my_data.heading("Scan Type", text="Scan Type", anchor=CENTER)
     my_data.heading("Scan Name", text="Name", anchor=CENTER)
 
+    # insert the data to the data frame
     for idx in range(len(data)):
         my_data.insert(parent='', index='end', iid=idx, text='',
                        values=(data[idx][0], data[idx][1], data[idx][2]))
 
-    my_data.pack()
-    ws.mainloop()
+    my_data.pack()  # pack all of this into the data frame
+    ws.mainloop()  # begin an infinite loop that runs until the window is closed
 
 def changeSampleParams(x, parameters, sample):
     """
