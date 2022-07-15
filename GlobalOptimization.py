@@ -11,6 +11,7 @@ import multiprocessing as mp
 
 import functools
 
+
 def plotScans(scans, data, data_dict, sim_dict):
     """
     Purpose: Plot the all the selected scans
@@ -377,7 +378,7 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.01, display=False):
+def differential_evolution(fname,scan, parameters, bounds,sBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.01, display=False):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
@@ -1065,7 +1066,7 @@ if __name__ == "__main__":
 
     print(createBoundsDatatype(fname, scans, sBounds, sWeights))
     #start = time.time()
-    #x, fun = differential_evolution(fname, scans, parameters, bounds)
+    #x, fun = differential_evolution(fname, scans, parameters, bounds, sBounds)
     #end = time.time()
     #print(end-start)
 
