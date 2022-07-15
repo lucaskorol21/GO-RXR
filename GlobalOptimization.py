@@ -953,6 +953,51 @@ def getGlobOptParams(fname):
 
     return
 
+def createBoundsDatatype(fname, scans, sBounds, sWeights):
+
+        scanBounds = dict()
+
+        info, data_dict, sim_dict = ReadDataHDF5(fname)  # need for data info
+
+        # make sure the number of bounds, number of weights, and scans are all the same
+        ns = len(scans)
+        nB = len(sBounds)
+        nW = len(sWeights)
+
+        if ns != nB or ns != nW:
+            raise SyntaxError('Make sure that the number of bounds, scans, and weights all have the same lenght.')
+
+        for s in range(ns):
+            scan = scans[s]
+            scanType = info[scan-1][1]  # retrieve the scan type this
+            bound = sBounds[s]  # retrieve the scan's proper bounds
+            weight = sWeights[s]  # retrieve the scan's proper weights
+
+            nb = len(bound)
+            nw = len(weight)
+
+            if nb != nw:
+                raise SyntaxError('Make sure every scan has the same number of bounds and weights.')
+
+            # check to make sure that the bounds are in the proper range
+            for b in bound:
+                up = b[0]
+                low = b[1]
+                if scanType == 'Reflectivity':
+
+                    if up < 0 or up > 1:
+                        raise ValueError('Scan ' + str(scan) + ': Upper bound momentum transfer bounds should be found between 0 and 1')
+                    if low < 0 or low> 1:
+                        raise ValueError('Scan ' + str(scan) + ': Lower bound momentum transfer bounds should be found between 0 and 1')
+
+                elif scanType == 'Energy':
+                    if up < 1 or low < 1:
+                        raise ValueError('Bounds for energy scan appear to be set for a reflectivity scan ')
+
+            scanBounds[scan] = (bound, weight)
+
+        return scanBounds
+
 if __name__ == "__main__":
     sample = slab(8)
 
@@ -1002,11 +1047,27 @@ if __name__ == "__main__":
     bounds = list(zip(lw, up))
     scans = [1,2,3,4,5,6]
 
+    # determines the bounds for the scans
+    sBounds = [[(0.1,0.8)],
+               [(0.1,0.3),(0.3,0.5),(0.6,0.8)],
+               [(0.1,0.6),(0.7,0.8)],
+               [(0.1,0.5)],
+               [(0.2,0.6),(0.6,0.8)],
+               [(0.1,0.8)]]
 
-    start = time.time()
-    x, fun = differential_evolution(fname, scans, parameters, bounds)
-    end = time.time()
-    print(end-start)
+    # Determines the weights you want to use for each bound
+    sWeights = [[1],
+                [1,0.2,0.5],
+                [1,0.1],
+                [0.5],
+                [1,0.8],
+                [0.7]]
+
+    print(createBoundsDatatype(fname, scans, sBounds, sWeights))
+    #start = time.time()
+    #x, fun = differential_evolution(fname, scans, parameters, bounds)
+    #end = time.time()
+    #print(end-start)
 
     #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
 
