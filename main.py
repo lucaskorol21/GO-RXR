@@ -10,7 +10,6 @@ from scipy.interpolate import UnivariateSpline
 from scipy import signal
 import time
 
-import asyncio
 from tkinter import *
 from tkinter import ttk
 import multiprocessing as mp
@@ -72,11 +71,9 @@ def plotScans(scans, data, data_dict, sim_dict):
         fig_idx = fig_idx + 1
 
     plt.show()
-def getInfo(val):
-    data = val[0]
-    data_dict = val[1]
-    sim_dict = val[2]
-    queue = val[3]
+
+def getInfo(data, data_dict, sim_dict, queue):
+
 
     scanNumberList = list(data[:,0])
 
@@ -100,13 +97,13 @@ def getInfo(val):
 
         dat = data_dict[name]
         sim = sim_dict[name]
-        pol = dat.attrs['Polarization']
+        pol = dat['Polarization']
         if scanType.upper() == 'REFLECTIVITY':
-            temp_data = list(dat)
+            temp_data = dat['Data']
             qz_data = temp_data[0]
             Rdata = temp_data[2]
 
-            temp_sim = list(sim)
+            temp_sim = sim['Data']
             qz_sim = temp_sim[0]
             Rsim = temp_sim[2]
             if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
@@ -133,11 +130,11 @@ def getInfo(val):
 
         if scanType.upper() == 'ENERGY':
 
-            temp_data = list(dat)
+            temp_data = dat['Data']
             qz_data = temp_data[3]
             Rdata = temp_data[2]
 
-            temp_sim = list(sim)
+            temp_sim = sim['Data']
             qz_sim = temp_sim[3]
             Rsim = temp_sim[2]
             if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
@@ -272,29 +269,29 @@ if __name__ == '__main__':
     # load in the data and simulation data
     f, data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
 
+    data_dict = hdf5ToDict(data_dict)
+    sim_dict = hdf5ToDict(sim_dict)
+    f.close()
 
-    """
     # Running the two tasks at once
     f1 = functools.partial(createTable, data)
-    f2 = functools.partial(getInfo, [data, data_dict, sim_dict])
     queue = mp.Queue()
+    
     p1 = mp.Process(target=f1)
     p1.start()
 
-    p2 = mp.Process(target=getInfo([data, data_dict, sim_dict,queue]))
+    p2 = mp.Process(target=getInfo(data, data_dict, sim_dict, queue))
     p2.start()
-
-    p1.terminate()
+    
     p2.join()
-
+    p1.terminate()
+    
     scans = queue.get()
-    """
 
-    data_dict = hdf5ToDict(data_dict)
-    sim_dict = hdf5ToDict(sim_dict)
 
+    queue1 = mp.Queue()
     # show the current scans
-    scans = [1,2,3,4,5]
+    #scans = [1,2,3,4,5]
 
     f3 = functools.partial(plotScans, scans, data, data_dict, sim_dict)
 
@@ -304,26 +301,19 @@ if __name__ == '__main__':
     p3 = mp.Process(target=f3)
     p3.start()
 
-    p5 = mp.Process(target=selectOptimize(sample))
+    p5 = mp.Process(target=selectOptimize(sample, queue1))
     p5.start()
 
-    p3.terminate()
-    p4.terminate()
+
     p5.join()
     p3.terminate()
     p4.terminate()
 
-    #p3 = mp.Process(target=f3)
-    #p3.start()
-    #p3.join()
+    parameters = queue1.get()
 
+    print(scans)
+    print(parameters)
 
-
-
-
-
-
-    f.close()
 
 
 

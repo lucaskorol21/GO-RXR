@@ -6,7 +6,221 @@ import matplotlib.pyplot as plt
 import time
 from tkinter import *
 from material_model import *
+from tkinter import ttk
+import multiprocessing as mp
 
+import functools
+
+def plotScans(scans, data, data_dict, sim_dict):
+
+
+    my_index = list()
+    for s in scans:
+        my_index.append((data[:, 0].astype(int).tolist().index(s)))
+
+    my_scans = data[my_index]
+    # plot the sample model
+    fig_idx = 1
+    for s in my_scans:
+        name = s[2]
+        scanType = s[1]
+        scan_num = s[0]
+        dat = data_dict[name]
+        sim = sim_dict[name]
+        pol = dat['Polarization']
+
+        if scanType.upper() == 'REFLECTIVITY':
+            qz = dat['Data'][0]
+            R = dat['Data'][2]
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
+            plt.plot(qz, R)
+            plt.plot(qz, Rsim)
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Momentum Transfer, qz (A^{-1})')
+            plt.legend(['Experiment', 'Simulation'])
+
+        elif scanType.upper() == 'ENERGY':
+            E = dat['Data'][3]
+            R = dat['Data'][2]
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
+            plt.plot(E, R)
+            plt.plot(E, Rsim)
+
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Energy, E (eV)')
+            plt.legend(['Experiment', 'Simulation'])
+
+        fig_idx = fig_idx + 1
+
+    plt.show()
+
+def getInfo(data, data_dict, sim_dict, queue):
+
+
+    scanNumberList = list(data[:,0])
+
+    scans = list()
+    # select the scan you would like to view
+    #   provide option if they want to skip this step and simply just select the scans
+
+    select_scan = 'Y'
+    while select_scan.upper() == 'Y' or select_scan.upper() == 'YES':
+        scan_number = input("Select which scan you would like to view? ")
+        if scan_number.upper() == "EXIT":
+            exit()
+        while scan_number not in scanNumberList:
+            scan_number = input("Scan number not in dataset. Please select another scan to view: ")
+            if scan_number.upper() == 'EXIT':
+                exit()
+
+        # Plotting the Scan
+        name = data[int(scan_number) - 1][2]
+        scanType = data[int(scan_number) - 1][1]
+
+        dat = data_dict[name]
+        sim = sim_dict[name]
+        pol = dat['Polarization']
+        if scanType.upper() == 'REFLECTIVITY':
+            temp_data = dat['Data']
+            qz_data = temp_data[0]
+            Rdata = temp_data[2]
+
+            temp_sim = sim['Data']
+            qz_sim = temp_sim[0]
+            Rsim = temp_sim[2]
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Reflectivity Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.yscale('log')
+                plt.legend(['Data', 'Simulation'])
+                plt.show()
+            else:
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Reflectivity Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.legend(['Data', 'Simulation'])
+                plt.show()
+
+        if scanType.upper() == 'ENERGY':
+
+            temp_data = dat['Data']
+            qz_data = temp_data[3]
+            Rdata = temp_data[2]
+
+            temp_sim = sim['Data']
+            qz_sim = temp_sim[3]
+            Rsim = temp_sim[2]
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.yscale('log')
+                plt.show()
+            else:
+
+                plt.figure()
+                plt.plot(qz_data, Rdata)
+                plt.plot(qz_sim, Rsim)
+                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
+                plt.xlabel('Momentum Transfer, qz (A^{-1})')
+                plt.ylabel('Reflectivity')
+                plt.legend(['Data', 'Simulation'])
+                plt.show()
+
+
+
+        # Questions for the user
+        my_scan = input('Would you like to add scan ' + str(scan_number) + ' to data optimization (y/n)?')
+        if my_scan.upper() == 'EXIT':
+            exit()
+
+        while my_scan.upper() != 'Y' and my_scan.upper() != 'YES' and my_scan.upper() != 'N' and my_scan.upper() != 'NO':
+            my_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
+            if my_scan.upper() == 'EXIT':
+                exit()
+
+        if my_scan.upper() == 'Y' or my_scan.upper == 'YES':
+            scans.append(int(scan_number))
+            scanNumberList.remove(scan_number)
+
+        select_scan = input('Would you like to select another scan (y/n)?')
+        if select_scan.upper() != 'Y' and select_scan.upper() != 'YES' and select_scan.upper() != 'N' and select_scan.upper() != 'NO':
+            select_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
+        if select_scan.upper() == 'EXIT':
+            exit()
+
+    queue.put(scans)
+
+def createTable(data):
+    # View the different scans
+    ws = Tk()
+    ws.title('PythonGuides')
+    ws.geometry('700x250')
+    ws['bg'] = '#AC99F2'
+
+    data_frame = Frame(ws)
+    data_frame.pack()
+
+    # scrollbar
+    data_scroll = Scrollbar(data_frame)
+    data_scroll.pack(side=RIGHT, fill=Y)
+
+    # data_scroll = Scrollbar(data_frame, orient='horizontal')
+    # data_scroll.pack(side=BOTTOM, fill=X)
+
+    my_data = ttk.Treeview(data_frame, yscrollcommand=data_scroll.set, xscrollcommand=data_scroll.set)
+    my_data.pack()
+
+    # data_scroll.config(command=my_data.yview)
+    data_scroll.config(command=my_data.xview)
+
+    # define our column
+
+    my_data['columns'] = ('Scan Number', 'Scan Type', 'Scan Name')
+
+    # format our column
+    my_data.column("#0", width=0, stretch=NO)
+    my_data.column("Scan Number", anchor=CENTER, width=160)
+    my_data.column("Scan Type", anchor=CENTER, width=160)
+    my_data.column("Scan Name", anchor=CENTER, width=320)
+
+    # Create Headings
+    my_data.heading("#0", text="", anchor=CENTER)
+    my_data.heading("Scan Number", text="Scan Number", anchor=CENTER)
+    my_data.heading("Scan Type", text="Scan Type", anchor=CENTER)
+    my_data.heading("Scan Name", text="Name", anchor=CENTER)
+
+    for idx in range(len(data)):
+        my_data.insert(parent='', index='end', iid=idx, text='',
+                       values=(data[idx][0], data[idx][1], data[idx][2]))
+
+    my_data.pack()
+    ws.mainloop()
 
 def changeSampleParams(x, parameters, sample):
     """
@@ -114,9 +328,9 @@ def scanCompute(x, *args):
         name = scan[2]
         if scanType == 'Reflectivity':
             myDataScan = data[name]
-            myData = list(myDataScan)
-            E = myDataScan.attrs['Energy']
-            pol = myDataScan.attrs['Polarization']
+            myData = myDataScan['Data']
+            E = myDataScan['Energy']
+            pol = myDataScan['Polarization']
             qz = np.array(myData[0])
 
             Rdat = np.log(np.array(myData[2]))
@@ -124,15 +338,12 @@ def scanCompute(x, *args):
             Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
-
-
-
         elif scanType == 'Energy':
             myDataScan = data[name]
-            myData = list(myDataScan)
-            Theta = myDataScan.attrs['Angle']
+            myData = myDataScan['Data']
+            Theta = myDataScan['Angle']
             E = np.array(myData[3])
-            pol = myDataScan.attrs['Polarization']
+            pol = myDataScan['Polarization']
 
             Rdat = np.log(np.array(myData[2]))
             Rsim = sample.energy_scan(Theta, E)
@@ -144,18 +355,18 @@ def scanCompute(x, *args):
     return chi2
 
 def differential_evolution(fname,scan, parameters, bounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.01, display=False):
-    sample = ReadSampleHDF5(fname)  # import the sample information
 
-    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+    sample = ReadSampleHDF5(fname)  # import the sample information
+    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     # makes sure that scan is a list
     if type(scan) != list or type(scan) != np.ndarray:
         scan = [scan]
 
-    scans = data_info[tuple(scan)]
+    scan = [s - 1 for s in scan]  # makes sure the indices are correct
+    scans = data_info[tuple(scan)]  # gets the appropriate scans
 
     params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
-
 
     # This line will be used to select and use different global optimization algorithms
     ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=strat,
@@ -167,7 +378,6 @@ def differential_evolution(fname,scan, parameters, bounds, strat = 'currenttobes
     print('Chi: ' + str(fun))
     print('Fitting parameters: ', x)
 
-    f.close()
     return x, fun
 
 def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
@@ -179,6 +389,7 @@ def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
     if type(scan) != list or type(scan) != np.ndarray:
         scan = [scan]
 
+    scan = [s - 1 for s in scan]  # makes sure the indices are correct
     scans = data_info[tuple(scan)]
 
     params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
@@ -202,6 +413,7 @@ def dual_annealing(fname, scan, parameters, bounds, mIter=300):
     if type(scan) != list or type(scan) != np.ndarray:
         scan = [scan]
 
+    scan = [s - 1 for s in scan]  # makes sure the indices are correct
     scans = data_info[tuple(scan)]
 
     params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
@@ -219,12 +431,11 @@ def dual_annealing(fname, scan, parameters, bounds, mIter=300):
     return x, fun
 
 
-def selectOptimize(sample):
+def selectOptimize(sample, queue):
 
     sample_params = list()
     upperbound = list()
     lowerbound = list()
-
 
 
     # ----------------------------------------- Parameter Selection -------------------------------------------------- #
@@ -660,16 +871,17 @@ def selectOptimize(sample):
         temp_list.append(up)
         my_params.append(temp_list)
 
-    print()
-    print('The list of scans you requested are:' + str(scans))
-    print()
-    print(my_params)
+
+
     header = ['Layer', 'Property', 'Element(s)', 'Polymorph', 'Characteristic', 'Upper Bound', 'Lower Bound']
     Ntab = PrettyTable(header)
     Ntab.add_rows(my_params)
-    print(Ntab)
 
 
+    queue.put(my_params)
+
+def getGlobOptParams(fname):
+    print(fname)
 
 
 if __name__ == "__main__":
@@ -719,7 +931,7 @@ if __name__ == "__main__":
     lw = [3.5,3.5,17.3,8.5,-0.5]
     up = [6.5,6.5,19.8,11.5,0.5]
     bounds = list(zip(lw, up))
-    scans = [0,1,2,3,4,5,6]
+    scans = [1,2,3,4,5,6]
 
 
     start = time.time()

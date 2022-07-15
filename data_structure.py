@@ -398,8 +398,11 @@ def ReadDataHDF5(fname):
 
     """
     #f.close()
+    data_dict = hdf5ToDict(data_dict)
+    sim_dict = hdf5ToDict(sim_dict)
+    f.close()
 
-    return f, data, data_dict, sim_dict
+    return data, data_dict, sim_dict
 
 
 def WriteSampleHDF5(fname, sample):
@@ -1598,12 +1601,7 @@ if __name__ == "__main__":
 
     fname = "Pim10uc.h5"
     #WriteSampleHDF5(fname, sample)
-    f, data, data_dict, sim_dict = ReadDataHDF5(fname)
 
-    name = data[0][2]
-    my_data = list(data_dict[name])
-    qz = my_data[0]
-    R = np.log10(my_data[2])
 
 
 
