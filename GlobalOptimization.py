@@ -455,7 +455,14 @@ def dual_annealing(fname, scan, parameters, bounds, mIter=300):
 
 
 def selectOptimize(sample, queue):
+    """
+    Purpose: Ask the user the parameters they want to optimize
+    :param sample:
+    :param queue:
+    :return:
+    """
 
+    # make sure that when element or compound is selected, that the characteristic is no longer available
     sample_params = list()
     upperbound = list()
     lowerbound = list()
