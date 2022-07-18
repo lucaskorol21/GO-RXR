@@ -1096,6 +1096,8 @@ if __name__ == "__main__":
     end = time.time()
     print(end-start)
 
+
+    #
     #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
 
     #Var = sum((x-x_expected)**2)/len(x_expected)
