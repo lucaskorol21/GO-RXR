@@ -337,30 +337,49 @@ def scanCompute(x, *args):
 
     chi2 = 0  # what we will use to determine some values
 
-    sample = args[0]
-    scans = args[1]
-    data = args[2]
-    sims = args[3]
-    parameters = args[4]
+    sample = args[0]  # slab class
+    scans = args[1]  # data info
+    data = args[2]  # data dict
+    sims = args[3]  # simulation dict
+    parameters = args[4]  # defines which parameters to change
+    scanBounds = args[5]  # defines the bounds of the scans
 
     sample = changeSampleParams(x, parameters, sample)
 
 
 
     for scan in scans:
+        scan_number = int(scan[0])
         scanType = scan[1]
         name = scan[2]
+        scanbounds = scanBounds[scan_number]
+        xbound = scanbounds[0]
+        weights = scanbounds[1]
+
         if scanType == 'Reflectivity':
             myDataScan = data[name]
             myData = myDataScan['Data']
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
             qz = np.array(myData[0])
-
             Rdat = np.log(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
             Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
-            chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
+
+
+            for b in range(len(xbound)):
+                lw = xbound[b][0]
+                up = xbound[b][1]
+
+                w = weights[b]
+
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]
+
+                if len(idx) != 0:
+                    chi2 = chi2 + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
+
+
+            #chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
         elif scanType == 'Energy':
             myDataScan = data[name]
@@ -375,22 +394,22 @@ def scanCompute(x, *args):
 
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
-
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds,sBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.01, display=False):
+def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=False):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     # makes sure that scan is a list
-    if type(scan) != list or type(scan) != np.ndarray:
+    if type(scan) != list and type(scan) != np.ndarray:
         scan = [scan]
 
     scan = [s - 1 for s in scan]  # makes sure the indices are correct
-    scans = data_info[tuple(scan)]  # gets the appropriate scans
 
-    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+    scans = data_info[scan]  # gets the appropriate scans
+
+    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
 
     # This line will be used to select and use different global optimization algorithms
     ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=strat,
@@ -1047,12 +1066,11 @@ if __name__ == "__main__":
     parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
-                  ['SCATTERING FACTOR', 'STRUCTURAL', 'La']]
+                  [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
 
 
-    lw = [3.5,3.5,17.3,8.5,-0.5]
-    up = [6.5,6.5,19.8,11.5,0.5]
+    lw = [3.5,3.5,17.3,8.5]
+    up = [6.5,6.5,19.8,11.5]
     bounds = list(zip(lw, up))
     scans = [1,2,3,4,5,6]
 
@@ -1072,11 +1090,11 @@ if __name__ == "__main__":
                 [1,0.8],
                 [0.7]]
 
-    print(createBoundsDatatype(fname, scans, sBounds))
-    #start = time.time()
-    #x, fun = differential_evolution(fname, scans, parameters, bounds, sBounds)
-    #end = time.time()
-    #print(end-start)
+    scanBounds = createBoundsDatatype(fname, scans, sBounds, sWeights=sWeights)
+    start = time.time()
+    x, fun = differential_evolution(fname, scans, parameters, bounds, scanBounds, mIter=10, display=True, tolerance=1e-6)
+    end = time.time()
+    print(end-start)
 
     #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
 
