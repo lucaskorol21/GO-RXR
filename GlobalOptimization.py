@@ -1097,9 +1097,8 @@ if __name__ == "__main__":
     print(end-start)
 
 
-    #
-    #x_expected = np.array([5,5, 18.8437, 10, 3, 4, 10.1373])
-
-    #Var = sum((x-x_expected)**2)/len(x_expected)
-    #print(Var)
+    # Show the results for the global optimization
+    # compare with previous version
+    # allow user to use current sample model for next optimization
+    # give user option to save new sample
 
