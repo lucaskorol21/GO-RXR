@@ -954,7 +954,7 @@ def getGlobOptParams(fname):
 
     return
 
-def createBoundsDatatype(fname, scans, sBounds, sWeights):
+def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
         scanBounds = dict()
 
@@ -963,22 +963,30 @@ def createBoundsDatatype(fname, scans, sBounds, sWeights):
         # make sure the number of bounds, number of weights, and scans are all the same
         ns = len(scans)
         nB = len(sBounds)
-        nW = len(sWeights)
-
-        if ns != nB or ns != nW:
-            raise SyntaxError('Make sure that the number of bounds, scans, and weights all have the same lenght.')
+        if sWeights != None:
+            nW = len(sWeights)
+            if ns != nB or ns != nW:
+                raise SyntaxError('Make sure that the number of bounds, scans, and weights all have the same length.')
+        else:
+            if ns != nB:
+                raise SyntaxError('Make sure that the number of bounds and scans all have the same length.')
 
         for s in range(ns):
             scan = scans[s]
             scanType = info[scan-1][1]  # retrieve the scan type this
             bound = sBounds[s]  # retrieve the scan's proper bounds
-            weight = sWeights[s]  # retrieve the scan's proper weights
-
             nb = len(bound)
-            nw = len(weight)
+            if sWeights != None:
+                weight = sWeights[s]  # retrieve the scan's proper weights
+                nw = len(weight)
 
-            if nb != nw:
-                raise SyntaxError('Make sure every scan has the same number of bounds and weights.')
+                if nb != nw:
+                    raise SyntaxError('Make sure every scan has the same number of bounds and weights.')
+
+            else:
+                weight = [1 for i in range(nb)]
+
+
 
             # check to make sure that the bounds are in the proper range
             for b in bound:
@@ -1064,7 +1072,7 @@ if __name__ == "__main__":
                 [1,0.8],
                 [0.7]]
 
-    print(createBoundsDatatype(fname, scans, sBounds, sWeights))
+    print(createBoundsDatatype(fname, scans, sBounds))
     #start = time.time()
     #x, fun = differential_evolution(fname, scans, parameters, bounds, sBounds)
     #end = time.time()
