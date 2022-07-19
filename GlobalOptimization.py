@@ -91,8 +91,8 @@ def getScans(data, data_dict, sim_dict, queue):
     :param queue: multiprocessing queue used to store scans
     :return:
     """
-    print('Begin scan selection for global optimization. Input the number representing the task you want completed:')
-    print()
+    print('SCAN SELECTION FOR GLOBAL OPTIMIZATION \n')
+    print('Select an option:')
 
     stage1 = {'1': 'Select Scan',
               '2': 'Exit/Finished'}
@@ -116,6 +116,8 @@ def getScans(data, data_dict, sim_dict, queue):
     scanNumberList = list(data[:,0])  # get the scan number list
 
     scans = list()
+    boundaries = list()
+    weights = list()
 
     cont = True
 
@@ -124,6 +126,8 @@ def getScans(data, data_dict, sim_dict, queue):
     stg3 = False  # stage 3
     stg4 = False  # weight selection
 
+    scan = 0
+
     while cont:
 
         # Determines if user wants to select a scan
@@ -131,7 +135,8 @@ def getScans(data, data_dict, sim_dict, queue):
             for key in stage1.keys():
                 val = stage1[key]
                 print('\t'+key+': ' + val)
-            toggle = input("-> ")
+            toggle = input("\n" + "-> ")
+            print()
             if toggle != '1' and toggle != '2':
                 while toggle != '1' and toggle != '2':
                     toggle = input('Please select one of the provided options: ')
@@ -144,14 +149,20 @@ def getScans(data, data_dict, sim_dict, queue):
 
         # Determine which scans the user wants to use
         elif stg2:
+            print('SCAN SELECTION' + '\n')
             scan = input('Please select scan you would like to view: ')
             while scan not in scanNumberList:
-                scan = input('Please select scan you would like to view: ')
+                scan = input('Scan number must be found between '+scanNumberList[0]+' and ' + scanNumberList[-1]+': ')
+            while scan in scans:
+                scan = input('Scan ' + scan + ' already selected! Choose another scan: ')
+            print('\n Select an option: ')
+
 
             for key in stage2.keys():
                 val = stage2[key]
                 print('\t' + key + ': ' + val)
-            toggle = input("-> ")
+            toggle = input("\n" + "-> ")
+            print()
             if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                     toggle = input('Please select one of the provided options: ')
@@ -163,6 +174,7 @@ def getScans(data, data_dict, sim_dict, queue):
             elif toggle == '2':
                 pass
             elif toggle == '3':
+                pass
                 stg1 = True
                 stg2 = False
             elif toggle == '4':
@@ -170,27 +182,84 @@ def getScans(data, data_dict, sim_dict, queue):
 
         # Selecting bounds
         elif stg3:
+            scanNumber = data[int(scan) - 1][0]
+            scanType = data[int(scan) - 1][1]
+            scanName = data[int(scan) - 1][2]
+
+            print('\n Choose boundary options:')
             for key in stage3.keys():
                 val = stage3[key]
                 print('\t' + key + ': ' + val)
-            toggle = input("-> ")
+            toggle = input("\n" + "-> ")
+            print()
 
             if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                     toggle = input('Please select one of the provided options: ')
 
             if toggle == '1':
-                # set boundary
+                bound = []
+                if scanType == 'Reflectivity':
+                    qz_up = str(round(data_dict[scanName]['Data'][0][-1],2))
+                    qz_lw = str(round(data_dict[scanName]['Data'][0][0],2))
+                    bound = input('\n Enter the boundaries for scan ' + scan + ' in terms of qz (' + qz_lw + ', '+qz_up + '): ')
+
+                elif scanType == 'Energy':
+                    E_up = str(round(data_dict[scanName]['Data'][3][-1],2))
+                    E_lw = str(round(data_dict[scanName]['Data'][3][0],2))
+                    bound = input('\n Enter the boundaries for scan ' + scan + ' in terms of qz (' + E_lw + ', ' + E_up + '): ')
+
+                bound = bound.split()
+                bound = [ast.literal_eval(bd) for bd in bound]
+
+                prev = 0
+                tuple_eval = True
+                limit_eval = True
+                while tuple_eval or limit_eval:
+                    tuple_eval = False
+                    limit_eval = False
+                    for bd in bound:
+
+                        if type(bd) != tuple:
+                            tuple_eval = True
+                        elif bd[0] > bd[1] or prev > bd[0]:
+                            limit_eval = True
+                        prev = bd[1]
+                    if tuple_eval:
+                        bound = input('Enter the boundaries as tuples, each separated by spaces:')
+                        bound = bound.split()
+                        bound = [ast.literal_eval(bd) for bd in bound]
+                    if limit_eval:
+                        bound = input('Make sure boundary limits are in ascending order: ')
+                        bound = bound.split()
+                        bound = [ast.literal_eval(bd) for bd in bound]
+
+                boundaries.append(bound)
+                # go onto next step
                 stg3 = False
                 stg4 = True
             elif toggle == '2':
+                bound = []
+                if scanType == 'Reflectivity':
+                    qz_up =data_dict[scanName]['Data'][0][-1]
+                    qz_lw = data_dict[scanName]['Data'][0][0]
+                    bound = [(qz_lw, qz_up)]
 
+
+                elif scanType == 'Energy':
+                    E_up = data_dict[scanName]['Data'][3][-1]
+                    E_lw = data_dict[scanName]['Data'][3][0]
+                    bound = [(E_lw, E_up)]
+
+                boundaries.append(bound)
+                weights.append([1])
                 # set boundary and weights to default values
                 stg3 = False
                 stg1 = True
 
             elif toggle == '3':
                 # remove previous selected scan
+                scans.pop()
                 stg2 = True
                 stg3 = False
             elif toggle == '4':
@@ -202,22 +271,51 @@ def getScans(data, data_dict, sim_dict, queue):
                 val = stage4[key]
                 print('\t' + key + ': ' + val)
 
-            toggle = input("-> ")
+            toggle = input("\n" + "-> ")
+            print()
 
             if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
                     toggle = input('Please select one of the provided options: ')
 
             if toggle == '1':
+                num_weights = len(boundaries[-1])
+                weight = input('Input weights for the boundaries selected: ')
+                weight = weight.split()
+                while len(weight) != num_weights:
+                    weight = input('Select '+ str(num_weights)+' weights, each separated by a space: ')
+                    weight = weight.split()
+
+                weight = [float(w) for w in weight]
+
+                notFloat = True
+                notBig = True
+                while notFloat and notBig:
+                    notFloat = False
+                    notBig = False
+                    for w in weight:
+                        if type(w) != float:
+                            notFloat = True
+                        if w<0:
+                            notBig = True
+                    if notFloat:
+                        weight = input('Make sure you enter weight as an integer or float: ')
+                    elif notBig:
+                        weight = input('Weight must be positive: ')
+
+                weights.append(weight)
                 # set weights
                 stg1 = True
                 stg4 = False
             elif toggle == '2':
                 # set to default values
+                num_weights = len(boundaries[-1])
+                weight = [1 for n in range(num_weights)]
+                weights.append(weight)
                 stg1 = True
                 stg4 = False
             elif toggle == '3':
-
+                boundaries.pop()  # remove selected boundaries
                 # return to previous section
                 stg4 = False
                 stg3 = True
@@ -226,9 +324,11 @@ def getScans(data, data_dict, sim_dict, queue):
                 # set weights to default value and exit
                 cont = False
 
+    scanBounds = dict()
+    for idx in range(len(boundaries)):
+        scanBounds[scans[idx]] = (boundaries[idx], weights[idx])
 
-
-    queue.put(scans)
+    queue.put([scans, scanBounds])
     return
 
 def createTable(data):
@@ -1167,6 +1267,7 @@ if __name__ == "__main__":
     queue = mp.Queue()
     data, data_dict, sim_dict = ReadDataHDF5(fname)
     getScans(data, data_dict, sim_dict, queue)
+    print(queue.get())
     """
     parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
