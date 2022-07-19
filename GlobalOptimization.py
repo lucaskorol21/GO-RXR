@@ -1,3 +1,5 @@
+import copy
+
 from scipy import optimize
 from material_structure import *
 import numpy as np
@@ -1026,6 +1028,75 @@ def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
         return scanBounds
 
+def comparisonScanPlots(fname, x, parameters, scans):
+
+    sample = ReadSampleHDF5(fname)  # get the previous sample version
+    info, data_dict, sim_dict = ReadDataHDF5(fname)  # get the sample data and simulation data
+    newSample = changeSampleParams(x, parameters, sample)  # change to globally optimized parameters
+
+    scans = [s-1 for s in scans]
+    info = info[scans]  # retrieve only the needed scans
+
+    figNum = 1
+    for idx in range(len(info)):
+        scanNumber = info[idx][0]
+        scanType = info[idx][1]
+        scanName = info[idx][2]
+
+        pol = data_dict[scanName]['Polarization']
+        dat = data_dict[scanName]['Data']
+        sim = sim_dict[scanName]['Data']
+        if scanType == 'Reflectivity':
+
+            E = data_dict[scanName]['Energy']
+
+            qz = dat[0]
+            R = dat[2]
+            Rsim = sim[2]
+
+            qz, Rnew = newSample.reflectivity(E,qz)
+            Rnew = Rnew[pol]
+
+            plt.figure(figNum)
+            plt.suptitle('Reflectivity Scan: ' + scanName)
+            plt.plot(qz, R)
+            plt.plot(qz, Rsim)
+            plt.plot(qz, Rnew)
+            plt.legend(['Data', 'Current Model', 'Optimized Model'])
+            plt.xlabel('Momentum Transfer, qz (A^{-1})')
+            if pol == 'S' or pol == 'P' or pol=='LC' or pol=='RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+
+        elif scanType == 'Energy':
+            Theta = data_dict[scanName]['Angle']
+
+            E = dat[3]
+            R = dat[2]
+            Rsim = sim[2]
+
+            E, Rnew = newSample.energy_scan(Theta, E)
+            Rnew = Rnew[pol]
+
+            plt.figure(figNum)
+            plt.suptitle('Energy Scan: ' + scanName)
+            plt.plot(E, R)
+            plt.plot(E, Rsim)
+            plt.plot(E, Rnew)
+            plt.legend(['Data', 'Current Model', 'Optimized Model'])
+            plt.xlabel('Energy, E (eV)')
+            if pol == 'S' or pol == 'P' or pol=='LC' or pol=='RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+        figNum = figNum + 1
+
+    plt.show()
+    return
+
 if __name__ == "__main__":
     sample = slab(8)
 
@@ -1096,7 +1167,7 @@ if __name__ == "__main__":
     end = time.time()
     print(end-start)
 
-
+    comparisonScanPlots(fname, x, parameters, scans)
     # Show the results for the global optimization
     # compare with previous version
     # allow user to use current sample model for next optimization
