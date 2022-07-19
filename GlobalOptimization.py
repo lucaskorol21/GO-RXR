@@ -1,5 +1,3 @@
-import copy
-
 from scipy import optimize
 from material_structure import *
 import numpy as np
@@ -10,6 +8,7 @@ from tkinter import *
 from material_model import *
 from tkinter import ttk
 import multiprocessing as mp
+
 
 import functools
 
@@ -92,111 +91,142 @@ def getScans(data, data_dict, sim_dict, queue):
     :param queue: multiprocessing queue used to store scans
     :return:
     """
+    print('Begin scan selection for global optimization. Input the number representing the task you want completed:')
+    print()
+
+    stage1 = {'1': 'Select Scan',
+              '2': 'Exit/Finished'}
+
+    stage2 = {'1': 'Use Scan',
+              '2': 'Choose Different Scan',
+              '3': 'Return',
+              '4': 'Exit'}
+
+    stage3 = {'1': 'Select Scan Boundaries',
+              '2': 'Use Default Boundary and Weights',
+              '3': 'Return',
+              '4': 'Exit/Finish'}
+
+    stage4 = {'1': 'Select Scan Boundary Weights',
+              '2': 'Use Default Boundary Weights',
+              '3': 'Return',
+              '4': 'Exit'}
 
 
     scanNumberList = list(data[:,0])  # get the scan number list
 
     scans = list()
 
-    # enter a while loop that asks user which scan they would like to view and if they would like to optimize that scan
-    select_scan = 'Y'
-    while select_scan.upper() == 'Y' or select_scan.upper() == 'YES':
-        scan_number = input("Select which scan you would like to view? ")
-        if scan_number.upper() == "EXIT":
-            return
-        while scan_number not in scanNumberList:
-            scan_number = input("Scan number not in dataset. Please select another scan to view: ")
-            if scan_number.upper() == 'EXIT':
-                return
+    cont = True
 
-        # Plot the scan
-        name = data[int(scan_number) - 1][2]
-        scanType = data[int(scan_number) - 1][1]
+    stg1 = True   # stage 1
+    stg2 = False  # stage 2
+    stg3 = False  # stage 3
+    stg4 = False  # weight selection
 
-        # Plotting  the selected scan
-        dat = data_dict[name]
-        sim = sim_dict[name]
-        pol = dat['Polarization']
-        if scanType.upper() == 'REFLECTIVITY':
-            temp_data = dat['Data']
-            qz_data = temp_data[0]
-            Rdata = temp_data[2]
+    while cont:
 
-            temp_sim = sim['Data']
-            qz_sim = temp_sim[0]
-            Rsim = temp_sim[2]
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+        # Determines if user wants to select a scan
+        if stg1:
+            for key in stage1.keys():
+                val = stage1[key]
+                print('\t'+key+': ' + val)
+            toggle = input("-> ")
+            if toggle != '1' and toggle != '2':
+                while toggle != '1' and toggle != '2':
+                    toggle = input('Please select one of the provided options: ')
 
-                plt.figure()
-                plt.plot(qz_data, Rdata)
-                plt.plot(qz_sim, Rsim)
-                plt.suptitle('Dataset ' + name + " : " + "Reflectivity Scan")
-                plt.xlabel('Momentum Transfer, qz (A^{-1})')
-                plt.ylabel('Reflectivity')
-                plt.yscale('log')
-                plt.legend(['Data', 'Simulation'])
-                plt.show()
-            else:
+            if toggle == '2':
+                cont = False
+            elif toggle == '1':
+                stg1 = False
+                stg2 = True
 
-                plt.figure()
-                plt.plot(qz_data, Rdata)
-                plt.plot(qz_sim, Rsim)
-                plt.suptitle('Dataset ' + name + " : " + "Reflectivity Scan")
-                plt.xlabel('Momentum Transfer, qz (A^{-1})')
-                plt.ylabel('Reflectivity')
-                plt.legend(['Data', 'Simulation'])
-                plt.show()
+        # Determine which scans the user wants to use
+        elif stg2:
+            scan = input('Please select scan you would like to view: ')
+            while scan not in scanNumberList:
+                scan = input('Please select scan you would like to view: ')
 
-        if scanType.upper() == 'ENERGY':
+            for key in stage2.keys():
+                val = stage2[key]
+                print('\t' + key + ': ' + val)
+            toggle = input("-> ")
+            if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    toggle = input('Please select one of the provided options: ')
 
-            temp_data = dat['Data']
-            qz_data = temp_data[3]
-            Rdata = temp_data[2]
+            if toggle == '1':
+                scans.append(scan)
+                stg2 = False
+                stg3 = True
+            elif toggle == '2':
+                pass
+            elif toggle == '3':
+                stg1 = True
+                stg2 = False
+            elif toggle == '4':
+                cont = False
 
-            temp_sim = sim['Data']
-            qz_sim = temp_sim[3]
-            Rsim = temp_sim[2]
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+        # Selecting bounds
+        elif stg3:
+            for key in stage3.keys():
+                val = stage3[key]
+                print('\t' + key + ': ' + val)
+            toggle = input("-> ")
 
-                plt.figure()
-                plt.plot(qz_data, Rdata)
-                plt.plot(qz_sim, Rsim)
-                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
-                plt.xlabel('Momentum Transfer, qz (A^{-1})')
-                plt.ylabel('Reflectivity')
-                plt.yscale('log')
-                plt.show()
-            else:
-                plt.figure()
-                plt.plot(qz_data, Rdata)
-                plt.plot(qz_sim, Rsim)
-                plt.suptitle('Dataset ' + name + " : " + "Energy Scan")
-                plt.xlabel('Momentum Transfer, qz (A^{-1})')
-                plt.ylabel('Reflectivity')
-                plt.legend(['Data', 'Simulation'])
-                plt.show()
+            if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    toggle = input('Please select one of the provided options: ')
+
+            if toggle == '1':
+                # set boundary
+                stg3 = False
+                stg4 = True
+            elif toggle == '2':
+
+                # set boundary and weights to default values
+                stg3 = False
+                stg1 = True
+
+            elif toggle == '3':
+                # remove previous selected scan
+                stg2 = True
+                stg3 = False
+            elif toggle == '4':
+                # set boundary and weights to default and exit
+                cont = False
+
+        elif stg4:
+            for key in stage4.keys():
+                val = stage4[key]
+                print('\t' + key + ': ' + val)
+
+            toggle = input("-> ")
+
+            if toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    toggle = input('Please select one of the provided options: ')
+
+            if toggle == '1':
+                # set weights
+                stg1 = True
+                stg4 = False
+            elif toggle == '2':
+                # set to default values
+                stg1 = True
+                stg4 = False
+            elif toggle == '3':
+
+                # return to previous section
+                stg4 = False
+                stg3 = True
+
+            elif toggle == '4':
+                # set weights to default value and exit
+                cont = False
 
 
-
-        # Questions for the user
-        my_scan = input('Would you like to add scan ' + str(scan_number) + ' to data optimization (y/n)?')
-        if my_scan.upper() == 'EXIT':
-            return
-
-        while my_scan.upper() != 'Y' and my_scan.upper() != 'YES' and my_scan.upper() != 'N' and my_scan.upper() != 'NO':
-            my_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
-            if my_scan.upper() == 'EXIT':
-                return
-
-        if my_scan.upper() == 'Y' or my_scan.upper == 'YES':
-            scans.append(int(scan_number))
-            scanNumberList.remove(scan_number)
-
-        select_scan = input('Would you like to select another scan (y/n)?')
-        if select_scan.upper() != 'Y' and select_scan.upper() != 'YES' and select_scan.upper() != 'N' and select_scan.upper() != 'NO':
-            select_scan = input('Please select (y/n). If you want to exit please type \'exit\': ')
-        if select_scan.upper() == 'EXIT':
-            return
 
     queue.put(scans)
     return
@@ -910,7 +940,6 @@ def selectOptimize(sample, queue):
         elif params[1] == 'MAGNETIC':
             if len(params) == 3:
                 temp_list.append(params[2])  # element
-                temp_list.append('N/A')
                 temp_list.append('MAGNETIC DENSITY')
             else:
                 temp_list.append(params[2])  # poly element
@@ -927,8 +956,9 @@ def selectOptimize(sample, queue):
     Ntab = PrettyTable(header)
     Ntab.add_rows(my_params)
 
-
-    queue.put(my_params)
+    print(Ntab)
+    bounds = list(zip(lowerbound, upperbound))
+    queue.put([my_params,bounds])
 
 def getGlobOptParams(fname):
     # Load in the sample information
@@ -971,9 +1001,11 @@ def getGlobOptParams(fname):
     p3.terminate()
     p4.terminate()
 
-    parameters = queue1.get()
+    val = queue1.get()
+    parameters = val[0]
+    bounds = val[1]
 
-    return
+    return scans, parameters, bounds
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
@@ -1132,8 +1164,10 @@ if __name__ == "__main__":
     #plt.show()
     #WriteSampleHDF5(fname, sample)
     #print(ReadDataHDF5(fname))
-
-
+    queue = mp.Queue()
+    data, data_dict, sim_dict = ReadDataHDF5(fname)
+    getScans(data, data_dict, sim_dict, queue)
+    """
     parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
                   [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
@@ -1166,10 +1200,6 @@ if __name__ == "__main__":
     x, fun = differential_evolution(fname, scans, parameters, bounds, scanBounds, mIter=10, display=True, tolerance=1e-6)
     end = time.time()
     print(end-start)
-
+    
     comparisonScanPlots(fname, x, parameters, scans)
-    # Show the results for the global optimization
-    # compare with previous version
-    # allow user to use current sample model for next optimization
-    # give user option to save new sample
-
+    """

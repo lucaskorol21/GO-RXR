@@ -46,7 +46,47 @@ if __name__ == '__main__':
     fname = 'Pim10uc.h5'
     #WriteSampleHDF5(fname, sample)
 
-    getGlobOptParams(fname)
+    scans, parameters, bounds = getGlobOptParams(fname)
+
+    #parameters = [[1, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+    #              [2, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+    #              [3, 'STRUCTURAL', 'COMPOUND', 'THICKNESS'],
+    #              [4, 'STRUCTURAL', 'COMPOUND', 'THICKNESS']]
+
+    #lw = [3.5, 3.5, 17.3, 8.5]
+    #up = [6.5, 6.5, 19.8, 11.5]
+    #bounds = list(zip(lw, up))
+    #scans = [1, 2, 3, 4, 5, 6]
+
+    # determines the bounds for the scans
+    sBounds = [[(0.1, 0.8)],
+               [(0.1, 0.3), (0.3, 0.5), (0.6, 0.8)],
+               [(0.1, 0.6), (0.7, 0.8)],
+               [(0.1, 0.5)],
+               [(0.2, 0.6), (0.6, 0.8)],
+               [(0.1, 0.8)]]
+
+    # Determines the weights you want to use for each bound
+    sWeights = [[1],
+                [1, 0.2, 0.5],
+                [1, 0.1],
+                [0.5],
+                [1, 0.8],
+                [0.7]]
+
+    scanBounds = createBoundsDatatype(fname, scans, sBounds, sWeights=sWeights)
+
+    start = time.time()
+    x, fun = differential_evolution(fname, scans, parameters, bounds, scanBounds, mIter=10, display=True,
+                                    tolerance=1e-6)
+    end = time.time()
+    print(end - start)
+
+    comparisonScanPlots(fname, x, parameters, scans)
+    # Show the results for the global optimization
+    # compare with previous version
+    # allow user to use current sample model for next optimization
+    # give user option to save new sample
 
 
 
