@@ -618,6 +618,12 @@ def parameterSelection(sample, queue):
     param = list()  # keeps track of the current selection tree
     upperbound = list()  # upper bound of the parameter
     lowerbound = list()  # lower bound of the parameter
+    compoundBounds = False
+    elementBounds = False
+    magneticBounds = False
+    polyBounds = False
+    lastStep = False
+    val = 0
 
     print('PARAMETER SELECTION \n')
     cont = True
@@ -809,17 +815,188 @@ def parameterSelection(sample, queue):
         elif compound_mode:
             temp = dict()
             print('COMPOUND MODE \n')
-            print('Select one of the options: ')
+            print('Select an option: ')
             idx = 1
             for char in compoundList:
                 print('\t '+str(idx)+': ' + char)
                 temp[str(idx)] = char
                 idx = idx + 1
 
+            print('\t '+str(idx)+': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            print('\t ' + str(idx) + ': Exit')
+            temp[str(idx)] = 'Exit'
+
             toggle = input('\n -> ')
             print()
             while toggle not in list(temp.keys()):
-                toggle = input('Select ')
+                toggle = input('Select one of the options provided: ')
+            print()
+
+            if temp[toggle] == 'Thickness':
+                compoundList.remove('Thickness')
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].remove('Thickness')
+                    val = sample.structure[param[0]][ele].thickness
+                param.append('THICKNESS')
+
+                compound_mode = False
+                compoundBounds = True
+
+            elif temp[toggle] == 'Density':
+                compoundList.remove('Density')
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].remove('Density')
+                    val = sample.structure[param[0]][ele].density
+                param.append('DENSITY')
+
+                compound_mode = False
+                compoundBounds = True
+
+            elif temp[toggle] == 'Roughness':
+                compoundList.remove('Roughness')
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].remove('Roughness')
+                    val = sample.structure[param[0]][ele].roughness
+                param.append('ROUGHNESS')
+
+                compound_mode = False
+                compoundBounds = True
+
+            elif temp[toggle] == 'Linked Roughness':
+                compoundList.remove('Linked Roughness')
+
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].remove('Linked Roughness')
+                    val = sample.structure[param[0]][ele].linked_roughness
+
+                param.append('LINKED ROUGHNESS')
+
+                compound_mode = False
+                compoundBounds = True
+
+            elif temp[toggle] == 'Return':
+                compound_mode = False
+                modeSelect = True
+                param.pop()  # remove mode selection
+            elif temp[toggle] == 'Exit':
+                cont = False
+        elif compoundBounds:
+            print('COMPOUND BOUND SELECTION \n')
+            print('Select an option: ')
+            print('\t 1: Select parameter boundaries')
+            print('\t 2: Use default boundaries')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                toggle = input('Select one of the provided options:')
+
+            print()
+            if toggle == '1':
+                bd = input('Enter the parameter optimization boundary as a tuple (lower, upper): ')
+                bd = ast.literal_eval(bd)
+                bd = (float(bd[0]), float(bd[1]))
+                while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
+
+                lowerbound.append(bd[0])
+                upperbound.append(bd[1])
+
+            elif toggle == '2':
+                characteristic = param[-1]
+                if characteristic == 'THICKNESS':
+                    lw = val - 5
+                    up = val + 5
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+
+                elif characteristic == 'DENSITY':
+                    lw = val - 0.01
+                    up = val + 0.01
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+                elif characteristic == 'ROUGHNESS':
+                    lw = val - 2
+                    up = val + 2
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+                elif characteristic == 'LINKED ROUGHNESS':
+                    lw = val - 2
+                    up = val + 2
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+
+            elif toggle == '3':
+                compoundBounds = False
+                compound_mode = True
+                removed_char = param.pop()
+                if removed_char == 'THICKNESS':
+                    removed_char = 'Thickness'
+                elif removed_char == 'DENSITY':
+                    removed_char = 'Density'
+                elif removed_char == 'ROUGHNESS':
+                    removed_char = 'Roughness'
+                elif removed_char == 'LINKED ROUGHNESS':
+                    removed_char = 'Linked Roughness'
+
+                compoundList.append(removed_char)
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].append(removed_char)
+            elif toggle == '4':
+                cont = False
+
+            if toggle == '1' or toggle == '2':
+
+                print('Select an option: ')
+                print('\t 1: Select new parameter for same layer in compound mode')
+                print('\t 2: Select new parameter for same layer in compound mode')
+                print('\t 3: Select a new layer')
+                print('\t 4: Return')
+                print('\t 5: Exit/Finish')
+                toggle = input('\n ->')
+                print()
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
+                    toggle = input('Select one of the provided options: ')
+                print()
+                if toggle == '1':
+                    parameters.append(param)
+                    compoundBounds = False
+                    compound_mode = True
+                    param.pop()
+                elif toggle == '2':
+                    parameters.append(param)
+                    compoundBounds = False
+                    element_mode = True
+                    param.pop()
+                    param.pop()
+                    param.append('ELEMENT')
+                elif toggle == '3':
+                    parameters.append(param)
+                    param = list()
+                    compoundBounds = False
+                    layerSelect = True
+
+                elif toggle == '4':
+                    upperbound.pop()
+                    lowerbound.pop()
+                elif toggle == '5':
+                    cont = False
+
 
 def getGlobOptParams(fname):
     # Load in the sample information
