@@ -624,6 +624,7 @@ def parameterSelection(sample, queue):
 
     paramType = True   # parameter type
 
+    layerSelect = False
     sampleParam = False  # structural
     bsSelect = False # background shift and scaling factor
     ffSelect = False # form factor energy shift
@@ -633,9 +634,9 @@ def parameterSelection(sample, queue):
     sSelect = False
 
     modeSelect = False  # mode
-    sS = False  # parameters
-    pS = False  # polymorphouse
-    mS = False  # magnetic
+    structSelect = False  # parameters
+    polySelect = False  # polymorphouse
+    magSelect = False  # magnetic
 
     element_mode = False
     compound_mode = False
@@ -665,7 +666,7 @@ def parameterSelection(sample, queue):
             elif toggle == '2':
                 # Sample Parameters
                 paramType = False
-                sampleParam = True
+                layerSelect = True
             elif toggle == '3':
                 # Scattering Factor Energy Shift
                 paramType = False
@@ -679,7 +680,7 @@ def parameterSelection(sample, queue):
                 # exit the program
                 cont = False
 
-        # Selecting whether to vary background shift or scaling factor
+        # Selecting whether to vary background shift or scaling factor -------------------------
         elif bsSelect:
             print('BACKGROUND SHIFT AND SCALING FACTOR \n')
             print('Choose an option: ')
@@ -694,19 +695,87 @@ def parameterSelection(sample, queue):
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
                 toggle = input('Please input the number of your selection: ')
 
+        elif layerSelect:
+            num_layers = len(sample.structure)
+            num_layers_list = [i for i in range(num_layers)]
+            print('LAYER SELECTION \n')
+            toggle = input('Select which layer you want to optimize (0-'+str(num_layers-1)+'): ')
+            while int(toggle) not in num_layers_list:
+                toggle = print('Enter the layer number you want to select (0-' + str(num_layers - 1) + '): ')
+
+            print()
+            layerSelect = False
+            sampleParam = True
+            param.append(int(toggle))
+        # Select sample params ------------------------------------------------------------------
         elif sampleParam:
+            print(param)
+            layer = sample.structure[param[0]]
+            poly_elements = list(sample.poly_elements.keys())
+            poly_exists = False
+
+            for ele in list(layer.keys()):
+                if ele in poly_elements:
+                    poly_exists = True
+
+            temp = dict() # keeps track of which selection is made
+            idx = 1
             print('SAMPLE PARAMETERS \n')
             print('Choose an option: ')
-            print('\t 1: Structural')
-            print('\t 2: Polymorphous')
-            print('\t 3: Magnetic')
-            print('\t 4: Return')
-            print('\t 5: Exit')
+            print('\t '+ str(idx) + ': Structural')
+            temp[str(idx)] = 'Structural'
+            idx = idx + 1
+            if poly_exists:
+                print('\t '+ str(idx) +': Polymorphous')
+                temp[str(idx)] = 'Polymorphous'
+                idx = idx + 1
+            if sample.layer_magnetized[param[0]]:
+                print('\t '+ str(idx) +': Magnetic')
+                temp[str(idx)] = 'Magnetic'
+                idx = idx + 1
+            print('\t '+ str(idx) +': Return to layer selection')
+            temp[str(idx)] = 'Return to layer selection'
+            idx = idx + 1
+            print('\t ' + str(idx) + ': Return to parameter selection')
+            temp[str(idx)] = 'Return to parameter selection'
+            idx = idx + 1
+            print('\t '+ str(idx) +': Exit')
+            temp[str(idx)] = 'Exit'
             toggle = input('\n -> ')
             print()
 
+            while toggle not in list(temp.keys()):
+                toggle = input('Please input the number of your selection: ')
 
 
+            if temp[toggle] == 'Structural':    # structural
+                modeSelect = True
+                sampleParam = False
+                param.append('STRUCTURAL')
+            elif temp[toggle] == 'Polymorphous':  # polymorphous
+                polySelect = True
+                sampleParam = False
+                param.append('POLYMORPHOUS')
+            elif temp[toggle] == 'Magnetic':  # magnetic
+                magSelect = True
+                sampleParam = False
+                param.append('MAGNETIC')
+            elif temp[toggle] == 'Return to layer selection':  # return
+                layerSelect = True
+                sampleParam = False
+                param.pop()
+            elif temp[toggle] == 'Return to parameter selection':  # return
+                paramType = True
+                sampleParam = False
+                param.pop()
+            elif temp[toggle] == 'Exit':  # exit
+                cont = False
+
+
+        elif modeSelect:
+            print('STRUCTURAL MODE SELECTION \n')
+            print('Select an option:')
+            print('Compound')
 
 def getGlobOptParams(fname):
     # Load in the sample information
