@@ -640,6 +640,7 @@ def parameterSelection(sample, queue):
 
     element_mode = False
     compound_mode = False
+    structDict = dict()
 
     while cont:
         # ----------------------------------------------------------------------------------------- #
@@ -749,6 +750,7 @@ def parameterSelection(sample, queue):
 
 
             if temp[toggle] == 'Structural':    # structural
+                structDict = dict()
                 modeSelect = True
                 sampleParam = False
                 param.append('STRUCTURAL')
@@ -774,8 +776,18 @@ def parameterSelection(sample, queue):
 
         elif modeSelect:
             print('STRUCTURAL MODE SELECTION \n')
+            for ele in list(sample.structure[param[0]].keys()):
+                structDict[ele] = ['Thickness','Density','Roughness', 'Linked Roughness']
+
             print('Select an option:')
-            print('Compound')
+            print('\t 1: Compound')
+            print('\t 2: Element')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                print()
 
 def getGlobOptParams(fname):
     # Load in the sample information
