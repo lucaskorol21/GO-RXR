@@ -13,7 +13,7 @@ import multiprocessing as mp
 import functools
 
 
-def plotScans(scans, data, data_dict, sim_dict):
+def plotScans(data, data_dict, sim_dict, scans):
     """
     Purpose: Plot the all the selected scans
     :param scans: An array containing the scans that you want to plot
@@ -127,7 +127,7 @@ def getScans(data, data_dict, sim_dict, queue):
     stg4 = False  # weight selection
 
     scan = 0
-
+    f = functools.partial(plotScans, data, data_dict, sim_dict)
     while cont:
 
         # Determines if user wants to select a scan
@@ -157,7 +157,9 @@ def getScans(data, data_dict, sim_dict, queue):
                 scan = input('Scan ' + scan + ' already selected! Choose another scan: ')
             print('\n Select an option: ')
 
-
+            p = mp.Process(target=f, args=([int(scan)],))
+            p.start()
+            #p.join()
             for key in stage2.keys():
                 val = stage2[key]
                 print('\t' + key + ': ' + val)
@@ -256,7 +258,7 @@ def getScans(data, data_dict, sim_dict, queue):
                 # set boundary and weights to default values
                 stg3 = False
                 stg1 = True
-
+                p.terminate()
             elif toggle == '3':
                 # remove previous selected scan
                 scans.pop()
@@ -307,6 +309,9 @@ def getScans(data, data_dict, sim_dict, queue):
                 # set weights
                 stg1 = True
                 stg4 = False
+
+
+                p.terminate()
             elif toggle == '2':
                 # set to default values
                 num_weights = len(boundaries[-1])
@@ -314,6 +319,9 @@ def getScans(data, data_dict, sim_dict, queue):
                 weights.append(weight)
                 stg1 = True
                 stg4 = False
+
+
+                p.terminate()
             elif toggle == '3':
                 boundaries.pop()  # remove selected boundaries
                 # return to previous section
