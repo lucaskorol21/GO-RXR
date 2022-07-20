@@ -882,7 +882,54 @@ def parameterSelection(sample, queue):
                 param.pop()  # remove mode selection
             elif temp[toggle] == 'Exit':
                 cont = False
-        elif compoundBounds:
+
+        elif element_mode:
+            print('ELEMENT MODE \n')
+            print('Select element: ')
+            idx = 1
+            elements = list(sample.structure[param[0]].keys())
+            for ele in elements:
+                print('\t ' + str(idx) + ': ' + ele)
+                idx = idx + 1
+            print('\t ' + str(idx) + ': Return')
+            idx = idx+1
+            print('\t ' + str(idx) + ': Exit')
+            toggle = input('\n -> ')
+            print()
+
+            while toggle != '1' and toggle !='2' and toggle != '3' and toggle != '4' and toggle !='5':
+                toggle = input('Select one of elements provided: ')
+            print()
+
+            ele = ''
+            if toggle == '1':
+                ele = elements[0]
+            elif toggle =='2':
+                ele = elements[0]
+            elif toggle == '3':
+                ele = elements[0]
+            elif toggle == '4':
+                param.pop()
+                element_mode = False
+                modeSelect = True
+            elif toggle =='5':
+                cont = False
+
+            if toggle == '1' or toggle =='2' or toggle =='3':
+                print('ELEMENT PARAMTER SELECTION \n')
+                print('Select parameter you want to vary for ' + ele + ': ')
+                idx = 1
+                for char in elementDict[ele]:
+                    print('\t ' + str(idx) + ': '+char)
+                    idx = idx + 1
+                print('\t ' + str(idx) +': Return')
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Exit')
+
+
+
+
+        elif compoundBounds:  # compound bounds ---------------------------------------------------------
             print('COMPOUND BOUND SELECTION \n')
             print('Select an option: ')
             print('\t 1: Select parameter boundaries')
