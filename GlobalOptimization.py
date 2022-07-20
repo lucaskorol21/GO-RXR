@@ -640,7 +640,8 @@ def parameterSelection(sample, queue):
 
     element_mode = False
     compound_mode = False
-    structDict = dict()
+    compoundList = []
+    elementDict = dict()
 
     while cont:
         # ----------------------------------------------------------------------------------------- #
@@ -751,6 +752,9 @@ def parameterSelection(sample, queue):
 
             if temp[toggle] == 'Structural':    # structural
                 structDict = dict()
+                for ele in list(sample.structure[param[0]].keys()):
+                    elementDict[ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
+                    compoundList = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
                 modeSelect = True
                 sampleParam = False
                 param.append('STRUCTURAL')
@@ -774,10 +778,9 @@ def parameterSelection(sample, queue):
                 cont = False
 
 
-        elif modeSelect:
+        elif modeSelect:  # Select Mode --------------------------------------------------------------------------------
             print('STRUCTURAL MODE SELECTION \n')
-            for ele in list(sample.structure[param[0]].keys()):
-                structDict[ele] = ['Thickness','Density','Roughness', 'Linked Roughness']
+
 
             print('Select an option:')
             print('\t 1: Compound')
@@ -787,7 +790,36 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
-                print()
+                toggle = input("Select one of the provided options: ")
+            print()
+            if toggle == '1':
+                compound_mode = True
+                modeSelect = False
+                param.append('COMPOUND')
+            elif toggle == '2':
+                element_mode = True
+                modeSelect = False
+                param.append('ELEMENT')
+            elif toggle == '3':
+                modeSelect = False
+                sampleParam = True
+            elif toggle == '4':
+                cont = False
+        # Compound Mode -----------------------------------------------------------------------------------------------
+        elif compound_mode:
+            temp = dict()
+            print('COMPOUND MODE \n')
+            print('Select one of the options: ')
+            idx = 1
+            for char in compoundList:
+                print('\t '+str(idx)+': ' + char)
+                temp[str(idx)] = char
+                idx = idx + 1
+
+            toggle = input('\n -> ')
+            print()
+            while toggle not in list(temp.keys()):
+                toggle = input('Select ')
 
 def getGlobOptParams(fname):
     # Load in the sample information
