@@ -835,7 +835,8 @@ def parameterSelection(sample, queue):
             print()
 
             if temp[toggle] == 'Thickness':
-                compoundList.remove('Thickness')
+                if 'Thickness' in compoundList:
+                    compoundList.remove('Thickness')
                 for ele in list(elementDict.keys()):
                     elementDict[ele].remove('Thickness')
                     val = sample.structure[param[0]][ele].thickness
@@ -845,7 +846,8 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Density':
-                compoundList.remove('Density')
+                if 'Density' in compoundList:
+                    compoundList.remove('Density')
                 for ele in list(elementDict.keys()):
                     elementDict[ele].remove('Density')
                     val = sample.structure[param[0]][ele].density
@@ -855,7 +857,8 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Roughness':
-                compoundList.remove('Roughness')
+                if 'Roughness' in compoundList:
+                    compoundList.remove('Roughness')
                 for ele in list(elementDict.keys()):
                     elementDict[ele].remove('Roughness')
                     val = sample.structure[param[0]][ele].roughness
@@ -865,8 +868,8 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Linked Roughness':
-                compoundList.remove('Linked Roughness')
-
+                if 'Linked Roughness' in compoundList:
+                    compoundList.remove('Linked Roughness')
                 for ele in list(elementDict.keys()):
                     elementDict[ele].remove('Linked Roughness')
                     val = sample.structure[param[0]][ele].linked_roughness
@@ -904,10 +907,13 @@ def parameterSelection(sample, queue):
             ele = ''
             if toggle == '1':
                 ele = elements[0]
+                param.append(ele)
             elif toggle =='2':
-                ele = elements[0]
+                ele = elements[1]
+                param.append(ele)
             elif toggle == '3':
-                ele = elements[0]
+                ele = elements[2]
+                param.append(ele)
             elif toggle == '4':
                 param.pop()
                 element_mode = False
@@ -916,16 +922,67 @@ def parameterSelection(sample, queue):
                 cont = False
 
             if toggle == '1' or toggle =='2' or toggle =='3':
-                print('ELEMENT PARAMTER SELECTION \n')
+                print('ELEMENT PARAMETER SELECTION \n')
                 print('Select parameter you want to vary for ' + ele + ': ')
                 idx = 1
+                temp = dict()
                 for char in elementDict[ele]:
                     print('\t ' + str(idx) + ': '+char)
+                    temp[str(idx)] = char
                     idx = idx + 1
-                print('\t ' + str(idx) +': Return')
+                print('\t ' + str(idx) +': Return to element selection')
+                temp[str(idx)] = 'Return to element selection'
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Return to mode selection')
+                temp[str(idx)] = 'Return to mode selection'
                 idx = idx + 1
                 print('\t ' + str(idx) + ': Exit')
+                temp[str(idx)] = 'Exit'
 
+                toggle = input("\n -> ")
+                print()
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+
+                print()
+                if temp[toggle] == 'Thickness':
+                    elementDict[ele].remove('Thickness')
+                    if 'Thickness' in compoundList:
+                        compoundList.remove('Thickness')
+                    param.append('THICKNESS')
+                    elementBounds = True
+                    element_mode = False
+                elif temp[toggle] == 'Density':
+                    elementDict[ele].remove('Density')
+                    if 'Density' in compoundList:
+                        compoundList.remove('Density')
+                    param.append('DENSITY')
+                    elementBounds = True
+                    element_mode = False
+                elif temp[toggle] == 'Roughness':
+                    elementDict[ele].remove('Roughness')
+                    if 'Roughness' in compoundList:
+                        compoundList.remove('Roughness')
+                    param.append('ROUGHNESS')
+                    elementBounds = True
+                    element_mode = False
+                elif temp[toggle] == 'Linked Roughness':
+                    elementDict[ele].remove('Linked Roughness')
+                    if 'Linked Roughness' in compoundList:
+                        compoundList.remove('Linked Roughness')
+                    param.append('LINKED ROUGHNESS')
+                    elementBounds = True
+                    element_mode = False
+                elif temp[toggle] == 'Return to element selection':
+                    param.pop()
+                elif temp[toggle] == 'Return to mode selection':
+                    element_mode = False
+                    modeSelect = True
+                    param.pop()
+                    param.pop()
+
+                elif temp[toggle] == 'Exit':
+                    cont = False
 
 
 
@@ -1011,7 +1068,7 @@ def parameterSelection(sample, queue):
 
                 print('Select an option: ')
                 print('\t 1: Select new parameter for same layer in compound mode')
-                print('\t 2: Select new parameter for same layer in compound mode')
+                print('\t 2: Select new parameter for same layer in element mode')
                 print('\t 3: Select a new layer')
                 print('\t 4: Return')
                 print('\t 5: Exit/Finish')
@@ -1021,19 +1078,22 @@ def parameterSelection(sample, queue):
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
-                    parameters.append(param)
+                    param1 = param.copy()
+                    parameters.append(param1)
                     compoundBounds = False
                     compound_mode = True
                     param.pop()
                 elif toggle == '2':
-                    parameters.append(param)
+                    param1 = param.copy()
+                    parameters.append(param1)
                     compoundBounds = False
                     element_mode = True
                     param.pop()
                     param.pop()
                     param.append('ELEMENT')
                 elif toggle == '3':
-                    parameters.append(param)
+                    param1 = param.copy()
+                    parameters.append(param1)
                     param = list()
                     compoundBounds = False
                     layerSelect = True
@@ -1042,8 +1102,135 @@ def parameterSelection(sample, queue):
                     upperbound.pop()
                     lowerbound.pop()
                 elif toggle == '5':
+                    parameters.append(param)
                     cont = False
 
+        elif elementBounds:  # compound bounds ---------------------------------------------------------
+            print('ELEMENT BOUND SELECTION \n')
+            print('Select an option: ')
+            print('\t 1: Select parameter boundaries')
+            print('\t 2: Use default boundaries')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                toggle = input('Select one of the provided options:')
+
+            print()
+            if toggle == '1':
+                bd = input('Enter the parameter optimization boundary as a tuple (lower, upper): ')
+                bd = ast.literal_eval(bd)
+                bd = (float(bd[0]), float(bd[1]))
+                while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
+
+                lowerbound.append(bd[0])
+                upperbound.append(bd[1])
+
+            elif toggle == '2':
+                characteristic = param[-1]
+                if characteristic == 'THICKNESS':
+                    lw = val - 5
+                    up = val + 5
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+
+                elif characteristic == 'DENSITY':
+                    lw = val - 0.01
+                    up = val + 0.01
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+                elif characteristic == 'ROUGHNESS':
+                    lw = val - 2
+                    up = val + 2
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+                elif characteristic == 'LINKED ROUGHNESS':
+                    lw = val - 2
+                    up = val + 2
+                    if lw < 0:
+                        lw = 0
+
+                    lowerbound.append(lw)
+                    upperbound.append(up)
+
+            elif toggle == '3':
+                elementBounds = False
+                element_mode = True
+                removed_char = param.pop()
+                if removed_char == 'THICKNESS':
+                    removed_char = 'Thickness'
+                elif removed_char == 'DENSITY':
+                    removed_char = 'Density'
+                elif removed_char == 'ROUGHNESS':
+                    removed_char = 'Roughness'
+                elif removed_char == 'LINKED ROUGHNESS':
+                    removed_char = 'Linked Roughness'
+
+                compoundList.append(removed_char)
+                for ele in list(elementDict.keys()):
+                    elementDict[ele].append(removed_char)
+            elif toggle == '4':
+                cont = False
+
+            if toggle == '1' or toggle == '2':
+
+                print('Select an option: ')
+                print('\t 1: Select new parameter for same layer in compound mode')
+                print('\t 2: Select new parameter for same layer in element mode')
+                print('\t 3: Select a new layer')
+                print('\t 4: Select a new parameter type')
+                print('\t 5: Return')
+                print('\t 6: Exit/Finish')
+                toggle = input('\n ->')
+                print()
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5' and toggle != '6':
+                    toggle = input('Select one of the provided options: ')
+                print()
+                if toggle == '1':
+                    parameters.append(param.copy())
+                    elementBounds = False
+                    compound_mode = True
+                    param.pop()  # removes property
+                    param.pop()  # removes element
+                    param.pop()  # removes mode
+                    param.append('COMPOUND')  # replaces element mode with compound mode
+                elif toggle == '2':
+                    parameters.append(param.copy())
+                    elementBounds = False
+                    element_mode = True
+                    param.pop()  # removes property
+                    param.pop()  # removes element
+
+                elif toggle == '3':
+                    parameters.append(param.copy())
+                    param = list()
+                    elementBounds = False
+                    layerSelect = True
+                elif toggle == '3':
+                    parameters.append(param.copy())
+                    param = list()
+                    elementBounds = False
+                    paramType = True
+
+                elif toggle == '5':
+                    upperbound.pop()
+                    lowerbound.pop()
+                elif toggle == '6':
+                    parameters.append(param.copy())
+                    cont = False
+    print(parameters)
+    print(lowerbound)
 
 def getGlobOptParams(fname):
     # Load in the sample information
