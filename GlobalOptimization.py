@@ -513,7 +513,7 @@ def scanCompute(x, *args):
 
                 w = weights[b]
 
-                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]  #
 
                 if len(idx) != 0:
                     chi2 = chi2 + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
@@ -1230,7 +1230,7 @@ def parameterSelection(sample, queue):
                     parameters.append(param.copy())
                     cont = False
     print(parameters)
-    print(lowerbound)
+    print(upperbound)
 
 def getGlobOptParams(fname):
     # Load in the sample information
