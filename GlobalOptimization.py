@@ -648,6 +648,7 @@ def parameterSelection(sample, queue):
     compound_mode = False
     # initializing the sturcture key so that it remember which options were selected
     structDict = dict()
+    bsTrack = ['Scaling Factor', 'Background Shift']
     for i in range(len(sample.structure)):
         structDict[i] = dict()
         structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
@@ -657,11 +658,12 @@ def parameterSelection(sample, queue):
 
 
 
+
     while cont:
         # ----------------------------------------------------------------------------------------- #
         # Selecting which kind of parameter user wants to optimize
         if paramType:
-            sp = list()
+            param = list()
             print('Select which parameter type to optimize: ')
             print('\t 1: Background Shift/Scaling Factor')
             print('\t 2: Sample Parameters')
@@ -698,18 +700,184 @@ def parameterSelection(sample, queue):
 
         # Selecting whether to vary background shift or scaling factor -------------------------
         elif bsSelect:
+            temp = dict()
             print('BACKGROUND SHIFT AND SCALING FACTOR \n')
             print('Choose an option: ')
-            print('\t 1: Background Shift')
-            print('\t 2: Scaling Factor')
-            print('\t 3: Background Shift and Scaling Factor')
-            print('\t 4: Return')
-            print('\t 5: Exit')
+            idx = 1
+            for var in bsTrack:
+                print('\t '+str(idx)+': ' + var)
+                temp[str(idx)] = var
+                idx = idx + 1
+            if len(bsTrack) == 2:
+                print('\t ' + str(idx) + ': Background Shift and Scaling Factor')
+                temp[str(idx)] = 'Background Shift and Scaling Factor'
+                idx = idx + 1
+            print('\t '+str(idx)+': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            print('\t '+str(idx)+': Exit')
+            temp[str(idx)] = 'Exit'
             toggle = input('\n ->')
             print()
 
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
                 toggle = input('Please input the number of your selection: ')
+
+            background = False
+            scaling = False
+            backScale = False
+            if temp[toggle] == 'Background Shift':
+                background = True
+            elif temp[toggle] == 'Scaling Factor':
+                scaling = True
+            elif temp[toggle] =='Background Shift and Scaling Factor':
+                backScale = True
+            elif temp[toggle] == 'Return':
+                bsSelect = False
+                paramType = True
+            elif temp[toggle] == 'Exit':
+                cont = False
+
+            if cont and not(paramType):
+                print(temp[toggle].upper() + ' SELECTION \n')
+                print('Select an option: ')
+                print('\t 1: Select bounds')
+                print('\t 2: Use default bounds')
+                print('\t 3: Return')
+                print('\t 4: Exit')
+                toggle = input('\n -> ')
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if toggle == '3':
+                    background = False
+                    scaling = False
+                    backScale = False
+                elif toggle == '4':
+                    cont = False
+                else:
+                    if background:
+                        bsTrack.remove('Background Shift')
+                        param.append('BACKGROUND SHIFT')
+                        if toggle == '1':
+                            bBounds = input('Select the background shift optimization bounds (lower, upper): ')
+                            bBounds = ast.literal_eval(bBounds)
+                            while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
+                                bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
+                                bBounds = ast.literal_eval(bBounds)
+
+                            lowerbound.append(float(bBounds[0]))
+                            upperbound.append(float(bBounds[1]))
+                            print()
+
+                        elif toggle == '2':
+                            lowerbound.append(-5e-7)
+                            upperbound.append(5e-7)
+
+                        parameters.append(param.copy())
+                    elif scaling:
+                        bsTrack.remove('Scaling Factor')
+                        param.append('SCALING FACTOR')
+                        if toggle == '1':
+                            sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
+                            sBounds = ast.literal_eval(sBounds)
+                            while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
+                                sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
+                                sBounds = ast.literal_eval(sBounds)
+
+                            lowerbound.append(float(sBounds[0]))
+                            upperbound.append(float(sBounds[1]))
+                            print()
+
+                        elif toggle == '2':
+                            lowerbound.append(0.8)
+                            upperbound.append(1.2)
+
+                        parameters.append(param.copy())
+                    elif backScale:
+                        bsTrack.remove('Background Shift')
+                        param.append('BACKGROUND SHIFT')
+                        if toggle == '1':
+                            bBounds = input('Select the background shift optimization bounds (lower, upper): ')
+                            bBounds = ast.literal_eval(bBounds)
+                            while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
+                                bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
+                                bBounds = ast.literal_eval(bBounds)
+
+                            lowerbound.append(float(bBounds[0]))
+                            upperbound.append(float(bBounds[1]))
+
+                        elif toggle == '2':
+                            lowerbound.append(-5e-7)
+                            upperbound.append(5e-7)
+
+                        parameters.append(param.copy())
+                        param = list()
+                        print(parameters)
+                        bsTrack.remove('Scaling Factor')
+                        param.append('SCALING FACTOR')
+                        if toggle == '1':
+                            sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
+                            sBounds = ast.literal_eval(sBounds)
+                            while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
+                                sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
+                                sBounds = ast.literal_eval(sBounds)
+
+                            lowerbound.append(float(sBounds[0]))
+                            upperbound.append(float(sBounds[1]))
+                            print()
+
+                        elif toggle == '2':
+                            lowerbound.append(0.8)
+                            upperbound.append(1.2)
+
+                        parameters.append(param.copy())
+                        print(parameters)
+                    print('SCALING FACTOR AND BACKGROUND SHIFT FINISH \n')
+                    print('Select an option: ')
+                    print('\t 1: Select another parameter type')
+                    print('\t 2: Return')
+                    print('\t 3: Exit/Finish')
+                    toggle = input('\n -> ')
+                    print()
+
+                    while toggle != '1' and toggle != '2' and toggle != '3':
+                        toggle = 'Select one of the provided options: '
+
+                    if toggle == '1':
+                        background = False
+                        scaling = False
+                        backScale = False
+                        bsSelect = False
+                        paramType = True
+                    elif toggle == '2':
+                        if background or scaling:
+                            if background:
+                                bsTrack.append('Background Shift')
+                            elif scaling:
+                                bsTrack.append('Scaling Factor')
+
+                            upperbound.pop()
+                            lowerbound.pop()
+                            parameters.pop()
+                            param = list()
+                        elif backScale:
+                            bsTrack = ['Background Shift', 'Scaling Factor']
+                            upperbound.pop()
+                            upperbound.pop()
+                            lowerbound.pop()
+                            lowerbound.pop()
+                            parameters.pop()
+                            parameters.pop()
+                            param = list()
+                        background = False
+                        scaling = False
+                        backScale = False
+                    elif toggle == '3':
+                        cont = False
+
+
 
         elif layerSelect:
             num_layers = len(sample.structure)
@@ -815,7 +983,18 @@ def parameterSelection(sample, queue):
                 modeSelect = False
                 sampleParam = True
             elif toggle == '4':
+
                 cont = False
+
+        # Polymorphouse case ------------------------------------------------------------------------------------------
+        elif polySelect:
+            print('POLYMORPHOUS SELECTION \n')
+
+            print('Select an option:')
+            print('\t 1: Dependant Polymorphs')
+            print('\t 2: Independant Polymorphs')
+            print('\t 3: Return')
+            print('\t 4: Exit')
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
             temp = dict()
