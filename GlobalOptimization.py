@@ -563,9 +563,9 @@ def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'c
 
     return x, fun
 
-def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
-    sample = ReadSampleHDF5(fname)  # import the sample information
+def shgo(fname, scan,parameters, bounds, scanBounds, N=64, iterations=3):
 
+    sample = ReadSampleHDF5(fname)  # import the sample information
     f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     # makes sure that scan is a list
@@ -575,7 +575,7 @@ def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
     scan = [s - 1 for s in scan]  # makes sure the indices are correct
     scans = data_info[tuple(scan)]
 
-    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
 
     ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=N, iters=iterations)
     x = ret.x
@@ -587,7 +587,7 @@ def shgo(fname, scan,parameters, bounds, N=64, iterations=3):
     f.close()
     return x, fun
 
-def dual_annealing(fname, scan, parameters, bounds, mIter=300):
+def dual_annealing(fname, scan, parameters, bounds,scanBounds, mIter=300):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
     f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
@@ -599,7 +599,7 @@ def dual_annealing(fname, scan, parameters, bounds, mIter=300):
     scan = [s - 1 for s in scan]  # makes sure the indices are correct
     scans = data_info[tuple(scan)]
 
-    params = [sample, scans, data, sims, parameters]  # required format for function scanCompute
+    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
 
 
     ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=mIter)
