@@ -649,13 +649,13 @@ def parameterSelection(sample, queue):
     # initializing the sturcture key so that it remember which options were selected
     structDict = dict()
     for i in range(len(sample.structure)):
-        structDict[str(i)] = dict()
-        structDict[str(i)]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
-        structDict[str(i)]['element'] = dict()
+        structDict[i] = dict()
+        structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
+        structDict[i]['element'] = dict()
         for ele in list(sample.structure[i].keys()):
-            structDict[str(i)]['element'][ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
-    compoundList = []
-    elementDict = dict()
+            structDict[i]['element'][ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
+
+
 
     while cont:
         # ----------------------------------------------------------------------------------------- #
@@ -873,7 +873,7 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Linked Roughness':
-                if 'Linked Roughness' in compoundList:
+                if 'Linked Roughness' in structDict[param[0]]['compound']:
                     structDict[param[0]]['compound'].remove('Linked Roughness')
                 for ele in list(structDict[param[0]]['element'].keys()):
                     structDict[param[0]]['element'][ele].remove('Linked Roughness')
