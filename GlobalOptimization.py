@@ -646,6 +646,14 @@ def parameterSelection(sample, queue):
 
     element_mode = False
     compound_mode = False
+    # initializing the sturcture key so that it remember which options were selected
+    structDict = dict()
+    for i in range(len(sample.structure)):
+        structDict[str(i)] = dict()
+        structDict[str(i)]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
+        structDict[str(i)]['element'] = dict()
+        for ele in list(sample.structure[i].keys()):
+            structDict[str(i)]['element'][ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
     compoundList = []
     elementDict = dict()
 
@@ -757,10 +765,7 @@ def parameterSelection(sample, queue):
 
 
             if temp[toggle] == 'Structural':    # structural
-                structDict = dict()
-                for ele in list(sample.structure[param[0]].keys()):
-                    elementDict[ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
-                    compoundList = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
+
                 modeSelect = True
                 sampleParam = False
                 param.append('STRUCTURAL')
@@ -817,7 +822,7 @@ def parameterSelection(sample, queue):
             print('COMPOUND MODE \n')
             print('Select an option: ')
             idx = 1
-            for char in compoundList:
+            for char in structDict[param[0]]['compound']:
                 print('\t '+str(idx)+': ' + char)
                 temp[str(idx)] = char
                 idx = idx + 1
@@ -835,10 +840,10 @@ def parameterSelection(sample, queue):
             print()
 
             if temp[toggle] == 'Thickness':
-                if 'Thickness' in compoundList:
-                    compoundList.remove('Thickness')
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].remove('Thickness')
+                if 'Thickness' in structDict[param[0]]['compound']:
+                    structDict[param[0]]['compound'].remove('Thickness')
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].remove('Thickness')
                     val = sample.structure[param[0]][ele].thickness
                 param.append('THICKNESS')
 
@@ -846,10 +851,10 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Density':
-                if 'Density' in compoundList:
-                    compoundList.remove('Density')
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].remove('Density')
+                if 'Density' in structDict[param[0]]['compound']:
+                    structDict[param[0]]['compound'].remove('Density')
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].remove('Density')
                     val = sample.structure[param[0]][ele].density
                 param.append('DENSITY')
 
@@ -857,10 +862,10 @@ def parameterSelection(sample, queue):
                 compoundBounds = True
 
             elif temp[toggle] == 'Roughness':
-                if 'Roughness' in compoundList:
-                    compoundList.remove('Roughness')
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].remove('Roughness')
+                if 'Roughness' in structDict[param[0]]['compound']:
+                    structDict[param[0]]['compound'].remove('Roughness')
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].remove('Roughness')
                     val = sample.structure[param[0]][ele].roughness
                 param.append('ROUGHNESS')
 
@@ -869,9 +874,9 @@ def parameterSelection(sample, queue):
 
             elif temp[toggle] == 'Linked Roughness':
                 if 'Linked Roughness' in compoundList:
-                    compoundList.remove('Linked Roughness')
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].remove('Linked Roughness')
+                    structDict[param[0]]['compound'].remove('Linked Roughness')
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].remove('Linked Roughness')
                     val = sample.structure[param[0]][ele].linked_roughness
 
                 param.append('LINKED ROUGHNESS')
@@ -926,7 +931,7 @@ def parameterSelection(sample, queue):
                 print('Select parameter you want to vary for ' + ele + ': ')
                 idx = 1
                 temp = dict()
-                for char in elementDict[ele]:
+                for char in structDict[param[0]]['element'][ele]:
                     print('\t ' + str(idx) + ': '+char)
                     temp[str(idx)] = char
                     idx = idx + 1
@@ -946,30 +951,30 @@ def parameterSelection(sample, queue):
 
                 print()
                 if temp[toggle] == 'Thickness':
-                    elementDict[ele].remove('Thickness')
-                    if 'Thickness' in compoundList:
-                        compoundList.remove('Thickness')
+                    structDict[param[0]]['element'][ele].remove('Thickness')
+                    if 'Thickness' in structDict[param[0]]['compound']:
+                        structDict[param[0]]['compound'].remove('Thickness')
                     param.append('THICKNESS')
                     elementBounds = True
                     element_mode = False
                 elif temp[toggle] == 'Density':
-                    elementDict[ele].remove('Density')
-                    if 'Density' in compoundList:
-                        compoundList.remove('Density')
+                    structDict[param[0]]['element'][ele].remove('Density')
+                    if 'Density' in structDict[param[0]]['compound']:
+                        structDict[param[0]]['compound'].remove('Density')
                     param.append('DENSITY')
                     elementBounds = True
                     element_mode = False
                 elif temp[toggle] == 'Roughness':
-                    elementDict[ele].remove('Roughness')
-                    if 'Roughness' in compoundList:
-                        compoundList.remove('Roughness')
+                    structDict[param[0]]['element'][ele].remove('Roughness')
+                    if 'Roughness' in structDict[param[0]]['compound']:
+                        structDict[param[0]]['compound'].remove('Roughness')
                     param.append('ROUGHNESS')
                     elementBounds = True
                     element_mode = False
                 elif temp[toggle] == 'Linked Roughness':
-                    elementDict[ele].remove('Linked Roughness')
-                    if 'Linked Roughness' in compoundList:
-                        compoundList.remove('Linked Roughness')
+                    structDict[param[0]]['element'][ele].remove('Linked Roughness')
+                    if 'Linked Roughness' in structDict[param[0]]['compound']:
+                        structDict[param[0]]['compound'].remove('Linked Roughness')
                     param.append('LINKED ROUGHNESS')
                     elementBounds = True
                     element_mode = False
@@ -1058,9 +1063,9 @@ def parameterSelection(sample, queue):
                 elif removed_char == 'LINKED ROUGHNESS':
                     removed_char = 'Linked Roughness'
 
-                compoundList.append(removed_char)
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].append(removed_char)
+                structDict[param[0]]['compound'].append(removed_char)
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].append(removed_char)
             elif toggle == '4':
                 cont = False
 
@@ -1177,9 +1182,9 @@ def parameterSelection(sample, queue):
                 elif removed_char == 'LINKED ROUGHNESS':
                     removed_char = 'Linked Roughness'
 
-                compoundList.append(removed_char)
-                for ele in list(elementDict.keys()):
-                    elementDict[ele].append(removed_char)
+                structDict[param[0]]['compound'].append(removed_char)
+                for ele in list(structDict[param[0]]['element'].keys()):
+                    structDict[param[0]]['element'][ele].append(removed_char)
             elif toggle == '4':
                 cont = False
 
