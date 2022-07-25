@@ -614,19 +614,30 @@ def dual_annealing(fname, scan, parameters, bounds,scanBounds, mIter=300):
     return x, fun
 
 def parameterSelection(sample, queue):
+    """
+    Purpose: Ask user to determine the parameters they would like to use
+    :param sample: Sample information in slab format
+    :param queue: Used for multiprocessing
+    :return:
+    """
+
+    # Booleans that determine which process to complete
+
     parameters = list()  # list that keeps track of all the selected parameters
     param = list()  # keeps track of the current selection tree
+
     upperbound = list()  # upper bound of the parameter
     lowerbound = list()  # lower bound of the parameter
-    compoundBounds = False
-    elementBounds = False
-    magneticBounds = False
-    polyBounds = False
-    lastStep = False
-    val = 0
+    compoundBounds = False  # compound mode bounds selection process
+    elementBounds = False  # element mode bounds selection process
+    magneticBounds = False  # magnetic bounds selection process
+    polyBounds = False  # polymorphous bounds selection process
+    lastStep = False  # States that program has finished successfully
+    val = 0  # keeps track of structure values for default boundaries
 
     print('PARAMETER SELECTION \n')
-    cont = True
+
+    cont = True  # continue parameter selection
 
     paramType = True   # parameter type
 
@@ -635,37 +646,43 @@ def parameterSelection(sample, queue):
     bsSelect = False # background shift and scaling factor
     ffSelect = False # form factor energy shift
     constSelect = False  # constraint
-    ffBounds = False
+    ffBounds = False  # form factor boundaries
+
 
     bSelect = False  # background shift
-    sSelect = False
+    sSelect = False  # scaling factor
 
-    modeSelect = False  # mode
+    modeSelect = False  # structural mode selection
     structSelect = False  # parameters
     polySelect = False  # polymorphouse
     magSelect = False  # magnetic
 
-    element_mode = False
-    compound_mode = False
-    dependent = False
-    independent = False
-    # initializing the sturcture key so that it remember which options were selected
-    structFf = dict()
-    magFf = dict()
-    polyFf = dict()
-    structDict = dict()
-    polyDict = dict()
+    element_mode = False  # element mode
+    compound_mode = False  # compound mode
+    dependent = False  # dependant polymorphous mode
+    independent = False  # independant polymorphous mode
 
-    bsTrack = ['Scaling Factor', 'Background Shift']
+    # dictionaries to keep track of which parameters have already been selected
+    structFf = dict()  # structural  form factor parameters
+    magFf = dict()  # magnetic form factor parameters
+    polyFf = dict()  # polymorphous form factors parameters
+    structDict = dict()  # stuctural parameters
+    polyDict = dict()  # polymorphous parameters
+    bsTrack = ['Scaling Factor', 'Background Shift']  # keeps track if scaling factor or background shift have been selected
+
+    # Retrieves dictionary info from sample input by user
     for i in range(len(sample.structure)):
         structDict[i] = dict()
         structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
         structDict[i]['element'] = dict()
+
+        # structural scattering factors
         for ele in list(sample.structure[i].keys()):
             if ele not in list(structFf.keys()):
                 if ele not in list(sample.poly_elements.keys()) and ele not in list(sample.mag_elements.keys()):
                     structFf[ele] = sample.structure[i][ele].scattering_factor
 
+            # polymorphous scattering factors
             polymorph = sample.structure[i][ele].polymorph
             if len(polymorph) > 0:
                 polyDict[i] = []
@@ -675,10 +692,8 @@ def parameterSelection(sample, queue):
                 if polymorph[j] not in list(polyFf.keys()):
                     polyFf[polymorph[j]] = sample.structure[i][ele].scattering_factor[j]
 
-
-
+            # magnetic scattering factors
             mag = sample.structure[i][ele].mag_density
-
             if len(mag) > 0:
                 if len(polymorph) > 0:
                     for j in range(len(polymorph)):
@@ -692,10 +707,11 @@ def parameterSelection(sample, queue):
 
 
 
-
+    # start of main process
     while cont:
         # ----------------------------------------------------------------------------------------- #
         # Selecting which kind of parameter user wants to optimize
+        # ----------------------------------------------------------------------------------------- #
         if paramType:
             param = list()
             print('Select which parameter type to optimize: ')
