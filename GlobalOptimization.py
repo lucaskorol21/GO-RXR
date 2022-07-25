@@ -858,7 +858,7 @@ def parameterSelection(sample, queue):
                             upperbound.append(1.2)
 
                         parameters.append(param.copy())
-                        print(parameters)
+
                     print('SCALING FACTOR AND BACKGROUND SHIFT FINISH \n')
                     print('Select an option: ')
                     print('\t 1: Select another parameter type')
@@ -868,7 +868,7 @@ def parameterSelection(sample, queue):
                     print()
 
                     while toggle != '1' and toggle != '2' and toggle != '3':
-                        toggle = 'Select one of the provided options: '
+                        toggle = input('Select one of the provided options: ')
 
                     if toggle == '1':
                         background = False
@@ -1004,7 +1004,7 @@ def parameterSelection(sample, queue):
                     toggle = input('Select one of the provided options: ')
                 print()
 
-                if temp[toggle] in list(structFf.keys()):
+                if temp[toggle] in list(magFf.keys()):
                     param.append('MAGNETIC')
                     param.append(magFf[temp[toggle]])
                     selected_ele['MAGNETIC'] = temp[toggle]
@@ -1101,6 +1101,8 @@ def parameterSelection(sample, queue):
                     elif toggle == '3':
                         ffBounds = False
                         ffSelect = True
+                        upperbound.pop()
+                        lowerbound.pop()
                         selected_ele = dict()
                         param = []
                     elif toggle == '4':
