@@ -635,6 +635,7 @@ def parameterSelection(sample, queue):
     bsSelect = False # background shift and scaling factor
     ffSelect = False # form factor energy shift
     constSelect = False  # constraint
+    ffBounds = False
 
     bSelect = False  # background shift
     sSelect = False
@@ -649,6 +650,7 @@ def parameterSelection(sample, queue):
     # initializing the sturcture key so that it remember which options were selected
     structFf = dict()
     magFf = dict()
+    polyFf = dict()
     structDict = dict()
     bsTrack = ['Scaling Factor', 'Background Shift']
     for i in range(len(sample.structure)):
@@ -656,6 +658,27 @@ def parameterSelection(sample, queue):
         structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
         structDict[i]['element'] = dict()
         for ele in list(sample.structure[i].keys()):
+            if ele not in list(structFf.keys()):
+                if ele not in list(sample.poly_elements.keys()) and ele not in list(sample.mag_elements.keys()):
+                    structFf[ele] = sample.structure[i][ele].scattering_factor
+
+            polymorph = sample.structure[i][ele].polymorph
+            for j in range(len(polymorph)):
+                if polymorph[j] not in list(polyFf.keys()):
+                    polyFf[polymorph[j]] = sample.structure[i][ele].scattering_factor[j]
+
+
+            mag = sample.structure[i][ele].mag_density
+
+            if len(mag) > 0:
+                if len(polymorph) > 0:
+                    for j in range(len(polymorph)):
+                        if polymorph[j] not in list(magFf.keys()):
+                            magFf[polymorph[j]] = sample.structure[i][ele].mag_scattering_factor[j]
+                else:
+                    if ele not in list(magFf.keys()):
+                        magFf[ele] = sample.structure[i][ele].mag_scattering_factor
+
             structDict[i]['element'][ele] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
 
 
@@ -881,17 +904,210 @@ def parameterSelection(sample, queue):
 
 
         elif ffSelect:
+
             print('FORM FACTOR ENERGY SHIFT SELECTION \n')
             print('Select an option: ')
             print('\t 1: Structural form factor')
-            print('\t 2: Magnetic form factor')
-            print('\t 3: Return')
-            print('\t 4: Exit')
+            print('\t 2: Polymorphous form factor')
+            print('\t 3: Magnetic form factor')
+            print('\t 4: Return')
+            print('\t 5: Exit')
             toggle = input('\n -> ')
             print()
 
-            while toggle != '1' and toggle != '2' and toggle != '3' and toggle!= '4':
+            selected_ele = dict()
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
                 toggle = input('Select one of the provided options')
+
+            if toggle == '1':
+                param.append('SCATTERING FACTOR')
+                print('STRUCTURAL SCATTERING FACTOR \n')
+                print('Select which element scattering factor to shift: ')
+                temp = dict()
+                idx = 1
+                for key in list(structFf.keys()):
+                    print('\t ' + str(idx) + ': ' + key)
+                    temp[str(idx)] = key
+                    idx = idx + 1
+                print('\t ' + str(idx) + ': Return')
+                temp[str(idx)] = 'Return'
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Exit')
+                temp[str(idx)] = 'Exit'
+                toggle = input('\n -> ')
+                print()
+
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if temp[toggle] in list(structFf.keys()):
+                    param.append('STRUCTURAL')
+                    param.append(structFf[temp[toggle]])
+                    selected_ele['STRUCTURAL'] = temp[toggle]
+                    ffBounds = True
+                elif temp[toggle] == 'Return':
+                    pass
+                elif toggle == 'Exit':
+                    cont = False
+            elif toggle == '2':
+                param.append('SCATTERING FACTOR')
+                print('POLYMORPHOUS SCATTERING FACTOR \n')
+                print('Select which element scattering factor to shift: ')
+                temp = dict()
+                idx = 1
+                for key in list(polyFf.keys()):
+                    print('\t ' + str(idx) + ': ' + key)
+                    temp[str(idx)] = key
+                    idx = idx + 1
+                print('\t ' + str(idx) + ': Return')
+                temp[str(idx)] = 'Return'
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Exit')
+                temp[str(idx)] = 'Exit'
+                toggle = input('\n -> ')
+                print()
+
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if temp[toggle] in list(polyFf.keys()):
+                    param.append('STRUCTURAL')
+                    param.append(polyFf[temp[toggle]])
+                    selected_ele['POLYMORPHOUS'] = temp[toggle]
+
+                    ffBounds = True
+                elif temp[toggle] == 'Return':
+                    pass
+                elif toggle == 'Exit':
+                    cont = False
+            elif toggle == '3':
+                param.append('SCATTERING FACTOR')
+                print('MAGNETIC SCATTERING FACTOR \n')
+                print('Select which element magnetic scattering factor to shift: ')
+                temp = dict()
+                idx = 1
+                for key in list(magFf.keys()):
+                    print('\t ' + str(idx) + ': ' + key)
+                    temp[str(idx)] = key
+                    idx = idx + 1
+                print('\t ' + str(idx) + ': Return')
+                temp[str(idx)] = 'Return'
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Exit')
+                temp[str(idx)] = 'Exit'
+                toggle = input('\n -> ')
+                print()
+
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if temp[toggle] in list(structFf.keys()):
+                    param.append('MAGNETIC')
+                    param.append(magFf[temp[toggle]])
+                    selected_ele['MAGNETIC'] = temp[toggle]
+                    ffBounds = True
+                elif temp[toggle] == 'Return':
+                    pass
+                elif toggle == 'Exit':
+                    cont = False
+            elif toggle == '4':
+                ffSelect = False
+                paramType = True
+                param = []
+            elif toggle == '5':
+                cont = False
+
+            if ffBounds:
+                print('FORM FACTOR BOUNDS \n')
+                print('Select an option: ')
+                print('\t 1: Select energy bounds')
+                print('\t 2: Use default energy bounds')
+                print('\t 3: Return')
+                print('\t 4: Exit')
+                toggle = input('\n -> ')
+                print()
+
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    toggle = input('Select one of the provided options:')
+                print()
+
+                if toggle == '1':
+                    bound = input('Select the energy shift bounds in eV as a tuple(lower, upper): ')
+                    bound = ast.literal_eval(bound)
+                    bound = (float(bound[0]), float(bound[1]))
+                    while bound[0] > bound[1]:
+                        bound = input('Make sure the lowerbound is smaller than the upperbound (lower, upper): ')
+                        bound = ast.literal_eval(bound)
+                        bound = (float(bound[0]), float(bound[1]))
+
+                    upperbound.append(bound[0])
+                    lowerbound.append(bound[1])
+
+                elif toggle == '2':
+                    lowerbound.append(-0.5)
+                    upperbound.append(0.5)
+                elif toggle == '3':
+                    ffbounds = False
+                    selected_ele = dict()
+                    param = []
+                elif toggle == '4':
+                    cont = False
+
+                if toggle == '1' or toggle == '2':
+                    print('FINISH SCATTERING FACTOR \n')
+                    print('Select an option: ')
+                    print('\t 1: Select another scattering factor')
+                    print('\t 2: Select another parameter')
+                    print('\t 3: Return')
+                    print('\t 4: Exit/Finish')
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                        toggle = input('Select one of the provided options')
+                    print()
+
+                    if toggle == '1':
+                        parameters.append(param.copy())
+                        ffBounds = False
+                        ffSelect = True
+                        param = []
+                        key = list(selected_ele.keys())[0]
+                        if key == 'STRUCTURAL':
+                            del structFf[selected_ele[key]]
+                        elif key == 'POLYMORPHOUS':
+                            del polyFf[selected_ele[key]]
+                        elif key == 'MAGNETIC':
+                            del magFf[selected_ele[key]]
+
+                        selected_ele = dict()
+                    elif toggle == '2':
+                        parameters.append(param.copy())
+                        ffBounds = False
+                        ffSelect = False
+                        paramType = True
+                        param = []
+                        key = list(selected_ele.keys())[0]
+                        if key == 'STRUCTURAL':
+                            del structFf[selected_ele[key]]
+                        elif key == 'POLYMORPHOUS':
+                            del polyFf[selected_ele[key]]
+                        elif key == 'MAGNETIC':
+                            del magFf[selected_ele[key]]
+
+                        selected_ele = dict()
+                    elif toggle == '3':
+                        ffBounds = False
+                        ffSelect = True
+                        selected_ele = dict()
+                        param = []
+                    elif toggle == '4':
+                        parameters.append(param.copy())
+                        cont = False
+
+
         elif layerSelect:
             num_layers = len(sample.structure)
             num_layers_list = [i for i in range(num_layers)]
