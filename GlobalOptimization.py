@@ -647,6 +647,8 @@ def parameterSelection(sample, queue):
     element_mode = False
     compound_mode = False
     # initializing the sturcture key so that it remember which options were selected
+    structFf = dict()
+    magFf = dict()
     structDict = dict()
     bsTrack = ['Scaling Factor', 'Background Shift']
     for i in range(len(sample.structure)):
@@ -878,7 +880,18 @@ def parameterSelection(sample, queue):
                         cont = False
 
 
+        elif ffSelect:
+            print('FORM FACTOR ENERGY SHIFT SELECTION \n')
+            print('Select an option: ')
+            print('\t 1: Structural form factor')
+            print('\t 2: Magnetic form factor')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
 
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle!= '4':
+                toggle = input('Select one of the provided options')
         elif layerSelect:
             num_layers = len(sample.structure)
             num_layers_list = [i for i in range(num_layers)]
