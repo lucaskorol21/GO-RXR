@@ -710,7 +710,7 @@ def parameterSelection(sample, queue):
     # start of main process
     while cont:
         # ----------------------------------------------------------------------------------------- #
-        # Selecting which kind of parameter user wants to optimize
+        # Selecting which kind of parameter user wants to optimize -------------------------------- #
         # ----------------------------------------------------------------------------------------- #
         if paramType:
             param = list()
@@ -748,7 +748,9 @@ def parameterSelection(sample, queue):
                 # exit the program
                 cont = False
 
-        # Selecting whether to vary background shift or scaling factor -------------------------
+        # -------------------------------------------------------------------------------------- #
+        # Selecting whether to vary background shift or scaling factor ------------------------- #
+        # -------------------------------------------------------------------------------------- #
         elif bsSelect:
             temp = dict()
             print('BACKGROUND SHIFT AND SCALING FACTOR \n')
@@ -777,15 +779,20 @@ def parameterSelection(sample, queue):
             scaling = False
             backScale = False
             if temp[toggle] == 'Background Shift':
+                # background shift selected
                 background = True
             elif temp[toggle] == 'Scaling Factor':
+                 # scaling factor selected
                 scaling = True
             elif temp[toggle] =='Background Shift and Scaling Factor':
+                # both background shift and scaling factor selected
                 backScale = True
             elif temp[toggle] == 'Return':
+                # return to parameter selection
                 bsSelect = False
                 paramType = True
             elif temp[toggle] == 'Exit':
+                # exit the program where function not completed correctly
                 cont = False
 
             if cont and not(paramType):
