@@ -647,11 +647,15 @@ def parameterSelection(sample, queue):
 
     element_mode = False
     compound_mode = False
+    dependent = False
+    independent = False
     # initializing the sturcture key so that it remember which options were selected
     structFf = dict()
     magFf = dict()
     polyFf = dict()
     structDict = dict()
+    polyDict = dict()
+
     bsTrack = ['Scaling Factor', 'Background Shift']
     for i in range(len(sample.structure)):
         structDict[i] = dict()
@@ -663,9 +667,14 @@ def parameterSelection(sample, queue):
                     structFf[ele] = sample.structure[i][ele].scattering_factor
 
             polymorph = sample.structure[i][ele].polymorph
+            if len(polymorph) > 0:
+                polyDict[i] = []
+                if ele not in list(polyDict.values()):
+                    polyDict[i].append(ele)
             for j in range(len(polymorph)):
                 if polymorph[j] not in list(polyFf.keys()):
                     polyFf[polymorph[j]] = sample.structure[i][ele].scattering_factor[j]
+
 
 
             mag = sample.structure[i][ele].mag_density
@@ -1219,13 +1228,84 @@ def parameterSelection(sample, queue):
 
         # Polymorphouse case ------------------------------------------------------------------------------------------
         elif polySelect:
+            dependent = False
+            independent = False
             print('POLYMORPHOUS SELECTION \n')
 
             print('Select an option:')
             print('\t 1: Dependant Polymorphs')
-            print('\t 2: Independant Polymorphs')
+            print('\t 2: Independent Polymorphs')
             print('\t 3: Return')
             print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
+            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '2':
+                toggle = input('Select one of the provided options: ')
+            print()
+
+            if toggle == '1':
+                print('DEPENDANT ELEMENT SELECTION \n')
+                print('Select which polymorph you would like to optimize: ')
+                idx = 1
+                temp = dict()
+                for ele in polyDict[param[0]]:
+                    print('\t ' + str(idx) + ': ' + ele)
+                    temp[str(idx)] = ele
+                    idx = idx + 1
+                print('\t ' + str(idx) + ': Return')
+                temp[str(idx)] = 'Return'
+                idx = idx + 1
+                temp[str(idx)] = 'Exit'
+                print('\t '+ str(idx) + ': Exit')
+
+                toggle = input('\n -> ')
+                print()
+
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if temp[toggle] in polyDict[param[0]]:
+                    param.append('POLYMORPHOUS')
+                    param.append('DEPENDENT')
+                    param.append(temp[toggle])
+                    dependent = True
+                    polySelect = False
+                elif temp[toggle] == 'Return':
+                    pass
+                elif temp[toggle] == 'Exit':
+                    cont = False
+            elif toggle == '2':
+                print()
+            elif toggle == '3':
+                print()
+            elif toggle == '4':
+                cont = False
+
+            input()
+
+        elif dependent:
+            print('DEPENDENT POLYMORPH SELECTION \n')
+            my_poly = sample.structure[param[0]][param[-1]].polymorph
+            print('Select which polymorph you would like to control: ')
+            temp = dict()
+            idx = 1
+            for poly in my_poly:
+                print('\t ' + str(idx) +': ' + poly)
+                temp[str(idx)] = poly
+                idx = idx + 1
+            print('\t ' + str(idx) + ': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            print('\t ' + str(idx) + ': Exit')
+            temp[str(idx)] = 'Exit'
+            toggle = input('\n -> ')
+            print()
+            while toggle not in list(temp.keys()):
+                toggle = input('Select one of the provided options: ')
+            print()
+
+
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
             temp = dict()
