@@ -630,8 +630,10 @@ def parameterSelection(sample, queue):
     lowerbound = list()  # lower bound of the parameter
     compoundBounds = False  # compound mode bounds selection process
     elementBounds = False  # element mode bounds selection process
+    polyBounds = False
     magneticBounds = False  # magnetic bounds selection process
     polyBounds = False  # polymorphous bounds selection process
+    ffBounds = False  # form factor boundaries
     lastStep = False  # States that program has finished successfully
     val = 0  # keeps track of structure values for default boundaries
 
@@ -646,7 +648,7 @@ def parameterSelection(sample, queue):
     bsSelect = False # background shift and scaling factor
     ffSelect = False # form factor energy shift
     constSelect = False  # constraint
-    ffBounds = False  # form factor boundaries
+    polyRatio = False
 
 
     bSelect = False  # background shift
@@ -1251,70 +1253,53 @@ def parameterSelection(sample, queue):
 
         # Polymorphouse case ------------------------------------------------------------------------------------------
         elif polySelect:
-            dependent = False
-            independent = False
+
             print('POLYMORPHOUS SELECTION \n')
 
-            print('Select an option:')
-            print('\t 1: Dependant Polymorphs')
-            print('\t 2: Independent Polymorphs')
-            print('\t 3: Return')
-            print('\t 4: Exit')
+            print('Select which polymorph you would like to optimize: ')
+            idx = 1
+            temp = dict()
+            print(polyDict)
+            for ele in polyDict[param[0]]:
+                print('\t ' + str(idx) + ': ' + ele)
+                temp[str(idx)] = ele
+                idx = idx + 1
+            print('\t ' + str(idx) + ': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            temp[str(idx)] = 'Exit'
+            print('\t ' + str(idx) + ': Exit')
+
             toggle = input('\n -> ')
             print()
-            while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '2':
+
+            while toggle not in list(temp.keys()):
                 toggle = input('Select one of the provided options: ')
             print()
 
-            if toggle == '1':
-                print('DEPENDANT ELEMENT SELECTION \n')
-                print('Select which polymorph you would like to optimize: ')
-                idx = 1
-                temp = dict()
-                for ele in polyDict[param[0]]:
-                    print('\t ' + str(idx) + ': ' + ele)
-                    temp[str(idx)] = ele
-                    idx = idx + 1
-                print('\t ' + str(idx) + ': Return')
-                temp[str(idx)] = 'Return'
-                idx = idx + 1
-                temp[str(idx)] = 'Exit'
-                print('\t '+ str(idx) + ': Exit')
-
-                toggle = input('\n -> ')
-                print()
-
-                while toggle not in list(temp.keys()):
-                    toggle = input('Select one of the provided options: ')
-                print()
-
-                if temp[toggle] in polyDict[param[0]]:
-                    param.append('POLYMORPHOUS')
-                    param.append('DEPENDENT')
-                    param.append(temp[toggle])
-                    dependent = True
-                    polySelect = False
-                elif temp[toggle] == 'Return':
-                    pass
-                elif temp[toggle] == 'Exit':
-                    cont = False
-            elif toggle == '2':
-                print()
-            elif toggle == '3':
-                print()
-            elif toggle == '4':
+            if temp[toggle] == 'Return':
+                param.pop()
+                polySelect = False
+                sampleParam = True
+            elif temp[toggle] == 'Exit':
                 cont = False
+            else:
+                param.append(temp[toggle])
+                polyRatio = True
+                polySelect = False
 
-            input()
+        elif polyRatio:
+            polymorphs = sample.structure[param[0]][param[-1]].polymorph
+            poly_ratio = sample.structure[param[0]][param[-1]].poly_ratio
+            print('SELECT POLYMORPH RATIO \n')
+            if len(polymorphs) > 3:
+                raise RuntimeError('This code cannot handle more than three polymorphs.')
 
-        elif dependent:
-            print('DEPENDENT POLYMORPH SELECTION \n')
-            my_poly = sample.structure[param[0]][param[-1]].polymorph
-            print('Select which polymorph you would like to control: ')
-            temp = dict()
+            print('Select polymorph that you would like to control: ')
             idx = 1
-            for poly in my_poly:
-                print('\t ' + str(idx) +': ' + poly)
+            temp = dict()
+            for poly in polymorphs:
+                print('\t ' + str(idx)+ ': ' + poly)
                 temp[str(idx)] = poly
                 idx = idx + 1
             print('\t ' + str(idx) + ': Return')
@@ -1322,11 +1307,80 @@ def parameterSelection(sample, queue):
             idx = idx + 1
             print('\t ' + str(idx) + ': Exit')
             temp[str(idx)] = 'Exit'
+
             toggle = input('\n -> ')
             print()
+
             while toggle not in list(temp.keys()):
                 toggle = input('Select one of the provided options: ')
+
+            if temp[toggle] == 'Return':
+                param.pop()
+                polyRatio = False
+                polySelect = True
+            elif temp[toggle] == 'Exit':
+                cont = False
+            else:
+                selected_poly = temp[toggle]
+                param.append(temp[toggle])
+                if len(polymorphs) == 3:
+                    polymorphs.remove(selected_poly)
+                    ratio = input('Enter the ratio relation for ' + polymorphs[0] + ' and ' + polymorphs[1] + ': ')
+                    ratio = ratio.split()
+                    good = True
+                    ratio = []
+                    while len(ratio) != 2 and not(good):
+                        if good and len(ratio) != 2:
+                            ratio = input('Separate the numbers with a space: ')
+                        elif not(good):
+                            ratio = input('Ratio must be an integer or float type: ')
+                        if len(ratio) == 2:
+                            ratio = [float(ratio[0]), float(ratio[1])]
+                            if type(ratio[0]) == float and type(ratio[1]) == float:
+                                good = True
+                    print()
+                    param.append(polymorphs)
+                    param.append(ratio)
+
+                polyBounds = True
+                polyRatio = False
+
+        elif polyBounds:
+            my_ele = param[2]
+            my_poly = param[3]
+            print('POLYMORPH BOUNDARIES \n')
+            print('Select an option: ')
+            print('\t 1: Select boundaries')
+            print('\t 2: Use default boundaries')
+            print('\t 3: Return: ')
+            print('\t 4: Exit')
+
+            toggle = input('\n -> ')
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
             print()
+            toggle = input('Select the polymorph ratio boundaries for ' + my_ele + ' (upper, lower): ')
+
+
+            if toggle == '1':
+                print()
+            elif toggle == '2':
+
+                print()
+            elif toggle == '3':
+                polyBound = False
+                polyRatio = True
+                if len(param) == 4:
+                    param.pop()
+                    param.pop()
+                else:
+                    param.pop()
+                    param.pop()
+                    param.pop()
+                    param.pop()
+
+            elif toggle == '4':
+               cont = False
 
 
         # Compound Mode -----------------------------------------------------------------------------------------------
