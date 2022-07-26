@@ -1359,14 +1359,39 @@ def parameterSelection(sample, queue):
             while toggle not in ['1','2','3','4']:
                 toggle = input('Select one of the provided options: ')
             print()
-            toggle = input('Select the polymorph ratio boundaries for ' + my_ele + ' (upper, lower): ')
 
-
+            finishPoly = False
             if toggle == '1':
-                print()
-            elif toggle == '2':
+                bound = input('Input the polmorph ratio bound between 0 and 1 for ' + my_poly + ' (lower, upper): ')
+                bound = ast.literal_eval(bound)
+                bound = (float(bound[0]), float(bound[1]))
+                while bound[0] > bound[1] and bound[0]<0 and bound[1]>1:
+                    bound = input('Make sure upper and lower bounds are input in ascending order and are found between 0 and 1: ')
+                    bound = ast.literal_eval(bound)
+                    bound = (float(bound[0]), float(bound[1]))
 
-                print()
+                lowerbound.append(bound[0])
+                upperbound.append(bound[1])
+                finishPoly = True
+            elif toggle == '2':
+                # find index
+                poly = sample.structure[param[0]][my_ele].polymorph
+                if type(poly) == np.ndarray:
+                    idx = np.where(poly == my_poly)
+                elif type(poly) == list:
+                    idx = poly.index(my_poly)
+                var = sample.structure[param[0]][my_ele].poly_ratio[idx]
+                lw = var - 0.2
+                up = var + 0.2
+
+                if lw < 0:
+                    lw = 0
+                if up > 1:
+                    up = 1
+
+                upperbound.append(up)
+                lowerbound.append(lw)
+                finishPoly = True
             elif toggle == '3':
                 polyBound = False
                 polyRatio = True
@@ -1382,6 +1407,34 @@ def parameterSelection(sample, queue):
             elif toggle == '4':
                cont = False
 
+            if finishPoly:
+                print('FINISH POLYMORPH \n')
+                print('Make a selection:')
+                print('\t 1: Select another parameter for current layer')
+                print('\t 2: Select another layer')
+                print('\t 3: Select another parameter type')
+                print('\t 4: Return')
+                print('\t 5: Exit/Finish')
+
+                toggle = input('\n -> ')
+                print()
+                while toggle not in ['1','2','3','4','5']:
+                    toggle = input('Select one of the provided options: ')
+                print()
+                if toggle == '1':
+                    print()
+                elif toggle =='2':
+                    print()
+                elif toggle =='3':
+                    print()
+                elif toggle =='4':
+                    finishPoly = False
+                    polyBounds = True
+                    lowerbound.pop()
+                    upperbound.pop()
+                elif toggle =='5':
+                    cont = False
+                    parameters.append(param.copy())
 
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
