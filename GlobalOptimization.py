@@ -670,6 +670,7 @@ def parameterSelection(sample, queue):
     polyFf = dict()  # polymorphous form factors parameters
     structDict = dict()  # stuctural parameters
     polyDict = dict()  # polymorphous parameters
+    magDict = dict()
     bsTrack = ['Scaling Factor', 'Background Shift']  # keeps track if scaling factor or background shift have been selected
 
     # Retrieves dictionary info from sample input by user
@@ -677,7 +678,8 @@ def parameterSelection(sample, queue):
         structDict[i] = dict()
         structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
         structDict[i]['element'] = dict()
-
+        if sample.layer_magnetized[i]:
+            magDict[i] = dict()
         # structural scattering factors
         for ele in list(sample.structure[i].keys()):
             if ele not in list(structFf.keys()):
@@ -697,11 +699,14 @@ def parameterSelection(sample, queue):
             # magnetic scattering factors
             mag = sample.structure[i][ele].mag_density
             if len(mag) > 0:
+
                 if len(polymorph) > 0:
+                    magDict[i][ele] = polymorph
                     for j in range(len(polymorph)):
                         if polymorph[j] not in list(magFf.keys()):
                             magFf[polymorph[j]] = sample.structure[i][ele].mag_scattering_factor[j]
                 else:
+                    magDict[i][ele] = ele
                     if ele not in list(magFf.keys()):
                         magFf[ele] = sample.structure[i][ele].mag_scattering_factor
 
@@ -1259,7 +1264,6 @@ def parameterSelection(sample, queue):
             print('Select which polymorph you would like to optimize: ')
             idx = 1
             temp = dict()
-            print(polyDict)
             for ele in polyDict[param[0]]:
                 print('\t ' + str(idx) + ': ' + ele)
                 temp[str(idx)] = ele
@@ -1352,7 +1356,7 @@ def parameterSelection(sample, queue):
             print('Select an option: ')
             print('\t 1: Select boundaries')
             print('\t 2: Use default boundaries')
-            print('\t 3: Return: ')
+            print('\t 3: Return')
             print('\t 4: Exit')
 
             toggle = input('\n -> ')
@@ -1373,14 +1377,18 @@ def parameterSelection(sample, queue):
                 lowerbound.append(bound[0])
                 upperbound.append(bound[1])
                 finishPoly = True
+                polyBounds = False
             elif toggle == '2':
                 # find index
                 poly = sample.structure[param[0]][my_ele].polymorph
                 if type(poly) == np.ndarray:
                     idx = np.where(poly == my_poly)
+                    idx = idx[0][0]
                 elif type(poly) == list:
                     idx = poly.index(my_poly)
+
                 var = sample.structure[param[0]][my_ele].poly_ratio[idx]
+
                 lw = var - 0.2
                 up = var + 0.2
 
@@ -1392,14 +1400,14 @@ def parameterSelection(sample, queue):
                 upperbound.append(up)
                 lowerbound.append(lw)
                 finishPoly = True
+                polyBounds = False
             elif toggle == '3':
-                polyBound = False
                 polyRatio = True
                 if len(param) == 4:
                     param.pop()
-                    param.pop()
+                    #param.pop()
                 else:
-                    param.pop()
+                    #param.pop()
                     param.pop()
                     param.pop()
                     param.pop()
@@ -1422,11 +1430,26 @@ def parameterSelection(sample, queue):
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
-                    print()
+                    parameters.append(param.copy())
+                    param = [param[0]]
+                    finishPoly = False
+                    sampleParam = True
+                    print(polyDict)
+                    polyDict[param[0]].remove(my_ele)
+
                 elif toggle =='2':
-                    print()
+                    parameters.append(param.copy())
+                    param = []
+                    finishPoly = False
+                    layerSelect = True
+                    polyDict[param[0]].remove(my_ele)
+
                 elif toggle =='3':
-                    print()
+                    parameters.append(param.copy())
+                    param = []
+                    finishPoly = False
+                    paramType = True
+                    polyDict[param[0]].remove(my_ele)
                 elif toggle =='4':
                     finishPoly = False
                     polyBounds = True
@@ -1436,6 +1459,9 @@ def parameterSelection(sample, queue):
                     cont = False
                     parameters.append(param.copy())
 
+        elif magSelect:
+            print('MAGNETIC SELECTION')
+            input()
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
             temp = dict()
@@ -1695,11 +1721,12 @@ def parameterSelection(sample, queue):
                 print('\t 1: Select new parameter for same layer in compound mode')
                 print('\t 2: Select new parameter for same layer in element mode')
                 print('\t 3: Select a new layer')
-                print('\t 4: Return')
-                print('\t 5: Exit/Finish')
+                print('\t 4: Select a new parameter type')
+                print('\t 5: Return')
+                print('\t 6: Exit/Finish')
                 toggle = input('\n ->')
                 print()
-                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
+                while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5' and toggle != '6':
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
@@ -1724,9 +1751,14 @@ def parameterSelection(sample, queue):
                     layerSelect = True
 
                 elif toggle == '4':
+                    parameters.append(param.copy)
+                    param = []
+                    compoundBounds = False
+                    paramType = True
+                elif toggle == '5':
                     upperbound.pop()
                     lowerbound.pop()
-                elif toggle == '5':
+                elif toggle == '6':
                     parameters.append(param)
                     cont = False
 
@@ -1856,6 +1888,7 @@ def parameterSelection(sample, queue):
                     cont = False
     print(parameters)
     print(upperbound)
+    print(lowerbound)
 
 def getGlobOptParams(fname):
     # Load in the sample information
