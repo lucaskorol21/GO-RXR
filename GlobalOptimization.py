@@ -632,6 +632,7 @@ def parameterSelection(sample, queue):
     elementBounds = False  # element mode bounds selection process
     polyBounds = False
     magneticBounds = False  # magnetic bounds selection process
+    magBounds = False
     polyBounds = False  # polymorphous bounds selection process
     ffBounds = False  # form factor boundaries
     lastStep = False  # States that program has finished successfully
@@ -649,8 +650,10 @@ def parameterSelection(sample, queue):
     ffSelect = False # form factor energy shift
     constSelect = False  # constraint
     polyRatio = False
+    constCompound = False
+    constElement = False
 
-
+    constDict = dict()
     bSelect = False  # background shift
     sSelect = False  # scaling factor
 
@@ -661,8 +664,6 @@ def parameterSelection(sample, queue):
 
     element_mode = False  # element mode
     compound_mode = False  # compound mode
-    dependent = False  # dependant polymorphous mode
-    independent = False  # independant polymorphous mode
 
     # dictionaries to keep track of which parameters have already been selected
     structFf = dict()  # structural  form factor parameters
@@ -676,12 +677,14 @@ def parameterSelection(sample, queue):
     # Retrieves dictionary info from sample input by user
     for i in range(len(sample.structure)):
         structDict[i] = dict()
+        constDict[i] = []
         structDict[i]['compound'] = ['Thickness', 'Density', 'Roughness', 'Linked Roughness']
         structDict[i]['element'] = dict()
         if sample.layer_magnetized[i]:
             magDict[i] = dict()
         # structural scattering factors
         for ele in list(sample.structure[i].keys()):
+            constDict[i].append(ele)
             if ele not in list(structFf.keys()):
                 if ele not in list(sample.poly_elements.keys()) and ele not in list(sample.mag_elements.keys()):
                     structFf[ele] = sample.structure[i][ele].scattering_factor
@@ -748,9 +751,9 @@ def parameterSelection(sample, queue):
                 ffSelect = True
             elif toggle == '4':
                 # Constraints
-                paramTypeT = False
+                paramType = False
                 constSelect = True
-                print()
+
             elif toggle == '5':
                 # exit the program
                 cont = False
@@ -1460,8 +1463,80 @@ def parameterSelection(sample, queue):
                     parameters.append(param.copy())
 
         elif magSelect:
-            print('MAGNETIC SELECTION')
+            print('MAGNETIC SELECTION \n')
+            print('Select which magnetic element you would like to vary: ')
+            temp = dict()
+            selected_mag = ''
+            selected_mag_poly = ''
+            idx = 1
+            for ele in list(magDict[param[0]].keys()):
+                print('\t ' + str(idx) + ': ' + ele)
+                temp[str(idx)] = ele
+                idx = idx + 1
+            print('\t ' + str(idx) + ': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            print('\t ' + str(idx) + ': Exit')
+            temp[str(idx)] = 'Exit'
+            toggle = input('\n -> ')
+            print()
+
+            isPoly = False
+            while toggle not in list(temp.keys()):
+                toggle = input('Select one of the provided options: ')
+            print()
+
+            if temp[toggle] == 'Return':
+                pass
+            elif toggle == 'Exit':
+                cont = False
+            else:
+                param.append(temp[toggle])
+                magSelect = False
+                selected_mag = temp[toggle]
+                if len(sample.structure[param[0]][selected_mag].polymorph) > 0:
+                    isPoly = True
+
+            if isPoly:
+                print('SELECT MAGNETIC POLYMORPH \n')
+                idx = 1
+                temp = dict()
+                for poly in magDict[param[0]][selected_mag]:
+                    print('\t ' + str(idx) + ': ' + poly)
+                    temp[str(idx)] = poly
+                    idx = idx + 1
+                print('\t ' + str(idx) + ': Return')
+                temp[str(idx)] = 'Return'
+                idx = idx + 1
+                print('\t ' + str(idx) + ': Exit')
+                temp[str(idx)] = 'Exit'
+
+                toggle = input('\n -> ')
+                print()
+                while toggle not in list(temp.keys()):
+                    toggle = input('Select one of the provided options: ')
+                print()
+
+                if temp[toggle] == 'Return':
+                    param.pop()
+                    isPoly = False
+                    magSelect = True
+                    print()
+                elif temp[toggle] == 'Exit':
+                    cont = False
+                else:
+                    selected_mag_poly = temp[toggle]
+                    param.append(selected_mag_poly)
+                    magBounds = True
+                    selectMag = False
+                    isPoly = False
+
+        elif magBounds:
+            print()
             input()
+
+
+
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
             temp = dict()
@@ -1886,6 +1961,62 @@ def parameterSelection(sample, queue):
                 elif toggle == '6':
                     parameters.append(param.copy())
                     cont = False
+
+        elif constSelect:
+            print('THICKNESS CONSTRAINTS \n')
+            print('\t 1: Compound Mode')
+            print('\t 2: Element Mode')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
+            print()
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1':
+                constSelect = False
+                constCompound = True
+            elif toggle == '2':
+                constSelect = False
+                constElement = True
+            elif toggle == '3':
+                pass
+            elif toggle == '4':
+                cont = False
+        elif constCompound:
+            myList = list()
+            for key in list(constDict.keys()):
+                if len(constDict[key]) != 0:
+                    myList.append(key)
+
+            print('COMPOUND THICKNESS CONSTRAINT \n')
+            print('The layers not already selected are -> ' + str(myList))
+            toggle = input('Select the range of layers you want to keep a constant thickness: ')
+            toggle = toggle.split()
+            good = False
+            keys = list(constDict.keys())
+            while len(toggle) != 2 and good:
+                if len(toggle) != 2:
+                    toggle = input('Enter upper and lower range separated by a space: ')
+                    toggle = [int(toggle[0]), int(toggle[1])]
+                else:
+                    toggle = [int(toggle[0]), int(toggle[1])]
+                    if range(toggle[0],toggle[1]+1) not in keys:
+                        toggle = input('Select a range that exists in -> ' + str(keys))
+
+
+            param.append('CONSTRAINT')
+            param.append('COMPOUND')
+            param.append(toggle)
+
+            for key in keys:
+                del constDict[key]
+
+            constCompound = False
+            paramType = True
+
+        elif constElement:
+            print()
     print(parameters)
     print(upperbound)
     print(lowerbound)
