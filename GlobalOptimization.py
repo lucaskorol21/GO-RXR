@@ -1489,7 +1489,8 @@ def parameterSelection(sample, queue):
             print()
 
             if temp[toggle] == 'Return':
-                pass
+                magSelect = False
+                sampleParam = True
             elif toggle == 'Exit':
                 cont = False
             else:
@@ -1523,7 +1524,7 @@ def parameterSelection(sample, queue):
                     param.pop()
                     isPoly = False
                     magSelect = True
-                    print()
+
                 elif temp[toggle] == 'Exit':
                     cont = False
                 else:
@@ -1534,10 +1535,112 @@ def parameterSelection(sample, queue):
                     isPoly = False
 
         elif magBounds:
+            print('MAGNETIC BOUNDS \n')
+            print('Select one of the boundary options: ')
+            print('\t 1: Select boundaries')
+            print('\t 2: Default boundaries')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+            toggle = input('\n -> ')
             print()
-            input()
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
+            print()
 
+            contMag = False
+            if toggle == '1':
+                bd = input('Enter the magnetic density boundary in terms of mol/cm^3 (lower, upper): ')
+                bd = ast.literal_eval(bd)
+                bd = (float(bd[0]), float(bd[1]))
+                while bd[0] > bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
+                    bd = ast.literal_eval(bd)
+                    bd = (float(bd[0]), float(bd[1]))
 
+                lowerbound.append(bd[0])
+                upperbound.append(bd[1])
+                contMag = True
+            elif toggle == '2':
+                lw = 0
+                up = 0
+                if len(param) == 2:
+                    # non polymorphous case
+                    val = sample.structure[param[0]][param[2]].mag_density
+                    if type(val) == list or type(val) == np.ndarray:
+                        val = val[0]
+                    lw = val - 1e-5
+                    up = val + 1e-5
+                else:
+                    # polymorphous case
+                    print(param)
+                    var = sample.structure[param[0]][param[2]].mag_density
+                    polymorph = sample.structure[param[0]][param[2]].polymorph
+                    if type(polymorph) == list:
+                        idx = polymorph.index(param[3])
+                        idx = idx[0]
+                    elif type(polymorph) == np.ndarray:
+                        idx = np.where(param[3] == polymorph)
+                        idx = idx[0][0]
+                    val = var[idx]
+                    up = val + 1e-5
+                    lw = val - 1e-5
+                upperbound.append(up)
+                lowerbound.append(lw)
+                contMag = True
+            elif toggle == '3':
+                magSelect = True
+                magBounds = False
+                if len(param) == 2:
+                    param.pop()
+                else:
+                    param.pop()
+                    param.pop()
+            elif toggle == '4':
+                cont = False
+
+            if contMag:
+                print('FINISH MAGNETIC DENSITY \n')
+                print('Select an option: ')
+                print('\t 1: Select another magnetic density for the same layer')
+                print('\t 2: Select another parameter for the same layer')
+                print('\t 3: Select another layer')
+                print('\t 4: Select another parameter type')
+                print('\t 5: Return')
+                print('\t 6: Exit/Finish')
+                toggle = input('\n -> ')
+                print()
+                while toggle not in ['1','2','3','4','5','6']:
+                    toggle = input('Select one of the provided options: ')
+                if toggle in ['1','2','3']:
+                    parameters.append(param.copy())
+                    magBounds = False
+                    magLayer = magDict[param[0]][param[2]]
+                    if len(magLayer) > 1:
+                        if type(magLayer) == np.ndarray:
+                            print(magDict[param[0]][param[2]])
+                            magDict[param[0]][param[2]] = np.delete(magDict[param[0]][param[2]], np.where(magDict[param[0]][param[2]] == param[3])[0])
+                        else:
+                            magDict[param[0]][param[2]].remove(param[3])
+                    else:
+                        del magDict[param[0]][param[2]]
+                    print(magDict)
+                    if toggle == '1':
+                        param = param[0:2]
+                        magSelect = True
+                    elif toggle == '2':
+                        param = [param[0]]
+                        sampleParam = True
+                    elif toggle == '3':
+                        param = list()
+                        paramType = True
+                    print(magDict)
+                elif toggle == '4':
+                    print()
+                elif toggle == '5':
+                    lowerbound.pop()
+                    upperbound.pop()
+                elif toggle == '6':
+                    cont = False
 
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
@@ -1733,7 +1836,8 @@ def parameterSelection(sample, queue):
                 bd = (float(bd[0]), float(bd[1]))
                 while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
                     bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
-
+                bd = ast.literal_eval(bd)
+                bd = (float(bd[0]), float(bd[1]))
                 lowerbound.append(bd[0])
                 upperbound.append(bd[1])
 
@@ -1858,6 +1962,8 @@ def parameterSelection(sample, queue):
                 bd = (float(bd[0]), float(bd[1]))
                 while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
                     bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
+                    bd = ast.literal_eval(bd)
+                    bd = (float(bd[0]), float(bd[1]))
 
                 lowerbound.append(bd[0])
                 upperbound.append(bd[1])
