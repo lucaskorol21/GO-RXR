@@ -8,6 +8,7 @@ from tkinter import *
 from material_model import *
 from tkinter import ttk
 import multiprocessing as mp
+import sys
 
 
 import functools
@@ -654,6 +655,7 @@ def parameterSelection(sample, queue):
     constCompound = False
     constElement = False
     constThick = False
+    isFinished = False
 
     constDict = dict()
     bSelect = False  # background shift
@@ -943,10 +945,12 @@ def parameterSelection(sample, queue):
                         background = False
                         scaling = False
                         backScale = False
+                        isFinished = True
                     elif toggle == '3':
                         cont = False
-
-
+        # --------------------------------------------------------------------------------------------------------- #
+        # Form factor selection
+        # --------------------------------------------------------------------------------------------------------- #
         elif ffSelect:
 
             print('FORM FACTOR ENERGY SHIFT SELECTION \n')
@@ -1152,6 +1156,7 @@ def parameterSelection(sample, queue):
                     elif toggle == '4':
                         parameters.append(param.copy())
                         cont = False
+                        isFinished = True
 
 
         elif layerSelect:
@@ -1462,6 +1467,7 @@ def parameterSelection(sample, queue):
                     upperbound.pop()
                 elif toggle =='5':
                     cont = False
+                    isFinished = True
                     parameters.append(param.copy())
 
         elif magSelect:
@@ -1641,6 +1647,7 @@ def parameterSelection(sample, queue):
                     upperbound.pop()
                 elif toggle == '6':
                     cont = False
+                    isFinished = True
 
         # Compound Mode -----------------------------------------------------------------------------------------------
         elif compound_mode:
@@ -1942,6 +1949,7 @@ def parameterSelection(sample, queue):
                 elif toggle == '6':
                     parameters.append(param)
                     cont = False
+                    isFinished = True
 
         elif elementBounds:  # compound bounds ---------------------------------------------------------
             print('ELEMENT BOUND SELECTION \n')
@@ -2057,7 +2065,7 @@ def parameterSelection(sample, queue):
                     param = list()
                     elementBounds = False
                     layerSelect = True
-                elif toggle == '3':
+                elif toggle == '4':
                     parameters.append(param.copy())
                     param = list()
                     elementBounds = False
@@ -2069,6 +2077,7 @@ def parameterSelection(sample, queue):
                 elif toggle == '6':
                     parameters.append(param.copy())
                     cont = False
+                    isFinished = True
 
         elif constSelect:
             print('THICKNESS CONSTRAINTS \n')
@@ -2234,12 +2243,17 @@ def parameterSelection(sample, queue):
                 elif param[1] == 'ELEMENT':
                     constElement = True
             elif toggle == '4':
+                isFinished = True
                 cont = False
             param = []
-    print(parameters)
-    print(constraints)
-    print(upperbound)
-    print(lowerbound)
+
+    if not isFinished:
+        sys.exit()
+
+    bounds = list(zip(lowerbound, upperbound))
+    queue.put([parameters, constraints, bounds])
+    return
+
 
 def getGlobOptParams(fname):
     # Load in the sample information
