@@ -2298,9 +2298,10 @@ def getGlobOptParams(fname):
 
     val = queue1.get()
     parameters = val[0]
-    bounds = val[1]
+    constraints = val[1]
+    bounds = val[2]
 
-    return scans, parameters, bounds
+    return scans, parameters, constraints, bounds
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
