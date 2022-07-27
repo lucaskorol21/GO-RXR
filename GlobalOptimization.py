@@ -624,6 +624,7 @@ def parameterSelection(sample, queue):
     # Booleans that determine which process to complete
 
     parameters = list()  # list that keeps track of all the selected parameters
+    constraints = list()
     param = list()  # keeps track of the current selection tree
 
     upperbound = list()  # upper bound of the parameter
@@ -652,6 +653,7 @@ def parameterSelection(sample, queue):
     polyRatio = False
     constCompound = False
     constElement = False
+    constThick = False
 
     constDict = dict()
     bSelect = False  # background shift
@@ -1986,7 +1988,7 @@ def parameterSelection(sample, queue):
         elif constCompound:
             myList = list()
             for key in list(constDict.keys()):
-                if len(constDict[key]) != 0:
+                if len(constDict[key]) == 3:
                     myList.append(key)
 
             print('COMPOUND THICKNESS CONSTRAINT \n')
@@ -1994,30 +1996,142 @@ def parameterSelection(sample, queue):
             toggle = input('Select the range of layers you want to keep a constant thickness: ')
             toggle = toggle.split()
             good = False
-            keys = list(constDict.keys())
+
             while len(toggle) != 2 and good:
                 if len(toggle) != 2:
                     toggle = input('Enter upper and lower range separated by a space: ')
                     toggle = [int(toggle[0]), int(toggle[1])]
                 else:
                     toggle = [int(toggle[0]), int(toggle[1])]
-                    if range(toggle[0],toggle[1]+1) not in keys:
-                        toggle = input('Select a range that exists in -> ' + str(keys))
+                    if range(toggle[0],toggle[1]+1) not in myList:
+                        toggle = input('Select a range that exists in -> ' + str(myList))
 
 
             param.append('CONSTRAINT')
             param.append('COMPOUND')
+
             param.append(toggle)
 
-            for key in keys:
-                del constDict[key]
-
             constCompound = False
-            paramType = True
+            constThick = True
 
         elif constElement:
+            print('ELEMENT THICKNESS CONSTRAINT \n')
+            print('Select which element you want to add a constraint: ')
+            idx = 1
+            temp = dict()
+            contEleConst = False
+            selected_ele_const = ''
+            for ele in sample.myelements:
+                printList = []
+                for key in list(constDict.keys()):
+                    if ele in constDict[key]:
+                        printList.append(key)
+                if len(printList) != 0:
+                    print('\t ' + str(idx) + ': ' + str(ele))
+                    temp[str(idx)] = ele
+                    idx = idx + 1
+            print('\t ' + str(idx) + ': Return')
+            temp[str(idx)] = 'Return'
+            idx = idx + 1
+            print('\t ' + str(idx) + ': Exit')
+            temp[str(idx)] = 'Exit'
+
+            toggle = input('\n -> ')
             print()
+            while toggle not in list(temp.keys()):
+                toggle = input('Select one of the provided options: ')
+            print()
+            if temp[toggle] == 'Return':
+                constElement = False
+                constSelect = True
+            elif temp[toggle] == 'Exit':
+                cont = False
+            else:
+                contEleConst = True
+                selected_ele_const = temp[toggle]
+
+            if contEleConst:
+                myList = []
+                for key in list(constDict.keys()):
+                    if selected_ele_const in constDict[key]:
+                        myList.append(key)
+
+                print('The layers not already selected are -> ' + str(myList))
+                toggle = input('Select the range of layers you want to keep a constant thickness: ')
+                toggle = toggle.split()
+                good = False
+                while len(toggle) != 2 and good:
+                    if len(toggle) != 2:
+                        toggle = input('Enter upper and lower range separated by a space: ')
+                        toggle = [int(toggle[0]), int(toggle[1])]
+                    else:
+                        toggle = [int(toggle[0]), int(toggle[1])]
+                        if range(toggle[0], toggle[1] + 1) not in myList:
+                            toggle = input('Select a range that exists in -> ' + str(myList))
+
+                param.append('CONSTRAINT')
+                param.append('ELEMENT')
+                param.append(selected_ele_const)
+
+                param.append(toggle)
+
+
+
+                constElement = False
+                constThick = True
+
+        elif constThick:
+            print('SELECT CONSTRAINT THICKNESS \n')
+
+            toggle = input('Select the thickness constraint in Angstrom for layers ' + str(param[-1][0])+' to ' + str(param[-1][1]) + ': ')
+            toggle = float(toggle)
+            while type(toggle) != float:
+                toggle = input('Input must be a number: ')
+            param.append(toggle)
+
+            print('\n FINISH CONSTRAINT')
+            print()
+            print('\t 1: Select another constraint')
+            print('\t 2: Select another parameter type')
+            print('\t 3: Return')
+            print('\t 4: Exit/Finish')
+
+            toggle = input('\n -> ')
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1' or toggle == '2':
+                if param[1] == 'COMPOUND':
+                    layers = param[2]
+                    for i in range(int(layers[0]), int(layers[1])+1):
+                        del constDict[i]
+                elif param[1] == 'ELEMENT':
+                    ele = param[2]
+                    layers = param[3]
+                    for i in range(int(layers[0]), int(layers[1]) + 1):
+                        constDict[i].remove(ele)
+                        if len(constDict[i]) == 0:
+                            del constDict
+                constraints.append(param.copy())
+
+                constThick = False
+                if toggle == '1':
+                    constSelect = True
+                else:
+                    paramType = True
+
+            elif toggle == '3':
+                constThick = False
+                if param[1] == 'COMPOUND':
+                    constCompound = True
+                elif param[1] == 'ELEMENT':
+                    constElement = True
+            elif toggle == '4':
+                cont = False
+            param = []
     print(parameters)
+    print(constraints)
     print(upperbound)
     print(lowerbound)
 
