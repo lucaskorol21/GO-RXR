@@ -13,6 +13,65 @@ import sys
 
 import functools
 
+def plotScansWidget(sample, data, data_dict, sim_dict, scans):
+    my_index = list()  # contains the indices of the appropriate scans
+    # Finds the indices of each scan
+    for s in scans:
+        my_index.append((data[:, 0].astype(int).tolist().index(s)))
+
+    my_scans = data[my_index]  # gets all the appropriate scans
+
+    # plot the sample model
+    fig_idx = 1
+    for s in my_scans:
+
+        name = s[2]  # name of the scan
+        scanType = s[1]  # scan type
+        scan_num = s[0]  # scan number
+        dat = data_dict[name]
+        sim = sim_dict[name]
+        pol = dat['Polarization']
+
+        if scanType.upper() == 'REFLECTIVITY':
+            qz = dat['Data'][0]  # momentum transfer
+            R = dat['Data'][2]  # reflectivity
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
+            plt.plot(qz, R)  # data
+            plt.plot(qz, Rsim)  # simulation
+
+            # Change log scale for non-asymmetry scans
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Momentum Transfer, qz (A^{-1})')
+            plt.legend(['Experiment', 'Simulation'])
+
+        elif scanType.upper() == 'ENERGY':
+            E = dat['Data'][3]  # Energy
+            R = dat['Data'][2]  # Reflectivity
+            Rsim = sim['Data'][2]
+            plt.figure(fig_idx)
+            plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
+            plt.plot(E, R)  # data
+            plt.plot(E, Rsim)  # simulation
+
+            # Changes the yscale depending on if scan is an asymmetry scan
+            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+                plt.yscale('log')
+                plt.ylabel('log(R)')
+            else:
+                plt.ylabel('A')
+            plt.xlabel('Energy, E (eV)')
+            plt.legend(['Experiment', 'Simulation'])
+
+        fig_idx = fig_idx + 1
+
+
+    return
 
 def plotScans(data, data_dict, sim_dict, scans):
     """
@@ -2275,7 +2334,10 @@ def getGlobOptParams(fname):
     p2.join()
     p1.terminate()
 
-    scans = queue.get()
+    step1 = queue.get()
+    scans = step1[0]
+    scans = [int(scan) for scan in scans]
+    bw = step1[1]
 
     queue1 = mp.Queue()
     # show the current scans
@@ -2301,7 +2363,7 @@ def getGlobOptParams(fname):
     constraints = val[1]
     bounds = val[2]
 
-    return scans, parameters, constraints, bounds
+    return scans
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
@@ -2464,7 +2526,8 @@ if __name__ == "__main__":
     data, data_dict, sim_dict = ReadDataHDF5(fname)
     sample = ReadSampleHDF5(fname)
 
-    parameterSelection(sample, queue)
+    getGlobOptParams(fname)
+    #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()
     #scans = results[0]
