@@ -17,8 +17,9 @@ import functools
 def plotScansWidget(sample, data, data_dict, sim_dict, scans):
 
     cwd = os.getcwd()
-    print(cwd)
+
     dir = 'Plot_Scans'
+    """
     for file in os.scandir(dir):
         os.remove(file.path)
 
@@ -79,25 +80,30 @@ def plotScansWidget(sample, data, data_dict, sim_dict, scans):
         fig_idx = fig_idx + 1
         saveto = dir +'/' + name + '.png'
         plt.savefig(saveto)
-
+    """
     root = Tk()
     root.geometry('900x900')
     root.title('Show Selected Scans')
 
     # create a notebook
-    notebook = ttk.Notebook(root)
-    notebook.pack(pady=10, expand =True)
+    tabControl = ttk.Notebook(root)
 
-
+    idx = 0
+    im = list()
     for filename in os.listdir(dir):
-        frame = ttk.Frame(notebook, width=800, height=800)
-        #frame.pack(fill='both', expand=True)
-        frame.place(anchor='center', relx=0.5, rely=0.5)
 
-        img = ImageTk.PhotoImage(Image.open(dir+'/'+filename))
-        label = Label(frame, image=img)
+        frame = ttk.Frame(tabControl)
+
+        im.append(ImageTk.PhotoImage(file=dir + '/' + filename))
+        label = Label(frame, imag=im[idx])
         label.pack()
-        notebook.add(frame, text=name)
+        tabControl.add(frame, text=filename)
+
+
+        idx = idx + 1
+
+
+    tabControl.pack()
     root.mainloop()
     return
 
