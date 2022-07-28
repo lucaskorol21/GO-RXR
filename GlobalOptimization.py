@@ -14,14 +14,16 @@ from PIL import Image, ImageTk
 
 import functools
 
-def plotScansWidget(sample, data, data_dict, sim_dict, scans):
+def saveScans(data, data_dict, sim_dict, scans, sample):
 
-    cwd = os.getcwd()
 
     dir = 'Plot_Scans'
-    """
+
+
     for file in os.scandir(dir):
         os.remove(file.path)
+
+    sample.plot_density_profile(save=True, fig=99)
 
     my_index = list()  # contains the indices of the appropriate scans
     # Finds the indices of each scan
@@ -80,7 +82,14 @@ def plotScansWidget(sample, data, data_dict, sim_dict, scans):
         fig_idx = fig_idx + 1
         saveto = dir +'/' + name + '.png'
         plt.savefig(saveto)
-    """
+        plt.close()
+
+    return
+
+def plotScansWidget():
+
+    dir = 'Plot_Scans'
+
     root = Tk()
     root.geometry('900x900')
     root.title('Show Selected Scans')
@@ -93,12 +102,13 @@ def plotScansWidget(sample, data, data_dict, sim_dict, scans):
     for filename in os.listdir(dir):
 
         frame = ttk.Frame(tabControl)
-
-        im.append(ImageTk.PhotoImage(file=dir + '/' + filename))
+        imageFile = dir + '/' + filename
+        im.append(ImageTk.PhotoImage(Image.open(imageFile)))
         label = Label(frame, imag=im[idx])
         label.pack()
-        tabControl.add(frame, text=filename)
+        frame.pack()
 
+        tabControl.add(frame, text=filename)
 
         idx = idx + 1
 
@@ -2371,19 +2381,24 @@ def getGlobOptParams(fname):
     step1 = queue.get()
     scans = step1[0]
     scans = [int(scan) for scan in scans]
+
+    f_mid = functools.partial(saveScans, data, data_dict, sim_dict, scans, sample)
+    p_mid = mp.Process(target=f_mid)
+    p_mid.start()
+    p_mid.join()
+
     bw = step1[1]
 
     queue1 = mp.Queue()
     # show the current scans
     # scans = [1,2,3,4,5]
 
-    f3 = functools.partial(plotScans, data, data_dict, sim_dict, scans)
+    f3 = functools.partial(plotScansWidget)
+    p3 = mp.Process(target=f3)
+    p3.start()
 
     p4 = mp.Process(target=sample.showSampleParameters)
     p4.start()
-
-    p3 = mp.Process(target=f3)
-    p3.start()
 
     p5 = mp.Process(target=parameterSelection(sample, queue1))
     p5.start()
@@ -2558,9 +2573,10 @@ if __name__ == "__main__":
     #print(ReadDataHDF5(fname))
     scans = [1,2,3,4]
     data, data_dict, sim_dict = ReadDataHDF5(fname)
-    sample = ReadSampleHDF5(fname)
-    plotScansWidget(sample, data, data_dict, sim_dict, scans)
-    #getGlobOptParams(fname)
+    #sample = ReadSampleHDF5(fname)
+    #saveScans(data, data_dict, sim_dict, scans, sample)
+    #plotScansWidget(data, data_dict, sim_dict, scans, sample)
+    getGlobOptParams(fname)
     #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()

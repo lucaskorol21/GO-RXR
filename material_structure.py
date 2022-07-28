@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
@@ -1018,7 +1020,7 @@ class slab:
         self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
 
-    def plot_density_profile(self, fig=1):
+    def plot_density_profile(self, fig=1, save=False, dir='Plot_Scans'):
         thickness, density, density_magnetic = self.density_profile()
         val = list(density.values())
         mag_val = list(density_magnetic.values())
@@ -1049,6 +1051,10 @@ class slab:
         plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
         plt.xlabel('Thickness (Angstrom)')
         plt.ylabel('Density (mol/cm^3)')
+
+        if save:
+            saveto = dir + '/Density_Profile.png'
+            plt.savefig(saveto)
 
 
 
