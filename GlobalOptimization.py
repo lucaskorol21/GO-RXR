@@ -9,11 +9,19 @@ from material_model import *
 from tkinter import ttk
 import multiprocessing as mp
 import sys
-
+import os
+from PIL import Image, ImageTk
 
 import functools
 
 def plotScansWidget(sample, data, data_dict, sim_dict, scans):
+
+    cwd = os.getcwd()
+    print(cwd)
+    dir = 'Plot_Scans'
+    for file in os.scandir(dir):
+        os.remove(file.path)
+
     my_index = list()  # contains the indices of the appropriate scans
     # Finds the indices of each scan
     for s in scans:
@@ -69,8 +77,28 @@ def plotScansWidget(sample, data, data_dict, sim_dict, scans):
             plt.legend(['Experiment', 'Simulation'])
 
         fig_idx = fig_idx + 1
+        saveto = dir +'/' + name + '.png'
+        plt.savefig(saveto)
+
+    root = Tk()
+    root.geometry('900x900')
+    root.title('Show Selected Scans')
+
+    # create a notebook
+    notebook = ttk.Notebook(root)
+    notebook.pack(pady=10, expand =True)
 
 
+    for filename in os.listdir(dir):
+        frame = ttk.Frame(notebook, width=800, height=800)
+        #frame.pack(fill='both', expand=True)
+        frame.place(anchor='center', relx=0.5, rely=0.5)
+
+        img = ImageTk.PhotoImage(Image.open(dir+'/'+filename))
+        label = Label(frame, image=img)
+        label.pack()
+        notebook.add(frame, text=name)
+    root.mainloop()
     return
 
 def plotScans(data, data_dict, sim_dict, scans):
@@ -2522,11 +2550,11 @@ if __name__ == "__main__":
     #plt.show()
     #WriteSampleHDF5(fname, sample)
     #print(ReadDataHDF5(fname))
-    queue = mp.Queue()
+    scans = [1,2,3,4]
     data, data_dict, sim_dict = ReadDataHDF5(fname)
     sample = ReadSampleHDF5(fname)
-
-    getGlobOptParams(fname)
+    plotScansWidget(sample, data, data_dict, sim_dict, scans)
+    #getGlobOptParams(fname)
     #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()
