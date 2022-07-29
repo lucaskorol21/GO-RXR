@@ -720,7 +720,6 @@ def scanCompute(x, *args):
     sample = changeSampleParams(x, parameters, sample)
 
 
-
     for scan in scans:
         scan_number = int(scan[0])
         scanType = scan[1]
@@ -993,6 +992,7 @@ def parameterSelection(sample, queue):
             elif toggle == '5':
                 # exit the program
                 cont = False
+                isFinished = True
 
         # -------------------------------------------------------------------------------------- #
         # Selecting whether to vary background shift or scaling factor ------------------------- #
@@ -1676,25 +1676,25 @@ def parameterSelection(sample, queue):
                 print()
                 if toggle == '1':
                     parameters.append(param.copy())
-                    param = [param[0]]
                     finishPoly = False
                     sampleParam = True
-                    print(polyDict)
                     polyDict[param[0]].remove(my_ele)
+                    param = [param[0]]
 
                 elif toggle =='2':
                     parameters.append(param.copy())
-                    param = []
+
                     finishPoly = False
                     layerSelect = True
                     polyDict[param[0]].remove(my_ele)
+                    param = []
 
                 elif toggle =='3':
                     parameters.append(param.copy())
-                    param = []
                     finishPoly = False
                     paramType = True
                     polyDict[param[0]].remove(my_ele)
+                    param = []
                 elif toggle =='4':
                     finishPoly = False
                     polyBounds = True
@@ -2520,7 +2520,7 @@ def getGlobOptParams(fname):
     p_mid.join()
 
     scanBounds = step1[1]
-
+    print(scanBounds)
     queue1 = mp.Queue()
     # show the current scans
     # scans = [1,2,3,4,5]
@@ -2541,14 +2541,10 @@ def getGlobOptParams(fname):
     constraints = val[1]
     bounds = val[2]
 
-    print(scanBounds)
-    print(parameters)
-    print(bounds)
-    x, fun = differential_evolution(fname,scans, parameters, bounds,scanBounds)
 
-    comparisonScanPlots(fname, x, parameters, scans)
+    x, fun = differential_evolution(fname,scans, parameters, bounds,scanBounds,tolerance=0.00001)
 
-    return
+    return x, fun, parameters, scans
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
@@ -2603,7 +2599,9 @@ def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
         return scanBounds
 
-def comparisonScanPlots(fname, x, parameters, scans):
+def saveComparisonScanPlots(fname, x, parameters, scans):
+
+    dir = 'comparisonPlots'
 
     sample = ReadSampleHDF5(fname)  # get the previous sample version
     info, data_dict, sim_dict = ReadDataHDF5(fname)  # get the sample data and simulation data
@@ -2668,9 +2666,33 @@ def comparisonScanPlots(fname, x, parameters, scans):
             else:
                 plt.ylabel('A')
         figNum = figNum + 1
+        plt.savefig(dir + '/' + scanName + '.png')
 
-    plt.show()
     return
+
+def comparisonScanPlots():
+    dir = 'comparisonPlots'
+    root = Tk()
+    root.geometry('900x900')
+    root.title('Show Comparison Scans')
+    tabControl = ttk.Notebook(root)
+
+    idx = 0
+    im = list()
+    for filename in os.listdir(dir):
+        frame = ttk.Frame(tabControl)
+        imageFile = dir + '/' + filename
+        im.append(ImageTk.PhotoImage(Image.open(imageFile)))
+        label = Label(frame, imag=im[idx])
+        label.pack()
+        frame.pack()
+
+        tabControl.add(frame, text=filename)
+
+        idx = idx + 1
+
+    tabControl.pack()
+    root.mainloop()
 
 if __name__ == "__main__":
     sample = slab(8)
@@ -2712,7 +2734,16 @@ if __name__ == "__main__":
     #sample = ReadSampleHDF5(fname)
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
-    getGlobOptParams(fname)
+    x, fun, parameters, scans = getGlobOptParams(fname)
+    f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
+    p6 = mp.Process(target=f6)
+    p6.start()
+    p6.join()
+
+    p7 = mp.Process(target=comparisonScanPlots)
+    p7.start()
+    p7.join()
+
     #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()
