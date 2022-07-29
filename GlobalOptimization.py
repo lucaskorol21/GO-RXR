@@ -2615,7 +2615,7 @@ def saveComparisonScanPlots(fname, x, parameters, scans):
         scanNumber = info[idx][0]
         scanType = info[idx][1]
         scanName = info[idx][2]
-
+        print(scanName)
         pol = data_dict[scanName]['Polarization']
         dat = data_dict[scanName]['Data']
         sim = sim_dict[scanName]['Data']
@@ -2666,11 +2666,13 @@ def saveComparisonScanPlots(fname, x, parameters, scans):
             else:
                 plt.ylabel('A')
         figNum = figNum + 1
-        plt.savefig(dir + '/' + scanName + '.png')
+        pictureName = dir + '/' + scanName + '.png'
+        plt.savefig(pictureName)
 
     return
 
 def comparisonScanPlots():
+    # Remove the previously svae plts !!!!!
     dir = 'comparisonPlots'
     root = Tk()
     root.geometry('900x900')
@@ -2735,6 +2737,7 @@ if __name__ == "__main__":
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
     x, fun, parameters, scans = getGlobOptParams(fname)
+    print(scans)
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
     p6 = mp.Process(target=f6)
     p6.start()
