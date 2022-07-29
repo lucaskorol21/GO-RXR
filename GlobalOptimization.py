@@ -567,7 +567,7 @@ def getScans(data, data_dict, sim_dict, queue):
 
     scanBounds = dict()
     for idx in range(len(boundaries)):
-        scanBounds[scans[idx]] = (boundaries[idx], weights[idx])
+        scanBounds[int(scans[idx])] = (boundaries[idx], weights[idx])
 
     queue.put([scans, scanBounds])
     return
@@ -678,8 +678,8 @@ def changeSampleParams(x, parameters, sample):
 
 
             elif property == 'POLYMORPHOUS':
-                element = params[3]  # determines the element that contains the polymorph
-                polymorph = params[4]  # determines the polymorph to change
+                element = params[2]  # determines the element that contains the polymorph
+                polymorph = params[3]  # determines the polymorph to change
 
                 ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
 
@@ -769,7 +769,7 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=False):
+def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=True):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
@@ -2519,7 +2519,7 @@ def getGlobOptParams(fname):
     p_mid.start()
     p_mid.join()
 
-    bw = step1[1]
+    scanBounds = step1[1]
 
     queue1 = mp.Queue()
     # show the current scans
@@ -2540,9 +2540,15 @@ def getGlobOptParams(fname):
     parameters = val[0]
     constraints = val[1]
     bounds = val[2]
-    print(parameters)
 
-    return scans
+    print(scanBounds)
+    print(parameters)
+    print(bounds)
+    x, fun = differential_evolution(fname,scans, parameters, bounds,scanBounds)
+
+    comparisonScanPlots(fname, x, parameters, scans)
+
+    return
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
