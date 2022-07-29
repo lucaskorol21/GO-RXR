@@ -9,7 +9,7 @@ with open('ff_Altered.pkl', 'rb') as f:
     global ff
     global ffAltered
     ff = pickle.load(f)
-    ffAltered = pickle.load(f)
+    ffAltered = ff
 f.close()
 
 # Loads all scattering factors when program imported
@@ -17,7 +17,7 @@ with open('ffm_Altered.pkl','rb') as f:
     global ffm
     global ffmAltered
     ffm = pickle.load(f)
-    ffmAltered = pickle.load(f)
+    ffmAltered = ffm
 f.close()
 
 

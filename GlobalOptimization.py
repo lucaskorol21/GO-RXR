@@ -1200,7 +1200,7 @@ def parameterSelection(sample, queue):
                 toggle = input('Select one of the provided options')
 
             if toggle == '1':
-                param.append('SCATTERING FACTOR')
+
                 print('STRUCTURAL SCATTERING FACTOR \n')
                 print('Select which element scattering factor to shift: ')
                 temp = dict()
@@ -1222,6 +1222,7 @@ def parameterSelection(sample, queue):
                 print()
 
                 if temp[toggle] in list(structFf.keys()):
+                    param.append('SCATTERING FACTOR')
                     param.append('STRUCTURAL')
                     param.append(structFf[temp[toggle]])
                     selected_ele['STRUCTURAL'] = temp[toggle]
@@ -1231,7 +1232,6 @@ def parameterSelection(sample, queue):
                 elif toggle == 'Exit':
                     cont = False
             elif toggle == '2':
-                param.append('SCATTERING FACTOR')
                 print('POLYMORPHOUS SCATTERING FACTOR \n')
                 print('Select which element scattering factor to shift: ')
                 temp = dict()
@@ -1253,17 +1253,19 @@ def parameterSelection(sample, queue):
                 print()
 
                 if temp[toggle] in list(polyFf.keys()):
+                    param.append('SCATTERING FACTOR')
                     param.append('STRUCTURAL')
                     param.append(polyFf[temp[toggle]])
                     selected_ele['POLYMORPHOUS'] = temp[toggle]
 
                     ffBounds = True
+                    ffSelect=False
                 elif temp[toggle] == 'Return':
                     pass
                 elif toggle == 'Exit':
                     cont = False
             elif toggle == '3':
-                param.append('SCATTERING FACTOR')
+
                 print('MAGNETIC SCATTERING FACTOR \n')
                 print('Select which element magnetic scattering factor to shift: ')
                 temp = dict()
@@ -1285,6 +1287,7 @@ def parameterSelection(sample, queue):
                 print()
 
                 if temp[toggle] in list(magFf.keys()):
+                    param.append('SCATTERING FACTOR')
                     param.append('MAGNETIC')
                     param.append(magFf[temp[toggle]])
                     selected_ele['MAGNETIC'] = temp[toggle]
@@ -2537,6 +2540,7 @@ def getGlobOptParams(fname):
     parameters = val[0]
     constraints = val[1]
     bounds = val[2]
+    print(parameters)
 
     return scans
 
