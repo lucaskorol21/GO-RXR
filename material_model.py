@@ -7,13 +7,17 @@ from scipy import interpolate
 # Loads all scattering factors when program imported
 with open('ff_Altered.pkl', 'rb') as f:
     global ff
+    global ffAltered
     ff = pickle.load(f)
+    ffAltered = pickle.load(f)
 f.close()
 
 # Loads all scattering factors when program imported
 with open('ffm_Altered.pkl','rb') as f:
     global ffm
+    global ffmAltered
     ffm = pickle.load(f)
+    ffmAltered = pickle.load(f)
 f.close()
 
 
@@ -28,7 +32,7 @@ def resetAlteredSF():
 
     with open('ff_Altered.pkl', 'wb') as handle:
         pickle.dump(ff, handle)
-
+    return
 def resetSF():
     """
         Purpose: Reset original form factors to original values
@@ -38,7 +42,7 @@ def resetSF():
     with open('ff_Altered.pkl', 'rb') as f:
         ff = pickle.load(f)
 
-
+    return
 
 def resetAlteredSFM():
     """
@@ -52,6 +56,7 @@ def resetAlteredSFM():
     with open('ffm_Altered.pkl', 'wb') as handle:
         pickle.dump(ffm, handle)
 
+    return
 
 def resetSFM():
     """
@@ -61,6 +66,7 @@ def resetSFM():
     global ffm
     with open('ffm_Altered.pkl', 'rb') as f:
         ffm = pickle.load(f)
+    return
 
 def FfEnergyShift(element, dE, opt=False):
     """
@@ -74,16 +80,16 @@ def FfEnergyShift(element, dE, opt=False):
     """
     global ff
     if not(opt):  # no optimization
-        ff[element][:,0] = ff[element][:,0] + dE  #energy shift
+        ff[element][:,0] = ffAltered[element][:,0] + dE  #energy shift
 
         # save shifted value to file
         with open('ff_Altered.pkl') as f:
             pickle.dump(ff, f)
         f.close()
     else:  # optimization
-        resetSF()
-        ff[element][:,0] = ff[element][:,0] + dE
+        ff[element][:,0] = ffAltered[element][:,0] + dE
 
+    return
 
 
 def FfmEnergyShift(element,dE, opt = False):
@@ -99,14 +105,14 @@ def FfmEnergyShift(element,dE, opt = False):
 
     global ffm
     if not(opt): # non-optimization
-        ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
+        ffm[element][:,0] = ffmAltered[element][:,0] + dE  # energy shift
 
         with open("ffm_Altered.pkl") as f:  # save shifted magnetic form factor to altered file
             pickle.dump(ffm, f)
         f.close()
     else:  # optimization
-        resetSFM()
-        ffm[element][:,0] = ffm[element][:,0] + dE  # energy shift
+
+        ffm[element][:,0] = ffmAltered[element][:,0] + dE  # energy shift
 
 def form_factor(f,E):
 
