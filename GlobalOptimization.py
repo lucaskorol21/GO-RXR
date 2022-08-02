@@ -16,14 +16,11 @@ import functools
 
 def saveScans(data, data_dict, sim_dict, scans, sample):
 
-
     dir = 'Plot_Scans'
 
 
     for file in os.scandir(dir):
         os.remove(file.path)
-
-    sample.plot_density_profile(save=True, fig=99)
 
     my_index = list()  # contains the indices of the appropriate scans
     # Finds the indices of each scan
@@ -216,16 +213,7 @@ def plotScansWidget(sample):
     tree.pack(expand=True, fill='both')
     tabControl.add(tree, text='Sample Information')
     # Showing the Scans
-    """
-    dir = 'Plot_Scans'
-    
-    root = Tk()
-    root.geometry('900x900')
-    root.title('Show Selected Scans')
 
-    # create a notebook
-    tabControl = ttk.Notebook(root)
-    """
     idx = 0
     im = list()
     for filename in os.listdir(dir):
@@ -246,74 +234,61 @@ def plotScansWidget(sample):
     root.mainloop()
     return
 
-def plotScans(data, data_dict, sim_dict, scans):
-    """
-    Purpose: Plot the all the selected scans
-    :param scans: An array containing the scans that you want to plot
-    :param data: The two dimensional list that contains scan number and name
-    :param data_dict: Data dictionary
-    :param sim_dict: Simulation dictionary
-    :return:
-    """
+def plotScan(data, data_dict, sim_dict, scan, queue):
 
-    my_index = list()  # contains the indices of the appropriate scans
-    # Finds the indices of each scan
-    for s in scans:
-        my_index.append((data[:, 0].astype(int).tolist().index(s)))
 
-    my_scans = data[my_index] # gets all the appropriate scans
+    my_index = data[:, 0].astype(int).tolist().index(scan)
+    my_scan = data[my_index]
 
-    # plot the sample model
-    fig_idx = 1
-    for s in my_scans:
+    name = my_scan[2]  # name of the scan
+    scanType = my_scan[1]  # scan type
+    scan_num = my_scan[0]  # scan number
 
-        name = s[2]  # name of the scan
-        scanType = s[1]  # scan type
-        scan_num = s[0]  # scan number
-        dat = data_dict[name]
-        sim = sim_dict[name]
-        pol = dat['Polarization']
+    dat = data_dict[name]
+    sim = sim_dict[name]
+    pol = dat['Polarization']
 
-        if scanType.upper() == 'REFLECTIVITY':
-            qz = dat['Data'][0]  # momentum transfer
-            R = dat['Data'][2]  # reflectivity
-            Rsim = sim['Data'][2]
-            plt.figure(fig_idx)
-            plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
-            plt.plot(qz, R)  # data
-            plt.plot(qz, Rsim)  # simulation
+    fig = plt.figure()
+    if scanType.upper() == 'REFLECTIVITY':
+        qz = dat['Data'][0]  # momentum transfer
+        R = dat['Data'][2]  # reflectivity
+        Rsim = sim['Data'][2]
 
-            # Change log scale for non-asymmetry scans
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-                plt.ylabel('log(R)')
-            else:
-                plt.ylabel('A')
-            plt.xlabel('Momentum Transfer, qz (A^{-1})')
-            plt.legend(['Experiment', 'Simulation'])
+        plt.suptitle('Reflectivity Scan ' + str(scan_num) + ': ' + name)
+        plt.plot(qz, R)  # data
+        plt.plot(qz, Rsim)  # simulation
 
-        elif scanType.upper() == 'ENERGY':
-            E = dat['Data'][3]  # Energy
-            R = dat['Data'][2]  # Reflectivity
-            Rsim = sim['Data'][2]
-            plt.figure(fig_idx)
-            plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
-            plt.plot(E, R)  # data
-            plt.plot(E, Rsim)  # simulation
+        # Change log scale for non-asymmetry scans
+        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+            plt.yscale('log')
+            plt.ylabel('log(R)')
+        else:
+            plt.ylabel('A')
+        plt.xlabel('Momentum Transfer, qz (A^{-1})')
+        plt.legend(['Experiment', 'Simulation'])
 
-            # Changes the yscale depending on if scan is an asymmetry scan
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-                plt.ylabel('log(R)')
-            else:
-                plt.ylabel('A')
-            plt.xlabel('Energy, E (eV)')
-            plt.legend(['Experiment', 'Simulation'])
+    elif scanType.upper() == 'ENERGY':
+        E = dat['Data'][3]  # Energy
+        R = dat['Data'][2]  # Reflectivity
+        Rsim = sim['Data'][2]
 
-        fig_idx = fig_idx + 1
+        plt.suptitle('Energy Scan' + str(scan_num) + ': ' + name)
+        plt.plot(E, R)  # data
+        plt.plot(E, Rsim)  # simulation
 
+        # Changes the yscale depending on if scan is an asymmetry scan
+        if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+            plt.yscale('log')
+            plt.ylabel('log(R)')
+        else:
+            plt.ylabel('A')
+        plt.xlabel('Energy, E (eV)')
+        plt.legend(['Experiment', 'Simulation'])
+
+    queue.put(fig)
     plt.show()
     return
+
 
 def getScans(data, data_dict, sim_dict, queue):
     """
@@ -324,6 +299,14 @@ def getScans(data, data_dict, sim_dict, queue):
     :param queue: multiprocessing queue used to store scans
     :return:
     """
+
+    # remove all scans in the Plot_Scans directory to make room for the new scans
+    cwd = os.getcwd()
+    dir = 'Plot_Scans'
+
+    for file in os.scandir(dir):
+        os.remove(file.path)
+
     print('SCAN SELECTION FOR GLOBAL OPTIMIZATION \n')
     print('Select an option:')
 
@@ -347,20 +330,23 @@ def getScans(data, data_dict, sim_dict, queue):
 
 
     scanNumberList = list(data[:,0])  # get the scan number list
+    scanName = 'Temp'
 
-    scans = list()
-    boundaries = list()
-    weights = list()
+    scans = list()  # contains the scans for global optimization
+    boundaries = list()  # contains the scans boundaries
+    weights = list()  # contains the weights of the scans
 
-    cont = True
+    cont = True  # boolean used to determine whether to continue in the process loop
+    isFinished = False  # determines if the scan selection process properly finished
 
-    stg1 = True   # stage 1
-    stg2 = False  # stage 2
-    stg3 = False  # stage 3
-    stg4 = False  # weight selection
+    stg1 = True   # determines whether to select a scan or exit
+    stg2 = False  # determines to use or choose a different scan
+    stg3 = False  # scan boundary selection
+    stg4 = False  # scan weight selection
 
     scan = 0
-    f = functools.partial(plotScans, data, data_dict, sim_dict)
+    queue_scan = mp.Queue()
+
     while cont:
 
         # Determines if user wants to select a scan
@@ -370,12 +356,15 @@ def getScans(data, data_dict, sim_dict, queue):
                 print('\t'+key+': ' + val)
             toggle = input("\n" + "-> ")
             print()
-            if toggle != '1' and toggle != '2':
-                while toggle != '1' and toggle != '2':
-                    toggle = input('Please select one of the provided options: ')
 
+            # checks to make sure one of the selections is made
+            while toggle != '1' and toggle != '2':
+                toggle = input('Please select one of the provided options: ')
+
+            # Exit
             if toggle == '2':
                 cont = False
+                isFinished = True
             elif toggle == '1':
                 stg1 = False
                 stg2 = True
@@ -389,8 +378,9 @@ def getScans(data, data_dict, sim_dict, queue):
             while scan in scans:
                 scan = input('Scan ' + scan + ' already selected! Choose another scan: ')
             print('\n Select an option: ')
-
-            p = mp.Process(target=f, args=([int(scan)],))
+            queue_scan = mp.Queue()
+            f = functools.partial(plotScan, data, data_dict, sim_dict, int(scan), queue_scan)  # show the scan
+            p = mp.Process(target=f)
             p.start()
             #p.join()
             for key in stage2.keys():
@@ -491,15 +481,20 @@ def getScans(data, data_dict, sim_dict, queue):
                 # set boundary and weights to default values
                 stg3 = False
                 stg1 = True
+                fig = queue_scan.get()
+                plt.savefig(dir + '/' + scanName + '.png')
                 p.terminate()
             elif toggle == '3':
                 # remove previous selected scan
                 scans.pop()
+                p.terminate()
                 stg2 = True
                 stg3 = False
             elif toggle == '4':
                 # set boundary and weights to default and exit
+                p.terminate()
                 cont = False
+                isFinished = True
 
         elif stg4:
             for key in stage4.keys():
@@ -543,7 +538,8 @@ def getScans(data, data_dict, sim_dict, queue):
                 stg1 = True
                 stg4 = False
 
-
+                fig = queue_scan.get()
+                plt.savefig(dir + '/' + scanName + '.png')
                 p.terminate()
             elif toggle == '2':
                 # set to default values
@@ -553,7 +549,8 @@ def getScans(data, data_dict, sim_dict, queue):
                 stg1 = True
                 stg4 = False
 
-
+                fig = queue_scan.get()
+                plt.savefig(dir + '/' + scanName + '.png')
                 p.terminate()
             elif toggle == '3':
                 boundaries.pop()  # remove selected boundaries
@@ -564,6 +561,20 @@ def getScans(data, data_dict, sim_dict, queue):
             elif toggle == '4':
                 # set weights to default value and exit
                 cont = False
+                isFinished = True
+                fig = queue_scan.get()
+                plt.savefig(dir + '/' + scanName + '.png')
+                p.close()
+
+    if not(isFinished):
+        sys.exit()
+
+    # checks to make sure that user did not return too many times and ended up not selecting a scan
+    elif len(scans) == 0:
+        sys.exit()
+    # double checking to make sure that user did not mess up input somehow
+    elif len(scans) != len(boundaries) or len(scans) != len(weights):
+        sys.exit()
 
     scanBounds = dict()
     for idx in range(len(boundaries)):
@@ -2514,10 +2525,7 @@ def getGlobOptParams(fname):
     scans = step1[0]
     scans = [int(scan) for scan in scans]
 
-    f_mid = functools.partial(saveScans, data, data_dict, sim_dict, scans, sample)
-    p_mid = mp.Process(target=f_mid)
-    p_mid.start()
-    p_mid.join()
+
 
     scanBounds = step1[1]
     print(scanBounds)
@@ -2733,9 +2741,11 @@ if __name__ == "__main__":
     #print(ReadDataHDF5(fname))
     scans = [1,2,3,4]
     data, data_dict, sim_dict = ReadDataHDF5(fname)
+
     #sample = ReadSampleHDF5(fname)
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
+
     x, fun, parameters, scans = getGlobOptParams(fname)
     print(scans)
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
