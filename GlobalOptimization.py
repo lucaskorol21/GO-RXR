@@ -2713,16 +2713,17 @@ def getGlobalOptimization():
     """
     print('GLOBAL OPTIMIZATION \n')
     cont = True
+    isFinished = False
     initial = True
     diffev = False
     sh = False
     dual = False
 
-    sh_select = False
-    sh_default = False
+    param = dict()
 
     while cont:
         if initial:
+            param = dict()
             print('Select which algorithm you would like to use:')
             print('\t 1: Differential Evolution')
             print('\t 2: Simplicial Homology')
@@ -2733,10 +2734,214 @@ def getGlobalOptimization():
             print()
             while toggle not in ['1','2','3','4']:
                 toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1':
+                initial = False
+                diffev = True
+            elif toggle == '2':
+                initial = False
+                sh = True
+            elif toggle == '3':
+                initial = False
+                dual = True
+            elif toggle == '4':
+                cont = False
 
-            print()
+        # differential evolution
         elif diffev:
+
+            print('DIFFERENTIAL EVOLUTION \n')
+            print('Select an option: ')
+            print('\t 1: Use default differential evolution parameters')
+            print('\t 2: Select differential evolution parameters')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+
+            toggle = input('\n -> ')
             print()
+            while toggle not in ['1', '2', '3', '4']:
+                toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1' or toggle == '2':
+                param['algorithm'] = 'differential_evolution'
+                if toggle == '1':
+                    param['strategy'] = 'currenttobest1bin'
+                    param['maxiter'] = 25
+                    param['popsize'] = 15
+                    param['tol'] = 0.001
+                    param['recombination'] = 0.7
+                    param['disp'] = True
+                    param['polish'] = True
+                    param['updating'] = 'immediate'
+                    param['atol'] = 0
+                    param['init'] = 'latinhypercube'
+                elif toggle == '2':
+                    print('Select the strategy to use:')
+                    print('\t 1: best1bin')
+                    print('\t 2: best1exp')
+                    print('\t 3: rand1exp')
+                    print('\t 4: randtobest1exp')
+                    print('\t 5: best2exp')
+                    print('\t 6: rand2exp')
+                    print('\t 7: randtobest1bin')
+                    print('\t 8: currenttobest1bin')
+                    print('\t 9: best2bin')
+                    print('\t 10: rand2bin')
+                    print('\t 11: rand1bin')
+
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle not in ['1','2','3','4','5','6','7','8','9','10','11']:
+                        toggle = input('Select one of the provided options: ')
+                    print()
+
+                    if toggle == '1':
+                        param['strategy'] = 'best1bin'
+                    elif toggle =='2':
+                        param['strategy'] = 'best1exp'
+                    elif toggle =='3':
+                        param['strategy'] = 'rand1exp'
+                    elif toggle =='4':
+                        param['strategy'] = 'randtobest1exp'
+                    elif toggle =='5':
+                        param['strategy'] = 'best2exp'
+                    elif toggle =='6':
+                        param['strategy'] = 'rand2exp'
+                    elif toggle =='7':
+                        param['strategy'] = 'randtobest1bin'
+                    elif toggle =='8':
+                        param['strategy'] = 'currenttobest1bin'
+                    elif toggle =='9':
+                        param['strategy'] = 'best2bin'
+                    elif toggle =='10':
+                        param['strategy'] = 'rand2bin'
+                    elif toggle =='11':
+                        param['strategy'] = 'rand1bin'
+
+                    toggle = int(input('\n Select number of iterations as an integer type: '))
+
+                    if toggle <= 0:
+                        param['maxiter'] = 25
+                    else:
+                        param['maxiter'] = toggle
+
+                    toggle = int(input('\n Select population size as an integer type: '))
+
+                    if toggle <= 0:
+                        param['popsize'] = 15
+                    else:
+                        param['popsize'] = toggle
+
+                    toggle = float(input('\n Select the relative tolerance for convergence: '))
+
+                    if toggle < 0:
+                        param['tol'] = 0.001
+                    else:
+                        param['tol'] = toggle
+
+                    toggle = float(input('\n Select recombination constant between 0 and 1'))
+                    while toggle > 1:
+                        toggle = float(input('Recombination constant must be smaller than 1: '))
+
+                    if toggle < 0:
+                        param['recombination'] = 0.7
+                    else:
+                        param['recombination'] = toggle
+
+                    print('\n Would you like to display at each iteration: ')
+                    print('\t 1: Yes')
+                    print('\t 2: No')
+
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle not in ['1','2']:
+                        toggle = input('Select one of the provided options: ')
+                    print()
+                    if toggle == '1':
+                        param['display'] = True
+                    elif toggle == '2':
+                        param['display'] = False
+
+                    print('\n Would you like to polish for best fit: ')
+                    print('\t 1: Yes')
+                    print('\t 2: No')
+
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle not in ['1', '2']:
+                        toggle = input('Select one of the provided options: ')
+                    print()
+                    if toggle == '1':
+                        param['polish'] = True
+                    elif toggle == '2':
+                        param['polish'] = False
+
+                    print('\n Select which updating option (1 - default): ')
+                    print('\t 1: Best solution vector is continously updated within a single generation')
+                    print('\t 2: Best solution vector is is updated once per generation')
+
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle not in ['1', '2']:
+                        toggle = input('Select one of the provided options: ')
+                    print()
+                    if toggle == '1':
+                        param['updating'] = 'immediate'
+                    elif toggle == '2':
+                        param['updating'] = 'deferred'
+
+                    toggle = float(input('Select the absolute tolerance of convergence: '))
+                    if toggle < 0:
+                        param['atol'] = 0
+                    else:
+                        param['atol'] = toggle
+                    # ---------------------------
+                    print('\n Select which population initialization to use (1 - default): ')
+                    print('\t 1: latinhypercube')
+                    print('\t 2: sobol')
+                    print('\t 3: halton')
+                    print('\t 4: random')
+
+                    toggle = input('\n -> ')
+                    print()
+                    while toggle not in ['1', '2', '3', '4']:
+                        toggle = input('Select one of the provided options: ')
+                    print()
+                    if toggle == '1':
+                        param['init'] = 'latinhypercube'
+                    elif toggle == '2':
+                        param['init'] = 'sobol'
+                    elif toggle == '3':
+                        param['init'] = 'halton'
+                    elif toggle == '4':
+                        param['init'] = 'random'
+
+                print('SHOW PARAMETERS')
+                print(param)
+                print('\n Select and option: ')
+                print('\t 1: Use selected parameters for global optimization')
+                print('\t 2: Select different parameters')
+                print('\t 3: Exit')
+                toggle = input('\n ->')
+                print()
+                while toggle not in ['1', '2', '3']:
+                    toggle = input('Select one of the provided options: ')
+
+                if toggle == '1':
+                    cont = False
+                    isFinished = True
+                elif toggle == '2':
+                    diffev = False
+                    initial = True
+                elif toggle == '3':
+                    cont = False
+            elif toggle == '3':
+                diffev = False
+                initial = True
+            elif toggle == '4':
+                cont = False
+
+        # simplicial homology global optimization parameter selection
         elif sh:
             print('SIMPLICIAL HOMOLOGY \n')
             print('Select an option: ')
@@ -2750,19 +2955,135 @@ def getGlobalOptimization():
             while toggle not in ['1','2','3','4']:
                 toggle = input('Select one of the provided options: ')
             print()
-            if toggle == '1':
-                sh = False
-                sh_
-            elif toggle == '2':
-                print()
-            elif toggle == '3':
-                print()
-            elif toggle == '4':
-                print()
-        elif dual:
-            print()
+            if toggle == '1' or toggle == '2':
+                param['algorithm'] = 'shgo'
+                if toggle == '1':
+                    param['n'] = 64
+                    param['iter'] = 3
+                    param['sampling_method'] = 'simplicial'
+                elif toggle == '2':
+                    # selecting the number of sampling points
+                    toggle = int(input('\n Select the number of sampling point (integer): '))
+                    if toggle <= 0:
+                        param['n'] = 64
+                    else:
+                        param['n'] = toggle
 
-    return
+                    # selecting the number of iterations
+                    toggle = int(input('\n Select the maximum number of iterations: '))
+
+                    if toggle <= 0:
+                        param['iter'] = 3
+                    else:
+                        param['iter'] = toggle
+
+                    print('\n Select the sampling method: ')
+                    print('\t 1: halton')
+                    print('\t 2: simplicial')
+                    print('\t 3: sobol')
+
+                    toggle = input('\n -> ')
+                    while toggle not in ['1','2','3']:
+                        toggle = input('Select one of the provided options: ')
+
+                    if toggle == '1':
+                        param['sampling_method'] = 'halton'
+                    elif toggle =='2':
+                        param['sampling_method'] = 'simplicial'
+                    elif toggle == '3':
+                        param['sampling_method'] = 'sobol'
+
+                print('SHOW PARAMETERS')
+                print(param)
+                print('\n Select and option: ')
+                print('\t 1: Use selected parameters for global optimization')
+                print('\t 2: Select different parameters')
+                print('\t 3: Exit')
+                toggle = input('\n ->')
+                print()
+                while toggle not in ['1','2','3']:
+                    toggle = input('Select one of the provided options: ')
+
+                if toggle == '1':
+                    cont = False
+                    isFinished = True
+                elif toggle == '2':
+                    sh = False
+                    initial = True
+                elif toggle == '3':
+                    cont = False
+            elif toggle == '3':
+                sh = False
+                initial = True
+            elif toggle == '4':
+                cont = False
+
+        elif dual:
+            print('DUAL ANNEALING \n')
+            print('Select an option: ')
+            print('\t 1: Use default dual annealing parameters')
+            print('\t 2: Select dual annealing parameters')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+
+            toggle = input('\n -> ')
+            print()
+            while toggle not in ['1', '2', '3', '4']:
+                toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1' or toggle == '2':
+                param['algorithm'] = 'dual_annealing'
+                if toggle == '1':
+                    param['maxiter'] = 300
+                elif toggle == '2':
+                    # selecting the number of sampling points
+                    toggle = int(input('Select the maximum number of iterations (integer): '))
+
+                    if toggle <= 0:
+                        param['maxiter'] = 300
+                    else:
+                        param['maxiter'] = toggle
+
+
+
+
+                print('SHOW PARAMETERS')
+                print(param)
+                print('\n Select and option: ')
+                print('\t 1: Use selected parameters for global optimization')
+                print('\t 2: Select different parameters')
+                print('\t 3: Exit')
+                toggle = input('\n ->')
+                print()
+                while toggle not in ['1', '2', '3']:
+                    toggle = input('Select one of the provided options: ')
+
+                if toggle == '1':
+                    cont = False
+                    isFinished = True
+                elif toggle == '2':
+                    dual = False
+                    initial = True
+                elif toggle == '3':
+                    cont = False
+            elif toggle == '3':
+                dual = False
+                initial = True
+            elif toggle == '4':
+                cont = False
+
+
+    if not(isFinished):
+        sys.exit()
+
+    if param['algorithm'] == 'differential_evolution':
+        print('do something')
+    elif param['algorithm'] == 'shgo':
+        print('do something')
+    elif param['algorithm'] == 'dual_annealing':
+        print('do something')
+    return param
+
 def optimizationProcess(fname):
     # Load in the sample information
     sample = ReadSampleHDF5(fname)
@@ -2830,7 +3151,7 @@ if __name__ == "__main__":
     #sample = ReadSampleHDF5(fname)
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
-
+    """
     x, fun, parameters, scans = getParameters(fname)
     print(scans)
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
@@ -2841,7 +3162,8 @@ if __name__ == "__main__":
     p7 = mp.Process(target=comparisonScanPlots)
     p7.start()
     p7.join()
-
+    """
+    print(getGlobalOptimization())
     #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()
