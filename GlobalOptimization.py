@@ -2500,14 +2500,15 @@ def parameterSelection(sample, queue):
     queue.put([parameters, constraints, bounds])
     return
 
-
-def getGlobOptParams(fname):
-    # Load in the sample information
-    sample = ReadSampleHDF5(fname)
-
-    # load in the data and simulation data
-    data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
-
+def getScanInfo(data, data_dict, sim_dict):
+    """
+    Purpose: Gets the scan info from the user
+    :param data:
+    :param data_dict:
+    :param sim_dict:
+    :param queue:
+    :return:
+    """
     # Running the two tasks at once
     f1 = functools.partial(createTable, data)
     queue = mp.Queue()
@@ -2518,6 +2519,7 @@ def getGlobOptParams(fname):
     p2 = mp.Process(target=getScans(data, data_dict, sim_dict, queue))
     p2.start()
 
+
     p2.join()
     p1.terminate()
 
@@ -2525,34 +2527,34 @@ def getGlobOptParams(fname):
     scans = step1[0]
     scans = [int(scan) for scan in scans]
 
-
-
     scanBounds = step1[1]
-    print(scanBounds)
-    queue1 = mp.Queue()
-    # show the current scans
-    # scans = [1,2,3,4,5]
+    return scans, scanBounds
 
+def getParameters():
+    """
+    Purpose: Get the optimization parameters
+    :param fname:
+    :return:
+    """
+
+    queue = mp.Queue()
     f3 = functools.partial(plotScansWidget, sample)
     p3 = mp.Process(target=f3)
     p3.start()
 
 
-    p5 = mp.Process(target=parameterSelection(sample, queue1))
+    p5 = mp.Process(target=parameterSelection(sample, queue))
     p5.start()
 
     p5.join()
     p3.terminate()
 
-    val = queue1.get()
+    val = queue.get()
     parameters = val[0]
     constraints = val[1]
     bounds = val[2]
 
-
-    x, fun = differential_evolution(fname,scans, parameters, bounds,scanBounds,tolerance=0.00001)
-
-    return x, fun, parameters, scans
+    return parameters, constraints, bounds
 
 def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 
@@ -2704,6 +2706,89 @@ def comparisonScanPlots():
     tabControl.pack()
     root.mainloop()
 
+def getGlobalOptimization():
+    """
+    Purpose: Get the global optimization parameters
+    :return:
+    """
+    print('GLOBAL OPTIMIZATION \n')
+    cont = True
+    initial = True
+    diffev = False
+    sh = False
+    dual = False
+
+    sh_select = False
+    sh_default = False
+
+    while cont:
+        if initial:
+            print('Select which algorithm you would like to use:')
+            print('\t 1: Differential Evolution')
+            print('\t 2: Simplicial Homology')
+            print('\t 3: Dual Annealing')
+            print('\t 4: Exit')
+
+            toggle = input('\n -> ')
+            print()
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
+
+            print()
+        elif diffev:
+            print()
+        elif sh:
+            print('SIMPLICIAL HOMOLOGY \n')
+            print('Select an option: ')
+            print('\t 1: Use default simplicial homology parameters')
+            print('\t 2: Select simplicial homology parameters')
+            print('\t 3: Return')
+            print('\t 4: Exit')
+
+            toggle = input('\n -> ')
+            print()
+            while toggle not in ['1','2','3','4']:
+                toggle = input('Select one of the provided options: ')
+            print()
+            if toggle == '1':
+                sh = False
+                sh_
+            elif toggle == '2':
+                print()
+            elif toggle == '3':
+                print()
+            elif toggle == '4':
+                print()
+        elif dual:
+            print()
+
+    return
+def optimizationProcess(fname):
+    # Load in the sample information
+    sample = ReadSampleHDF5(fname)
+
+    # load in the data and simulation data
+    data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+
+    # get the scan info from the user
+    scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
+
+    # get sample parameters for optimization
+    parameters, constraints, bounds = getParameters()
+
+    # get the global optimization parameters from the user
+
+    x, fun = differential_evolution(fname, scans, parameters, bounds, scanBounds, tolerance=0.00001)
+
+    f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
+    p6 = mp.Process(target=f6)
+    p6.start()
+    p6.join()
+
+    p7 = mp.Process(target=comparisonScanPlots)
+    p7.start()
+    p7.join()
+
 if __name__ == "__main__":
     sample = slab(8)
 
@@ -2746,7 +2831,7 @@ if __name__ == "__main__":
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
 
-    x, fun, parameters, scans = getGlobOptParams(fname)
+    x, fun, parameters, scans = getParameters(fname)
     print(scans)
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
     p6 = mp.Process(target=f6)
