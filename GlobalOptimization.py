@@ -2706,7 +2706,7 @@ def comparisonScanPlots():
     tabControl.pack()
     root.mainloop()
 
-def getGlobalOptimization():
+def getGlobalOptimization(sample, data, data_dict, scan_dict ,scan, parameters, bounds,scanBounds):
     """
     Purpose: Get the global optimization parameters
     :return:
@@ -3077,7 +3077,27 @@ def getGlobalOptimization():
         sys.exit()
 
     if param['algorithm'] == 'differential_evolution':
-        print('do something')
+        # makes sure that scan is a list
+        if type(scan) != list and type(scan) != np.ndarray:
+            scan = [scan]
+
+        scan = [s - 1 for s in scan]  # makes sure the indices are correct
+
+        scans = data[scan]  # gets the appropriate scans
+
+        params = [sample, scans, data_dict, sim_dict, parameters, scanBounds]  # required format for function scanCompute
+
+        # This line will be used to select and use different global optimization algorithms
+        ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=param['strategy'],
+                                              maxiter=param['maxiter'], popsize=param['popsize'],
+                                              tol=param['tol'], recombination=param['recombination'],
+                                              disp=param['display'], polish=param['polish'], updating=param['updating'],
+                                              atol=param['atol'], init=param['init'])
+        x = ret.x
+        fun = ret.fun
+
+        print('Chi: ' + str(fun))
+        print('Fitting parameters: ', x)
     elif param['algorithm'] == 'shgo':
         print('do something')
     elif param['algorithm'] == 'dual_annealing':
@@ -3163,7 +3183,7 @@ if __name__ == "__main__":
     p7.start()
     p7.join()
     """
-    print(getGlobalOptimization())
+
     #parameterSelection(sample, queue)
     #getScans(data, data_dict, sim_dict, queue)
     #results = queue.get()
