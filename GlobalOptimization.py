@@ -1084,14 +1084,23 @@ def parameterSelection(sample, queue):
                         bsTrack.remove('Background Shift')
                         param.append('BACKGROUND SHIFT')
                         if toggle == '1':
-                            bBounds = input('Select the background shift optimization bounds (lower, upper): ')
-                            bBounds = ast.literal_eval(bBounds)
-                            while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
-                                if str(bBounds).lower() == 'show':
+                            bBounds = input('Select the background shift bounds (-5e-7, 5e-7): ')
+                            bBounds = bBounds.split()
+                            boundWrong = True
+                            while boundWrong:
+                                boundWrong = False
+                                if bBounds[0].upper() == 'show':
                                     print(parameters)
                                     print()
-                                bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
-                                bBounds = ast.literal_eval(bBounds)
+                                    boundWrong = True
+                                    bBounds = input('Select the background shift bounds (-5e-7, 5e-7): ')
+                                elif len(bBounds) != 2:
+                                    boundWrong = True
+                                    bBounds = input('Separate the boundaries with a space (-5e-7, 5e-7): ')
+                                elif len(bBounds) == 2:
+                                    if float(bBounds[0]) > float(bBounds[1]):
+                                        boundWrong = True
+                                        bBounds = input('Input the lower bound first (-5e-7, 5e-7): ')
 
                             lowerbound.append(float(bBounds[0]))
                             upperbound.append(float(bBounds[1]))
@@ -1106,14 +1115,24 @@ def parameterSelection(sample, queue):
                         bsTrack.remove('Scaling Factor')
                         param.append('SCALING FACTOR')
                         if toggle == '1':
-                            sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
-                            sBounds = ast.literal_eval(sBounds)
-                            while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
-                                if str(sBounds).lower() == 'show':
+                            sBounds = input('Select the scaling factor bounds (0,1): ')
+                            sBounds = sBounds.split()
+                            boundWrong = True
+                            while boundWrong:
+                                boundWrong = True
+                                if sBounds[0].lower() == 'show':
+                                    boundWrong = True
                                     print(parameters)
                                     print()
-                                sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
-                                sBounds = ast.literal_eval(sBounds)
+                                    sBounds = input('Select the scaling factor bounds (0,1): ')
+                                elif len(sBounds) != 2:
+                                    boundWrong = True
+                                    sBounds = input('Separate the two bounds with a space (0,1): ')
+                                elif len(sBounds) == 2:
+                                    if float(sBounds[0])>float(sBounds[1]):
+                                        boundWrong = True
+                                        sBounds = input('Input the lower bound first (0,1): ')
+
 
                             lowerbound.append(float(sBounds[0]))
                             upperbound.append(float(sBounds[1]))

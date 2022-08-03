@@ -41,7 +41,7 @@ if __name__ == '__main__':
     sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.0053, 0], ['Co', 'Ni'])
 
     sample.addlayer(7,'CCO', 10.1373, density =[0.05,0.05,0.01], roughness=2, linked_roughness=[3,1.5,False])
-    
+    """
     # save new sample model to current file
     fname = 'Pim10uc.h5'
     #WriteSampleHDF5(fname, sample)
@@ -88,7 +88,8 @@ if __name__ == '__main__':
     # allow user to use current sample model for next optimization
     # give user option to save new sample
 
-
+    """
+    print('hello'.split())
 
 
 
