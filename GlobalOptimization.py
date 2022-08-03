@@ -1115,23 +1115,23 @@ def parameterSelection(sample, queue):
                         bsTrack.remove('Scaling Factor')
                         param.append('SCALING FACTOR')
                         if toggle == '1':
-                            sBounds = input('Select the scaling factor bounds (0,1): ')
+                            sBounds = input('Select the scaling factor bounds (0.8,1.2): ')
                             sBounds = sBounds.split()
                             boundWrong = True
                             while boundWrong:
-                                boundWrong = True
+                                boundWrong = False
                                 if sBounds[0].lower() == 'show':
                                     boundWrong = True
                                     print(parameters)
                                     print()
-                                    sBounds = input('Select the scaling factor bounds (0,1): ')
+                                    sBounds = input('Select the scaling factor bounds (0.8,1.2): ')
                                 elif len(sBounds) != 2:
                                     boundWrong = True
-                                    sBounds = input('Separate the two bounds with a space (0,1): ')
+                                    sBounds = input('Separate the two bounds with a space (0.8,1.2): ')
                                 elif len(sBounds) == 2:
                                     if float(sBounds[0])>float(sBounds[1]):
                                         boundWrong = True
-                                        sBounds = input('Input the lower bound first (0,1): ')
+                                        sBounds = input('Input the lower bound first (0.8,1.2): ')
 
 
                             lowerbound.append(float(sBounds[0]))
@@ -1146,18 +1146,29 @@ def parameterSelection(sample, queue):
                     elif backScale:
                         bsTrack.remove('Background Shift')
                         param.append('BACKGROUND SHIFT')
+
                         if toggle == '1':
-                            bBounds = input('Select the background shift optimization bounds (lower, upper): ')
-                            bBounds = ast.literal_eval(bBounds)
-                            while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
-                                if str(bBounds).lower() == 'show':
+                            bBounds = input('Select the background shift bounds (-5e-7, 5e-7): ')
+                            bBounds = bBounds.split()
+                            boundWrong = True
+                            while boundWrong:
+                                boundWrong = False
+                                if bBounds[0].upper() == 'show':
                                     print(parameters)
                                     print()
-                                bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
-                                bBounds = ast.literal_eval(bBounds)
+                                    boundWrong = True
+                                    bBounds = input('Select the background shift bounds (-5e-7, 5e-7): ')
+                                elif len(bBounds) != 2:
+                                    boundWrong = True
+                                    bBounds = input('Separate the boundaries with a space (-5e-7, 5e-7): ')
+                                elif len(bBounds) == 2:
+                                    if float(bBounds[0]) > float(bBounds[1]):
+                                        boundWrong = True
+                                        bBounds = input('Input the lower bound first (-5e-7, 5e-7): ')
 
                             lowerbound.append(float(bBounds[0]))
                             upperbound.append(float(bBounds[1]))
+                            print()
 
                         elif toggle == '2':
                             lowerbound.append(-5e-7)
@@ -1169,14 +1180,23 @@ def parameterSelection(sample, queue):
                         bsTrack.remove('Scaling Factor')
                         param.append('SCALING FACTOR')
                         if toggle == '1':
-                            sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
-                            sBounds = ast.literal_eval(sBounds)
-                            while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
-                                if str(sBounds).lower() == 'show':
+                            sBounds = input('Select the scaling factor bounds (0.8,1.2): ')
+                            sBounds = sBounds.split()
+                            boundWrong = True
+                            while boundWrong:
+                                boundWrong = False
+                                if sBounds[0].lower() == 'show':
+                                    boundWrong = True
                                     print(parameters)
                                     print()
-                                sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
-                                sBounds = ast.literal_eval(sBounds)
+                                    sBounds = input('Select the scaling factor bounds (0.8,1.2): ')
+                                elif len(sBounds) != 2:
+                                    boundWrong = True
+                                    sBounds = input('Separate the two bounds with a space (0.8,1.2): ')
+                                elif len(sBounds) == 2:
+                                    if float(sBounds[0]) > float(sBounds[1]):
+                                        boundWrong = True
+                                        sBounds = input('Input the lower bound first (0.8,1.2): ')
 
                             lowerbound.append(float(sBounds[0]))
                             upperbound.append(float(sBounds[1]))
@@ -1219,6 +1239,8 @@ def parameterSelection(sample, queue):
                             lowerbound.pop()
                             parameters.pop()
                             param = list()
+                            background = False
+                            scaling = False
                         elif backScale:
                             bsTrack = ['Background Shift', 'Scaling Factor']
                             upperbound.pop()
@@ -1234,6 +1256,7 @@ def parameterSelection(sample, queue):
                         isFinished = True
                     elif toggle == '3':
                         cont = False
+                        isFinished = True
         # --------------------------------------------------------------------------------------------------------- #
         # Form factor selection
         # --------------------------------------------------------------------------------------------------------- #
@@ -1387,19 +1410,26 @@ def parameterSelection(sample, queue):
                 print()
 
                 if toggle == '1':
-                    bound = input('Select the energy shift bounds in eV as a tuple(lower, upper): ')
-                    bound = ast.literal_eval(bound)
-                    bound = (float(bound[0]), float(bound[1]))
-                    while bound[0] > bound[1]:
-                        if str(bound).lower() == 'show':
+                    bound = input('Select the energy shift bounds in eV (-0.5eV, 0.5eV): ')
+                    bound = bound.split()
+                    boundWrong = True
+                    while boundWrong:
+                        boundWrong = False
+                        if bound[0] == 'show':
+                            boundWrong = True
                             print(parameters)
                             print()
-                        bound = input('Make sure the lowerbound is smaller than the upperbound (lower, upper): ')
-                        bound = ast.literal_eval(bound)
-                        bound = (float(bound[0]), float(bound[1]))
+                            bound = input('Select the energy shift bounds in eV (-0.5eV, 0.5eV): ')
+                        elif len(bound) != 2:
+                            boundWrong = True
+                            bound = input('Select the energy shift bounds separated by a space: ')
+                        elif len(bound) == 2:
+                            if float(bound[0]) > float(bound[1]):
+                                boundWrong = True
+                                bound = input('Input lower bound first (-0.5eV, 0.5eV): ')
 
-                    upperbound.append(bound[0])
-                    lowerbound.append(bound[1])
+                    upperbound.append(float(bound[0]))
+                    lowerbound.append(float(bound[1]))
 
                 elif toggle == '2':
                     lowerbound.append(-0.5)
@@ -1702,19 +1732,26 @@ def parameterSelection(sample, queue):
 
             finishPoly = False
             if toggle == '1':
-                bound = input('Input the polmorph ratio bound between 0 and 1 for ' + my_poly + ' (lower, upper): ')
-                bound = ast.literal_eval(bound)
-                bound = (float(bound[0]), float(bound[1]))
-                while bound[0] > bound[1] and bound[0]<0 and bound[1]>1:
-                    if str(bound).lower() == 'show':
+                bound = input('Input the polmorph ratio bound for ' + my_poly + ' (0, 1): ')
+                bound = bound.strip()
+                boundWrong = True
+                while boundWrong:
+                    boundWrong = False
+                    if bound[0] == 'show':
+                        boundWrong = True
                         print(parameters)
                         print()
-                    bound = input('Make sure upper and lower bounds are input in ascending order and are found between 0 and 1: ')
-                    bound = ast.literal_eval(bound)
-                    bound = (float(bound[0]), float(bound[1]))
+                        bound = input('Input the polmorph ratio bound for ' + my_poly + ' (0, 1): ')
+                    elif len(bound) != 2:
+                        boundWrong = True
+                        bound = input('Separate each bound by a space (0,1): ')
+                    elif len(bound) == 2:
+                        if float(bound[0])> float(bound[1]):
+                            boundWrong = True
+                            bound = input('Input lower bound first for ' + my_poly + ' (0, 1): ')
 
-                lowerbound.append(bound[0])
-                upperbound.append(bound[1])
+                lowerbound.append(float(bound[0]))
+                upperbound.append(float(bound[1]))
                 finishPoly = True
                 polyBounds = False
             elif toggle == '2':
@@ -1897,18 +1934,25 @@ def parameterSelection(sample, queue):
             contMag = False
             if toggle == '1':
                 bd = input('Enter the magnetic density boundary in terms of mol/cm^3 (lower, upper): ')
-                bd = ast.literal_eval(bd)
-                bd = (float(bd[0]), float(bd[1]))
-                while bd[0] > bd[1] and bd[0] < 0 and type(bd) != tuple:
-                    if str(bd).lower() == 'show':
+                bd = bd.strip()
+                boundWrong = True
+                while boundWrong:
+                    boundWrong = False
+                    if bd[0] == 'show':
+                        boundWrong = True
                         print(parameters)
                         print()
-                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
-                    bd = ast.literal_eval(bd)
-                    bd = (float(bd[0]), float(bd[1]))
+                        bd = input('Enter the magnetic density boundary in terms of mol/cm^3 (lower, upper): ')
+                    elif len(bd) != 2:
+                        boundWrong = True
+                        bd = input('Separate each bound by a space: ')
+                    elif len(bd) == 2:
+                        if float(bd[0]) > float(bd[1]):
+                            boundWrong = True
+                            bd = input('Input lower bound first: ')
 
-                lowerbound.append(bd[0])
-                upperbound.append(bd[1])
+                lowerbound.append(float(bd[0]))
+                upperbound.append(float(bd[1]))
                 contMag = True
             elif toggle == '2':
                 lw = 0
@@ -2197,18 +2241,26 @@ def parameterSelection(sample, queue):
 
             print()
             if toggle == '1':
-                bd = input('Enter the parameter optimization boundary as a tuple (lower, upper): ')
-                bd = ast.literal_eval(bd)
-                bd = (float(bd[0]), float(bd[1]))
-                while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
-                    if str(bd).lower() == 'show':
+                bd = input('Enter the parameter optimization boundary: ')
+                bd = bd.strip()
+                boundWrong = True
+                while boundWrong:
+                    boundWrong = False
+                    if bd[0] == 'show':
+                        boundWrong = True
                         print(parameters)
                         print()
-                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
-                bd = ast.literal_eval(bd)
-                bd = (float(bd[0]), float(bd[1]))
-                lowerbound.append(bd[0])
-                upperbound.append(bd[1])
+                        bd = input('Enter the parameter optimization boundary: ')
+                    elif len(bd) != 2:
+                        boundWrong = True
+                        bd = input('Separate each bound by a space: ')
+                    elif len(bd) == 2:
+                        if float(bd[0]) > float(bd[1]):
+                            boundWrong = True
+                            bd = input('Input lower bound first: ')
+
+                lowerbound.append(float(bd[0]))
+                upperbound.append(float(bd[1]))
 
             elif toggle == '2':
                 characteristic = param[-1]
@@ -2334,18 +2386,25 @@ def parameterSelection(sample, queue):
             print()
             if toggle == '1':
                 bd = input('Enter the parameter optimization boundary as a tuple (lower, upper): ')
-                bd = ast.literal_eval(bd)
-                bd = (float(bd[0]), float(bd[1]))
-                while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
-                    if str(bd).lower() == 'show':
+                bd = bd.strip()
+                boundWrong = True
+                while boundWrong:
+                    boundWrong = False
+                    if bd[0] == 'show':
+                        boundWrong = True
                         print(parameters)
                         print()
-                    bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
-                    bd = ast.literal_eval(bd)
-                    bd = (float(bd[0]), float(bd[1]))
+                        bd = input('Enter the parameter optimization boundary: ')
+                    elif len(bd) != 2:
+                        boundWrong = True
+                        bd = input('Separate each bound by a space: ')
+                    elif len(bd) == 2:
+                        if float(bd[0]) > float(bd[1]):
+                            boundWrong = True
+                            bd = input('Input lower bound first: ')
 
-                lowerbound.append(bd[0])
-                upperbound.append(bd[1])
+                lowerbound.append(float(bd[0]))
+                upperbound.append(float(bd[1]))
 
             elif toggle == '2':
                 characteristic = param[-1]
@@ -2751,11 +2810,13 @@ def createBoundsDatatype(fname, scans, sBounds, sWeights=None):
 def saveComparisonScanPlots(fname, x, parameters, scans):
 
     dir = 'comparisonPlots'
+    for file in os.scandir(dir):
+        os.remove(file.path)
 
     sample = ReadSampleHDF5(fname)  # get the previous sample version
     info, data_dict, sim_dict = ReadDataHDF5(fname)  # get the sample data and simulation data
     newSample = changeSampleParams(x, parameters, sample)  # change to globally optimized parameters
-
+    newSample.plot_density_profile(fig=1001, save=True, dir='comparisonPlots')
     scans = [s-1 for s in scans]
     info = info[scans]  # retrieve only the needed scans
 
@@ -2821,8 +2882,9 @@ def saveComparisonScanPlots(fname, x, parameters, scans):
     return
 
 def comparisonScanPlots():
-    # Remove the previously svae plts !!!!!
+
     dir = 'comparisonPlots'
+
     root = Tk()
     root.geometry('900x900')
     root.title('Show Comparison Scans')
@@ -3245,7 +3307,7 @@ def getGlobalOptimization(sample, data, data_dict, sim_dict ,scan, parameters, b
             scan = [scan]
 
         scan = [s - 1 for s in scan]  # makes sure the indices are correct
-        scans = data[tuple(scan)]
+        scans = data[scan]
 
         params = [sample, scans, data_dict, sim_dict, parameters, scanBounds]  # required format for function scanCompute
 
@@ -3263,7 +3325,7 @@ def getGlobalOptimization(sample, data, data_dict, sim_dict ,scan, parameters, b
             scan = [scan]
 
         scan = [s - 1 for s in scan]  # makes sure the indices are correct
-        scans = data[tuple(scan)]
+        scans = data[scan]
 
         params = [sample, scans, data_dict, sim_dict, parameters, scanBounds]  # required format for function scanCompute
 
@@ -3282,7 +3344,7 @@ def optimizationProcess(fname):
 
     # get the scan info from the user
     scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
-
+    sample.plot_density_profile(fig=1000, save=True, dir='Plot_Scans')
     # get sample parameters for optimization
     parameters, constraints, bounds = getParameters(sample)
 
