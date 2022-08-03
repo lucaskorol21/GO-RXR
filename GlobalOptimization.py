@@ -981,6 +981,9 @@ def parameterSelection(sample, queue):
             print()
 
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Please input the number of your selection: ')
 
             if toggle == '1':
@@ -1030,6 +1033,9 @@ def parameterSelection(sample, queue):
             print()
 
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Please input the number of your selection: ')
 
             background = False
@@ -1061,6 +1067,9 @@ def parameterSelection(sample, queue):
                 print('\t 4: Exit')
                 toggle = input('\n -> ')
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
 
@@ -1078,6 +1087,9 @@ def parameterSelection(sample, queue):
                             bBounds = input('Select the background shift optimization bounds (lower, upper): ')
                             bBounds = ast.literal_eval(bBounds)
                             while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
+                                if str(bBounds).lower() == 'show':
+                                    print(parameters)
+                                    print()
                                 bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
                                 bBounds = ast.literal_eval(bBounds)
 
@@ -1097,6 +1109,9 @@ def parameterSelection(sample, queue):
                             sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
                             sBounds = ast.literal_eval(sBounds)
                             while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
+                                if str(sBounds).lower() == 'show':
+                                    print(parameters)
+                                    print()
                                 sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
                                 sBounds = ast.literal_eval(sBounds)
 
@@ -1116,6 +1131,9 @@ def parameterSelection(sample, queue):
                             bBounds = input('Select the background shift optimization bounds (lower, upper): ')
                             bBounds = ast.literal_eval(bBounds)
                             while type(bBounds) != tuple or float(bBounds[0]) > float(bBounds[1]):
+                                if str(bBounds).lower() == 'show':
+                                    print(parameters)
+                                    print()
                                 bBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
                                 bBounds = ast.literal_eval(bBounds)
 
@@ -1135,6 +1153,9 @@ def parameterSelection(sample, queue):
                             sBounds = input('Select the scaling factor optimization bounds (lower, upper): ')
                             sBounds = ast.literal_eval(sBounds)
                             while type(sBounds) != tuple or float(sBounds[0]) > float(sBounds[1]):
+                                if str(sBounds).lower() == 'show':
+                                    print(parameters)
+                                    print()
                                 sBounds = input('Input bounds as a tuple in ascending order (lower, upper): ')
                                 sBounds = ast.literal_eval(sBounds)
 
@@ -1157,6 +1178,9 @@ def parameterSelection(sample, queue):
                     print()
 
                     while toggle != '1' and toggle != '2' and toggle != '3':
+                        if toggle.lower() == 'show':
+                            print(parameters)
+                            print()
                         toggle = input('Select one of the provided options: ')
 
                     if toggle == '1':
@@ -1208,6 +1232,9 @@ def parameterSelection(sample, queue):
 
             selected_ele = dict()
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options')
 
             if toggle == '1':
@@ -1229,6 +1256,9 @@ def parameterSelection(sample, queue):
                 print()
 
                 while toggle not in list(temp.keys()):
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
 
@@ -1260,6 +1290,9 @@ def parameterSelection(sample, queue):
                 print()
 
                 while toggle not in list(temp.keys()):
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
 
@@ -1294,6 +1327,9 @@ def parameterSelection(sample, queue):
                 print()
 
                 while toggle not in list(temp.keys()):
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
 
@@ -1325,6 +1361,9 @@ def parameterSelection(sample, queue):
                 print()
 
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options:')
                 print()
 
@@ -1333,6 +1372,9 @@ def parameterSelection(sample, queue):
                     bound = ast.literal_eval(bound)
                     bound = (float(bound[0]), float(bound[1]))
                     while bound[0] > bound[1]:
+                        if str(bound).lower() == 'show':
+                            print(parameters)
+                            print()
                         bound = input('Make sure the lowerbound is smaller than the upperbound (lower, upper): ')
                         bound = ast.literal_eval(bound)
                         bound = (float(bound[0]), float(bound[1]))
@@ -1360,6 +1402,9 @@ def parameterSelection(sample, queue):
                     toggle = input('\n -> ')
                     print()
                     while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                        if toggle.lower() == 'show':
+                            print(parameters)
+                            print()
                         toggle = input('Select one of the provided options')
                     print()
 
@@ -1410,8 +1455,12 @@ def parameterSelection(sample, queue):
             num_layers_list = [i for i in range(num_layers)]
             print('LAYER SELECTION \n')
             toggle = input('Select which layer you want to optimize (0-'+str(num_layers-1)+'): ')
-            while int(toggle) not in num_layers_list:
-                toggle = print('Enter the layer number you want to select (0-' + str(num_layers - 1) + '): ')
+
+            while toggle not in [str(i) for i in num_layers_list]:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
+                    toggle = input('Select which layer you want to optimize (0-' + str(num_layers - 1) + '): ')
 
             print()
             layerSelect = False
@@ -1455,6 +1504,9 @@ def parameterSelection(sample, queue):
             print()
 
             while toggle not in list(temp.keys()):
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Please input the number of your selection: ')
 
 
@@ -1495,6 +1547,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input("Select one of the provided options: ")
             print()
             if toggle == '1':
@@ -1572,6 +1627,9 @@ def parameterSelection(sample, queue):
             print()
 
             while toggle not in list(temp.keys()):
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
 
             if temp[toggle] == 'Return':
@@ -1617,6 +1675,9 @@ def parameterSelection(sample, queue):
 
             toggle = input('\n -> ')
             while toggle not in ['1','2','3','4']:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
 
@@ -1626,6 +1687,9 @@ def parameterSelection(sample, queue):
                 bound = ast.literal_eval(bound)
                 bound = (float(bound[0]), float(bound[1]))
                 while bound[0] > bound[1] and bound[0]<0 and bound[1]>1:
+                    if str(bound).lower() == 'show':
+                        print(parameters)
+                        print()
                     bound = input('Make sure upper and lower bounds are input in ascending order and are found between 0 and 1: ')
                     bound = ast.literal_eval(bound)
                     bound = (float(bound[0]), float(bound[1]))
@@ -1683,6 +1747,9 @@ def parameterSelection(sample, queue):
                 toggle = input('\n -> ')
                 print()
                 while toggle not in ['1','2','3','4','5']:
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
@@ -1737,6 +1804,9 @@ def parameterSelection(sample, queue):
 
             isPoly = False
             while toggle not in list(temp.keys()):
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
 
@@ -1769,6 +1839,9 @@ def parameterSelection(sample, queue):
                 toggle = input('\n -> ')
                 print()
                 while toggle not in list(temp.keys()):
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
 
@@ -1796,6 +1869,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle not in ['1','2','3','4']:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
 
@@ -1805,6 +1881,9 @@ def parameterSelection(sample, queue):
                 bd = ast.literal_eval(bd)
                 bd = (float(bd[0]), float(bd[1]))
                 while bd[0] > bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    if str(bd).lower() == 'show':
+                        print(parameters)
+                        print()
                     bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
                     bd = ast.literal_eval(bd)
                     bd = (float(bd[0]), float(bd[1]))
@@ -1862,6 +1941,9 @@ def parameterSelection(sample, queue):
                 toggle = input('\n -> ')
                 print()
                 while toggle not in ['1','2','3','4','5','6']:
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 if toggle in ['1','2','3']:
                     parameters.append(param.copy())
@@ -1915,6 +1997,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle not in list(temp.keys()):
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the options provided: ')
             print()
 
@@ -1985,6 +2070,9 @@ def parameterSelection(sample, queue):
             print()
 
             while toggle != '1' and toggle !='2' and toggle != '3' and toggle != '4' and toggle !='5':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of elements provided: ')
             print()
 
@@ -2026,6 +2114,9 @@ def parameterSelection(sample, queue):
                 toggle = input("\n -> ")
                 print()
                 while toggle not in list(temp.keys()):
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
 
                 print()
@@ -2080,6 +2171,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options:')
 
             print()
@@ -2088,6 +2182,9 @@ def parameterSelection(sample, queue):
                 bd = ast.literal_eval(bd)
                 bd = (float(bd[0]), float(bd[1]))
                 while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    if str(bd).lower() == 'show':
+                        print(parameters)
+                        print()
                     bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
                 bd = ast.literal_eval(bd)
                 bd = (float(bd[0]), float(bd[1]))
@@ -2161,6 +2258,9 @@ def parameterSelection(sample, queue):
                 toggle = input('\n ->')
                 print()
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5' and toggle != '6':
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
@@ -2207,6 +2307,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4':
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options:')
 
             print()
@@ -2215,6 +2318,9 @@ def parameterSelection(sample, queue):
                 bd = ast.literal_eval(bd)
                 bd = (float(bd[0]), float(bd[1]))
                 while bd[0]>bd[1] and bd[0] < 0 and type(bd) != tuple:
+                    if str(bd).lower() == 'show':
+                        print(parameters)
+                        print()
                     bd = input('Enter the parameter optimization boundary as a tuple (lower, upper) in ascending order: ')
                     bd = ast.literal_eval(bd)
                     bd = (float(bd[0]), float(bd[1]))
@@ -2289,6 +2395,9 @@ def parameterSelection(sample, queue):
                 toggle = input('\n ->')
                 print()
                 while toggle != '1' and toggle != '2' and toggle != '3' and toggle != '4' and toggle != '5' and toggle != '6':
+                    if toggle.lower() == 'show':
+                        print(parameters)
+                        print()
                     toggle = input('Select one of the provided options: ')
                 print()
                 if toggle == '1':
@@ -2334,6 +2443,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle not in ['1','2','3','4']:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
             if toggle == '1':
@@ -2401,6 +2513,9 @@ def parameterSelection(sample, queue):
             toggle = input('\n -> ')
             print()
             while toggle not in list(temp.keys()):
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
             if temp[toggle] == 'Return':
@@ -2448,6 +2563,9 @@ def parameterSelection(sample, queue):
             toggle = input('Select the thickness constraint in Angstrom for layers ' + str(param[-1][0])+' to ' + str(param[-1][1]) + ': ')
             toggle = float(toggle)
             while type(toggle) != float:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Input must be a number: ')
             param.append(toggle)
 
@@ -2460,6 +2578,9 @@ def parameterSelection(sample, queue):
 
             toggle = input('\n -> ')
             while toggle not in ['1','2','3','4']:
+                if toggle.lower() == 'show':
+                    print(parameters)
+                    print()
                 toggle = input('Select one of the provided options: ')
             print()
             if toggle == '1' or toggle == '2':
@@ -3167,7 +3288,7 @@ if __name__ == "__main__":
     #print(ReadDataHDF5(fname))
     scans = [1,2,3,4]
     data, data_dict, sim_dict = ReadDataHDF5(fname)
-
+    parameterSelection(sample, mp.Queue())
     #sample = ReadSampleHDF5(fname)
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
