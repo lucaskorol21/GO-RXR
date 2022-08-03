@@ -3335,22 +3335,7 @@ def getGlobalOptimization(sample, data, data_dict, sim_dict ,scan, parameters, b
 
     return x, fun, param
 
-def optimizationProcess(fname):
-    # Load in the sample information
-    sample = ReadSampleHDF5(fname)
-
-    # load in the data and simulation data
-    data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
-
-    # get the scan info from the user
-    scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
-    sample.plot_density_profile(fig=1000, save=True, dir='Plot_Scans')
-    # get sample parameters for optimization
-    parameters, constraints, bounds = getParameters(sample)
-
-    # get the global optimization parameters from the user and perform globa optimization
-
-    x, fun, glob_params = getGlobalOptimization(sample, data, data_dict, sim_dict ,scans, parameters, bounds,scanBounds)
+def showComparisonPlots(fname, x, parameters, scans):
 
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
     p6 = mp.Process(target=f6)
@@ -3360,7 +3345,64 @@ def optimizationProcess(fname):
     p7 = mp.Process(target=comparisonScanPlots)
     p7.start()
     p7.join()
+    return
 
+def optimizationProcess(fname):
+
+    contOpt = True
+
+
+    while contOpt:
+        # Load in the sample information
+        sample = ReadSampleHDF5(fname)
+
+        # load in the data and simulation data
+        data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+
+        # get the scan info from the user
+        scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
+        sample.plot_density_profile(fig=1000, save=True, dir='Plot_Scans')
+        # get sample parameters for optimization
+        parameters, constraints, bounds = getParameters(sample)
+
+        # get the global optimization parameters from the user and perform globa optimization
+
+        x, fun, glob_params = getGlobalOptimization(sample, data, data_dict, sim_dict ,scans, parameters, bounds,scanBounds)
+
+        showComparisonPlots(fname, x, parameters, scans)
+
+        print('SAVE MODEL \n')
+        print('Select an option: ')
+        print('\t 1: Save as hdf5 file')
+        print('\t 2: Save as ASCII file')
+        print('\t 3: Do not save model')
+
+        toggle = input('\n -> ')
+        print()
+        while toggle not in ['1','2','3']:
+            toggle = input('Select one of the provided options')
+        print()
+
+        # Need to provide a new filename
+        if toggle == '1':
+            WriteSampleHDF5(fname, sample)
+        elif toggle == '2':
+            WriteSampleASCII(fname, sample)
+
+        print('NEW OPTIMIZATION \n')
+        print('Select an option: ')
+        print('\t 1: Continue')
+        print('\t 2: Exit/Finish')
+        toggle = input('\n -> ')
+        print()
+        while toggle not in ['1','2']:
+            toggle = input('Select one of the provided options: ')
+        print()
+
+        if toggle == '2':
+            contOpt = False
+
+    return
 if __name__ == "__main__":
     sample = slab(8)
 
