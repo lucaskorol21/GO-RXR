@@ -2651,7 +2651,7 @@ def getScanInfo(data, data_dict, sim_dict):
     scanBounds = step1[1]
     return scans, scanBounds
 
-def getParameters():
+def getParameters(sample):
     """
     Purpose: Get the optimization parameters
     :param fname:
@@ -2662,7 +2662,6 @@ def getParameters():
     f3 = functools.partial(plotScansWidget, sample)
     p3 = mp.Process(target=f3)
     p3.start()
-
 
     p5 = mp.Process(target=parameterSelection(sample, queue))
     p5.start()
@@ -2827,7 +2826,7 @@ def comparisonScanPlots():
     tabControl.pack()
     root.mainloop()
 
-def getGlobalOptimization(sample, data, data_dict, scan_dict ,scan, parameters, bounds,scanBounds):
+def getGlobalOptimization(sample, data, data_dict, sim_dict ,scan, parameters, bounds,scanBounds):
     """
     Purpose: Get the global optimization parameters
     :return:
@@ -2979,9 +2978,9 @@ def getGlobalOptimization(sample, data, data_dict, scan_dict ,scan, parameters, 
                         toggle = input('Select one of the provided options: ')
                     print()
                     if toggle == '1':
-                        param['display'] = True
+                        param['disp'] = True
                     elif toggle == '2':
-                        param['display'] = False
+                        param['disp'] = False
 
                     print('\n Would you like to polish for best fit: ')
                     print('\t 1: Yes')
@@ -3196,7 +3195,8 @@ def getGlobalOptimization(sample, data, data_dict, scan_dict ,scan, parameters, 
 
     if not(isFinished):
         sys.exit()
-
+    x = []
+    fun = 0
     if param['algorithm'] == 'differential_evolution':
         # makes sure that scan is a list
         if type(scan) != list and type(scan) != np.ndarray:
@@ -3212,18 +3212,47 @@ def getGlobalOptimization(sample, data, data_dict, scan_dict ,scan, parameters, 
         ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=param['strategy'],
                                               maxiter=param['maxiter'], popsize=param['popsize'],
                                               tol=param['tol'], recombination=param['recombination'],
-                                              disp=param['display'], polish=param['polish'], updating=param['updating'],
+                                              disp=param['disp'], polish=param['polish'], updating=param['updating'],
                                               atol=param['atol'], init=param['init'])
         x = ret.x
         fun = ret.fun
 
         print('Chi: ' + str(fun))
         print('Fitting parameters: ', x)
+
     elif param['algorithm'] == 'shgo':
-        print('do something')
+        # makes sure that scan is a list
+        if type(scan) != list or type(scan) != np.ndarray:
+            scan = [scan]
+
+        scan = [s - 1 for s in scan]  # makes sure the indices are correct
+        scans = data[tuple(scan)]
+
+        params = [sample, scans, data_dict, sim_dict, parameters, scanBounds]  # required format for function scanCompute
+
+        ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=param['n'], iters=param['iter'],
+                            sampling_method=param['sampling_method'])
+        x = ret.x
+        fun = ret.fun
+
+
+        print('Chi: ' + str(fun))
+        print('Fitting parameters: ', x)
     elif param['algorithm'] == 'dual_annealing':
-        print('do something')
-    return param
+        # makes sure that scan is a list
+        if type(scan) != list or type(scan) != np.ndarray:
+            scan = [scan]
+
+        scan = [s - 1 for s in scan]  # makes sure the indices are correct
+        scans = data[tuple(scan)]
+
+        params = [sample, scans, data_dict, sim_dict, parameters, scanBounds]  # required format for function scanCompute
+
+        ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=param['maxiter'])
+        x = ret.x
+        fun = ret.fun
+
+    return x, fun, param
 
 def optimizationProcess(fname):
     # Load in the sample information
@@ -3236,11 +3265,11 @@ def optimizationProcess(fname):
     scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
 
     # get sample parameters for optimization
-    parameters, constraints, bounds = getParameters()
+    parameters, constraints, bounds = getParameters(sample)
 
-    # get the global optimization parameters from the user
+    # get the global optimization parameters from the user and perform globa optimization
 
-    x, fun = differential_evolution(fname, scans, parameters, bounds, scanBounds, tolerance=0.00001)
+    x, fun, glob_params = getGlobalOptimization(sample, data, data_dict, sim_dict ,scans, parameters, bounds,scanBounds)
 
     f6 = functools.partial(saveComparisonScanPlots, fname, x, parameters, scans)
     p6 = mp.Process(target=f6)
@@ -3288,7 +3317,7 @@ if __name__ == "__main__":
     #print(ReadDataHDF5(fname))
     scans = [1,2,3,4]
     data, data_dict, sim_dict = ReadDataHDF5(fname)
-    parameterSelection(sample, mp.Queue())
+    optimizationProcess(fname)
     #sample = ReadSampleHDF5(fname)
     #saveScans(data, data_dict, sim_dict, scans, sample)
     #plotScansWidget(data, data_dict, sim_dict, scans, sample)
