@@ -415,7 +415,8 @@ def WriteSampleHDF5(fname, sample):
 
     # deletes the previous sample information
     with h5py.File(fname, "a") as f:
-        del f['Sample']
+        if 'Sample' in f:
+            del f['Sample']
     f.close()
 
     f = h5py.File(fname, "a")
@@ -1570,6 +1571,161 @@ def hdf5ToDict(hform):
 
     return mydict
 
+def saveNewFile(fname, info, data_dict, sample):
+    """
+        Purpose: Take in data and sample model and save it as an hdf5 file
+        :param fname: File name with .hdf5 file extension
+        :param AScans: Reflectivity scan data from ProcessRXR
+        :param AInfo: Reflectivity scan information from ProcessRXR
+        :param EScans: Energy scan data from Process RXR
+        :param EInfo: Energy scan information from Process RXR
+        :param sample: sample object
+        :return:
+        """
+
+    # Checking if fname already exists
+    cwd = os.getcwd()
+    path = cwd + '/' + fname
+    if os.path.exists(path):
+        raise OSError(
+            "HDF5 file already exists. To write new file remove the old file from the current working directory.")
+
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    # creating group that will contain the sample information
+    grp1 = f.create_group("Sample")
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = int(m)
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
+    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
+
+    dsLayer = 0
+    for my_layer in sample.structure:
+
+        # Layer information
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+
+        formula = ''
+        for ele in list(my_layer.keys()):
+            stoich = my_layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+        layer.attrs['Formula'] = formula
+
+        for ele in list(my_layer.keys()):
+            element = layer.create_group(ele)
+
+            # Element information
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+            # May be changed in the future as layermagnetized also contains this information
+            # Original implemented to avoid problem of trying to load in the magnetic data that does not exist
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['Position'] = my_layer[ele].position
+
+        dsLayer = dsLayer + 1
+
+    # Loading in the experimental data and simulated data
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
+
+    grp2 = f.create_group("Experimental_data")
+    grp3 = f.create_group("Simulated_data")
+
+    grpR = grp2.create_group("Reflectivity_Scan")
+    subR = grp3.create_group("Reflectivity_Scan")
+
+    grpE = grp2.create_group("Energy_Scan")
+    subE = grp3.create_group("Energy_Scan")
+
+    for inf in info:
+        name = inf[2]
+        if inf[1] == 'Energy':
+            energy = data_dict[name]['Energy']
+            angle = data_dict[name]['Angle']
+            polarization = data_dict[name]['Polarization']
+            datasetpoints = data_dict[name]['DataPoints']
+            dsNum = data_dict[name]['DatasetNumber']
+            data = data_dict[name]['Data']
+            theta = data[1]
+            E = data[3]
+
+            E, R = sample.energy_scan(theta, E)
+            R = R[polarization]
+            print(name)
+            sim = np.array([data[0], data[1], R, data[3]])
+            dat = np.array([data[0], data[1], data[2], data[3]])
+
+            dset = grpE.create_dataset(name, dat)
+            dset1 = subE.create_dataset(name, sim)
+
+            dset.attrs['Energy'] = float(energy)
+            dset1.attrs['Energy'] = float(energy)
+
+            dset.attrs['Polarization'] = polarization
+            dset1.attrs['Polarization'] = polarization
+
+            dset.attrs['Angle'] = float(angle)
+            dset1.attrs['Angle'] = float(angle)
+
+            dset.attrs['DataPoints'] = int(datasetpoints)
+            dset1.attrs['DataPoints'] = int(datasetpoints)
+
+            dset.attrs['DatasetNumber'] = int(dsNum)
+            dset1.attrs['DatasetNumber'] = int(dsNum)
+
+        elif inf[1] == 'Reflectivity':
+
+            energy = data_dict[name]['Energy']
+            polarization = data_dict[name]['Polarization']
+            datasetpoints = data_dict[name]['DataPoints']
+            dsNum = data_dict[name]['DatasetNumber']
+            data = data_dict[name]['Data']
+            dat = np.array([data[0], data[1], data[2]])
+            qz, R = sample.reflectivity(energy, data[0])
+            R = R[polarization]
+
+            sim = np.array([data[0],data[1],R])
+
+            dset = grpR.create_dataset(name, data=dat)
+            dset1 = subR.create_dataset(name, data=sim)
+
+            dset.attrs['Energy'] = float(energy)
+            dset1.attrs['Energy'] = float(energy)
+
+            dset.attrs['Polarization'] = str(polarization)
+            dset1.attrs['Polarization'] = str(polarization)
+
+            dset.attrs['DataPoints'] = int(datasetpoints)
+            dset1.attrs['DataPoints'] = int(datasetpoints)
+
+            dset.attrs['DatasetNumber'] = int(dsNum)
+            dset1.attrs['DatasetNumber'] = int(dsNum)
+
+    f.close()
+    return
 if __name__ == "__main__":
 
     sample = slab(8)
@@ -1600,6 +1756,10 @@ if __name__ == "__main__":
     sample.addlayer(7, 'CCO', 4, density = 2.5, roughness = 2)
 
     fname = "Pim10uc.h5"
+    fnew = 'test.h5'
+    info, data_dict, sim_dict=ReadDataHDF5(fname)
+    #print(len(data_dict['59_E429.58_Th5.0_S']['Data'][3]))
+    saveNewFile(fnew, info, data_dict, sample)
     #WriteSampleHDF5(fname, sample)
 
 

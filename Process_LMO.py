@@ -126,10 +126,10 @@ def GetSampleInfo(sample):
 
 
 
-samples = ["Pim10uc", "Pim7uc"]
+samples = ["Pim10uc"]
 #samples = ["Pim4uc"]
 
-for sam in [0, 1]:
+for sam in [0]:
     EScan,AScan,ECal,Geo,Corr = GetSampleInfo(samples[sam])
     AsData,AsInfo = ProcessRXR("Data/" + samples[sam]+".spc", AScan,ECal,Geo,Corr,"A")
     EsData,EsInfo = ProcessRXR("Data/" + samples[sam]+".spc", EScan,ECal,Geo,Corr,"E")
