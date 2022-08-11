@@ -1662,6 +1662,7 @@ def saveNewFile(fname, info, data_dict, sample):
 
     for inf in info:
         name = inf[2]
+
         if inf[1] == 'Energy':
             energy = data_dict[name]['Energy']
             angle = data_dict[name]['Angle']
@@ -1672,14 +1673,14 @@ def saveNewFile(fname, info, data_dict, sample):
             theta = data[1]
             E = data[3]
 
-            E, R = sample.energy_scan(theta, E)
+            E, R = sample.energy_scan(angle, E)
             R = R[polarization]
-            print(name)
+
             sim = np.array([data[0], data[1], R, data[3]])
             dat = np.array([data[0], data[1], data[2], data[3]])
 
-            dset = grpE.create_dataset(name, dat)
-            dset1 = subE.create_dataset(name, sim)
+            dset = grpE.create_dataset(name, data=dat)
+            dset1 = subE.create_dataset(name, data=sim)
 
             dset.attrs['Energy'] = float(energy)
             dset1.attrs['Energy'] = float(energy)

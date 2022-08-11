@@ -2741,6 +2741,7 @@ def getParameters(sample):
     p3 = mp.Process(target=f3)
     p3.start()
 
+
     p5 = mp.Process(target=parameterSelection(sample, queue))
     p5.start()
 
@@ -3350,14 +3351,36 @@ def showComparisonPlots(fname, x, parameters, scans):
 def optimizationProcess(fname):
 
     contOpt = True
-
+    first = True
 
     while contOpt:
         # Load in the sample information
-        sample = ReadSampleHDF5(fname)
+        if first:
+            sample = ReadSampleHDF5(fname)
+            # load in the data and simulation data
+            data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+            first = False
+        else:
+            fileDir = os.getcwd()
+            fileExt = r".h5"
+            listFiles = [filename for filename in os.listdir(fileDir) if filename.endswith(fileExt)]
+            dictFiles = dict()
+            idx = 1
+            print('Select which file you would like to save to: ')
+            for file in listFiles:
+                print('\t ' + str(idx) + ': ' + file)
+                dictFiles[str(idx)] = file
+                idx = idx + 1
 
-        # load in the data and simulation data
-        data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+            whichFile = input('\n -> ')
+            print()
+            while whichFile not in list(dictFiles.keys()):
+                whichFile = input('Select one of the provided options: ')
+
+            fname = dictFiles[whichFile]
+            # load in the data and simulation data
+            data, data_dict, sim_dict = ReadDataHDF5(fname)  # file must remain open as we process the dataset
+            sample = ReadSampleHDF5(fname)
 
         # get the scan info from the user
         scans, scanBounds = getScanInfo(data, data_dict, sim_dict)
@@ -3373,25 +3396,61 @@ def optimizationProcess(fname):
 
         print('SAVE MODEL \n')
         print('Select an option: ')
-        print('\t 1: Save as hdf5 file')
-        print('\t 2: Save as ASCII file')
-        print('\t 3: Do not save model')
+        print('\t 1: Save model to a current file')
+        print('\t 2: Save model to a new file')
+        print('\t 3: Do not save model and use previous model')
 
         toggle = input('\n -> ')
         print()
         while toggle not in ['1','2','3']:
             toggle = input('Select one of the provided options')
         print()
-
         # Need to provide a new filename
         if toggle == '1':
-            WriteSampleHDF5(fname, sample)
+            newSample = changeSampleParams(x, parameters, sample)
+            fileDir = os.getcwd()
+            fileExt = r".h5"
+            listFiles = [filename for filename in os.listdir(fileDir) if filename.endswith(fileExt)]
+            dictFiles = dict()
+            idx = 1
+            print('Select which file you would like to save to: ')
+            for file in listFiles:
+                print('\t ' + str(idx) + ': ' + file)
+                dictFiles[str(idx)] = file
+                idx = idx + 1
+
+            whichFile = input('\n -> ')
+            print()
+
+            while whichFile not in list(dictFiles.keys()):
+                whichFile = input('Select one of the provided options: ')
+            print()
+            WriteSampleHDF5(dictFiles[whichFile], newSample)
+
+
         elif toggle == '2':
-            WriteSampleASCII(fname, sample)
+            newSample = changeSampleParams(x, parameters, sample)
+            fileDir = os.getcwd()
+            fileExt = r".h5"
+            fileWrong = True
+            fileName = ''
+            while fileWrong:
+                fileWrong = False
+                fileName = input('Select filename (include .h5 extension): ')
+                for filename in os.listdir(fileDir):
+                    if filename == fileName:
+                        fileWrong = True
+                if fileName.endswith(fileExt):
+                    fileWrong = True
+
+            saveNewFile(fileName,info, data_dict, newSample)
+
+        elif toggle == '3':
+            first = True
 
         print('NEW OPTIMIZATION \n')
         print('Select an option: ')
-        print('\t 1: Continue')
+        print('\t 1: Continue with last saved model')
         print('\t 2: Exit/Finish')
         toggle = input('\n -> ')
         print()
