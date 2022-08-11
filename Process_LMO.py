@@ -2,8 +2,8 @@ from SpecFileProcessing import *
 from data_structure import *
 
 sample = slab(2)
-sample.addlayer(0,"SrTiO3", 50)
-sample.addlayer(1, "LaMnO3", 20, linked_roughness=[False, 0.5, 2.5])
+sample.addlayer(0,"SrTiO3", 50, roughness=2)
+sample.addlayer(1, "LaMnO3", 30, roughness=2, linked_roughness=[False, 0.5, 2.5])
 sample.polymorphous(1,'Mn', ['Mn2+', 'Mn3+'], [1,0], sf = ['Mn', 'Fe'])
 sample.magnetization(1,['Mn2+', 'Mn3+'], [0.1,0], ['Co', 'Ni'])
 
