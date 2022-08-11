@@ -2736,12 +2736,11 @@ def getParameters(sample):
     :return:
     """
 
-    queue = mp.Queue()
     f3 = functools.partial(plotScansWidget, sample)
     p3 = mp.Process(target=f3)
     p3.start()
-
-
+    time.sleep(4)  # makes sure that plotScansWidget has time to finish before the next process starts
+    queue = mp.Queue()
     p5 = mp.Process(target=parameterSelection(sample, queue))
     p5.start()
 
