@@ -1048,7 +1048,8 @@ class slab:
         for key in list(density_magnetic.keys()):
             my_legend.append('Mag: ' + key)
 
-        plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
+        plt.legend(my_legend)
+        #plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
         plt.xlabel('Thickness (Angstrom)')
         plt.ylabel('Density (mol/cm^3)')
 
@@ -1093,7 +1094,6 @@ class slab:
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
-
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
 

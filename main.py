@@ -15,32 +15,29 @@ import time
 
 if __name__ == '__main__':
     # Define the sample model
-    sample = slab(8)
+    sample = slab(2)
 
-    sample.addlayer(0, 'SrTiO3', 50, density =[0.027904,0.027904,0.083712], roughness=[7.58207,False,5.77093])
-    sample.addlayer(1, 'SrTiO3', 5, density=[0, 0.027904, 0], roughness=[7.58207, 4.03102, 5.77093])
+    sample.addlayer(0, 'SrTiO3', 50, density = [0.27, 0.29,0.84],roughness=4)
+    sample.addlayer(1, 'LaMnO3', 30, density=[0.26,0.28,0.82],roughness=1.5, linked_roughness=0.5)
 
-    sample.addlayer(2,'LaMnO3', 5, density=[0.021798,0.0209,0.084], roughness=[3.77764,2,2],linked_roughness=[False, 0.5, False])
-    sample.polymorphous(2,'Mn',['Mn2+', 'Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2,['Mn2+','Mn3+'], [0.025,0], ['Co','Ni'])
+    sample.plot_density_profile(1)
+    plt.xlim([-20,40])
+    plt.show()
 
-    sample.addlayer(3,'LaMnO3', 18.8437, density=[0.021798,0.0209,0.084], roughness=[3.77764,2,2])
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.025, 0], ['Co', 'Ni'])
+    thickness, density, density_magnetic = sample.density_profile(step=0.1)  # Computes the density profile
+    E = 450
+    sf = {'Sr': array([24.97849388, 17.13689607]), 'Ti': array([-11.6888725 ,   2.07084738]), 'O': array([5.49082694, 0.30418793]), 'La': array([24.56415562,  9.75841986]), 'Mn': array([14.23069285,  2.83051044])}
 
-    sample.addlayer(4, 'LaMnO3', 10, density=[0.021798, 0.0209, 0.084], roughness=[3.77764, 2, 2])
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
 
-    sample.addlayer(5, 'LaMnO3', 3, density=[0.025, 0.024, 0.05], roughness=[0.25, 0.25, 2])
-    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0.016, 0], ['Co', 'Ni'])
-
-    sample.addlayer(6, 'LaMnO3', 4, density=[0.025, 0.042, 0.04], roughness=[0.25, 0.25, 2])
-    sample.polymorphous(6, 'Mn', ['Mn2+', 'Mn3+'], [0.4, 0.6], sf=['Mn', 'Fe'])
-    sample.magnetization(6, ['Mn2+', 'Mn3+'], [0.0053, 0], ['Co', 'Ni'])
-
-    sample.addlayer(7,'CCO', 10.1373, density =[0.05,0.05,0.01], roughness=2, linked_roughness=[3,1.5,False])
+    delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+    plt.figure(2)
+    plt.plot(thickness, delta)
+    plt.plot(thickness, beta)
+    plt.xlabel('Thickness (Angstrom)')
+    plt.ylabel(r'$\delta, \;\; \beta$')
+    plt.legend([r'$\delta$',r'$\beta$'])
+    plt.xlim([-20,40])
+    plt.show()
     """
     # save new sample model to current file
     fname = 'Pim10uc.h5'
@@ -89,7 +86,5 @@ if __name__ == '__main__':
     # give user option to save new sample
 
     """
-    print('hello'.split())
-
 
 
