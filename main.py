@@ -15,29 +15,37 @@ import time
 
 if __name__ == '__main__':
     # Define the sample model
-    sample = slab(2)
+    sample1 = slab(2)
+    sample1.addlayer(0, 'SrTiO3', 50,roughness=4)
+    sample1.addlayer(1, 'LaMnO3', 30,roughness=1.5, linked_roughness=1)
 
-    sample.addlayer(0, 'SrTiO3', 50, density = [0.27, 0.29,0.84],roughness=4)
-    sample.addlayer(1, 'LaMnO3', 30, density=[0.26,0.28,0.82],roughness=1.5, linked_roughness=0.5)
+    sample2 = slab(2)
+    sample2.addlayer(0, 'SrTiO3', 50, density=4.8579022, roughness=5.97722238)
+    sample2.addlayer(1, 'LaMnO3', 36.64782587,density=6.77792568, roughness=5.06593207, linked_roughness=0.62078224)
 
-    sample.plot_density_profile(1)
-    plt.xlim([-20,40])
+    sample1.plot_density_profile(1)
+    plt.xlim([-25,50])
     plt.show()
 
-    thickness, density, density_magnetic = sample.density_profile(step=0.1)  # Computes the density profile
-    E = 450
-    sf = {'Sr': array([24.97849388, 17.13689607]), 'Ti': array([-11.6888725 ,   2.07084738]), 'O': array([5.49082694, 0.30418793]), 'La': array([24.56415562,  9.75841986]), 'Mn': array([14.23069285,  2.83051044])}
+    fname = 'Pim10uc.h5'
+    info, data_dict, sim_dict = ReadDataHDF5(fname)
+    mydata = data_dict[info[21][2]]
 
+    qz = mydata['Data'][0]
+    R = mydata['Data'][2]
+    E = mydata['Energy']
+    qz, Rn = sample1.reflectivity(E, qz)
+    Rn = Rn['S']
 
-    delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
     plt.figure(2)
-    plt.plot(thickness, delta)
-    plt.plot(thickness, beta)
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel(r'$\delta, \;\; \beta$')
-    plt.legend([r'$\delta$',r'$\beta$'])
-    plt.xlim([-20,40])
+    plt.plot(qz, R)
+    plt.plot(qz, Rn)
+    plt.ylabel('Reflection Intensity (R)')
+    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($A^{-1}$)')
+    plt.legend(['Experiment', 'Simulated'])
+    plt.yscale('log')
     plt.show()
+
     """
     # save new sample model to current file
     fname = 'Pim10uc.h5'

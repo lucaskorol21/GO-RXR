@@ -745,7 +745,7 @@ def scanCompute(x, *args):
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
             qz = np.array(myData[0])
-            Rdat = np.log(np.array(myData[2]))
+            Rdat = np.log10(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
             Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
 
@@ -753,10 +753,9 @@ def scanCompute(x, *args):
             for b in range(len(xbound)):
                 lw = xbound[b][0]
                 up = xbound[b][1]
-
                 w = weights[b]
 
-                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]  #
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]  # determines index boundaries
 
                 if len(idx) != 0:
                     chi2 = chi2 + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
@@ -3441,7 +3440,7 @@ def optimizationProcess(fname):
                 for filename in os.listdir(fileDir):
                     if filename == fileName:
                         fileWrong = True
-                if fileName.endswith(fileExt):
+                if not(fileName.endswith(fileExt)):
                     fileWrong = True
 
             saveNewFile(fileName,info, data_dict, newSample)
@@ -3467,13 +3466,13 @@ if __name__ == "__main__":
     sample = slab(2)
 
     sample.addlayer(0, 'SrTiO3', 50, roughness=4)
-    sample.addlayer(1, 'LaMnO3', 30, roughness=1.5, linked_roughness=0.5)
 
+    sample.addlayer(1, 'LaMnO3', 30, roughness=1.5, linked_roughness=1)
     fname = 'Pim10uc.h5'
 
     #sample.plot_density_profile(1)
     #plt.show()
-    #WriteSampleHDF5(fname, sample)
+    WriteSampleHDF5(fname, sample)
     #print(ReadDataHDF5(fname))
     #scans = [1,2,3,4]
     #data, data_dict, sim_dict = ReadDataHDF5(fname)
