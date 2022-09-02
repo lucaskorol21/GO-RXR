@@ -91,7 +91,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
             layer = layer + 1
             if layer_magnetized[layer]:
                 for ele in structure[layer].keys():
-                    if structure[layer][ele].mag_scattering_factor != None:
+                    if len(structure[layer][ele].mag_scattering_factor) != 0:
                         gamma = structure[layer][ele].gamma
                         phi = structure[layer][ele].phi
 
@@ -346,7 +346,7 @@ class element:
         self.phi = 90  #
         self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-        self.mag_scattering_factor = None
+        self.mag_scattering_factor = []
         self.position = None
 
 class slab:

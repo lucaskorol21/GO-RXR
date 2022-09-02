@@ -3472,8 +3472,8 @@ if __name__ == "__main__":
     sample.polymorphous(1,'Mn',['Mn2+','Mn3+'],[0.5,0.5], sf=['Mn','Fe'])
     sample.magnetization(1,['Mn2+','Mn3+'],[0,0],['Co', 'Ni'])
 
-    sample.addlayer(2, 'CCO', 5, density=[0.01,0.01,0.01], roughness=0.5, linked_roughness=0.5)
-    fname = 'test.h5'
+    sample.addlayer(2, 'CCO', 15, density=[0.03,0.03,0.03], roughness=2, linked_roughness=2)
+    fname = 'attempt1.h5'
 
     #sample.plot_density_profile(1)
     #plt.show()
