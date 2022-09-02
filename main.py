@@ -23,26 +23,25 @@ if __name__ == '__main__':
     sample2.addlayer(0, 'SrTiO3', 50, density=4.8579022, roughness=5.97722238)
     sample2.addlayer(1, 'LaMnO3', 36.64782587,density=6.77792568, roughness=5.06593207, linked_roughness=0.62078224)
 
-    sample1.plot_density_profile(1)
-    plt.xlim([-25,50])
-    plt.show()
+    #sample1.plot_density_profile(1)
+    #plt.xlim([-25,50])
+    #plt.show()
 
     fname = 'Pim10uc.h5'
     info, data_dict, sim_dict = ReadDataHDF5(fname)
-    mydata = data_dict[info[21][2]]
-
-    qz = mydata['Data'][0]
+    mydata = data_dict[info[71][2]]
+    print(info[71][2])
+    E = mydata['Data'][3]
     R = mydata['Data'][2]
-    E = mydata['Energy']
-    qz, Rn = sample1.reflectivity(E, qz)
+    Theta = mydata['Angle']
+    E, Rn = sample1.reflectivity(Theta, E)
     Rn = Rn['S']
 
     plt.figure(2)
-    plt.plot(qz, R)
-    plt.plot(qz, Rn)
+    plt.plot(E, R)
+    #plt.plot(qz, Rn)
     plt.ylabel('Reflection Intensity (R)')
-    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($A^{-1}$)')
-    plt.legend(['Experiment', 'Simulated'])
+    plt.xlabel(r'Energy, E (eV)')
     plt.yscale('log')
     plt.show()
 

@@ -771,7 +771,7 @@ def scanCompute(x, *args):
             pol = myDataScan['Polarization']
 
             Rdat = np.log(np.array(myData[2]))
-            Rsim = sample.energy_scan(Theta, E)
+            E, Rsim = sample.energy_scan(Theta, E)
             Rsim = np.log(Rsim[pol])
 
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
@@ -1732,7 +1732,7 @@ def parameterSelection(sample, queue):
             finishPoly = False
             if toggle == '1':
                 bound = input('Input the polmorph ratio bound for ' + my_poly + ' (0, 1): ')
-                bound = bound.strip()
+                bound = bound.split()
                 boundWrong = True
                 while boundWrong:
                     boundWrong = False
@@ -2386,7 +2386,7 @@ def parameterSelection(sample, queue):
             print()
             if toggle == '1':
                 bd = input('Enter the parameter optimization boundary as a tuple (lower, upper): ')
-                bd = bd.strip()
+                bd = bd.split()
                 boundWrong = True
                 while boundWrong:
                     boundWrong = False
@@ -3425,6 +3425,7 @@ def optimizationProcess(fname):
             while whichFile not in list(dictFiles.keys()):
                 whichFile = input('Select one of the provided options: ')
             print()
+            print(dictFiles[whichFile])
             WriteSampleHDF5(dictFiles[whichFile], newSample)
 
 
@@ -3443,7 +3444,7 @@ def optimizationProcess(fname):
                 if not(fileName.endswith(fileExt)):
                     fileWrong = True
 
-            saveNewFile(fileName,info, data_dict, newSample)
+            saveNewFile(fileName,data, data_dict, newSample)
 
         elif toggle == '3':
             first = True
@@ -3463,16 +3464,20 @@ def optimizationProcess(fname):
 
     return
 if __name__ == "__main__":
-    sample = slab(2)
+    sample = slab(3)
 
     sample.addlayer(0, 'SrTiO3', 50, roughness=4)
 
-    sample.addlayer(1, 'LaMnO3', 30, roughness=1.5, linked_roughness=1)
-    fname = 'Pim10uc.h5'
+    sample.addlayer(1, 'LaMnO3', 39.44931460338314, density = [0.022742245555,0.022742245555,0.068226736666],roughness=6.9991860, linked_roughness=1.39166797086646)
+    sample.polymorphous(1,'Mn',['Mn2+','Mn3+'],[0.5,0.5], sf=['Mn','Fe'])
+    sample.magnetization(1,['Mn2+','Mn3+'],[0,0],['Co', 'Ni'])
+
+    sample.addlayer(2, 'CCO', 5, density=[0.01,0.01,0.01], roughness=0.5, linked_roughness=0.5)
+    fname = 'test.h5'
 
     #sample.plot_density_profile(1)
     #plt.show()
-    WriteSampleHDF5(fname, sample)
+    #WriteSampleHDF5(fname, sample)
     #print(ReadDataHDF5(fname))
     #scans = [1,2,3,4]
     #data, data_dict, sim_dict = ReadDataHDF5(fname)

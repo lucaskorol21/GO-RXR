@@ -825,8 +825,8 @@ class slab:
                         const = (next_density-current_density)/2
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         density_struct[ele] = density_struct[ele] + const * erf_func
-                        density_struct[ele][density_struct[ele]<0] = 0
 
+                density_struct[ele][density_struct[ele] < 0] = 0
             # Polymorph element
             pn=0
             if ele in poly_keys:
