@@ -1,24 +1,37 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
-
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.figure as Figure
 import sys
+import material_structure as ms
+
+
 
 
 class sampleWidget(QWidget):
-    def __init__(self):
+    def __init__(self, sample):
         super().__init__()
-        pagelayout = QHBoxLayout()
+        pagelayout = QHBoxLayout()  # page layout
 
-        cblayout = QVBoxLayout()
+        cblayout = QVBoxLayout()  # combobox and button layout
 
-        addlayerButton = QPushButton('Add Layer')
-        copylayerButton = QPushButton('Copy Layer')
-        deletelayerButton = QPushButton('Delete Layer')
+        # bottons for adding, copying, and deleteing layers
+        addlayerButton = QPushButton('Add Layer')  # add layer
+        addlayerButton.clicked.connect(self._addLayer)
 
+        copylayerButton = QPushButton('Copy Layer')  # copy layer
+        copylayerButton.clicked.connect(self._copyLayer)
 
+        deletelayerButton = QPushButton('Remove Layer')  # delete layer
+        deletelayerButton.clicked.connect(self._removeLayer)
+
+        self.structInfo = sample.structure
         self.layerBox = QComboBox(self)
-        self.layerBox.addItems(['Substrate', 'Layer 1', 'Layer 2', 'Layer 3'])
+        self.layerBox.currentIndexChanged.connect(self.setTable)
+        self.layerBox.addItems(['Substrate', 'Layer 1'])
 
         # buttons
         cblayout.addWidget(addlayerButton)
@@ -29,32 +42,135 @@ class sampleWidget(QWidget):
         cblayout.addWidget(self.layerBox)
 
         # table widget
-        # create table
-        self.elementTable = QTableWidget(self)
-        #self.elementTable.resize(660, 125)
-        self.elementTable.setRowCount(3)
-        self.elementTable.setColumnCount(6)
 
-        self.elementTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+        # create table
+        self.createElementTable()
 
         selectlayout = QVBoxLayout()
 
+        # buttons for choosing which parameters to choose
         structButton = QPushButton('Structure')
         selectlayout.addWidget(structButton)
         polyButton = QPushButton('Element Variation')
         selectlayout.addWidget(polyButton)
         magButton = QPushButton('Magnetic')
         selectlayout.addWidget(magButton)
+        dpButton = QPushButton('Density Profile')
+        dpButton.setStyleSheet("background-color : cyan")
+        selectlayout.addWidget(dpButton)
 
         pagelayout.addLayout(cblayout)
         pagelayout.addWidget(self.elementTable)
         pagelayout.addLayout(selectlayout)
 
-        self.setLayout(pagelayout)
+        t = np.arange(0.00, 2.0, 0.01)
+        s = 1 + np.sin(2 * np.pi * t)
+        fig = plt.figure()
+        plt.plot(t,s)
+
+        self.canvas = FigureCanvas(fig)
+        mylayout = QVBoxLayout()
+        mylayout.addLayout(pagelayout)
+        mylayout.addWidget(self.canvas)
+
+        self.setLayout(mylayout)
+
+    def createElementTable(self):
+        idx = self.layerBox.currentIndex()
+
+        self.elementTable = QTableWidget(self)
+        # self.elementTable.resize(660, 125)
+        self.elementTable.setRowCount(3)
+        self.elementTable.setColumnCount(6)
+
+        self.elementTable.setHorizontalHeaderLabels(
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+        for row in range(self.elementTable.rowCount()):
+            for column in range(self.elementTable.columnCount()):
+                if column == 0:
+                    element = list(self.structInfo[idx].keys())[row]
+                    item = QTableWidgetItem(element)
+                    self.elementTable.setItem(row,column, item)
+                elif column == 1:
+                    thickness = self.structInfo[idx][element].thickness
+                    item = QTableWidgetItem(str(thickness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 2:
+                    density = self.structInfo[idx][element].density
+                    item = QTableWidgetItem(str(density))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 3:
+                    roughness = self.structInfo[idx][element].roughness
+                    item = QTableWidgetItem(str(roughness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 4:
+                    linked_roughness = self.structInfo[idx][element].linked_roughness
+                    item = QTableWidgetItem(str(linked_roughness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 5:
+                    scattering_factor = self.structInfo[idx][element].scattering_factor
+                    item = QTableWidgetItem(scattering_factor)
+                    self.elementTable.setItem(row, column, item)
+
+    def setTable(self):
+        idx = self.layerBox.currentIndex()
+
+        self.elementTable = QTableWidget(self)
+        # self.elementTable.resize(660, 125)
+        self.elementTable.setRowCount(3)
+        self.elementTable.setColumnCount(6)
+
+        self.elementTable.setHorizontalHeaderLabels(
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+        for row in range(self.elementTable.rowCount()):
+            for column in range(self.elementTable.columnCount()):
+                if column == 0:
+                    element = list(self.structInfo[idx].keys())[row]
+                    item = QTableWidgetItem(element)
+                    self.elementTable.setItem(row, column, item)
+                elif column == 1:
+                    thickness = self.structInfo[idx][element].thickness
+                    item = QTableWidgetItem(str(thickness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 2:
+                    density = self.structInfo[idx][element].density
+                    item = QTableWidgetItem(str(density))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 3:
+                    roughness = self.structInfo[idx][element].roughness
+                    item = QTableWidgetItem(str(roughness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 4:
+                    linked_roughness = self.structInfo[idx][element].linked_roughness
+                    item = QTableWidgetItem(str(linked_roughness))
+                    self.elementTable.setItem(row, column, item)
+                elif column == 5:
+                    scattering_factor = self.structInfo[idx][element].scattering_factor
+                    item = QTableWidgetItem(scattering_factor)
+                    self.elementTable.setItem(row, column, item)
+    def _addLayer(self):
+
+        num = self.layerBox.count()
+        if num == 0:
+            self.layerBox.addItem('Substrate')
+        else:
+            self.layerBox.addItem('Layer ' + str(num))
+
+    def _removeLayer(self):
+        num = self.layerBox.count()
+
+        if num != 0:
+            self.layerBox.removeItem(num-1)
+
+    def _copyLayer(self):
+        num = self.layerBox.count()
+        if num == 0:
+            self.layerBox.addItem('Substrate')
+        else:
+            self.layerBox.addItem('Layer ' + str(num))
 
 class ReflectometryApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, sample):
         super().__init__()
 
         # set the title
@@ -74,18 +190,21 @@ class ReflectometryApp(QMainWindow):
         label2 = QLabel('Label 2')
         label3 = QLabel('Label 3')
 
-        _sampleWidget = sampleWidget()  # initialize the sample widget
+        _sampleWidget = sampleWidget(sample)  # initialize the sample widget
         sampleButton = QPushButton('Sample')
+        sampleButton.setStyleSheet("background-color : pink")
         sampleButton.clicked.connect(self.activate_tab_1)
         buttonlayout.addWidget(sampleButton)
         self.stackedlayout.addWidget(_sampleWidget)
 
         reflButton = QPushButton('Reflectivity')
+        reflButton.setStyleSheet("background-color : pink")
         reflButton.clicked.connect(self.activate_tab_2)
         buttonlayout.addWidget(reflButton)
         self.stackedlayout.addWidget(label2)
 
         goButton = QPushButton('Global Optimization')
+        goButton.setStyleSheet("background-color : pink")
         goButton.clicked.connect(self.activate_tab_3)
         buttonlayout.addWidget(goButton)
         self.stackedlayout.addWidget(label3)
@@ -220,7 +339,11 @@ class TestWindow(QWidget):
 
 
 if __name__ == '__main__':
+    sample = ms.slab(2)
+    sample.addlayer(0,'SrTiO3', 50)
+    sample.addlayer(1,'LaMnO3', 20)
+
     app = QApplication(sys.argv)
-    demo = ReflectometryApp()
+    demo = ReflectometryApp(sample)
     demo.show()
     sys.exit(app.exec_())
