@@ -28,12 +28,16 @@ class sampleWidget(QWidget):
         deletelayerButton = QPushButton('Remove Layer')  # delete layer
         deletelayerButton.clicked.connect(self._removeLayer)
 
+        # Layer Box
         self.structInfo = sample.structure
         self.layerBox = QComboBox(self)
-        self.layerBox.currentIndexChanged.connect(self.setTable)
+
+        # change this for an arbitrary sample model
         self.layerBox.addItems(['Substrate', 'Layer 1'])
 
-        # buttons
+        self.layerBox.currentIndexChanged.connect(self.changetable)
+
+        # buttons for adding and removing layers
         cblayout.addWidget(addlayerButton)
         cblayout.addWidget(copylayerButton)
         cblayout.addWidget(deletelayerButton)
@@ -42,9 +46,7 @@ class sampleWidget(QWidget):
         cblayout.addWidget(self.layerBox)
 
         # table widget
-
-        # create table
-        self.createElementTable()
+        self.tableStacklayout = QStackedLayout()
 
         selectlayout = QVBoxLayout()
 
@@ -60,7 +62,7 @@ class sampleWidget(QWidget):
         selectlayout.addWidget(dpButton)
 
         pagelayout.addLayout(cblayout)
-        pagelayout.addWidget(self.elementTable)
+        pagelayout.addLayout(self.tableStacklayout)
         pagelayout.addLayout(selectlayout)
 
         t = np.arange(0.00, 2.0, 0.01)
@@ -73,81 +75,56 @@ class sampleWidget(QWidget):
         mylayout.addLayout(pagelayout)
         mylayout.addWidget(self.canvas)
 
+        # create the tables as predefined by the sample model
+        #  We will need to consider the case when no sample model is given
+        for i in range(len(self.structInfo)):
+            self.tableStacklayout.addWidget(self.createElementTable(i))
+
         self.setLayout(mylayout)
 
-    def createElementTable(self):
-        idx = self.layerBox.currentIndex()
+    def createElementTable(self, idx):
+        #idx = self.layerBox.currentIndex()
 
-        self.elementTable = QTableWidget(self)
+        elementTable = QTableWidget(self)
         # self.elementTable.resize(660, 125)
-        self.elementTable.setRowCount(3)
-        self.elementTable.setColumnCount(6)
+        elementTable.setRowCount(3)
+        elementTable.setColumnCount(6)
 
-        self.elementTable.setHorizontalHeaderLabels(
+        elementTable.setHorizontalHeaderLabels(
             ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
-        for row in range(self.elementTable.rowCount()):
-            for column in range(self.elementTable.columnCount()):
+        for row in range(elementTable.rowCount()):
+            for column in range(elementTable.columnCount()):
                 if column == 0:
                     element = list(self.structInfo[idx].keys())[row]
                     item = QTableWidgetItem(element)
-                    self.elementTable.setItem(row,column, item)
+                    elementTable.setItem(row,column, item)
                 elif column == 1:
                     thickness = self.structInfo[idx][element].thickness
                     item = QTableWidgetItem(str(thickness))
-                    self.elementTable.setItem(row, column, item)
+                    elementTable.setItem(row, column, item)
                 elif column == 2:
                     density = self.structInfo[idx][element].density
                     item = QTableWidgetItem(str(density))
-                    self.elementTable.setItem(row, column, item)
+                    elementTable.setItem(row, column, item)
                 elif column == 3:
                     roughness = self.structInfo[idx][element].roughness
                     item = QTableWidgetItem(str(roughness))
-                    self.elementTable.setItem(row, column, item)
+                    elementTable.setItem(row, column, item)
                 elif column == 4:
                     linked_roughness = self.structInfo[idx][element].linked_roughness
                     item = QTableWidgetItem(str(linked_roughness))
-                    self.elementTable.setItem(row, column, item)
+                    elementTable.setItem(row, column, item)
                 elif column == 5:
                     scattering_factor = self.structInfo[idx][element].scattering_factor
                     item = QTableWidgetItem(scattering_factor)
-                    self.elementTable.setItem(row, column, item)
+                    elementTable.setItem(row, column, item)
 
-    def setTable(self):
+        return elementTable
+
+    def changetable(self):
         idx = self.layerBox.currentIndex()
+        self.tableStacklayout.setCurrentIndex(idx)
 
-        self.elementTable = QTableWidget(self)
-        # self.elementTable.resize(660, 125)
-        self.elementTable.setRowCount(3)
-        self.elementTable.setColumnCount(6)
-
-        self.elementTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
-        for row in range(self.elementTable.rowCount()):
-            for column in range(self.elementTable.columnCount()):
-                if column == 0:
-                    element = list(self.structInfo[idx].keys())[row]
-                    item = QTableWidgetItem(element)
-                    self.elementTable.setItem(row, column, item)
-                elif column == 1:
-                    thickness = self.structInfo[idx][element].thickness
-                    item = QTableWidgetItem(str(thickness))
-                    self.elementTable.setItem(row, column, item)
-                elif column == 2:
-                    density = self.structInfo[idx][element].density
-                    item = QTableWidgetItem(str(density))
-                    self.elementTable.setItem(row, column, item)
-                elif column == 3:
-                    roughness = self.structInfo[idx][element].roughness
-                    item = QTableWidgetItem(str(roughness))
-                    self.elementTable.setItem(row, column, item)
-                elif column == 4:
-                    linked_roughness = self.structInfo[idx][element].linked_roughness
-                    item = QTableWidgetItem(str(linked_roughness))
-                    self.elementTable.setItem(row, column, item)
-                elif column == 5:
-                    scattering_factor = self.structInfo[idx][element].scattering_factor
-                    item = QTableWidgetItem(scattering_factor)
-                    self.elementTable.setItem(row, column, item)
     def _addLayer(self):
 
         num = self.layerBox.count()
