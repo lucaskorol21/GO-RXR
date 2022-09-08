@@ -7,6 +7,132 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.figure as Figure
 import sys
 import material_structure as ms
+import os
+import ast
+
+def stringcheck(string):
+
+    # checks to make sure that the roughness and whatnot is in the correct format
+    num = 0
+    correctFormat = True
+    if len(string) == 0:
+        correctFormat = False
+    else:
+        first = True
+        for char in string:
+            if first:
+                if char == '.':
+                    correctFormat = False
+                elif not char.isdigit():
+                    correctFormat = False
+                first = False
+
+            elif not char.isdigit():
+                if char == '.':
+                    num = num + 1
+                    if num > 1:
+                        correctFormat = False
+                else:
+                    correctFormat = False
+
+
+    return correctFormat
+
+
+class compoundInput(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        pagelayout = QVBoxLayout()
+        infolayout = QGridLayout()
+        formula = QLabel('Formula: ')
+        self.formula = QLineEdit()
+        self.formula.editingFinished.connect(self.formulaDone)
+
+        thickness = QLabel('Thickness (A): ')
+        self.thickness = QLineEdit()
+        self.thickness.setText('10')
+
+        density = QLabel('Density (g/cm^3): ')
+        self.density = QLineEdit()
+
+        roughness = QLabel('Roughness (A): ')
+        self.roughness = QLineEdit()
+        self.roughness.setText('2')
+
+        linkedroughnesslayout = QHBoxLayout()
+        #consider including a tab to select linked roughness
+        linkedroughness = QLabel('Linked Roughness (A): ')
+        self.linkedroughness = QLineEdit()
+        self.linkedroughness.setHidden(True)
+
+        self.checkbox = QCheckBox()
+        self.checkbox.stateChanged.connect(self.linkedroughnessbox)
+        self.checkboxstate = 0
+
+        linkedroughnesslayout.addWidget(self.checkbox)
+        linkedroughnesslayout.addWidget(linkedroughness)
+
+
+
+        infolayout.addWidget(formula, 0,0)
+        infolayout.addWidget(thickness,1,0)
+        infolayout.addWidget(density,2,0)
+        infolayout.addWidget(roughness,3,0)
+        infolayout.addLayout(linkedroughnesslayout,4,0)
+
+        infolayout.addWidget(self.formula,0,1)
+        infolayout.addWidget(self.thickness,1,1)
+        infolayout.addWidget(self.density,2,1)
+        infolayout.addWidget(self.roughness,3,1)
+        infolayout.addWidget(self.linkedroughness,4,1)
+
+        enterButton = QPushButton('Enter')
+        enterButton.clicked.connect(self.inputComplete)
+
+        pagelayout.addLayout(infolayout)
+        pagelayout.addWidget(enterButton)
+        self.setLayout(pagelayout)
+    def formulaDone(self):
+        cwd = os.getcwd()
+        filename =  'Perovskite_Density.txt'
+
+        found = False
+        with open(filename) as file:
+            for line in file:
+                myformula = line.split()[0]
+                mydensity = line.split()[1]
+                if not found:
+                    if self.formula.text() == myformula:
+                        self.density.setText(mydensity)
+                        found = True
+                    else:
+                        self.density.clear()
+
+    def linkedroughnessbox(self):
+        self.checkboxstate = self.checkbox.checkState()
+        if self.checkboxstate > 0:
+            self.linkedroughness.setHidden(False)
+        else:
+            self.linkedroughness.setHidden(True)
+
+    def inputComplete(self):
+
+        finished = True
+        # gets the elements and their stoichiometry
+        myElements = ms.find_stoichiometry(self.formula.text())  # gets the elements and their stoichiometry
+
+        # gets the density
+
+        myDensity = self.density.text()
+        densityCorrect = stringcheck(myDensity)
+
+        print(densityCorrect)
+
+
+        # gets the roughness
+
+        # gets the linked roughness
 
 
 
@@ -14,6 +140,8 @@ import material_structure as ms
 class sampleWidget(QWidget):
     def __init__(self, sample):
         super().__init__()
+
+        # Initializes the sample definition widget
         pagelayout = QHBoxLayout()  # page layout
 
         cblayout = QVBoxLayout()  # combobox and button layout
@@ -32,9 +160,16 @@ class sampleWidget(QWidget):
         self.structInfo = sample.structure
         self.layerBox = QComboBox(self)
 
+        layerList = []
+        for i in range(len(self.structInfo)):
+            if i == 0:
+                layerList.append('Substrate')
+            else:
+                layerList.append('Layer '+str(i))
         # change this for an arbitrary sample model
-        self.layerBox.addItems(['Substrate', 'Layer 1'])
+        self.layerBox.addItems(layerList)
 
+        # changes the table on the screen when new layer selected
         self.layerBox.currentIndexChanged.connect(self.changetable)
 
         # buttons for adding and removing layers
@@ -316,11 +451,13 @@ class TestWindow(QWidget):
 
 
 if __name__ == '__main__':
-    sample = ms.slab(2)
+    sample = ms.slab(3)
     sample.addlayer(0,'SrTiO3', 50)
     sample.addlayer(1,'LaMnO3', 20)
+    sample.addlayer(2, 'LaAlO3', 5)
 
     app = QApplication(sys.argv)
-    demo = ReflectometryApp(sample)
+    #demo = ReflectometryApp(sample)
+    demo = compoundInput()
     demo.show()
     sys.exit(app.exec_())
