@@ -39,10 +39,10 @@ def stringcheck(string):
     return correctFormat
 
 
-class compoundInput(QWidget):
+class compoundInput(QDialog):
     def __init__(self):
         super().__init__()
-
+        self.val = []
         pagelayout = QVBoxLayout()
         infolayout = QGridLayout()
         formula = QLabel('Formula: ')
@@ -90,8 +90,11 @@ class compoundInput(QWidget):
         enterButton = QPushButton('Enter')
         enterButton.clicked.connect(self.inputComplete)
 
+        self.errorMessage = QLabel('')
+
         pagelayout.addLayout(infolayout)
         pagelayout.addWidget(enterButton)
+        pagelayout.addWidget(self.errorMessage)
         self.setLayout(pagelayout)
     def formulaDone(self):
         cwd = os.getcwd()
@@ -121,14 +124,42 @@ class compoundInput(QWidget):
         finished = True
         # gets the elements and their stoichiometry
         myElements = ms.find_stoichiometry(self.formula.text())  # gets the elements and their stoichiometry
+        ele = [list(myElements[0].keys())[i] for i in range(int(myElements[1]))]
+        stoich = [myElements[0][e].stoichiometry for e in ele]
+        myElements = {ele[i]:stoich[i] for i in range(len(ele))}
 
         # gets the density
+        myThickness = self.thickness.text()
+        thicknessCorrect = stringcheck(myThickness)
 
         myDensity = self.density.text()
         densityCorrect = stringcheck(myDensity)
 
-        print(densityCorrect)
+        myRoughness = self.roughness.text()
+        roughnessCorrect = stringcheck(myRoughness)
 
+        myLinkedroughness = self.linkedroughness.text()
+
+        linkedroughnessCorrect = True
+        if myLinkedroughness != '':
+            linkedroughnessCorrect = stringcheck(myLinkedroughness)
+
+        if not(thicknessCorrect) or not(densityCorrect) or not(roughnessCorrect) or not(linkedroughnessCorrect):
+            if not(thicknessCorrect):
+                self.errorMessage.setText('Please check thickness!')
+            elif not(densityCorrect):
+                self.errorMessage.setText('Please check density!')
+            elif not (roughnessCorrect):
+                self.errorMessage.setText('Please check roughness!')
+            elif not (linkedroughnessCorrect):
+                self.errorMessage.setText('Please check linked roughness!')
+        else:
+            if myLinkedroughness == '':
+                self.val = [myElements, myThickness,myDensity, myRoughness, None]
+            else:
+                self.val = [myElements, myThickness, myDensity, myRoughness, myLinkedroughness]
+
+            self.accept()
 
         # gets the roughness
 
@@ -268,6 +299,12 @@ class sampleWidget(QWidget):
         else:
             self.layerBox.addItem('Layer ' + str(num))
 
+
+        addLayerApp = compoundInput()
+        addLayerApp.show()
+        addLayerApp.exec_()
+        print(addLayerApp.val)
+        addLayerApp.close()
     def _removeLayer(self):
         num = self.layerBox.count()
 
@@ -333,121 +370,7 @@ class ReflectometryApp(QMainWindow):
         self.stackedlayout.setCurrentIndex(2)
 
 
-# Element table widget
 
-### Garbage code for layer --------------------------------------------------------------------------------------------
-class elementTable(QTableWidget):
-    def __init__(self):
-        super().__init__(3,5)
-
-# Compound table widget
-class compoundTable(QTableWidget):
-    def __init__(self):
-        super().__init__(1, 5)
-
-
-class TestWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        # setting title
-        self.setWindowTitle('Reflectometry of Quantum Materials (RQM)')
-
-        # setting geometry
-        self.setGeometry(200,80,1000,600)
-
-        # calling method
-        # creating a combo box widget
-        self.layers = QComboBox(self)
-
-        # setting geometry of layers
-        self.layers.setGeometry(200, 150, 120, 30)
-        self.layers.move(31, 131)
-        self.layers.resize(98, 30)
-
-        # this is where the layers list will be initialized based on input sample info
-        my_list = ['Substrate', 'Layer 1', 'Layer 2', 'Layer 3']
-
-        self.layers.addItems(my_list)
-        self.layers.activated.connect(self.layerProperties)
-
-        self._createButtons()
-
-        self._createElementTable()
-        
-
-    def _createButtons(self):
-        # button used to add or remove layers
-        self.addlayer_button = QPushButton('Add Layer', self)
-        self.addlayer_button.resize(100, 32)
-        self.addlayer_button.move(30, 40)
-        self.addlayer_button.clicked.connect(self._addLayer)
-
-        self.copylayer_button = QPushButton('Copy Layer', self)
-        self.copylayer_button.resize(100, 32)
-        self.copylayer_button.move(30, 70)
-        self.copylayer_button.clicked.connect(self._copyLayer)
-
-        self.removelayer_button = QPushButton('Remove Layer', self)
-        self.removelayer_button.resize(100, 32)
-        self.removelayer_button.move(30, 100)
-        self.removelayer_button.clicked.connect(self._removeLayer)
-
-        self.struct_button = QPushButton('Structural', self)
-        self.struct_button.resize(100, 32)
-        self.struct_button.move(150, 5)
-
-        self.poly_button = QPushButton('Element Variation', self)
-        self.poly_button.resize(100, 32)
-        self.poly_button.move(250, 5)
-
-        self.mag_button = QPushButton('Magnetic', self)
-        self.mag_button.resize(100, 32)
-        self.mag_button.move(350, 5)
-
-        self.elementMode_button = QPushButton('Element', self)
-        self.elementMode_button.resize(100, 32)
-        self.elementMode_button.move(150, 175)
-
-        self.compoundMode_button = QPushButton('Compound', self)
-        self.compoundMode_button.resize(100, 32)
-        self.compoundMode_button.move(250, 175)
-
-    def _createElementTable(self):
-        # create table
-        self.elementTable = QTableWidget(self)
-        self.elementTable.move(150, 40)
-        self.elementTable.resize(660, 125)
-
-        self.elementTable.setRowCount(3)
-        self.elementTable.setColumnCount(6)
-
-        self.elementTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
-
-    def _addLayer(self):
-        num = self.layers.count()
-        if num == 0:
-            self.layers.addItem('Substrate')
-        else:
-            self.layers.addItem('Layer ' + str(num))
-
-    def _removeLayer(self):
-        num = self.layers.count()
-
-        if num != 0:
-            self.layers.removeItem(num-1)
-
-    def _copyLayer(self):
-        num = self.layers.count()
-        if num == 0:
-            self.layers.addItem('Substrate')
-        else:
-            self.layers.addItem('Layer ' + str(num))
-
-
-    def layerProperties(self, index):
-            print('Activated: ' + str(index))
 
 
 if __name__ == '__main__':
@@ -457,7 +380,8 @@ if __name__ == '__main__':
     sample.addlayer(2, 'LaAlO3', 5)
 
     app = QApplication(sys.argv)
-    #demo = ReflectometryApp(sample)
-    demo = compoundInput()
+    demo = ReflectometryApp(sample)
+
     demo.show()
+
     sys.exit(app.exec_())
