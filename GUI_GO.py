@@ -124,9 +124,6 @@ class compoundInput(QDialog):
         finished = True
         # gets the elements and their stoichiometry
         myElements = ms.find_stoichiometry(self.formula.text())  # gets the elements and their stoichiometry
-        ele = [list(myElements[0].keys())[i] for i in range(int(myElements[1]))]
-        stoich = [myElements[0][e].stoichiometry for e in ele]
-        myElements = {ele[i]:stoich[i] for i in range(len(ele))}
 
         # gets the density
         myThickness = self.thickness.text()
@@ -155,17 +152,15 @@ class compoundInput(QDialog):
                 self.errorMessage.setText('Please check linked roughness!')
         else:
             if myLinkedroughness == '':
-                self.val = [myElements, myThickness,myDensity, myRoughness, None]
+                self.val = [myElements[0], myThickness,myDensity, myRoughness, None]
             else:
-                self.val = [myElements, myThickness, myDensity, myRoughness, myLinkedroughness]
+                self.val = [myElements[0], myThickness, myDensity, myRoughness, myLinkedroughness]
 
             self.accept()
 
         # gets the roughness
 
         # gets the linked roughness
-
-
 
 
 class sampleWidget(QWidget):
@@ -247,6 +242,42 @@ class sampleWidget(QWidget):
             self.tableStacklayout.addWidget(self.createElementTable(i))
 
         self.setLayout(mylayout)
+    def createCompoundTable(self, info, idx):
+        compoundTable = QTableWidget(self)
+        # self.elementTable.resize(660, 125)
+        compoundTable.setRowCount(3)
+        compoundTable.setColumnCount(6)
+
+        compoundTable.setHorizontalHeaderLabels(
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+        for row in range(compoundTable.rowCount()):
+            for column in range(compoundTable.columnCount()):
+                if column == 0:
+                    element = list(self.structInfo[idx].keys())[row]
+                    item = QTableWidgetItem(element)
+                    compoundTable.setItem(row, column, item)
+                elif column == 1:
+                    thickness = self.structInfo[idx][element].thickness
+                    item = QTableWidgetItem(str(thickness))
+                    compoundTable.setItem(row, column, item)
+                elif column == 2:
+                    density = self.structInfo[idx][element].density
+                    item = QTableWidgetItem(str(density))
+                    compoundTable.setItem(row, column, item)
+                elif column == 3:
+                    roughness = self.structInfo[idx][element].roughness
+                    item = QTableWidgetItem(str(roughness))
+                    compoundTable.setItem(row, column, item)
+                elif column == 4:
+                    linked_roughness = self.structInfo[idx][element].linked_roughness
+                    item = QTableWidgetItem(str(linked_roughness))
+                    compoundTable.setItem(row, column, item)
+                elif column == 5:
+                    scattering_factor = self.structInfo[idx][element].scattering_factor
+                    item = QTableWidgetItem(scattering_factor)
+                    compoundTable.setItem(row, column, item)
+
+        return compoundTable
 
     def createElementTable(self, idx):
         #idx = self.layerBox.currentIndex()
@@ -293,18 +324,24 @@ class sampleWidget(QWidget):
 
     def _addLayer(self):
 
-        num = self.layerBox.count()
-        if num == 0:
-            self.layerBox.addItem('Substrate')
-        else:
-            self.layerBox.addItem('Layer ' + str(num))
-
-
         addLayerApp = compoundInput()
         addLayerApp.show()
         addLayerApp.exec_()
-        print(addLayerApp.val)
+        userinput = addLayerApp.val
         addLayerApp.close()
+        #A = ms.atomic_mass(list(userinput[0].keys())[0])
+        #B = ms.atomic_mass(list(userinput[0].keys())[1])
+        #O = ms.atomic_mass(list(userinput[0].keys())[2])
+        #print(A, B, O)
+        if len(userinput) != 0:
+            num = self.layerBox.count()
+            if num == 0:
+                self.layerBox.addItem('Substrate')
+            else:
+                self.layerBox.addItem('Layer ' + str(num))
+
+
+
     def _removeLayer(self):
         num = self.layerBox.count()
 
