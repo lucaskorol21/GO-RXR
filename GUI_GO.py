@@ -151,11 +151,18 @@ class compoundInput(QDialog):
             elif not (linkedroughnessCorrect):
                 self.errorMessage.setText('Please check linked roughness!')
         else:
+            elements = list(myElements[0].keys())
+            tempArray = []
             if myLinkedroughness == '':
-                self.val = [myElements[0], myThickness,myDensity, myRoughness, False]
+                for ele in elements:
+                    stoich = myElements[0][ele].stoichiometry
+                    tempArray.append([ele, myThickness, myDensity, myRoughness, False, stoich, ele])
             else:
-                self.val = [myElements[0], myThickness, myDensity, myRoughness, myLinkedroughness]
+                for ele in elements:
+                    stoich = myElements[0][ele].stoichiometry
+                    tempArray.append([ele, myThickness, myDensity, myRoughness, myLinkedroughness, stoich, ele])
 
+            self.val = np.array(tempArray)
             self.accept()
 
         # gets the roughness
@@ -169,7 +176,8 @@ class compoundInput(QDialog):
 class sampleWidget(QWidget):
     def __init__(self, sample):
         super().__init__()
-
+        self.sample = sample  # variable used to define sample info
+        self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
         # Initializes the sample definition widget
         pagelayout = QHBoxLayout()  # page layout
 
@@ -186,11 +194,11 @@ class sampleWidget(QWidget):
         deletelayerButton.clicked.connect(self._removeLayer)
 
         # Layer Box
-        self.structInfo = sample.structure
+        self.structInfo = self.sample.structure
         self.layerBox = QComboBox(self)
 
         layerList = []
-        for i in range(len(self.structInfo)):
+        for i in range(len(self.sample.structure)):
             if i == 0:
                 layerList.append('Substrate')
             else:
@@ -211,6 +219,11 @@ class sampleWidget(QWidget):
 
         # table widget
         self.tableStacklayout = QStackedLayout()
+        self.structTable = QTableWidget()
+        self.structTable.setRowCount(3)
+        self.structTable.setColumnCount(7)
+        self.structTable.setHorizontalHeaderLabels(
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Stoichiometry', 'Scattering Factor'])
 
         selectlayout = QVBoxLayout()
 
@@ -222,12 +235,12 @@ class sampleWidget(QWidget):
         magButton = QPushButton('Magnetic')
         selectlayout.addWidget(magButton)
         dpButton = QPushButton('Density Profile')
-        dpButton.clicked.connect(self._density_profile)
+        dpButton.clicked.connect(self._densityprofile)
         dpButton.setStyleSheet("background-color : cyan")
         selectlayout.addWidget(dpButton)
 
         pagelayout.addLayout(cblayout)
-        pagelayout.addLayout(self.tableStacklayout)
+        pagelayout.addWidget(self.structTable)
         pagelayout.addLayout(selectlayout)
 
 
@@ -243,7 +256,6 @@ class sampleWidget(QWidget):
         #self.densityWidget.enableAutoRange()
         self.densityWidget.addLegend()
         #self.densityWidget.showButtons()
-        self.densityWidget.plot(title='Three random plots')
 
         for i in range(5):
             self.densityWidget.plot(x,y[i],pen=(i,5), filllevel=0,fillBrush=(255,255,255,30), name = str(i))
@@ -255,9 +267,11 @@ class sampleWidget(QWidget):
 
         # create the tables as predefined by the sample model
         #  We will need to consider the case when no sample model is given
-        for i in range(len(self.structInfo)):
-            self.tableStacklayout.addWidget(self.createElementTable(i))
+        for i in range(len(self.sample.structure)):
+            self.setStructFromSample(i)
 
+        # setTable
+        self.setTable(0)
         self.setLayout(mylayout)
 
     def createCompoundTable(self, info, idx):
@@ -265,7 +279,7 @@ class sampleWidget(QWidget):
         # self.elementTable.resize(660, 125)
 
         compoundTable.setRowCount(3)
-        compoundTable.setColumnCount(6)
+        compoundTable.setColumnCount(7)
         elements = list(info[0].keys())
 
         # compute the molar mass
@@ -276,7 +290,7 @@ class sampleWidget(QWidget):
             molar_mass = molar_mass + mass*stoich
 
         compoundTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Stoichiometry','Scattering Factor'])
         for row in range(compoundTable.rowCount()):
             for column in range(compoundTable.columnCount()):
                 if column == 0:
@@ -300,54 +314,65 @@ class sampleWidget(QWidget):
                     item = QTableWidgetItem(str(linked_roughness))
                     compoundTable.setItem(row, column, item)
                 elif column == 5:
+                    stoich = info[0][elements[row]].stoichiometry
+                    item = QTableWidgetItem(str(stoich))
+                    compoundTable.setItem(row, column, item)
+                elif column == 6:
                     scattering_factor = elements[row]
                     item = QTableWidgetItem(scattering_factor)
                     compoundTable.setItem(row, column, item)
 
         return compoundTable
 
-    def createElementTable(self, idx):
-        #idx = self.layerBox.currentIndex()
 
-        elementTable = QTableWidget(self)
-        # self.elementTable.resize(660, 125)
-        elementTable.setRowCount(3)
-        elementTable.setColumnCount(6)
+    def setStructFromSample(self, idx):
+        # this function will take the upon initialization and load in all parameters
+        structInfo = self.sample.structure
+        numLay = len(structInfo)
+        tempArray = np.empty((3,7), dtype=object)
+        for row in range(3):
+            for col in range(7):
+                if col == 0:
+                    element = list(structInfo[idx].keys())[row]
+                    tempArray[row,col] = str(element)
+                elif col == 1:
+                    element = list(structInfo[idx].keys())[row]
+                    thickness = structInfo[idx][element].thickness
+                    tempArray[row,col] = str(thickness)
+                elif col == 2:
+                    element = list(structInfo[idx].keys())[row]
+                    density = structInfo[idx][element].density
+                    tempArray[row,col] = str(density)
+                elif col == 3:
+                    element = list(structInfo[idx].keys())[row]
+                    roughness = structInfo[idx][element].roughness
+                    tempArray[row,col] = str(roughness)
+                elif col == 4:
+                    element = list(structInfo[idx].keys())[row]
+                    linked_roughness = structInfo[idx][element].linked_roughness
+                    tempArray[row,col] = str(linked_roughness)
+                elif col == 5:
+                    element = list(structInfo[idx].keys())[row]
+                    stoichiometry = structInfo[idx][element].stoichiometry
+                    tempArray[row,col] = str(stoichiometry)
+                elif col == 6:
+                    element = list(structInfo[idx].keys())[row]
+                    scattering_factor = structInfo[idx][element].scattering_factor
+                    tempArray[row,col] = str(scattering_factor)
 
-        elementTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
-        for row in range(elementTable.rowCount()):
-            for column in range(elementTable.columnCount()):
-                if column == 0:
-                    element = list(self.structInfo[idx].keys())[row]
-                    item = QTableWidgetItem(element)
-                    elementTable.setItem(row,column, item)
-                elif column == 1:
-                    thickness = self.structInfo[idx][element].thickness
-                    item = QTableWidgetItem(str(thickness))
-                    elementTable.setItem(row, column, item)
-                elif column == 2:
-                    density = self.structInfo[idx][element].density
-                    item = QTableWidgetItem(str(density))
-                    elementTable.setItem(row, column, item)
-                elif column == 3:
-                    roughness = self.structInfo[idx][element].roughness
-                    item = QTableWidgetItem(str(roughness))
-                    elementTable.setItem(row, column, item)
-                elif column == 4:
-                    linked_roughness = self.structInfo[idx][element].linked_roughness
-                    item = QTableWidgetItem(str(linked_roughness))
-                    elementTable.setItem(row, column, item)
-                elif column == 5:
-                    scattering_factor = self.structInfo[idx][element].scattering_factor
-                    item = QTableWidgetItem(scattering_factor)
-                    elementTable.setItem(row, column, item)
+        self.structTableInfo.append(tempArray)
 
-        return elementTable
+    def setTable(self, idx):
+        tableInfo = self.structTableInfo[idx]
+
+        for row in range(3):
+            for col in range(7):
+                item = QTableWidgetItem(str(tableInfo[row][col]))
+                self.structTable.setItem(row,col, item)
 
     def changetable(self):
         idx = self.layerBox.currentIndex()
-        self.tableStacklayout.setCurrentIndex(idx)
+        self.setTable(idx)
 
     def _addLayer(self):
 
@@ -357,24 +382,30 @@ class sampleWidget(QWidget):
         userinput = addLayerApp.val
         addLayerApp.close()
 
-        #print(A, B, O)
         if len(userinput) != 0:
             num = self.layerBox.count()
+            idx = self.layerBox.currentIndex()
             if num == 0:
                 self.layerBox.addItem('Substrate')
+                self.structTableInfo.insert(0, userinput)
+
             else:
                 self.layerBox.addItem('Layer ' + str(num))
-        print(userinput)
-        myTable = self.createCompoundTable(userinput,0)
-        idx = self.layerBox.currentIndex() + 1
-        self.tableStacklayout.insertWidget(idx,myTable)
+                self.structTableInfo.insert(idx+1, userinput)
+
+
+
+
     def _removeLayer(self):
         num = self.layerBox.count()
 
         if num != 0:
             self.layerBox.removeItem(num-1)
 
-        self.tableStacklayout.removeWidget(self.tableStacklayout.currentWidget())
+        idx = self.layerBox.currentIndex()
+
+        self.structTableInfo.pop(idx)
+        self.setTable(idx)
 
     def _copyLayer(self):
         num = self.layerBox.count()
@@ -383,33 +414,24 @@ class sampleWidget(QWidget):
         else:
             self.layerBox.addItem('Layer ' + str(num))
 
-        idx = self.layerBox.currentIndex() + 1
-        currentTable = self.tableStacklayout.currentWidget()
-        rows = currentTable.rowCount()
-        cols = currentTable.columnCount()
+        idx = self.layerBox.currentIndex()
 
-        newTable = QTableWidget()
-        newTable.setRowCount(rows)
-        newTable.setColumnCount(cols)
+        newLayer = self.structTableInfo[idx]
+        self.structTableInfo.insert(idx+1,newLayer)
 
-        newTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
 
-        for row in range(rows):
-            for col in range(cols):
-                item = QTableWidgetItem(currentTable.item(row,col).text())
-                newTable.setItem(row, col, item)
+    def _densityprofile(self):
+        self._createsample()
+        self.densityWidget.clear()
 
-        self.tableStacklayout.insertWidget(idx, newTable)
+    def _createsample(self):
+        m = self.tableStacklayout.count()
+        self.sample = ms.slab(m)
 
-    def _density_profile(self):
 
-        fig = plt.figure()
-        t = np.arange(0.00, 2.0, 0.01)
-        s = 1 + np.sin(8 * np.pi * t)
-
-        plt.plot(t, s)
-
+        for idx in range(m):
+            table = self.tableStacklayout.currentWidget()
+            pass
 class ReflectometryApp(QMainWindow):
     def __init__(self, sample):
         super().__init__()
