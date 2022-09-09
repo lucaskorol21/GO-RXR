@@ -247,8 +247,7 @@ class sampleWidget(QWidget):
 
         mylayout = QVBoxLayout()
         mylayout.addLayout(pagelayout)
-        x = np.arange(1000)
-        y = np.random.normal(size=(5,1000))
+
         self.densityWidget = pg.PlotWidget()
 
         #self.densityWidget = pg.PlotWidget()
@@ -257,11 +256,6 @@ class sampleWidget(QWidget):
         self.densityWidget.addLegend()
         #self.densityWidget.showButtons()
 
-        for i in range(5):
-            self.densityWidget.plot(x,y[i],pen=(i,5), filllevel=0,fillBrush=(255,255,255,30), name = str(i))
-
-
-        #self.densityWidget.plot([1, 2, 3, 4, 5], [3, 2, 7, 4, 10])
 
         mylayout.addWidget(self.densityWidget)
 
@@ -273,56 +267,6 @@ class sampleWidget(QWidget):
         # setTable
         self.setTable(0)
         self.setLayout(mylayout)
-
-    def createCompoundTable(self, info, idx):
-        compoundTable = QTableWidget(self)
-        # self.elementTable.resize(660, 125)
-
-        compoundTable.setRowCount(3)
-        compoundTable.setColumnCount(7)
-        elements = list(info[0].keys())
-
-        # compute the molar mass
-        molar_mass = 0
-        for ele in elements:
-            stoich = info[0][ele].stoichiometry
-            mass = ms.atomic_mass(ele)
-            molar_mass = molar_mass + mass*stoich
-
-        compoundTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Stoichiometry','Scattering Factor'])
-        for row in range(compoundTable.rowCount()):
-            for column in range(compoundTable.columnCount()):
-                if column == 0:
-                    item = QTableWidgetItem(elements[row])
-                    compoundTable.setItem(row, column, item)
-                elif column == 1:
-                    thickness = info[1]
-                    item = QTableWidgetItem(str(thickness))
-                    compoundTable.setItem(row, column, item)
-                elif column == 2:
-                    stoich = info[0][elements[row]].stoichiometry
-                    density = float(info[2])*stoich/molar_mass
-                    item = QTableWidgetItem(str(density))
-                    compoundTable.setItem(row, column, item)
-                elif column == 3:
-                    roughness = info[3]
-                    item = QTableWidgetItem(str(roughness))
-                    compoundTable.setItem(row, column, item)
-                elif column == 4:
-                    linked_roughness = info[4]
-                    item = QTableWidgetItem(str(linked_roughness))
-                    compoundTable.setItem(row, column, item)
-                elif column == 5:
-                    stoich = info[0][elements[row]].stoichiometry
-                    item = QTableWidgetItem(str(stoich))
-                    compoundTable.setItem(row, column, item)
-                elif column == 6:
-                    scattering_factor = elements[row]
-                    item = QTableWidgetItem(scattering_factor)
-                    compoundTable.setItem(row, column, item)
-
-        return compoundTable
 
 
     def setStructFromSample(self, idx):
@@ -422,16 +366,80 @@ class sampleWidget(QWidget):
 
     def _densityprofile(self):
         self._createsample()
+
+        thickness, density, density_magnetic = self.sample.density_profile()
         self.densityWidget.clear()
 
+        self._plotDensityProfile(thickness, density, density_magnetic)
+
+
+    def _plotDensityProfile(self,thickness, density, density_magnetic):
+
+        """
+        val = list(density.values())
+        mag_val = list(density_magnetic.values())
+        check = []
+        for key in list(density.keys()):
+            if key[-1].isdigit():
+                check.append(True)
+            else:
+                check.append(False)
+
+        plt.figure(fig)
+        for idx in range(len(val)):
+            if check[idx]:
+                plt.plot(thickness, val[idx], ':')
+            else:
+                plt.plot(thickness, val[idx])
+
+        for idx in range(len(mag_val)):
+            plt.plot(thickness, -mag_val[idx], '--')
+
+        center = np.zeros(len(thickness))
+        plt.plot(thickness, center, 'k-.', linewidth=2)
+        my_legend = list(density.keys())
+
+        for key in list(density_magnetic.keys()):
+            my_legend.append('Mag: ' + key)
+
+        plt.legend(my_legend)
+        # plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
+        plt.xlabel('Thickness (Angstrom)')
+        plt.ylabel('Density (mol/cm^3)')
+
+        if save:
+            saveto = dir + '/Density_Profile.png'
+            plt.savefig(saveto)
+
+        """
     def _createsample(self):
-        m = self.tableStacklayout.count()
+
+        m = len(self.structTableInfo)
         self.sample = ms.slab(m)
-
-
         for idx in range(m):
-            table = self.tableStacklayout.currentWidget()
-            pass
+            formula = ''
+            thickness = []
+            density = []
+            roughness = []
+            linked_roughness = []
+
+            layer = self.structTableInfo[idx]
+            for ele in range(len(layer)):
+                element = layer[ele]
+                formula = formula + element[0]
+                if element[5] != '1':
+                    formula = formula + element[5]
+
+                thickness.append(float(element[1]))
+                density.append(float(element[2]))
+                roughness.append(float(element[3]))
+                if element[4].isdigit():
+                    linked_roughness.append(float(element[4]))
+                else:
+                    linked_roughness.append(False)
+
+            self.sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness)
+
 class ReflectometryApp(QMainWindow):
     def __init__(self, sample):
         super().__init__()

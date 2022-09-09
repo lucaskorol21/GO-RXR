@@ -401,7 +401,7 @@ class slab:
         # Let's user know layer already initialized
         if len(self.structure[num_layer]) != 0:
             warnings.warn('Layer '+str(num_layer)+' already initialized')
-
+        """"
         # Thickness type check
         if type(thickness) != int and type(thickness) != float:
             raise TypeError('Layer ' +str(num_layer)+': Thickness must be integer or float type')
@@ -412,7 +412,22 @@ class slab:
             thickness = abs(thickness)
         elif thickness == 0:
             raise ValueError('Layer ' +str(num_layer)+': Thickness cannot be zero')
-
+        """
+        # Checks Thickness
+        if type(thickness) == int or type(thickness) == float:
+            temp_thickness = [thickness for i in range(num_elements)]
+            thickness = temp_thickness
+        if type(thickness) != list and type(thickness) != np.ndarray:
+            raise TypeError(
+                'Layer ' + str(num_layer) + ': Thickness must be of float, integer, list, or numpy.ndarray type.')
+        else:
+            for idx in range(len(thickness)):
+                if thickness[idx] < 0:
+                    thickness[idx] = abs(thickness[idx])
+                    warnings.warn('Layer ' + str(
+                        num_layer) + ': Thickness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                if thickness[idx] > 100:
+                    warnings.warn('Layer ' + str(num_layer) + ': Thickness is much larger than expected')
         # Checks Density
         if density == None:
             pass
@@ -488,7 +503,7 @@ class slab:
                 elements[key].density = density[position]
 
             #elements[key].density = density[position]*elements[key].stoichiometry/molar_mass  # sets density  (g/cm^3)
-            elements[key].thickness = thickness  # sets thickness  (Angstrom)
+            elements[key].thickness = thickness[position]  # sets thickness  (Angstrom)
             elements[key].roughness = roughness[position]  # Order of Angstrom
             elements[key].linked_roughness = linked_roughness[position]  # sets the linked roughness for each element
             elements[key].molar_mass = molar_mass  # Molar mass of perovskite material
