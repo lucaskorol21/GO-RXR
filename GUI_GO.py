@@ -374,7 +374,7 @@ class sampleWidget(QWidget):
 
 
     def _plotDensityProfile(self,thickness, density, density_magnetic):
-
+        print(len(density)+ len(density_magnetic))
         """
         val = list(density.values())
         mag_val = list(density_magnetic.values())
