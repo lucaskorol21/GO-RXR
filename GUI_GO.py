@@ -8,7 +8,7 @@ import matplotlib.figure as Figure
 import sys
 import material_structure as ms
 import os
-import ast
+import pyqtgraph as pg
 
 def stringcheck(string):
 
@@ -152,7 +152,7 @@ class compoundInput(QDialog):
                 self.errorMessage.setText('Please check linked roughness!')
         else:
             if myLinkedroughness == '':
-                self.val = [myElements[0], myThickness,myDensity, myRoughness, None]
+                self.val = [myElements[0], myThickness,myDensity, myRoughness, False]
             else:
                 self.val = [myElements[0], myThickness, myDensity, myRoughness, myLinkedroughness]
 
@@ -161,6 +161,9 @@ class compoundInput(QDialog):
         # gets the roughness
 
         # gets the linked roughness
+
+
+
 
 
 class sampleWidget(QWidget):
@@ -219,6 +222,7 @@ class sampleWidget(QWidget):
         magButton = QPushButton('Magnetic')
         selectlayout.addWidget(magButton)
         dpButton = QPushButton('Density Profile')
+        dpButton.clicked.connect(self._density_profile)
         dpButton.setStyleSheet("background-color : cyan")
         selectlayout.addWidget(dpButton)
 
@@ -226,15 +230,28 @@ class sampleWidget(QWidget):
         pagelayout.addLayout(self.tableStacklayout)
         pagelayout.addLayout(selectlayout)
 
-        t = np.arange(0.00, 2.0, 0.01)
-        s = 1 + np.sin(2 * np.pi * t)
-        fig = plt.figure()
-        plt.plot(t,s)
 
-        self.canvas = FigureCanvas(fig)
+
         mylayout = QVBoxLayout()
         mylayout.addLayout(pagelayout)
-        mylayout.addWidget(self.canvas)
+        x = np.arange(1000)
+        y = np.random.normal(size=(5,1000))
+        self.densityWidget = pg.PlotWidget()
+
+        #self.densityWidget = pg.PlotWidget()
+        self.densityWidget.setBackground('w')
+        #self.densityWidget.enableAutoRange()
+        self.densityWidget.addLegend()
+        #self.densityWidget.showButtons()
+        self.densityWidget.plot(title='Three random plots')
+
+        for i in range(5):
+            self.densityWidget.plot(x,y[i],pen=(i,5), filllevel=0,fillBrush=(255,255,255,30), name = str(i))
+
+
+        #self.densityWidget.plot([1, 2, 3, 4, 5], [3, 2, 7, 4, 10])
+
+        mylayout.addWidget(self.densityWidget)
 
         # create the tables as predefined by the sample model
         #  We will need to consider the case when no sample model is given
@@ -339,9 +356,7 @@ class sampleWidget(QWidget):
         addLayerApp.exec_()
         userinput = addLayerApp.val
         addLayerApp.close()
-        #A = ms.atomic_mass(list(userinput[0].keys())[0])
-        #B = ms.atomic_mass(list(userinput[0].keys())[1])
-        #O = ms.atomic_mass(list(userinput[0].keys())[2])
+
         #print(A, B, O)
         if len(userinput) != 0:
             num = self.layerBox.count()
@@ -351,13 +366,15 @@ class sampleWidget(QWidget):
                 self.layerBox.addItem('Layer ' + str(num))
         print(userinput)
         myTable = self.createCompoundTable(userinput,0)
-
-        self.tableStacklayout.addWidget(myTable)
+        idx = self.layerBox.currentIndex() + 1
+        self.tableStacklayout.insertWidget(idx,myTable)
     def _removeLayer(self):
         num = self.layerBox.count()
 
         if num != 0:
             self.layerBox.removeItem(num-1)
+
+        self.tableStacklayout.removeWidget(self.tableStacklayout.currentWidget())
 
     def _copyLayer(self):
         num = self.layerBox.count()
@@ -365,6 +382,33 @@ class sampleWidget(QWidget):
             self.layerBox.addItem('Substrate')
         else:
             self.layerBox.addItem('Layer ' + str(num))
+
+        idx = self.layerBox.currentIndex() + 1
+        currentTable = self.tableStacklayout.currentWidget()
+        rows = currentTable.rowCount()
+        cols = currentTable.columnCount()
+
+        newTable = QTableWidget()
+        newTable.setRowCount(rows)
+        newTable.setColumnCount(cols)
+
+        newTable.setHorizontalHeaderLabels(
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+
+        for row in range(rows):
+            for col in range(cols):
+                item = QTableWidgetItem(currentTable.item(row,col).text())
+                newTable.setItem(row, col, item)
+
+        self.tableStacklayout.insertWidget(idx, newTable)
+
+    def _density_profile(self):
+
+        fig = plt.figure()
+        t = np.arange(0.00, 2.0, 0.01)
+        s = 1 + np.sin(8 * np.pi * t)
+
+        plt.plot(t, s)
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, sample):
