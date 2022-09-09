@@ -176,10 +176,10 @@ class sampleWidget(QWidget):
         addlayerButton = QPushButton('Add Layer')  # add layer
         addlayerButton.clicked.connect(self._addLayer)
 
-        copylayerButton = QPushButton('Copy Layer')  # copy layer
+        copylayerButton = QPushButton('Copy Current Layer')  # copy layer
         copylayerButton.clicked.connect(self._copyLayer)
 
-        deletelayerButton = QPushButton('Remove Layer')  # delete layer
+        deletelayerButton = QPushButton('Remove Current Layer')  # delete layer
         deletelayerButton.clicked.connect(self._removeLayer)
 
         # Layer Box
@@ -242,38 +242,48 @@ class sampleWidget(QWidget):
             self.tableStacklayout.addWidget(self.createElementTable(i))
 
         self.setLayout(mylayout)
+
     def createCompoundTable(self, info, idx):
         compoundTable = QTableWidget(self)
         # self.elementTable.resize(660, 125)
+
         compoundTable.setRowCount(3)
         compoundTable.setColumnCount(6)
+        elements = list(info[0].keys())
+
+        # compute the molar mass
+        molar_mass = 0
+        for ele in elements:
+            stoich = info[0][ele].stoichiometry
+            mass = ms.atomic_mass(ele)
+            molar_mass = molar_mass + mass*stoich
 
         compoundTable.setHorizontalHeaderLabels(
             ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
         for row in range(compoundTable.rowCount()):
             for column in range(compoundTable.columnCount()):
                 if column == 0:
-                    element = list(self.structInfo[idx].keys())[row]
-                    item = QTableWidgetItem(element)
+                    item = QTableWidgetItem(elements[row])
                     compoundTable.setItem(row, column, item)
                 elif column == 1:
-                    thickness = self.structInfo[idx][element].thickness
+                    thickness = info[1]
                     item = QTableWidgetItem(str(thickness))
                     compoundTable.setItem(row, column, item)
                 elif column == 2:
-                    density = self.structInfo[idx][element].density
+                    stoich = info[0][elements[row]].stoichiometry
+                    density = float(info[2])*stoich/molar_mass
                     item = QTableWidgetItem(str(density))
                     compoundTable.setItem(row, column, item)
                 elif column == 3:
-                    roughness = self.structInfo[idx][element].roughness
+                    roughness = info[3]
                     item = QTableWidgetItem(str(roughness))
                     compoundTable.setItem(row, column, item)
                 elif column == 4:
-                    linked_roughness = self.structInfo[idx][element].linked_roughness
+                    linked_roughness = info[4]
                     item = QTableWidgetItem(str(linked_roughness))
                     compoundTable.setItem(row, column, item)
                 elif column == 5:
-                    scattering_factor = self.structInfo[idx][element].scattering_factor
+                    scattering_factor = elements[row]
                     item = QTableWidgetItem(scattering_factor)
                     compoundTable.setItem(row, column, item)
 
@@ -339,9 +349,10 @@ class sampleWidget(QWidget):
                 self.layerBox.addItem('Substrate')
             else:
                 self.layerBox.addItem('Layer ' + str(num))
+        print(userinput)
+        myTable = self.createCompoundTable(userinput,0)
 
-
-
+        self.tableStacklayout.addWidget(myTable)
     def _removeLayer(self):
         num = self.layerBox.count()
 
