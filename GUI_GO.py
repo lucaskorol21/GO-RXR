@@ -171,7 +171,15 @@ class compoundInput(QDialog):
 
 
 
-
+class reflectivityWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        pagelayout = QHBoxLayout()
+        self.layerBox = QComboBox()
+        hello = QLabel('Hello')
+        pagelayout.addWidget(self.layerBox)
+        pagelayout.addWidget(hello)
+        self.setLayout(pagelayout)
 
 class sampleWidget(QWidget):
     def __init__(self, sample):
@@ -220,9 +228,11 @@ class sampleWidget(QWidget):
         # layer combo box
         cblayout.addWidget(self.layerBox)
 
-        # table widget
-        self.tableStacklayout = QStackedLayout()
+        self.sampleInfoLayout = QStackedLayout() # stacked layout for the different parameter types
+
         self.structTable = QTableWidget()
+
+
         self.structTable.setRowCount(3)
         self.structTable.setColumnCount(6)
         self.structTable.setHorizontalHeaderLabels(
@@ -233,14 +243,25 @@ class sampleWidget(QWidget):
         # setTable
         self.setTable(0)
 
+        # Element Variation Stuff
+        elementVar = QLabel('hello')
+        # Magnetic Stuff
         selectlayout = QVBoxLayout()
+        magVar = QLabel('bye')
+
+        self.sampleInfoLayout.addWidget(self.structTable)  # index 1
+        self.sampleInfoLayout.addWidget(elementVar)  # index 2
+        self.sampleInfoLayout.addWidget(magVar)  # index 3
 
         # buttons for choosing which parameters to choose
         structButton = QPushButton('Structure')
+        structButton.clicked.connect(self._structural)
         selectlayout.addWidget(structButton)
         polyButton = QPushButton('Element Variation')
+        polyButton.clicked.connect(self._elementVariation)
         selectlayout.addWidget(polyButton)
         magButton = QPushButton('Magnetic')
+        magButton.clicked.connect(self._magnetic)
         selectlayout.addWidget(magButton)
         dpButton = QPushButton('Density Profile')
         dpButton.clicked.connect(self._densityprofile)
@@ -248,7 +269,7 @@ class sampleWidget(QWidget):
         selectlayout.addWidget(dpButton)
 
         pagelayout.addLayout(cblayout)
-        pagelayout.addWidget(self.structTable)
+        pagelayout.addLayout(self.sampleInfoLayout)
         pagelayout.addLayout(selectlayout)
 
 
@@ -256,19 +277,16 @@ class sampleWidget(QWidget):
         mylayout = QVBoxLayout()
         mylayout.addLayout(pagelayout)
 
+        # Adding the plotting Widget
         self.densityWidget = pg.PlotWidget()
-
-        #self.densityWidget = pg.PlotWidget()
         self.densityWidget.setBackground('w')
-        #self.densityWidget.enableAutoRange()
         self.densityWidget.addLegend()
-        #self.densityWidget.showButtons()
+
 
 
         mylayout.addWidget(self.densityWidget)
 
-        # create the tables as predefined by the sample model
-        #  We will need to consider the case when no sample model is given
+
 
 
         self.setLayout(mylayout)
@@ -375,6 +393,17 @@ class sampleWidget(QWidget):
         newLayer = self.structTableInfo[idx]
         self.structTableInfo.insert(idx+1,newLayer)
 
+    def _structural(self):
+        print('structural')
+        self.sampleInfoLayout.setCurrentIndex(0)
+
+    def _elementVariation(self):
+        print('element variation')
+        self.sampleInfoLayout.setCurrentIndex(1)
+
+    def _magnetic(self):
+        print('magnetic')
+        self.sampleInfoLayout.setCurrentIndex(2)
 
     def _densityprofile(self):
 
@@ -481,6 +510,8 @@ class ReflectometryApp(QMainWindow):
         label3 = QLabel('Label 3')
 
         _sampleWidget = sampleWidget(sample)  # initialize the sample widget
+        _reflectivityWidget = reflectivityWidget()
+
         sampleButton = QPushButton('Sample')
         sampleButton.setStyleSheet("background-color : pink")
         sampleButton.clicked.connect(self.activate_tab_1)
