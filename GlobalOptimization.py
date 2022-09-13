@@ -3475,6 +3475,7 @@ if __name__ == "__main__":
     sample.addlayer(2, 'CCO', 15, density=[0.03,0.03,0.03], roughness=2, linked_roughness=2)
     fname = 'attempt1.h5'
 
+
     #sample.plot_density_profile(1)
     #plt.show()
     #WriteSampleHDF5(fname, sample)
