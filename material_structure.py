@@ -762,14 +762,30 @@ class slab:
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
         # Initializing thickness array
-        transition = [0]  # array that contains thickness that slab transition occurs
-        thick = 0  # contains the total film thickness
+        #transition = [0]
+        transition = [[0],[0],[0]]  # array that contains thickness that slab transition occurs
+        #thick = 0  # contains the total film thickness
+        thick1 = 0
+        thick2 = 0
+        thick3 = 0
 
-        # Find all the slab transitions and computes total thickness
+        # Find the largest thickness
         for layer in range(1, n):
-            val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
-            transition.append(val)
-            thick = thick + list(self.structure[layer].values())[0].thickness
+            val1 = transition[0][layer-1] +list(self.structure[layer].values())[0].thickness
+            val2 = transition[1][layer-1] +list(self.structure[layer].values())[1].thickness
+            val3 = transition[2][layer - 1] + list(self.structure[layer].values())[2].thickness
+
+            transition[0].append(val1)
+            transition[1].append(val2)
+            transition[2].append(val3)
+
+            thick1 = thick1 + list(self.structure[layer].values())[0].thickness
+            thick2 = thick1 + list(self.structure[layer].values())[0].thickness
+            thick3 = thick1 + list(self.structure[layer].values())[0].thickness
+            #val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
+            #transition.append(val)
+            #thick = thick + list(self.structure[layer].values())[0].thickness
+        thick = max(thick1,thick2,thick3)
 
         #step = 0.05  # thickness step size
         thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
@@ -787,10 +803,20 @@ class slab:
                 next_density = 0
                 position = 0
                 sigma = 0
+                position = 0
+                offset = 0
+                offset_list = []
 
-                # Loops through all layers
                 for layer in range(n):
-                    offset = transition[layer]
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]  # offset for new implementation
+                # Loops through all layers
+
+                for layer in range(n):
+                    offset = offset_list[layer]
+                    #offset = transition[layer]
+
 
                     # Element is found in the current layer (ignore linked roughness)
                     if ele in list(self.structure[layer].keys()):
@@ -799,7 +825,8 @@ class slab:
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
 
-                        position = self.structure[layer][ele].position  # position of element
+
+
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
 
                         current_density = self.structure[layer][ele].density  # current density
@@ -866,10 +893,15 @@ class slab:
 
             # Polymorphous elements
             if ele in poly_keys:
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]
 
                 for layer in range(n): # loops through all layers
+                    offset = offset_list[layer]  # offset for new implementation
+                    #offset = transition[layer]
 
-                    offset = transition[layer]
                     # Element found in current layer
                     if ele in list(self.structure[layer].keys()):
 
@@ -956,8 +988,15 @@ class slab:
 
             # Magnetic elements
             if ele in mag_keys:
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]
+
                 for layer in range(n):  # loops through all layers
-                    offset = transition[layer]
+                    #offset = transition[layer]
+                    offset = offset_list[layer]  # offset for new implementation
+
                     # Element found in current layer
                     if ele in list(self.structure[layer].keys()):
                         position = self.structure[layer][ele].position  # position of element

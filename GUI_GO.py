@@ -178,6 +178,9 @@ class sampleWidget(QWidget):
         super().__init__()
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
+
+        self.previousLayer = 0
+        self.firstStruct = True
         # Initializes the sample definition widget
         pagelayout = QHBoxLayout()  # page layout
 
@@ -221,9 +224,14 @@ class sampleWidget(QWidget):
         self.tableStacklayout = QStackedLayout()
         self.structTable = QTableWidget()
         self.structTable.setRowCount(3)
-        self.structTable.setColumnCount(7)
+        self.structTable.setColumnCount(6)
         self.structTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Stoichiometry', 'Scattering Factor'])
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+        for i in range(len(self.sample.structure)):
+            self.setStructFromSample(i)
+
+        # setTable
+        self.setTable(0)
 
         selectlayout = QVBoxLayout()
 
@@ -261,11 +269,8 @@ class sampleWidget(QWidget):
 
         # create the tables as predefined by the sample model
         #  We will need to consider the case when no sample model is given
-        for i in range(len(self.sample.structure)):
-            self.setStructFromSample(i)
 
-        # setTable
-        self.setTable(0)
+
         self.setLayout(mylayout)
 
 
@@ -297,12 +302,13 @@ class sampleWidget(QWidget):
                     tempArray[row,col] = str(linked_roughness)
                 elif col == 5:
                     element = list(structInfo[idx].keys())[row]
-                    stoichiometry = structInfo[idx][element].stoichiometry
-                    tempArray[row,col] = str(stoichiometry)
-                elif col == 6:
-                    element = list(structInfo[idx].keys())[row]
                     scattering_factor = structInfo[idx][element].scattering_factor
                     tempArray[row,col] = str(scattering_factor)
+                elif col == 6:
+                    element = list(structInfo[idx].keys())[row]
+                    stoichiometry = structInfo[idx][element].stoichiometry
+                    tempArray[row,col] = str(stoichiometry)
+
 
         self.structTableInfo.append(tempArray)
 
@@ -310,12 +316,19 @@ class sampleWidget(QWidget):
         tableInfo = self.structTableInfo[idx]
 
         for row in range(3):
-            for col in range(7):
+            for col in range(6):
                 item = QTableWidgetItem(str(tableInfo[row][col]))
                 self.structTable.setItem(row,col, item)
 
     def changetable(self):
         idx = self.layerBox.currentIndex()
+
+        for row in range(len(self.structTableInfo[self.previousLayer])):
+            for col in range(len(self.structTableInfo[self.previousLayer][0])-1):
+                item = self.structTable.item(row,col).text()
+                self.structTableInfo[self.previousLayer][row][col] = str(item)
+        self.previousLayer = idx
+
         self.setTable(idx)
 
     def _addLayer(self):
@@ -336,7 +349,6 @@ class sampleWidget(QWidget):
             else:
                 self.layerBox.addItem('Layer ' + str(num))
                 self.structTableInfo.insert(idx+1, userinput)
-
 
 
 
@@ -365,6 +377,12 @@ class sampleWidget(QWidget):
 
 
     def _densityprofile(self):
+
+        for row in range(len(self.structTableInfo[self.previousLayer])):
+            for col in range(len(self.structTableInfo[self.previousLayer][0])-1):
+                item = self.structTable.item(row, col).text()
+                self.structTableInfo[self.previousLayer][row][col] = str(item)
+
         self._createsample()
 
         thickness, density, density_magnetic = self.sample.density_profile()
@@ -374,8 +392,10 @@ class sampleWidget(QWidget):
 
 
     def _plotDensityProfile(self,thickness, density, density_magnetic):
-        print(len(density)+ len(density_magnetic))
-        """
+
+
+        num = len(density)
+
         val = list(density.values())
         mag_val = list(density_magnetic.values())
         check = []
@@ -385,13 +405,14 @@ class sampleWidget(QWidget):
             else:
                 check.append(False)
 
-        plt.figure(fig)
         for idx in range(len(val)):
             if check[idx]:
-                plt.plot(thickness, val[idx], ':')
+                self.densityWidget.plot(thickness,val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
             else:
-                plt.plot(thickness, val[idx])
+                self.densityWidget.plot(thickness, val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
 
+
+        """
         for idx in range(len(mag_val)):
             plt.plot(thickness, -mag_val[idx], '--')
 
@@ -407,10 +428,6 @@ class sampleWidget(QWidget):
         plt.xlabel('Thickness (Angstrom)')
         plt.ylabel('Density (mol/cm^3)')
 
-        if save:
-            saveto = dir + '/Density_Profile.png'
-            plt.savefig(saveto)
-
         """
     def _createsample(self):
 
@@ -424,11 +441,12 @@ class sampleWidget(QWidget):
             linked_roughness = []
 
             layer = self.structTableInfo[idx]
+
             for ele in range(len(layer)):
                 element = layer[ele]
                 formula = formula + element[0]
-                if element[5] != '1':
-                    formula = formula + element[5]
+                if element[6] != '1':
+                    formula = formula + element[6]
 
                 thickness.append(float(element[1]))
                 density.append(float(element[2]))
@@ -437,6 +455,7 @@ class sampleWidget(QWidget):
                     linked_roughness.append(float(element[4]))
                 else:
                     linked_roughness.append(False)
+
 
             self.sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness)
 
