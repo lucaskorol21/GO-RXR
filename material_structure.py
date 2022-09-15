@@ -771,6 +771,7 @@ class slab:
 
         # Find the largest thickness
         for layer in range(1, n):
+            # Need to make more general ******
             val1 = transition[0][layer-1] +list(self.structure[layer].values())[0].thickness
             val2 = transition[1][layer-1] +list(self.structure[layer].values())[1].thickness
             val3 = transition[2][layer - 1] + list(self.structure[layer].values())[2].thickness
@@ -780,15 +781,15 @@ class slab:
             transition[2].append(val3)
 
             thick1 = thick1 + list(self.structure[layer].values())[0].thickness
-            thick2 = thick1 + list(self.structure[layer].values())[0].thickness
-            thick3 = thick1 + list(self.structure[layer].values())[0].thickness
+            thick2 = thick2 + list(self.structure[layer].values())[0].thickness
+            thick3 = thick3 + list(self.structure[layer].values())[0].thickness
             #val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
             #transition.append(val)
             #thick = thick + list(self.structure[layer].values())[0].thickness
         thick = max(thick1,thick2,thick3)
-
+        print(thick)
         #step = 0.05  # thickness step size
-        thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
+        thickness = np.arange(-10,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
@@ -1189,6 +1190,7 @@ class slab:
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
+
             # Determines the magnetization direction of the first layer
             if layer == 0:
                 if self.layer_magnetized[0]:
@@ -1197,7 +1199,7 @@ class slab:
                             gamma = self.structure[0][ele].gamma
                             phi = self.structure[0][ele].phi
 
-
+            # Need to redo this
             # Determines the magnetization direction of the other layers
             if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
                 layer = layer + 1

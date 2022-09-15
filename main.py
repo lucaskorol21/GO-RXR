@@ -17,15 +17,15 @@ if __name__ == '__main__':
     # Define the sample model
     sample1 = slab(2)
     sample1.addlayer(0, 'SrTiO3', 50,roughness=4)
-    sample1.addlayer(1, 'LaMnO3', 30,roughness=1.5, linked_roughness=1)
+    sample1.addlayer(1, 'LaMnO3', [30,20,30],roughness=1.5, linked_roughness=1)
 
     sample2 = slab(2)
     sample2.addlayer(0, 'SrTiO3', 50, density=4.8579022, roughness=5.97722238)
     sample2.addlayer(1, 'LaMnO3', 36.64782587,density=6.77792568, roughness=5.06593207, linked_roughness=0.62078224)
 
-    #sample1.plot_density_profile(1)
-    #plt.xlim([-25,50])
-    #plt.show()
+    sample1.plot_density_profile(1)
+    plt.xlim([-25,50])
+    plt.show()
 
     fname = 'Pim10uc.h5'
     info, data_dict, sim_dict = ReadDataHDF5(fname)

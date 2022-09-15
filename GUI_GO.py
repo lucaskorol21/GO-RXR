@@ -96,6 +96,7 @@ class compoundInput(QDialog):
         pagelayout.addWidget(enterButton)
         pagelayout.addWidget(self.errorMessage)
         self.setLayout(pagelayout)
+
     def formulaDone(self):
         cwd = os.getcwd()
         filename =  'Perovskite_Density.txt'
@@ -151,16 +152,38 @@ class compoundInput(QDialog):
             elif not (linkedroughnessCorrect):
                 self.errorMessage.setText('Please check linked roughness!')
         else:
+            molar_mass = 0
             elements = list(myElements[0].keys())
+            # gets the molar mass of the compound
+            for ele in elements:
+                stoich = myElements[0][ele].stoichiometry
+
+                if ele[-1].isdigit():
+                    ele = ele.rstrip(ele[-1])
+
+                molar_mass = molar_mass + ms.atomic_mass(ele)*stoich
+
             tempArray = []
             if myLinkedroughness == '':
                 for ele in elements:
                     stoich = myElements[0][ele].stoichiometry
-                    tempArray.append([ele, myThickness, myDensity, myRoughness, False, stoich, ele])
+                    density = float(myDensity)
+                    if ele[-1].isdigit():
+                        ff_ele = ele.rstrip(ele[-1])
+                    else:
+                        ff_ele = ele
+                    print(ele)
+                    tempArray.append([ele, myThickness, str(density*float(stoich)/molar_mass), myRoughness, False, ff_ele, stoich])
             else:
                 for ele in elements:
                     stoich = myElements[0][ele].stoichiometry
-                    tempArray.append([ele, myThickness, myDensity, myRoughness, myLinkedroughness, stoich, ele])
+                    density = float(myDensity)
+                    if ele[-1].isdigit():
+                        ff_ele = ele.rstrip(ele[-1])
+                    else:
+                        ff_ele = ele
+
+                    tempArray.append([ele, myThickness, str(density*float(stoich)/molar_mass), myRoughness, myLinkedroughness, ff_ele, stoich])
 
             self.val = np.array(tempArray)
             self.accept()
@@ -356,7 +379,7 @@ class sampleWidget(QWidget):
         addLayerApp.exec_()
         userinput = addLayerApp.val
         addLayerApp.close()
-
+        print(userinput)
         if len(userinput) != 0:
             num = self.layerBox.count()
             idx = self.layerBox.currentIndex()
