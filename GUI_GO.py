@@ -193,6 +193,29 @@ class compoundInput(QDialog):
         # gets the linked roughness
 
 
+class variationWidget(QDialog):
+    def __init__(self, mainWidget, sample):
+        super().__init__()
+        self.varData = []
+        pagelayout = QVBoxLayout()
+        self.elementCheckBox = []
+        self.checkBoxLayout = []
+        for j in range(len(list(sample.structure[mainWidget.layerBox.currentIndex()].keys()))):
+            self.elementCheckBox.append(QCheckBox())
+            self.checkBoxLayout.append(QHBoxLayout())
+            layer = mainWidget.layerBox.currentIndex()
+            self.checkBoxLayout[j].addWidget(QLabel(list(sample.structure[layer].keys())[j]))
+            self.checkBoxLayout[j].addWidget(self.elementCheckBox[j])
+
+        for layout in self.checkBoxLayout:
+            pagelayout.addLayout(layout)
+
+        self.setLayout(pagelayout)
+
+
+
+        self.setLayout(pagelayout)
+
 
 class reflectivityWidget(QWidget):
     def __init__(self):
@@ -237,6 +260,7 @@ class sampleWidget(QWidget):
                 layerList.append('Substrate')
             else:
                 layerList.append('Layer '+str(i))
+
         # change this for an arbitrary sample model
         self.layerBox.addItems(layerList)
 
@@ -267,13 +291,18 @@ class sampleWidget(QWidget):
         self.setTable(0)
 
         # Element Variation Stuff
-        elementVar = QLabel('hello')
+        elementVariation = variationWidget(self,sample)
+
+
+
         # Magnetic Stuff
-        selectlayout = QVBoxLayout()
         magVar = QLabel('bye')
 
+        selectlayout = QVBoxLayout()
+
+
         self.sampleInfoLayout.addWidget(self.structTable)  # index 1
-        self.sampleInfoLayout.addWidget(elementVar)  # index 2
+        self.sampleInfoLayout.addWidget(elementVariation)  # index 2
         self.sampleInfoLayout.addWidget(magVar)  # index 3
 
         # buttons for choosing which parameters to choose
@@ -421,8 +450,10 @@ class sampleWidget(QWidget):
         self.sampleInfoLayout.setCurrentIndex(0)
 
     def _elementVariation(self):
-        print('element variation')
+        # need 3 separate combo boxes
         self.sampleInfoLayout.setCurrentIndex(1)
+
+
 
     def _magnetic(self):
         print('magnetic')
