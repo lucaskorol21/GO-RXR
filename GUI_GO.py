@@ -200,51 +200,62 @@ class variationWidget(QDialog):
     def __init__(self, mainWidget, sample):
         super().__init__()
 
-        self.varData = [[] for layer in sample.structure]  # keep track of all the necessary info obtained by the user
-        self.elelayout = QHBoxLayout()
-        self.mainWidget = mainWidget
-        self.elementCheckBox = []  # contains all check boxes
+        pagelayout = QHBoxLayout()
 
-        self.checkBoxLayout = []
+        self.varData = {ele:[[] for i in range(len(sample.structure))] for ele in sample.myelements}
+
+        self.elelayout = QVBoxLayout()
+        self.mainWidget = mainWidget
+        self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)
+        self.elementBox = QComboBox()
+
+
+
+        addButton = QPushButton('Add')
+        addButton.clicked.connect(self.addVarEle)
+        # Create the connect function
+        deleteButton = QPushButton('Delete')
+        deleteButton.clicked.connect(self.deleteVarEle)
+        # create the connect function
 
         # buttons for adding and removing
 
         self.sample = sample
         self.getPolyData()  # get polymorphous data
 
-        mainWidget.layerBox.currentIndexChanged.connect(self.changeLayer)
 
-        for j in range(len(self.sample.myelements)):
-
-            ele = self.sample.myelements[j]
-            self.elementCheckBox.append(QCheckBox(ele))
-            if ele in list(self.sample.poly_elements.keys()):
-                self.elementCheckBox[j].setCheckState(2)
-            self.elelayout.addWidget(self.elementCheckBox[j])
+        self.radiobutton = QRadioButton()
+        idx = self.mainWidget.layerBox.currentIndex()
 
 
-        self.setLayout(self.elelayout)
+        # Setting up the element variation check boxes
+        for j in range(len(list(self.sample.structure[idx].keys()))):
+            ele = list(self.sample.structure[idx].keys())[j]
+            self.elementBox.addItem(ele)
 
-        self.setLayout(self.elelayout)
 
-    def changeLayer(self):
-        layer = self.mainWidget.layerBox.currentIndex()
+        self.elementBox.currentIndexChanged.connect(self.setTable)
+        self.elelayout.addWidget(self.elementBox)
+        self.setTable()
 
-        myElements = list(self.sample.structure[layer].keys())
-        curNum = len(myElements)
-        prevNum = len(self.elementLabel)
 
-        self.elementLabel = myElements
 
-        for j in range(curNum):
-            self.elelayout.removeWidget(self.checkBoxWidget[j])
+        self.elelayout.addWidget(addButton)
+        self.elelayout.addWidget(deleteButton)
 
-        self.checkBoxWidget = []
-        self.elementCheckBox = []
-        for j in range(curNum):
-            self.elementCheckBox.append(QCheckBox())
-            self.checkBoxWidget.append(eleWidget(self.elementLabel[j], self.elementCheckBox[j]))
-            self.elelayout.addWidget(self.checkBoxWidget[j])
+
+        self.varTable = QTableWidget()
+
+        self.varTable.setRowCount(2)
+        self.varTable.setColumnCount(3)
+        self.varTable.setHorizontalHeaderLabels(
+            ['Name', 'Ratio', 'Scattering Factor'])
+
+        pagelayout.addLayout(self.elelayout)
+        pagelayout.addWidget(self.varTable)
+
+        self.setLayout(pagelayout)
+
 
     def getPolyData(self):
         elekeys = self.sample.structure
@@ -253,7 +264,70 @@ class variationWidget(QDialog):
             elekeys = list(layer.keys())
             for ele in elekeys:
                 if len(layer[ele].polymorph) != 0:
-                    self.varData[j].append([ele, layer[ele].polymorph, layer[ele].poly_ratio, layer[ele].scattering_factor])
+                    self.varData[ele][j] = [layer[ele].polymorph, layer[ele].poly_ratio, layer[ele].scattering_factor]
+
+    def changeElements(self):
+
+        # this function simply changes the elements based on current layer
+        # needs to be changed when adding and removing layers
+        idx = self.mainWidget.layerBox.currentIndex()
+        self.elementBox.clear()
+        for j in range(len(list(self.sample.structure[idx].keys()))):
+            ele = list(self.sample.structure[idx].keys())[j]
+            self.elementBox.addItem(ele)
+
+
+
+
+    def addVarEle(self):
+        row = self.varTable.rowCount()
+        self.varTable.setRowCount(row + 1)
+
+    def deleteVarEle(self):
+        row = self.varTable.rowCount()
+        if row != 2:
+            self.varTable.setRowCount(row-1)
+
+    def setTable(self):
+        idx = self.mainWidget.sampleInfoLayout.currentIndex()
+        if idx == 1:
+            layer_idx = self.mainWidget.layerBox.currentIndex()
+            ele_idx = self.elementBox.currentIndex()
+            if ele_idx != -1:
+                ele = list(self.sample.structure[layer_idx].keys())[ele_idx]
+                info = self.varData[ele][layer_idx]
+
+                if len(info) != 0:
+                    self.varTable.setRowCount(len(info[0]))
+                    print(info)
+                    for row in range(len(info[0])):
+
+                        # Element Name
+                        item = QTableWidgetItem(info[0][row])
+                        self.varTable.setItem(row, 0, item)
+
+                        # Ratio
+                        item = QTableWidgetItem(str(info[1][row]))
+                        self.varTable.setItem(row, 1, item)
+
+                        # Scattering Factor
+                        item = QTableWidgetItem(info[2][row])
+                        self.varTable.setItem(row, 2, item)
+
+                else:
+                    for row in range(self.varTable.rowCount()):
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 0, item)
+
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 1, item)
+
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 2, item)
+
+
+
+
 
 
 class reflectivityWidget(QWidget):
@@ -371,6 +445,7 @@ class sampleWidget(QWidget):
         # Adding the plotting Widget
         self.densityWidget = pg.PlotWidget()
         self.densityWidget.setBackground('w')
+
         self.densityWidget.addLegend()
 
 
@@ -534,23 +609,7 @@ class sampleWidget(QWidget):
                 self.densityWidget.plot(thickness, val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
 
 
-        """
-        for idx in range(len(mag_val)):
-            plt.plot(thickness, -mag_val[idx], '--')
 
-        center = np.zeros(len(thickness))
-        plt.plot(thickness, center, 'k-.', linewidth=2)
-        my_legend = list(density.keys())
-
-        for key in list(density_magnetic.keys()):
-            my_legend.append('Mag: ' + key)
-
-        plt.legend(my_legend)
-        # plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
-        plt.xlabel('Thickness (Angstrom)')
-        plt.ylabel('Density (mol/cm^3)')
-
-        """
     def _createsample(self):
 
         m = len(self.structTableInfo)
@@ -589,7 +648,7 @@ class ReflectometryApp(QMainWindow):
         self.setWindowTitle('Reflectometry of Quantum Materials')
 
         # set the geometry of the window
-        self.setGeometry(200,80,1000,600)
+        self.setGeometry(180,60,1000,600)
 
         pagelayout = QVBoxLayout()
         buttonlayout = QHBoxLayout()
