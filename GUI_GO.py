@@ -193,28 +193,67 @@ class compoundInput(QDialog):
         # gets the linked roughness
 
 
+
+
+
 class variationWidget(QDialog):
     def __init__(self, mainWidget, sample):
         super().__init__()
-        self.varData = []
-        pagelayout = QVBoxLayout()
-        self.elementCheckBox = []
+
+        self.varData = [[] for layer in sample.structure]  # keep track of all the necessary info obtained by the user
+        self.elelayout = QHBoxLayout()
+        self.mainWidget = mainWidget
+        self.elementCheckBox = []  # contains all check boxes
+
         self.checkBoxLayout = []
-        for j in range(len(list(sample.structure[mainWidget.layerBox.currentIndex()].keys()))):
+
+        # buttons for adding and removing
+
+        self.sample = sample
+        self.getPolyData()  # get polymorphous data
+
+        mainWidget.layerBox.currentIndexChanged.connect(self.changeLayer)
+
+        for j in range(len(self.sample.myelements)):
+
+            ele = self.sample.myelements[j]
+            self.elementCheckBox.append(QCheckBox(ele))
+            if ele in list(self.sample.poly_elements.keys()):
+                self.elementCheckBox[j].setCheckState(2)
+            self.elelayout.addWidget(self.elementCheckBox[j])
+
+
+        self.setLayout(self.elelayout)
+
+        self.setLayout(self.elelayout)
+
+    def changeLayer(self):
+        layer = self.mainWidget.layerBox.currentIndex()
+
+        myElements = list(self.sample.structure[layer].keys())
+        curNum = len(myElements)
+        prevNum = len(self.elementLabel)
+
+        self.elementLabel = myElements
+
+        for j in range(curNum):
+            self.elelayout.removeWidget(self.checkBoxWidget[j])
+
+        self.checkBoxWidget = []
+        self.elementCheckBox = []
+        for j in range(curNum):
             self.elementCheckBox.append(QCheckBox())
-            self.checkBoxLayout.append(QHBoxLayout())
-            layer = mainWidget.layerBox.currentIndex()
-            self.checkBoxLayout[j].addWidget(QLabel(list(sample.structure[layer].keys())[j]))
-            self.checkBoxLayout[j].addWidget(self.elementCheckBox[j])
+            self.checkBoxWidget.append(eleWidget(self.elementLabel[j], self.elementCheckBox[j]))
+            self.elelayout.addWidget(self.checkBoxWidget[j])
 
-        for layout in self.checkBoxLayout:
-            pagelayout.addLayout(layout)
-
-        self.setLayout(pagelayout)
-
-
-
-        self.setLayout(pagelayout)
+    def getPolyData(self):
+        elekeys = self.sample.structure
+        for j in range(len(self.sample.structure)):
+            layer = self.sample.structure[j]
+            elekeys = list(layer.keys())
+            for ele in elekeys:
+                if len(layer[ele].polymorph) != 0:
+                    self.varData[j].append([ele, layer[ele].polymorph, layer[ele].poly_ratio, layer[ele].scattering_factor])
 
 
 class reflectivityWidget(QWidget):
@@ -603,6 +642,7 @@ if __name__ == '__main__':
     sample = ms.slab(3)
     sample.addlayer(0,'SrTiO3', 50)
     sample.addlayer(1,'LaMnO3', 20)
+    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5,0.5],['Mn','Fe'])
     sample.addlayer(2, 'LaAlO3', 5)
 
     app = QApplication(sys.argv)
