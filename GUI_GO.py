@@ -205,8 +205,6 @@ class variationWidget(QDialog):
         self.elelayout = QVBoxLayout()
         self.mainWidget = mainWidget
         self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)
-        self.elementBox = QComboBox()
-
 
 
         addButton = QPushButton('Add')
@@ -227,11 +225,11 @@ class variationWidget(QDialog):
         # Setting up the element variation check boxes
         for j in range(len(list(self.sample.structure[idx].keys()))):
             ele = list(self.sample.structure[idx].keys())[j]
-            self.elementBox.addItem(ele)
+            self.mainWidget.elementBox.addItem(ele)
 
 
-        self.elementBox.currentIndexChanged.connect(self.setTable)
-        self.elelayout.addWidget(self.elementBox)
+        self.mainWidget.elementBox.currentIndexChanged.connect(self.setTable)
+        self.elelayout.addWidget(self.mainWidget.elementBox)
         self.setTable()
 
 
@@ -240,15 +238,15 @@ class variationWidget(QDialog):
         self.elelayout.addWidget(deleteButton)
 
 
-        self.varTable = QTableWidget()
 
-        self.varTable.setRowCount(2)
-        self.varTable.setColumnCount(3)
-        self.varTable.setHorizontalHeaderLabels(
+
+        self.mainWidget.varTable.setRowCount(2)
+        self.mainWidget.varTable.setColumnCount(3)
+        self.mainWidget.varTable.setHorizontalHeaderLabels(
             ['Name', 'Ratio', 'Scattering Factor'])
 
         pagelayout.addLayout(self.elelayout)
-        pagelayout.addWidget(self.varTable)
+        pagelayout.addWidget(self.mainWidget.varTable)
 
         self.setLayout(pagelayout)
 
@@ -260,77 +258,60 @@ class variationWidget(QDialog):
         # this function simply changes the elements based on current layer
         # needs to be changed when adding and removing layers
         idx = self.mainWidget.layerBox.currentIndex()
-        self.elementBox.clear()
+        self.mainWidget.elementBox.clear()
 
         for j in range(len(self.mainWidget.structTableInfo[idx])):
             ele = self.mainWidget.structTableInfo[idx][j][0]
-            self.elementBox.addItem(ele)
+            self.mainWidget.elementBox.addItem(ele)
 
 
     def addVarEle(self):
-        row = self.varTable.rowCount()
-        self.varTable.setRowCount(row + 1)
+        row = self.mainWidget.varTable.rowCount()
+        self.mainWidget.varTable.setRowCount(row + 1)
 
     def deleteVarEle(self):
-        row = self.varTable.rowCount()
+        row = self.mainWidget.varTable.rowCount()
         if row != 2:
-            self.varTable.setRowCount(row-1)
+            self.mainWidget.varTable.setRowCount(row-1)
 
     def setTable(self):
-        print('hello')
         idx = self.mainWidget.sampleInfoLayout.currentIndex()
 
         if idx == 1:
             layer_idx = self.mainWidget.layerBox.currentIndex()
-            ele_idx = self.elementBox.currentIndex()
+            ele_idx = self.mainWidget.elementBox.currentIndex()
             if ele_idx != -1:
                 ele = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
-                current_num = len(self.mainWidget.varData[ele])
-
-                # check to see if the current element is a polymorph
-                isVar = False
-                name = []
-                scat = []
-                for check in self.mainWidget.varData[ele]:
-                    if len(check) != 0:
-                        isVar = True
-                        name = check[0]
-                        scat = check[2]
-
-                # presets polymorphs values
-                if isVar:
-                    self.mainWidget.varData[ele][layer_idx] = [name,[1,0],scat]
 
                 info = self.mainWidget.varData[ele][layer_idx]
 
-                if len(info) != 0:
-                    self.varTable.setRowCount(len(info[0]))
+                # Might need to change this implementation
+                if len(info[0]) != 0:
+                    self.mainWidget.varTable.setRowCount(len(info[0]))
 
                     for row in range(len(info[0])):
 
                         # Element Name
                         item = QTableWidgetItem(info[0][row])
-                        self.varTable.setItem(row, 0, item)
+                        self.mainWidget.varTable.setItem(row, 0, item)
 
                         # Ratio
                         item = QTableWidgetItem(str(info[1][row]))
-                        self.varTable.setItem(row, 1, item)
+                        self.mainWidget.varTable.setItem(row, 1, item)
 
                         # Scattering Factor
                         item = QTableWidgetItem(info[2][row])
-                        self.varTable.setItem(row, 2, item)
+                        self.mainWidget.varTable.setItem(row, 2, item)
                 else:
-                    for row in range(self.varTable.rowCount()):
+                    for row in range(self.mainWidget.varTable.rowCount()):
                         item = QTableWidgetItem('')
-                        self.varTable.setItem(row, 0, item)
-
-                        item = QTableWidgetItem('')
-                        self.varTable.setItem(row, 1, item)
+                        self.mainWidget.varTable.setItem(row, 0, item)
 
                         item = QTableWidgetItem('')
-                        self.varTable.setItem(row, 2, item)
+                        self.mainWidget.varTable.setItem(row, 1, item)
 
-
+                        item = QTableWidgetItem('')
+                        self.mainWidget.varTable.setItem(row, 2, item)
 
 
 
@@ -351,8 +332,10 @@ class sampleWidget(QWidget):
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
 
-        self.varData = {ele: [[] for i in range(len(sample.structure))] for ele in sample.myelements}
+        self.varData = {ele: [[[],[],[]] for i in range(len(sample.structure))] for ele in sample.myelements}
         self.getPolyData()
+        self.varTable = QTableWidget()
+        self.elementBox = QComboBox()
 
         self.previousLayer = 0
         self.firstStruct = True
@@ -606,6 +589,7 @@ class sampleWidget(QWidget):
         newLayer = self.structTableInfo[idx]
         self.structTableInfo.insert(idx+1,newLayer)
 
+        # goes through all the
         for key in list(self.varData.keys()):
 
             isVar = False
@@ -632,10 +616,43 @@ class sampleWidget(QWidget):
 
     def _densityprofile(self):
 
+        # get info from structural table
         for row in range(len(self.structTableInfo[self.previousLayer])):
             for col in range(len(self.structTableInfo[self.previousLayer][0])-1):
                 item = self.structTable.item(row, col).text()
                 self.structTableInfo[self.previousLayer][row][col] = str(item)
+
+        # get information from variation table
+        ele = self.structTableInfo[self.previousLayer][self.elementBox.currentIndex()][0]
+
+        name = ['' for i in range(self.varTable.rowCount())]
+        ratio = ['' for i in range(self.varTable.rowCount())]
+        scat = ['' for i in range(self.varTable.rowCount())]
+
+        for row in range(self.varTable.rowCount()):
+            for col in range(self.varTable.columnCount()):
+                if self.varTable.item(row,col) == None:
+                    pass
+                else:
+                    item = self.varTable.item(row,col).text()
+                    if col == 0:
+                        name[row] = item
+                    elif col == 1:
+                        ratio[row] = item
+                    elif col == 2:
+                        scat[row] = item
+
+        # Makes sure that if the name or scattering factor is changed, that we change it throughout
+        for i in range(len(self.structTableInfo)):
+            for j in range(len(self.structTableInfo[i])):
+                new_ele = self.structTableInfo[i][j][0]
+                if new_ele == ele and i != self.previousLayer:
+                    self.varData[ele][i][0] = name
+                    self.varData[ele][i][2] = scat
+
+        self.varData[ele][self.previousLayer] = [name, ratio, scat]
+
+
 
         self._createsample()
 
