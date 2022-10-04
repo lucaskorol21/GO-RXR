@@ -277,7 +277,7 @@ class variationWidget(QDialog):
             self.varTable.setRowCount(row-1)
 
     def setTable(self):
-
+        print('hello')
         idx = self.mainWidget.sampleInfoLayout.currentIndex()
 
         if idx == 1:
