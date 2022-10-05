@@ -280,6 +280,7 @@ class variationWidget(QDialog):
         if idx == 1:
             layer_idx = self.mainWidget.layerBox.currentIndex()
             ele_idx = self.mainWidget.elementBox.currentIndex()
+            print(layer_idx, ele_idx)
             if ele_idx != -1:
                 ele = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
 
@@ -551,31 +552,19 @@ class sampleWidget(QWidget):
 
 
     def _removeLayer(self):
-        num = self.layerBox.count()
+        num = self.layerBox.count()  # get the number of layers in the material
 
-        idx = self.layerBox.currentIndex()
+        idx = self.layerBox.currentIndex()  # determine which layer has been selected to remove
         if num != 0:
             self.layerBox.removeItem(num-1)
 
-        self.structTableInfo.pop(idx)
+        self.structTableInfo.pop(idx)  # removes the information about that layer
 
+        # removes the element variation data
         for key in list(self.varData.keys()):
             self.varData[key].pop(idx)
 
-        # check to make sure that deleted elements are removed from variation list
-        allElements = []
-        for layer in range(len(self.structTableInfo)):
-            for elementsInfo in self.structTableInfo:
-                ele = elementsInfo[layer][0]
-
-                if ele not in allElements:
-                    allElements.append(ele)
-
-        for eleKey in list(self.varData.keys()):
-            if eleKey not in allElements:
-                self.varData.pop(eleKey)
-
-        self.setTable(idx-1)
+        self.setTable(idx)  # sets the table for layer that replaces the removed layer
 
     def _copyLayer(self):
         num = self.layerBox.count()
