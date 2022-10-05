@@ -542,12 +542,9 @@ class slab:
             raise RuntimeError('Layer ' + str(lay) + ': Element ' + ele + ' not found in layer ' + str(lay))
 
         # Checking polymorphous type
-        if type(polymorph) != list:
+        if type(polymorph) != list and type(polymorph) != np.ndarray:
             raise TypeError('Layer ' + str(lay) + ': Input of polymorphous variable must be of type list')
 
-        # Checking poly_ratio type
-        if type(poly_ratio) != list:
-            raise TypeError('Layer ' + str(lay) + ': Input of poly_ratio must be entered as a list')
 
         # Checks that length of list is greater than 2
         if len(polymorph) < 2:
@@ -787,7 +784,7 @@ class slab:
             #transition.append(val)
             #thick = thick + list(self.structure[layer].values())[0].thickness
         thick = max(thick1,thick2,thick3)
-        print(thick)
+
         #step = 0.05  # thickness step size
         thickness = np.arange(-10,thick+15+step, step) # Creates thickness array
 
