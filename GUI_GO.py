@@ -662,17 +662,13 @@ class sampleWidget(QWidget):
         newLayer = self.structTableInfo[idx]
         self.structTableInfo.insert(idx+1,newLayer)
 
-        # goes through all the
+
+        # goes through all the keys
         for key in list(self.varData.keys()):
 
-            isVar = False
-            data = []
+            info = self.varData[key][idx]
+            self.varData[key].insert(idx+1,info)
 
-            for info in self.varData[key]:
-                if len(info) != 0:
-                    data = [info[0], info[1], info[2]]
-
-            self.varData[key].insert(idx + 1, data)
 
     def _structural(self):
         self.structBool = True
