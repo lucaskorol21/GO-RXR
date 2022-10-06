@@ -270,12 +270,35 @@ class variationWidget(QDialog):
         self.mainWidget.change_elements = False
         self.mainWidget.elementBox.setCurrentIndex(self.element_idx)
     def addVarEle(self):
-        row = self.mainWidget.varTable.rowCount()
+        current_layer = self.mainWidget.layerBox.currentIndex()
+        current_element = self.mainWidget.elementBox.currentIndex()
+
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+
+        row = len(self.mainWidget.varData[element][current_layer][0])
+        for lay in range(len(self.mainWidget.varData[element])):
+            self.mainWidget.varData[element][lay][0].append('')  # add another element to name list
+            self.mainWidget.varData[element][lay][1].append('')  # add another element to name list
+            self.mainWidget.varData[element][lay][2].append('')  # add another element to name list
+
+        #row = self.mainWidget.varTable.rowCount()
         self.mainWidget.varTable.setRowCount(row + 1)
 
     def deleteVarEle(self):
-        row = self.mainWidget.varTable.rowCount()
+
+        current_layer = self.mainWidget.layerBox.currentIndex()
+        current_element = self.mainWidget.elementBox.currentIndex()
+
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+
+        row = len(self.mainWidget.varData[element][current_layer][0])
+
         if row != 2:
+            for lay in range(len(self.mainWidget.varData[element])):
+                self.mainWidget.varData[element][lay][0].pop()  # add another element to name list
+                self.mainWidget.varData[element][lay][1].pop()  # add another element to name list
+                self.mainWidget.varData[element][lay][2].pop()  # add another element to name list
+
             self.mainWidget.varTable.setRowCount(row-1)
 
     def setTable(self):
@@ -535,9 +558,8 @@ class sampleWidget(QWidget):
                 self.element_index = self.elementBox.currentIndex()
 
             ele = self.structTableInfo[self.previousLayer][self.element_index][0]
-            print(ele)
-            print()
-            name = ['' for i in range(self.varTable.rowCount())]
+
+            name = ['' for i in range(self.varTable.rowCount())]  # initialize for no input case
             ratio = ['' for i in range(self.varTable.rowCount())]
             scat = ['' for i in range(self.varTable.rowCount())]
 
