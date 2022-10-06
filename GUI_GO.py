@@ -335,7 +335,7 @@ class sampleWidget(QWidget):
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
 
-        self.varData = {ele: [[[],[],[]] for i in range(len(sample.structure))] for ele in sample.myelements}
+        self.varData = {ele: [[['',''],['',''],['','']] for i in range(len(sample.structure))] for ele in sample.myelements}
         self.getPolyData()
         self.varTable = QTableWidget()
         self.elementBox = QComboBox()
