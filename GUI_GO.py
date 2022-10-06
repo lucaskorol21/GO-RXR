@@ -268,7 +268,7 @@ class variationWidget(QDialog):
             self.mainWidget.elementBox.addItem(ele)
 
         self.mainWidget.change_elements = False
-
+        self.mainWidget.elementBox.setCurrentIndex(self.element_idx)
     def addVarEle(self):
         row = self.mainWidget.varTable.rowCount()
         self.mainWidget.varTable.setRowCount(row + 1)
@@ -282,6 +282,11 @@ class variationWidget(QDialog):
 
         layer_idx = self.mainWidget.layerBox.currentIndex()
         ele_idx = self.mainWidget.elementBox.currentIndex()
+
+        # makes sure that when we switch layers we show the same positional element
+        if not self.mainWidget.change_elements:
+            self.element_idx = ele_idx
+
         #print(layer_idx, ele_idx)
         if ele_idx != -1:
             ele = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
