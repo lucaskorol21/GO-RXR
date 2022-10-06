@@ -345,6 +345,154 @@ class variationWidget(QDialog):
                     self.mainWidget.varTable.setItem(row, 2, item)
 
 
+class magneticWidget(QDialog):
+    def __init__(self, mainWidget, sample):
+        super().__init__()
+
+        pagelayout = QHBoxLayout()
+
+        self.element_idx = 0
+        self.elelayout = QVBoxLayout()
+        self.mainWidget = mainWidget
+        self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)
+
+
+        addButton = QPushButton('Add')
+        addButton.clicked.connect(self.addVarEle)
+        # Create the connect function
+        deleteButton = QPushButton('Delete')
+        deleteButton.clicked.connect(self.deleteVarEle)
+        # create the connect function
+
+        # buttons for adding and removing
+
+        self.sample = sample
+
+        self.radiobutton = QRadioButton()
+        idx = self.mainWidget.layerBox.currentIndex()
+
+
+        # Setting up the element variation check boxes
+        for j in range(len(list(self.sample.structure[idx].keys()))):
+            ele = list(self.sample.structure[idx].keys())[j]
+            self.mainWidget.magBox.addItem(ele)
+
+
+        self.mainWidget.magBox.currentIndexChanged.connect(self.setTable)
+        self.elelayout.addWidget(self.mainWidget.magBox)
+        self.setTable()
+
+
+
+        self.elelayout.addWidget(addButton)
+        self.elelayout.addWidget(deleteButton)
+
+
+
+
+        self.mainWidget.magTable.setRowCount(2)
+        self.mainWidget.magTable.setColumnCount(3)
+        self.mainWidget.magTable.setHorizontalHeaderLabels(
+            ['Name', 'Ratio', 'Scattering Factor'])
+
+        pagelayout.addLayout(self.elelayout)
+        pagelayout.addWidget(self.mainWidget.magTable)
+
+        self.setLayout(pagelayout)
+
+
+
+
+    def changeElements(self):
+
+        # this function simply changes the elements based on current layer
+        # needs to be changed when adding and removing layers
+
+        self.mainWidget.change_elements = True
+        idx = self.mainWidget.layerBox.currentIndex()
+        self.mainWidget.magBox.clear()
+
+        for j in range(len(self.mainWidget.structTableInfo[idx])):
+            ele = self.mainWidget.structTableInfo[idx][j][0]
+            self.mainWidget.magBox.addItem(ele)
+
+        self.mainWidget.change_elements = False
+        self.mainWidget.magBox.setCurrentIndex(self.element_idx)
+
+    def addVarEle(self):
+        current_layer = self.mainWidget.layerBox.currentIndex()
+        current_element = self.mainWidget.magBox.currentIndex()
+
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+
+        row = len(self.mainWidget.magData[element][current_layer][0])
+        for lay in range(len(self.mainWidget.magData[element])):
+            self.mainWidget.magData[element][lay][0].append('')  # add another element to name list
+            self.mainWidget.magData[element][lay][1].append('')  # add another element to name list
+            self.mainWidget.magData[element][lay][2].append('')  # add another element to name list
+
+        #row = self.mainWidget.varTable.rowCount()
+        self.mainWidget.magTable.setRowCount(row + 1)
+
+    def deleteVarEle(self):
+
+        current_layer = self.mainWidget.layerBox.currentIndex()
+        current_element = self.mainWidget.magBox.currentIndex()
+
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+
+        row = len(self.mainWidget.magData[element][current_layer][0])
+
+        if row != 2:
+            for lay in range(len(self.mainWidget.magData[element])):
+                self.mainWidget.magData[element][lay][0].pop()  # add another element to name list
+                self.mainWidget.magData[element][lay][1].pop()  # add another element to name list
+                self.mainWidget.magData[element][lay][2].pop()  # add another element to name list
+
+            self.mainWidget.magTable.setRowCount(row-1)
+
+    def setTable(self):
+
+        layer_idx = self.mainWidget.layerBox.currentIndex()
+        ele_idx = self.mainWidget.magBox.currentIndex()
+
+        # makes sure that when we switch layers we show the same positional element
+        if not self.mainWidget.change_elements:
+            self.element_idx = ele_idx
+
+        #print(layer_idx, ele_idx)
+        if ele_idx != -1:
+            ele = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
+
+            info = self.mainWidget.magData[ele][layer_idx]
+
+            # Might need to change this implementation
+            if len(info[0]) != 0:
+                self.mainWidget.magTable.setRowCount(len(info[0]))
+
+                for row in range(len(info[0])):
+
+                    # Element Name
+                    item = QTableWidgetItem(info[0][row])
+                    self.mainWidget.magTable.setItem(row, 0, item)
+
+                    # Ratio
+                    item = QTableWidgetItem(str(info[1][row]))
+                    self.mainWidget.magTable.setItem(row, 1, item)
+
+                    # Scattering Factor
+                    item = QTableWidgetItem(info[2][row])
+                    self.mainWidget.magTable.setItem(row, 2, item)
+            else:
+                for row in range(self.mainWidget.magTable.rowCount()):
+                    item = QTableWidgetItem('')
+                    self.mainWidget.magTable.setItem(row, 0, item)
+
+                    item = QTableWidgetItem('')
+                    self.mainWidget.varTable.setItem(row, 1, item)
+
+                    item = QTableWidgetItem('')
+                    self.mainWidget.magTable.setItem(row, 2, item)
 
 
 class reflectivityWidget(QWidget):
@@ -367,6 +515,11 @@ class sampleWidget(QWidget):
         self.getPolyData()
         self.varTable = QTableWidget()
         self.elementBox = QComboBox()
+
+        self.magData = {ele: [[['', ''], ['', ''], ['', '']] for i in range(len(sample.structure))] for ele in
+                        sample.myelements}
+        self.magTable = QTableWidget()
+        self.magBox = QComboBox()
 
         self.change_elements = False
         self.element_index = 0
@@ -432,18 +585,15 @@ class sampleWidget(QWidget):
 
         # Element Variation Stuff
         elementVariation = variationWidget(self,sample)
-
-
-
-        # Magnetic Stuff
-        magVar = QLabel('bye')
+        elementMagnetic = magneticWidget(self,sample)
+        #elementMagnetic = QLabel('Bye Bye Felicia')
 
         selectlayout = QVBoxLayout()
 
 
         self.sampleInfoLayout.addWidget(self.structTable)  # index 1
         self.sampleInfoLayout.addWidget(elementVariation)  # index 2
-        self.sampleInfoLayout.addWidget(magVar)  # index 3
+        self.sampleInfoLayout.addWidget(elementMagnetic)  # index 3
 
         # buttons for choosing which parameters to choose
         structButton = QPushButton('Structure')
@@ -790,7 +940,7 @@ class sampleWidget(QWidget):
             elekeys = list(layer.keys())
             for ele in elekeys:
                 if len(layer[ele].polymorph) != 0:
-                    self.varData[ele][j] = [layer[ele].polymorph, layer[ele].poly_ratio,
+                    self.varData[ele][j] = [layer[ele].polymorph, list(layer[ele].poly_ratio),
                                             layer[ele].scattering_factor]
 
 class ReflectometryApp(QMainWindow):
