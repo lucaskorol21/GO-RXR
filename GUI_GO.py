@@ -377,9 +377,12 @@ class magneticWidget(QDialog):
         self.magDirBox.addItem('x-direction')
         self.magDirBox.addItem('y-direction')
         self.magDirBox.addItem('z-direction')
+
         magLayout.addWidget(magLabel)
         magLayout.addWidget(self.magDirBox)
         magLayout.addStretch(1)
+
+        self.magDirBox.currentIndexChanged.connect(self.magDirectionChange)
 
         self.mainWidget.magTable.setRowCount(3)
         self.mainWidget.magTable.setColumnCount(2)
@@ -396,6 +399,19 @@ class magneticWidget(QDialog):
     def setTable(self):
 
         layer_idx = self.mainWidget.layerBox.currentIndex()
+
+        # set the magnetic direction combobox to the correct magnetization direction
+        mag_idx = 0
+        dir = self.mainWidget.magDirection[layer_idx]
+        if dir=='x':
+            mag_idx = 0
+        elif dir =='y':
+            mag_idx = 1
+        elif dir =='z':
+            mag_idx = 2
+
+        self.magDirBox.setCurrentIndex(mag_idx)
+
         labels = []
         density = []
         sf = []
@@ -456,8 +472,18 @@ class magneticWidget(QDialog):
 
 
 
+    def magDirectionChange(self):
+        lay = self.mainWidget.layerBox.currentIndex()
+        mag = self.magDirBox.currentIndex()
 
+        if mag == 0:
+            self.mainWidget.magDirection[lay] = 'x'
+        elif mag == 1:
+            self.mainWidget.magDirection[lay] = 'y'
+        elif mag == 2:
+            self.mainWidget.magDirection[lay] = 'z'
 
+        print(self.mainWidget.magDirection)
 
 
 class reflectivityWidget(QWidget):
@@ -484,11 +510,11 @@ class sampleWidget(QWidget):
 
         self.magData = {ele: [[[], [], []] for i in range(len(sample.structure))] for ele in
                         sample.myelements}
-
+        self.magDirection = ['z' for i in range(len(sample.structure))]
         self.getData() # gets the element variation and magnetic information
 
         self.magTable = QTableWidget()
-        self.magBox = QComboBox()
+
 
         self.change_elements = False
         self.element_index = 0
@@ -678,9 +704,11 @@ class sampleWidget(QWidget):
             ele = self.structTableInfo[self.previousLayer][self.element_index][0]
 
             name = ['' for i in range(self.varTable.rowCount())]  # initialize for no input case
+            mag_name = []
             ratio = ['' for i in range(self.varTable.rowCount())]
+            mag_ratio = []
             scat = ['' for i in range(self.varTable.rowCount())]
-
+            mag_scat = []
             for row in range(self.varTable.rowCount()):
                 for col in range(self.varTable.columnCount()):
                     if self.varTable.item(row, col) == None:
@@ -701,11 +729,34 @@ class sampleWidget(QWidget):
                     new_ele = self.structTableInfo[i][j][0]
                     if new_ele == ele and i != self.previousLayer:
                         self.varData[ele][i][0] = name
-                        self.magData[ele][i][0] = name  # makes sure that magnetic components has correct names
+                        self.magData[ele][i][0] = mag_name  # makes sure that magnetic components has correct names
                         self.varData[ele][i][2] = scat
             self.varData[ele][self.previousLayer] = [name, ratio, scat]
-            self.magData[ele][self.previousLayer][0] = name  # sets current layer names
+            self.magData[ele][self.previousLayer][0] = mag_name  # sets current layer names
             self.previousLayer = idx
+
+        if self.magBool:
+            layer = self.structTableInfo[idx]
+            elements = []
+
+            for ele_idx in range(len(layer)):
+                ele = layer[ele_idx][0]
+
+                elements.append(ele)
+
+
+            e = 0  # element index
+            v = 0 # element variation index
+            for row in range(self.magTable.rowCount()):
+                element = elements[e]  # gets the proper element
+                names = self.magData[element][idx][0]
+
+                for col in range(self.magTable.columnCount()):
+                    item = self.magTable.item(row,col).text()  # gets the current item
+                    # figure out how to properly read the table
+
+
+                print(self.magData)
 
         self.setTable(idx)
 
@@ -754,7 +805,6 @@ class sampleWidget(QWidget):
                     self.varData[key].insert(idx+1, data)
 
 
-
     def _removeLayer(self):
         num = self.layerBox.count()  # get the number of layers in the material
 
@@ -791,6 +841,9 @@ class sampleWidget(QWidget):
 
 
     def _structural(self):
+        if self.polyBool or self.magBool:
+            self.changetable()
+
         self.structBool = True
         self.polyBool = False
         self.magBool = False
@@ -798,6 +851,8 @@ class sampleWidget(QWidget):
         self.sampleInfoLayout.setCurrentIndex(0)
 
     def _elementVariation(self):
+        if self.structBool or self.magBool:
+            self.changetable()
 
         self.structBool = False
         self.polyBool = True
@@ -805,9 +860,11 @@ class sampleWidget(QWidget):
 
         self.sampleInfoLayout.setCurrentIndex(1)
 
-
-
     def _magnetic(self):
+
+        if self.polyBool or self.structBool:
+            self.changetable()
+
         self.structBool = False
         self.polyBool = False
         self.magBool = True
@@ -908,6 +965,7 @@ class sampleWidget(QWidget):
         for j in range(len(self.sample.structure)):
             layer = self.sample.structure[j]
             elekeys = list(layer.keys())
+
             for ele in elekeys:
                 if len(layer[ele].polymorph) != 0:
                     self.varData[ele][j] = [layer[ele].polymorph, list(layer[ele].poly_ratio),
@@ -916,6 +974,15 @@ class sampleWidget(QWidget):
                 else:
                     self.magData[ele][j] = [[],list(layer[ele].mag_density), layer[ele].mag_scattering_factor]
 
+            # gets the magnetic direction for that particular layer
+            gamma = layer[ele].gamma
+            phi = layer[ele].phi
+            if gamma == 90 and phi == 90:
+                self.magDirection[j] = 'y'
+            elif gamma == 0 and phi == 90:
+                self.magDirection[j] = 'x'
+            elif gamma == 0 and phi == 0:
+                self.magDirection[j] = 'z'
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, sample):
