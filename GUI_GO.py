@@ -748,15 +748,32 @@ class sampleWidget(QWidget):
             e = 0  # element index
             v = 0 # element variation index
             for row in range(self.magTable.rowCount()):
+                print(elements, e)
                 element = elements[e]  # gets the proper element
-                names = self.magData[element][idx][0]
 
+                names = self.magData[element][idx][0]
+                num_v = len(names)
                 for col in range(self.magTable.columnCount()):
                     item = self.magTable.item(row,col).text()  # gets the current item
-                    # figure out how to properly read the table
+                    if num_v == 0:
+                        if col == 0:
+                            self.magData[element][idx][1] = [item]
+                        elif col == 1:
+                            self.magData[element][idx][2] = [item]
+                            e = e + 1
+                    else:
+                        if col == 0:
+                            self.magData[element][idx][1][v] = item
+                        elif col == 1:
+                            self.magData[element][idx][2][v] = item
+                            v = v + 1
+                            if v >= num_v-1:
+                                v = 0
+                                e = e + 1
+
+            print(self.magData)
 
 
-                print(self.magData)
 
         self.setTable(idx)
 
@@ -970,7 +987,14 @@ class sampleWidget(QWidget):
                 if len(layer[ele].polymorph) != 0:
                     self.varData[ele][j] = [layer[ele].polymorph, list(layer[ele].poly_ratio),
                                             layer[ele].scattering_factor]
-                    self.magData[ele][j] = [layer[ele].polymorph, list(layer[ele].mag_density), layer[ele].mag_scattering_factor]
+
+                    mag_density = ['' for i in range(len(layer[ele].polymorph))]
+                    mag_sf = ['' for i in range(len(layer[ele].polymorph))]
+                    if len(layer[ele].mag_density) != 0:
+                        mag_density = list(layer[ele].mag_density)
+                    if len(layer[ele].mag_scattering_factor) != 0:
+                        mag_sf = layer[ele].mag_scattering_factor
+                    self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf]
                 else:
                     self.magData[ele][j] = [[],list(layer[ele].mag_density), layer[ele].mag_scattering_factor]
 
@@ -1047,7 +1071,7 @@ if __name__ == '__main__':
     sample.addlayer(0,'SrTiO3', 50)
     sample.addlayer(1,'LaMnO3', 20)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5,0.5],['Mn','Fe'])
-    sample.magnetization(1,['Mn2+','Mn3+'], [0.1,0.1],['Ni','Co'])
+    #sample.magnetization(1,['Mn2+','Mn3+'], [0.1,0.1],['Ni','Co'])
     sample.addlayer(2, 'LaAlO3', 5)
 
     app = QApplication(sys.argv)
