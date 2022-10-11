@@ -231,6 +231,7 @@ class variationWidget(QDialog):
 
         self.mainWidget.elementBox.currentIndexChanged.connect(self.setTable)
         self.elelayout.addWidget(self.mainWidget.elementBox)
+        #self.mainWidget.polyButton.clicked.connect(self.setTable)
         self.setTable()
 
 
@@ -369,20 +370,20 @@ class magneticWidget(QDialog):
         self.sample = sample
 
         idx = self.mainWidget.layerBox.currentIndex()
-        self.mainWidget.layerBox.currentIndexChanged.connect(self.setTable)
+        self.mainWidget.layerBox.currentIndexChanged.connect(self.mainWidget.setTableMag)
         # Magnetization direction Widget format
         magLabel = QLabel('Magnetization Direction')
         magLayout = QVBoxLayout()
-        self.magDirBox = QComboBox()
-        self.magDirBox.addItem('x-direction')
-        self.magDirBox.addItem('y-direction')
-        self.magDirBox.addItem('z-direction')
+
+        self.mainWidget.magDirBox.addItem('x-direction')
+        self.mainWidget.magDirBox.addItem('y-direction')
+        self.mainWidget.magDirBox.addItem('z-direction')
 
         magLayout.addWidget(magLabel)
-        magLayout.addWidget(self.magDirBox)
+        magLayout.addWidget(self.mainWidget.magDirBox)
         magLayout.addStretch(1)
 
-        self.magDirBox.currentIndexChanged.connect(self.magDirectionChange)
+        self.mainWidget.magDirBox.currentIndexChanged.connect(self.magDirectionChange)
 
         self.mainWidget.magTable.setRowCount(3)
         self.mainWidget.magTable.setColumnCount(2)
@@ -390,7 +391,7 @@ class magneticWidget(QDialog):
             ['Magnetic Density (mol/cm^3)', 'Scattering Factor'])
 
         self.setTable()
-
+        #self.mainWidget.magButton.clicked.connect(self.setTable)
         pagelayout.addWidget(self.mainWidget.magTable)
         pagelayout.addLayout(magLayout)
 
@@ -410,7 +411,7 @@ class magneticWidget(QDialog):
         elif dir =='z':
             mag_idx = 2
 
-        self.magDirBox.setCurrentIndex(mag_idx)
+        self.mainWidget.magDirBox.setCurrentIndex(mag_idx)
 
         labels = []
         density = []
@@ -450,6 +451,7 @@ class magneticWidget(QDialog):
         self.mainWidget.magTable.setRowCount(row_num)
         self.mainWidget.magTable.setVerticalHeaderLabels(
             labels)
+        self.mainWidget.magTable.resizeColumnsToContents()  # resizes columns to fit
 
         for row in range(row_num):
 
@@ -474,7 +476,7 @@ class magneticWidget(QDialog):
 
     def magDirectionChange(self):
         lay = self.mainWidget.layerBox.currentIndex()
-        mag = self.magDirBox.currentIndex()
+        mag = self.mainWidget.magDirBox.currentIndex()
 
         if mag == 0:
             self.mainWidget.magDirection[lay] = 'x'
@@ -483,7 +485,6 @@ class magneticWidget(QDialog):
         elif mag == 2:
             self.mainWidget.magDirection[lay] = 'z'
 
-        print(self.mainWidget.magDirection)
 
 
 class reflectivityWidget(QWidget):
@@ -511,6 +512,7 @@ class sampleWidget(QWidget):
         self.magData = {ele: [[[''], [''], ['']] for i in range(len(sample.structure))] for ele in
                         sample.myelements}
         self.magDirection = ['z' for i in range(len(sample.structure))]
+        self.magDirBox = QComboBox()
         self.getData() # gets the element variation and magnetic information
 
         self.magTable = QTableWidget()
@@ -578,16 +580,16 @@ class sampleWidget(QWidget):
         # setTable
         self.setTable(0)
 
+
         # Element Variation Stuff
         elementVariation = variationWidget(self,sample)
         elementMagnetic = magneticWidget(self,sample)
 
+        self.sampleInfoLayout.addWidget(self.structTable)
+        self.sampleInfoLayout.addWidget(elementVariation)
+        self.sampleInfoLayout.addWidget(elementMagnetic)
+
         selectlayout = QVBoxLayout()
-
-
-        self.sampleInfoLayout.addWidget(self.structTable)  # index 1
-        self.sampleInfoLayout.addWidget(elementVariation)  # index 2
-        self.sampleInfoLayout.addWidget(elementMagnetic)  # index 3
 
         # buttons for choosing which parameters to choose
         structButton = QPushButton('Structure')
@@ -683,6 +685,82 @@ class sampleWidget(QWidget):
                 item = QTableWidgetItem(str(tableInfo[row][col]))
                 self.structTable.setItem(row,col, item)
 
+    def setTableMag(self):
+
+        layer_idx = self.layerBox.currentIndex()
+
+        # set the magnetic direction combobox to the correct magnetization direction
+        mag_idx = 0
+        dir = self.magDirection[layer_idx]
+        if dir=='x':
+            mag_idx = 0
+        elif dir =='y':
+            mag_idx = 1
+        elif dir =='z':
+            mag_idx = 2
+
+        self.magDirBox.setCurrentIndex(mag_idx)
+
+        labels = []
+        density = []
+        sf = []
+        # Loops through all of the elements
+        for ele_idx in range(len(self.structTableInfo[layer_idx])):
+            element = self.structTableInfo[layer_idx][ele_idx][0]
+
+            names = self.magData[element][layer_idx][0]
+            D = self.magData[element][layer_idx][1]
+            S = self.magData[element][layer_idx][2]
+
+            num = len(names)
+            if num != 0:
+                for i in range(num):
+                    labels.append(names[i])
+                    if len(D) != 0:
+                        density.append(D[i])
+                    else:
+                        density.append('')
+                    if len(S) != 0:
+                        sf.append(S[i])
+                    else:
+                        sf.append('')
+            else:
+                labels.append(element)
+                if len(D) != 0:
+                    density.append(D[0])
+                else:
+                    density.append('')
+                if len(S) != 0:
+                    sf.append(S[0])
+                else:
+                    sf.append('')
+
+        row_num = len(labels)
+        self.magTable.setRowCount(row_num)
+        self.magTable.setVerticalHeaderLabels(
+            labels)
+        self.magTable.resizeColumnsToContents()  # resizes columns to fit
+
+        for row in range(row_num):
+
+            mydensity = density[row]
+            mysf = sf[row]
+            if mydensity == '':
+                item = QTableWidgetItem('')
+                self.magTable.setItem(row,0,item)
+            else:
+                print(mydensity)
+                item = QTableWidgetItem(str(mydensity))
+                self.magTable.setItem(row, 0, item)
+
+            if mysf == '':
+                item = QTableWidgetItem('')
+                self.magTable.setItem(row, 1, item)
+            else:
+                item = QTableWidgetItem(mysf)
+                self.magTable.setItem(row, 1, item)
+
+
     def changetable(self):
 
         idx = self.layerBox.currentIndex()
@@ -704,11 +782,9 @@ class sampleWidget(QWidget):
             ele = self.structTableInfo[self.previousLayer][self.element_index][0]
 
             name = ['' for i in range(self.varTable.rowCount())]  # initialize for no input case
-            mag_name = []
             ratio = ['' for i in range(self.varTable.rowCount())]
-            mag_ratio = []
             scat = ['' for i in range(self.varTable.rowCount())]
-            mag_scat = []
+
             for row in range(self.varTable.rowCount()):
                 for col in range(self.varTable.columnCount()):
                     if self.varTable.item(row, col) == None:
@@ -728,11 +804,20 @@ class sampleWidget(QWidget):
 
                     new_ele = self.structTableInfo[i][j][0]
                     if new_ele == ele and i != self.previousLayer:
+
                         self.varData[ele][i][0] = name
-                        self.magData[ele][i][0] = mag_name  # makes sure that magnetic components has correct names
                         self.varData[ele][i][2] = scat
+
+                        if self.magData[ele][i][0][0] != '' and len(self.magData[ele][i][0]) != 1:
+                            self.magData[ele][i][0] = name  # makes sure that magnetic components has correct names
+
+
+
             self.varData[ele][self.previousLayer] = [name, ratio, scat]
-            self.magData[ele][self.previousLayer][0] = mag_name  # sets current layer names
+            if self.magData[ele][self.previousLayer][0][0] != '' and len(self.magData[ele][self.previousLayer][0]) != 1:
+                self.magData[ele][self.previousLayer][0] = name  # makes sure that magnetic components has correct names
+
+            print(self.magData)
             self.previousLayer = idx
 
         if self.magBool:
@@ -776,9 +861,20 @@ class sampleWidget(QWidget):
                                 v = 0
                                 e = e + 1
 
-            print(self.magData)
-            self.previousLayer = idx
+                        # Makes sure that if the name or scattering factor is changed, that we change it throughout
+            for i in range(len(self.structTableInfo[self.previousLayer])):
+                element = self.structTableInfo[self.previousLayer][i][0]
+                new_sf = self.magData[element][self.previousLayer][2]
+                for lay_idx in range(len(self.magData[element])):
 
+                    if self.magData[element][lay_idx][0][0] != '':
+                        self.magData[element][lay_idx][2] = new_sf
+                        if self.magData[element][lay_idx][1][0] == '' and new_sf[0] != '':
+                            self.magData[element][lay_idx][1][0] = 0
+                        elif new_sf[0] == '':
+                            self.magData[element][lay_idx][1][0] = ''
+
+            self.previousLayer = idx
 
         self.setTable(idx)
 
@@ -863,33 +959,35 @@ class sampleWidget(QWidget):
 
 
     def _structural(self):
-        if self.polyBool or self.magBool:
-            self.changetable()
+        self.changetable()
 
         self.structBool = True
         self.polyBool = False
         self.magBool = False
 
+        self.changetable()
+
         self.sampleInfoLayout.setCurrentIndex(0)
 
     def _elementVariation(self):
-        if self.structBool or self.magBool:
-            self.changetable()
+        self.changetable()
 
         self.structBool = False
         self.polyBool = True
         self.magBool = False
 
+        self.changetable()
+
         self.sampleInfoLayout.setCurrentIndex(1)
 
     def _magnetic(self):
-
-        if self.polyBool or self.structBool:
-            self.changetable()
+        self.changetable()
 
         self.structBool = False
         self.polyBool = False
         self.magBool = True
+
+        self.changetable()
 
         self.sampleInfoLayout.setCurrentIndex(2)
 
