@@ -229,10 +229,10 @@ class variationWidget(QDialog):
             self.mainWidget.elementBox.addItem(ele)
 
 
-        self.mainWidget.elementBox.currentIndexChanged.connect(self.setTable)
+        self.mainWidget.elementBox.currentIndexChanged.connect(self.mainWidget.setTableVar)
         self.elelayout.addWidget(self.mainWidget.elementBox)
-        #self.mainWidget.polyButton.clicked.connect(self.setTable)
-        self.setTable()
+
+        self.mainWidget.setTableVar()
 
 
 
@@ -311,49 +311,6 @@ class variationWidget(QDialog):
 
             self.mainWidget.varTable.setRowCount(row-1)
 
-    def setTable(self):
-
-        layer_idx = self.mainWidget.layerBox.currentIndex()
-        ele_idx = self.mainWidget.elementBox.currentIndex()
-
-        # makes sure that when we switch layers we show the same positional element
-        if not self.mainWidget.change_elements:
-            self.element_idx = ele_idx
-
-        #print(layer_idx, ele_idx)
-        if ele_idx != -1:
-            ele = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
-
-            info = self.mainWidget.varData[ele][layer_idx]
-
-            # Might need to change this implementation
-            if len(info[0]) != 0:
-                self.mainWidget.varTable.setRowCount(len(info[0]))
-
-                for row in range(len(info[0])):
-
-                    # Element Name
-                    item = QTableWidgetItem(info[0][row])
-                    self.mainWidget.varTable.setItem(row, 0, item)
-
-                    # Ratio
-                    item = QTableWidgetItem(str(info[1][row]))
-                    self.mainWidget.varTable.setItem(row, 1, item)
-
-                    # Scattering Factor
-                    item = QTableWidgetItem(info[2][row])
-                    self.mainWidget.varTable.setItem(row, 2, item)
-            else:
-                for row in range(self.mainWidget.varTable.rowCount()):
-                    item = QTableWidgetItem('')
-                    self.mainWidget.varTable.setItem(row, 0, item)
-
-                    item = QTableWidgetItem('')
-                    self.mainWidget.varTable.setItem(row, 1, item)
-
-                    item = QTableWidgetItem('')
-                    self.mainWidget.varTable.setItem(row, 2, item)
-
 
 class magneticWidget(QDialog):
     def __init__(self, mainWidget, sample):
@@ -390,88 +347,12 @@ class magneticWidget(QDialog):
         self.mainWidget.magTable.setHorizontalHeaderLabels(
             ['Magnetic Density (mol/cm^3)', 'Scattering Factor'])
 
-        self.setTable()
+        self.mainWidget.setTableMag()
         #self.mainWidget.magButton.clicked.connect(self.setTable)
         pagelayout.addWidget(self.mainWidget.magTable)
         pagelayout.addLayout(magLayout)
 
         self.setLayout(pagelayout)
-
-    def setTable(self):
-
-        layer_idx = self.mainWidget.layerBox.currentIndex()
-
-        # set the magnetic direction combobox to the correct magnetization direction
-        mag_idx = 0
-        dir = self.mainWidget.magDirection[layer_idx]
-        if dir=='x':
-            mag_idx = 0
-        elif dir =='y':
-            mag_idx = 1
-        elif dir =='z':
-            mag_idx = 2
-
-        self.mainWidget.magDirBox.setCurrentIndex(mag_idx)
-
-        labels = []
-        density = []
-        sf = []
-        # Loops through all of the elements
-        for ele_idx in range(len(self.mainWidget.structTableInfo[layer_idx])):
-            element = self.mainWidget.structTableInfo[layer_idx][ele_idx][0]
-
-            names = self.mainWidget.magData[element][layer_idx][0]
-            D = self.mainWidget.magData[element][layer_idx][1]
-            S = self.mainWidget.magData[element][layer_idx][2]
-
-            num = len(names)
-            if num != 0:
-                for i in range(num):
-                    labels.append(names[i])
-                    if len(D) != 0:
-                        density.append(D[i])
-                    else:
-                        density.append('')
-                    if len(S) != 0:
-                        sf.append(S[i])
-                    else:
-                        sf.append('')
-            else:
-                labels.append(element)
-                if len(D) != 0:
-                    density.append(D[0])
-                else:
-                    density.append('')
-                if len(S) != 0:
-                    sf.append(S[0])
-                else:
-                    sf.append('')
-
-        row_num = len(labels)
-        self.mainWidget.magTable.setRowCount(row_num)
-        self.mainWidget.magTable.setVerticalHeaderLabels(
-            labels)
-        self.mainWidget.magTable.resizeColumnsToContents()  # resizes columns to fit
-
-        for row in range(row_num):
-
-            mydensity = density[row]
-            mysf = sf[row]
-            if mydensity == '':
-                item = QTableWidgetItem('')
-                self.mainWidget.magTable.setItem(row,0,item)
-            else:
-                print(mydensity)
-                item = QTableWidgetItem(str(mydensity))
-                self.mainWidget.magTable.setItem(row, 0, item)
-
-            if mysf == '':
-                item = QTableWidgetItem('')
-                self.mainWidget.magTable.setItem(row, 1, item)
-            else:
-                item = QTableWidgetItem(mysf)
-                self.mainWidget.magTable.setItem(row, 1, item)
-
 
 
     def magDirectionChange(self):
@@ -594,14 +475,18 @@ class sampleWidget(QWidget):
         # buttons for choosing which parameters to choose
         structButton = QPushButton('Structure')
         structButton.clicked.connect(self._structural)
+        structButton.clicked.connect(self.setTableVar)
+        structButton.clicked.connect(self.setTableMag)
         selectlayout.addWidget(structButton)
 
         polyButton = QPushButton('Element Variation')
         polyButton.clicked.connect(self._elementVariation)
+        polyButton.clicked.connect(self.setTableVar)
         selectlayout.addWidget(polyButton)
 
         magButton = QPushButton('Magnetic')
         magButton.clicked.connect(self._magnetic)
+        magButton.clicked.connect(self.setTableMag)
         selectlayout.addWidget(magButton)
 
         self.structBool = True
@@ -684,7 +569,47 @@ class sampleWidget(QWidget):
             for col in range(6):
                 item = QTableWidgetItem(str(tableInfo[row][col]))
                 self.structTable.setItem(row,col, item)
+    def setTableVar(self):
 
+        layer_idx = self.layerBox.currentIndex()
+        ele_idx = self.elementBox.currentIndex()
+
+        # makes sure that when we switch layers we show the same positional element
+        if not self.change_elements:
+            self.element_idx = ele_idx
+
+        #print(layer_idx, ele_idx)
+        if ele_idx != -1:
+            ele = self.structTableInfo[layer_idx][ele_idx][0]
+
+            info = self.varData[ele][layer_idx]
+
+            # Might need to change this implementation
+            if len(info[0]) != 0:
+                self.varTable.setRowCount(len(info[0]))
+
+                for row in range(len(info[0])):
+
+                    # Element Name
+                    item = QTableWidgetItem(info[0][row])
+                    self.varTable.setItem(row, 0, item)
+
+                    # Ratio
+                    item = QTableWidgetItem(str(info[1][row]))
+                    self.varTable.setItem(row, 1, item)
+                    # Scattering Factor
+                    item = QTableWidgetItem(info[2][row])
+                    self.varTable.setItem(row, 2, item)
+            else:
+                for row in range(self.varTable.rowCount()):
+                    item = QTableWidgetItem('')
+                    self.varTable.setItem(row, 0, item)
+
+                    item = QTableWidgetItem('')
+                    self.varTable.setItem(row, 1, item)
+
+                    item = QTableWidgetItem('')
+                    self.varTable.setItem(row, 2, item)
     def setTableMag(self):
 
         layer_idx = self.layerBox.currentIndex()
@@ -749,7 +674,6 @@ class sampleWidget(QWidget):
                 item = QTableWidgetItem('')
                 self.magTable.setItem(row,0,item)
             else:
-                print(mydensity)
                 item = QTableWidgetItem(str(mydensity))
                 self.magTable.setItem(row, 0, item)
 
@@ -817,7 +741,6 @@ class sampleWidget(QWidget):
             if self.magData[ele][self.previousLayer][0][0] != '' and len(self.magData[ele][self.previousLayer][0]) != 1:
                 self.magData[ele][self.previousLayer][0] = name  # makes sure that magnetic components has correct names
 
-            print(self.magData)
             self.previousLayer = idx
 
         if self.magBool:
@@ -890,11 +813,13 @@ class sampleWidget(QWidget):
 
         # check to see if we have a new element
         num_layers = len(self.structTableInfo)
-
+        my_elements = []
         # checks to see if we have a new element and adds it to the element variation list
         for i in range(len(userinput)):
+            my_elements.append(userinput[i][0])
             if userinput[i][0] not in list(self.varData.keys()):
-                self.varData[userinput[i][0]] = [[] for i in range(num_layers)]
+                self.varData[userinput[i][0]] = [[['',''],['',''],['','']] for i in range(num_layers)]
+                self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for i in range(num_layers)]
 
 
         if len(userinput) != 0:
@@ -905,7 +830,8 @@ class sampleWidget(QWidget):
                 self.layerBox.addItem('Substrate')
                 self.structTableInfo.insert(0, userinput)
                 for i in range(len(userinput)):
-                    self.varData[userinput[i][0]] = [[]]
+                    self.varData[userinput[i][0]] = [['',''],['',''],['','']]
+                    self.magData[userinput[i][0]] = [[userinput[i][0]],[''],['']]
 
             else:
                 self.layerBox.addItem('Layer ' + str(num))
@@ -914,14 +840,36 @@ class sampleWidget(QWidget):
                 for key in list(self.varData.keys()):
 
                     isVar = False
+                    isMag = False
                     data = []
+                    data_mag = []
+                    # gets the correct elements
+                    if key in my_elements:
+                        for info_idx in range(len(self.varData[key])):
+                            info = self.varData[key][info_idx]
+                            info_mag = self.magData[key][info_idx]
+                            if not isVar:
+                                if info[0][0] != '':
 
-                    for info in self.varData[key]:
-                        if len(info) != 0:
-                            data = [info[0], [1,0], info[2]]
+                                    data = [info[0], [1,0], info[2]]
+                                    isVar = True
+                                else:
+                                    data = [['',''],['',''],['','']]
 
+                            if not isMag:
+                                if info_mag[1][0] != '' or info_mag[2][0] != '':
+                                    n = len(info_mag[0])
+                                    data_mag = [info_mag[0],[0 for i in range(n)], info_mag[2] ]
+                                    isMag = True
+                                else:
+                                    data_mag = [[key],[''],['']]
+                    else:
+                        data = [['',''],['',''],['','']]
+                        data_mag = [key,[''],['']]
                     self.varData[key].insert(idx+1, data)
-
+                    self.magData[key].insert(idx+1,data_mag)
+                    self.magDirection.insert(idx+1,'z')
+            print(self.varData)
 
     def _removeLayer(self):
         num = self.layerBox.count()  # get the number of layers in the material
@@ -935,6 +883,7 @@ class sampleWidget(QWidget):
         # removes the element variation data
         for key in list(self.varData.keys()):
             self.varData[key].pop(idx)
+            self.magData[key].pop(idx)
 
         self.setTable(idx)  # sets the table for layer that replaces the removed layer
 
@@ -955,7 +904,10 @@ class sampleWidget(QWidget):
         for key in list(self.varData.keys()):
 
             info = self.varData[key][idx]
+            info_mag = self.magData[key][idx]
+
             self.varData[key].insert(idx+1,info)
+            self.magData[key].insert(idx+1,info_mag)
 
 
     def _structural(self):
