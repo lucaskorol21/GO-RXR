@@ -947,6 +947,7 @@ class sampleWidget(QWidget):
 
         sample = self._createStructSample()
         sample = self._createVarSample(sample)
+        sample = self._createMagSample(sample)
 
         thickness, density, density_magnetic = sample.density_profile()
         self.densityWidget.clear()
@@ -958,9 +959,13 @@ class sampleWidget(QWidget):
 
 
         num = len(density)
+        print(num)
+        num = num + len(density_magnetic)
+        print(num)
 
         val = list(density.values())
         mag_val = list(density_magnetic.values())
+
         check = []
         for key in list(density.keys()):
             if key[-1].isdigit():
@@ -974,7 +979,9 @@ class sampleWidget(QWidget):
             else:
                 self.densityWidget.plot(thickness, val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
 
+        for idx in range(len(mag_val)):
 
+            self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2), name=list(density_magnetic.keys())[idx])
 
     def _createStructSample(self):
 
@@ -1030,6 +1037,27 @@ class sampleWidget(QWidget):
                     if names[0] != '':
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
                         sample.polymorphous(idx,ele_name,names,ratio,sf=scattering_factor)
+        return sample
+
+    def _createMagSample(self, sample):
+
+        m = len(self.structTableInfo)  # determines how many layers in the sample
+        for idx in range(m):
+            layer = self.structTableInfo[idx]  # gets the layer information
+            for ele in range(len(layer)):
+                ele_name = layer[ele][0]
+
+                mag = self.magData[ele_name][idx]
+
+
+                names = mag[0]
+                ratio = mag[1]
+                scattering_factor = mag[2]
+
+                if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
+                    ratio = [float(ratio[i]) for i in range(len(ratio))]
+                    sample.magnetization(idx,names,ratio,scattering_factor)
+
         return sample
 
     def getData(self):
@@ -1134,7 +1162,7 @@ if __name__ == '__main__':
     sample.addlayer(0,'SrTiO3', 50)
     sample.addlayer(1,'LaMnO3', 20)
     sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5,0.5],['Mn','Fe'])
-    sample.magnetization(1,['Mn2+','Mn3+'], [0.1,0.1],['Ni','Co'])
+    sample.magnetization(1,['Mn2+','Mn3+'], [0.001,0.001],['Ni','Co'])
     sample.addlayer(2, 'LaAlO3', 5)
 
     app = QApplication(sys.argv)
