@@ -9,6 +9,7 @@ import sys
 import material_structure as ms
 import os
 import pyqtgraph as pg
+import data_structure as ds
 
 def stringcheck(string):
 
@@ -366,17 +367,6 @@ class magneticWidget(QDialog):
         elif mag == 2:
             self.mainWidget.magDirection[lay] = 'z'
 
-
-
-class reflectivityWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        pagelayout = QHBoxLayout()
-        self.layerBox = QComboBox()
-        hello = QLabel('Hello')
-        pagelayout.addWidget(self.layerBox)
-        pagelayout.addWidget(hello)
-        self.setLayout(pagelayout)
 
 class sampleWidget(QWidget):
     def __init__(self, sample):
@@ -959,9 +949,7 @@ class sampleWidget(QWidget):
 
 
         num = len(density)
-        print(num)
         num = num + len(density_magnetic)
-        print(num)
 
         val = list(density.values())
         mag_val = list(density_magnetic.values())
@@ -1098,11 +1086,24 @@ class sampleWidget(QWidget):
             elif gamma == 0 and phi == 0:
                 self.magDirection[j] = 'z'
 
-
-class ReflectometryApp(QMainWindow):
-    def __init__(self, sample):
+class reflectivityWidget(QWidget):
+    def __init__(self, data, data_dict, sim_dict):
         super().__init__()
 
+        # This will be used to determine which scan to view
+        self.whichScan = QComboBox()
+        for scan in data:
+            self.whichScan.addItem(scan[2])
+
+        pagelayout = QHBoxLayout()
+        pagelayout.addWidget(self.whichScan)
+        self.setLayout(pagelayout)
+
+class ReflectometryApp(QMainWindow):
+    def __init__(self, fname):
+        super().__init__()
+        sample = ds.ReadSampleHDF5(fname)  # temopary way of loading in data
+        data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
         # set the title
         self.setWindowTitle('Reflectometry of Quantum Materials')
 
@@ -1125,7 +1126,7 @@ class ReflectometryApp(QMainWindow):
         self.goButton = QPushButton('Global Optimization')
 
         _sampleWidget = sampleWidget(sample)  # initialize the sample widget
-        _reflectivityWidget = reflectivityWidget()
+        _reflectivityWidget = reflectivityWidget(data, data_dict, sim_dict)
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.sampleButton.clicked.connect(self.activate_tab_1)
@@ -1135,7 +1136,7 @@ class ReflectometryApp(QMainWindow):
         self.reflButton.setStyleSheet("background-color : pink")
         self.reflButton.clicked.connect(self.activate_tab_2)
         buttonlayout.addWidget(self.reflButton)
-        self.stackedlayout.addWidget(label2)
+        self.stackedlayout.addWidget(_reflectivityWidget)
 
         self.goButton.setStyleSheet("background-color : pink")
         self.goButton.clicked.connect(self.activate_tab_3)
@@ -1165,8 +1166,10 @@ if __name__ == '__main__':
     sample.magnetization(1,['Mn2+','Mn3+'], [0.001,0.001],['Ni','Co'])
     sample.addlayer(2, 'LaAlO3', 5)
 
+    fname = 'Pim10uc.h5'
+
     app = QApplication(sys.argv)
-    demo = ReflectometryApp(sample)
+    demo = ReflectometryApp(fname)
 
     demo.show()
 
