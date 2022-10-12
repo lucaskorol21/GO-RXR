@@ -1105,7 +1105,9 @@ class reflectivityWidget(QWidget):
         for scan in data:
             self.whichScan.addItem(scan[2])
         self.whichScan.currentIndexChanged.connect(self.plot_scans)
+
         self.whichScan.setCurrentIndex(0)
+        self.plot_scans()
 
         pagelayout = QHBoxLayout()
         pagelayout.addWidget(self.spectrumWidget)
@@ -1130,12 +1132,12 @@ class reflectivityWidget(QWidget):
             Rsim = Rsim[pol]
             if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
-                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2))
-                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2))
+                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.spectrumWidget.setLogMode(False,True)
             elif pol == 'AL' or pol =='AC':
-                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2))
-                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2))
+                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
         elif scan_type == 'Energy':
             E = dat[3]
@@ -1143,8 +1145,8 @@ class reflectivityWidget(QWidget):
             Theta = self.data_dict[name]['Angle']
             E, Rsim = self.sample.energy_scan(Theta,E)
             Rsim = Rsim[pol]
-            self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2))
-            self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2))
+            self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+            self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
 
 
