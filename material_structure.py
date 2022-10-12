@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from collections import OrderedDict
 from scipy.special import erf
+import copy
 
 
 
@@ -513,7 +514,7 @@ class slab:
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
 
-    def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
+    def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=''):
         """
         Purpose: Allows the user to set polymorphous elements in their material
         :param lay: The layer the polymorphous element is found (integer value)
@@ -579,12 +580,13 @@ class slab:
         self.structure[lay][ele].poly_ratio = np.array(poly_ratio)
 
         # Sets scattering factors
-        if sf == None:
+        if sf is str:
             self.structure[lay][ele].scattering_factor = polymorph
         else:
             self.structure[lay][ele].scattering_factor = sf
 
     def magnetization(self, lay, identifier, density, sf, gamma=90, phi=90):
+
         """
         Purpose: Set magnetization properties
         :param lay: Layer the magnetic material is found
@@ -596,18 +598,17 @@ class slab:
         """
 
         # ---------------------------------------- Error Check ------------------------------------------------------- #
-
         # Checking that layer exists
         if lay > len(self.structure) - 1:
             raise RuntimeError('Layer ' + str(lay) + ' selected, but maximum layer is ' + str(len(self.structure) - 1))
 
         self.layer_magnetized[lay] = True
         # Checks to make sure that the variable identifier is either a list or string
-        if type(identifier) != str and type(identifier) != list:
+        if type(identifier) != str and type(identifier) != list and type(identifier) != np.ndarray:
             raise TypeError('Variable identifier must be a list or string.')
 
             # Checks to make sure that the variable identifier is either a list or string
-        if type(sf) != str and type(sf) != list:
+        if type(sf) != str and type(sf) != list and type(sf) != np.ndarray:
             raise TypeError('Variable identifier must be a list or string.')
 
         # Checks to make sure that the variable identifier is either a list or string
@@ -658,16 +659,16 @@ class slab:
             raise TypeError('Gamma and Phi must be of same type')
 
 
-
         # ------------------------------------------------------------------------------------------------------------ #
         layer = self.structure[lay]
         poly_start = True
-        if type(identifier) == list:
+        if type(identifier) == list or type(identifier) == np.ndarray:
             for key in list(layer.keys()):
                 for idx in range(len(identifier)):
                     if len(layer[key].polymorph) != 0:  # polymorph case
                         if identifier[idx] in layer[key].polymorph:  # checks if identifier in selected polymorph
                             # pre-initializing for polymorph case
+                            layer[key].polymorph = list(layer[key].polymorph)
                             poly_idx = layer[key].polymorph.index(identifier[idx])  # determine index of poly
 
                             # initialization
@@ -682,6 +683,7 @@ class slab:
                                     self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
                             self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
                             self.structure[lay][key].mag_density[poly_idx] = density[idx]
+
                             self.mag_elements[key][poly_idx] = identifier[idx]
                             if type(gamma) == list and type(phi) == list:
                                 self.structure[lay][key].gamma = gamma[idx]
@@ -692,6 +694,7 @@ class slab:
                     elif key == identifier[idx]:
                         self.structure[lay][identifier[idx]].mag_scattering_factor = [sf[idx]]
                         self.structure[lay][identifier[idx]].mag_density = np.array([density[idx]])
+
                         self.mag_elements[key] = [key]
                         # case where we want multiple different magnetization angles
                         # this implementation is for futur versions of code
@@ -701,7 +704,6 @@ class slab:
                         else:
                             self.structure[lay][key].gamma = gamma
                             self.structure[lay][key].phi = phi
-
 
 
 

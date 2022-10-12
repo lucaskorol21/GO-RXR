@@ -10,6 +10,7 @@ import material_structure as ms
 import os
 import pyqtgraph as pg
 import data_structure as ds
+import copy
 
 def stringcheck(string):
 
@@ -859,7 +860,7 @@ class sampleWidget(QWidget):
                     self.varData[key].insert(idx+1, data)
                     self.magData[key].insert(idx+1,data_mag)
                     self.magDirection.insert(idx+1,'z')
-            print(self.varData)
+
 
     def _removeLayer(self):
         num = self.layerBox.count()  # get the number of layers in the material
@@ -886,19 +887,21 @@ class sampleWidget(QWidget):
 
         idx = self.layerBox.currentIndex()
 
-        newLayer = self.structTableInfo[idx]
+        newLayer = copy.deepcopy(self.structTableInfo[idx])
         self.structTableInfo.insert(idx+1,newLayer)
 
 
         # goes through all the keys
         for key in list(self.varData.keys()):
 
-            info = self.varData[key][idx]
-            info_mag = self.magData[key][idx]
+            info = copy.deepcopy(self.varData[key][idx])
+            info_mag = copy.deepcopy(self.magData[key][idx])
 
             self.varData[key].insert(idx+1,info)
             self.magData[key].insert(idx+1,info_mag)
 
+        new_dir = copy.deepcopy(self.magDirection[idx])
+        self.magDirection.insert(idx+1,new_dir)
 
     def _structural(self):
         self.changetable()
@@ -935,13 +938,11 @@ class sampleWidget(QWidget):
 
     def _densityprofile(self):
 
-        sample = self._createStructSample()
-        sample = self._createVarSample(sample)
-        sample = self._createMagSample(sample)
-
+        sample = self._createSample()
+        print(sample.structure[1]['Mn'].mag_density)
         thickness, density, density_magnetic = sample.density_profile()
-        self.densityWidget.clear()
 
+        self.densityWidget.clear()
         self._plotDensityProfile(thickness, density, density_magnetic)
 
 
@@ -953,7 +954,6 @@ class sampleWidget(QWidget):
 
         val = list(density.values())
         mag_val = list(density_magnetic.values())
-
         check = []
         for key in list(density.keys()):
             if key[-1].isdigit():
@@ -968,10 +968,9 @@ class sampleWidget(QWidget):
                 self.densityWidget.plot(thickness, val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
 
         for idx in range(len(mag_val)):
-
             self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2), name=list(density_magnetic.keys())[idx])
 
-    def _createStructSample(self):
+    def _createSample(self):
 
         m = len(self.structTableInfo)  # determines how many layers in the sample
         sample = ms.slab(m)  # initializes the slab class
@@ -1005,11 +1004,6 @@ class sampleWidget(QWidget):
                 # still need to take into account sf that are different than element
             sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness)
 
-        return sample
-
-    def _createVarSample(self, sample):
-
-        m = len(self.structTableInfo)  # determines how many layers in the sample
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
             for ele in range(len(layer)):
@@ -1021,15 +1015,11 @@ class sampleWidget(QWidget):
                 ratio = poly[1]
                 scattering_factor = poly[2]
 
-                if len(names) != 0:
+                if len(names) > 1:
                     if names[0] != '':
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
                         sample.polymorphous(idx,ele_name,names,ratio,sf=scattering_factor)
-        return sample
 
-    def _createMagSample(self, sample):
-
-        m = len(self.structTableInfo)  # determines how many layers in the sample
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
             for ele in range(len(layer)):
@@ -1045,8 +1035,8 @@ class sampleWidget(QWidget):
                 if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx,names,ratio,scattering_factor)
-
         return sample
+
 
     def getData(self):
 
