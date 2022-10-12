@@ -396,6 +396,15 @@ class sampleWidget(QWidget):
         self.previousLayer = 0
         self.firstStruct = True
 
+        self.step_size = QLineEdit()
+        self.step_size.setText('0.1')
+        self.step_size.setMaximumWidth(100)
+        step_size_label = QLabel('Step Size (Å):')
+        step_size_label.setMaximumWidth(65)
+        step_size_layout = QHBoxLayout()
+        step_size_layout.addWidget(step_size_label)
+        step_size_layout.addWidget(self.step_size)
+
         # Initializes the sample definition widget
         pagelayout = QHBoxLayout()  # page layout
 
@@ -433,6 +442,7 @@ class sampleWidget(QWidget):
         cblayout.addWidget(addlayerButton)
         cblayout.addWidget(copylayerButton)
         cblayout.addWidget(deletelayerButton)
+        cblayout.addLayout(step_size_layout)
 
         # layer combo box
         cblayout.addWidget(self.layerBox)
@@ -938,9 +948,10 @@ class sampleWidget(QWidget):
 
     def _densityprofile(self):
 
-        sample = self._createSample()
-        print(sample.structure[1]['Mn'].mag_density)
-        thickness, density, density_magnetic = sample.density_profile()
+        step_size = float(self.step_size.text())
+        self.sample = self._createSample()
+
+        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)
 
         self.densityWidget.clear()
         self._plotDensityProfile(thickness, density, density_magnetic)
@@ -968,7 +979,8 @@ class sampleWidget(QWidget):
                 self.densityWidget.plot(thickness, val[idx], pen=pg.mkPen((idx,num),width=2), name=list(density.keys())[idx])
 
         for idx in range(len(mag_val)):
-            self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2), name=list(density_magnetic.keys())[idx])
+            myname = 'Mag: ' + list(density_magnetic.keys())[idx]
+            self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2, style=Qt.DashLine), name=myname)
 
     def _createSample(self):
 
@@ -1077,17 +1089,64 @@ class sampleWidget(QWidget):
                 self.magDirection[j] = 'z'
 
 class reflectivityWidget(QWidget):
-    def __init__(self, data, data_dict, sim_dict):
+    def __init__(self, sWidget, data, data_dict, sim_dict):
         super().__init__()
+        self.sWidget = sWidget
+        self.sample = sWidget.sample
+        self.data = data
+        self.data_dict = data_dict
+        # Adding the plotting Widget
+        self.spectrumWidget = pg.PlotWidget()
+        self.spectrumWidget.setBackground('w')
 
+        self.spectrumWidget.addLegend()
         # This will be used to determine which scan to view
         self.whichScan = QComboBox()
         for scan in data:
             self.whichScan.addItem(scan[2])
+        self.whichScan.currentIndexChanged.connect(self.plot_scans)
+        self.whichScan.setCurrentIndex(0)
 
         pagelayout = QHBoxLayout()
+        pagelayout.addWidget(self.spectrumWidget)
         pagelayout.addWidget(self.whichScan)
+
         self.setLayout(pagelayout)
+
+    def plot_scans(self):
+        self.sample = self.sWidget.sample
+        self.spectrumWidget.clear()
+        idx = self.whichScan.currentIndex()
+        name = self.whichScan.currentText()
+        dat = self.data_dict[name]['Data']
+        pol = self.data_dict[name]['Polarization']
+        scan_type = self.data[idx][1]
+
+        if scan_type == 'Reflectivity':
+            qz = dat[0]
+            R = dat[2]
+            E = self.data_dict[name]['Energy']
+            qz, Rsim = self.sample.reflectivity(E,qz)
+            Rsim = Rsim[pol]
+            if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
+
+                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2))
+                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2))
+                self.spectrumWidget.setLogMode(False,True)
+            elif pol == 'AL' or pol =='AC':
+                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2))
+                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2))
+
+        elif scan_type == 'Energy':
+            E = dat[3]
+            R = dat[2]
+            Theta = self.data_dict[name]['Angle']
+            E, Rsim = self.sample.energy_scan(Theta,E)
+            Rsim = Rsim[pol]
+            self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2))
+            self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2))
+
+
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
@@ -1116,7 +1175,7 @@ class ReflectometryApp(QMainWindow):
         self.goButton = QPushButton('Global Optimization')
 
         _sampleWidget = sampleWidget(sample)  # initialize the sample widget
-        _reflectivityWidget = reflectivityWidget(data, data_dict, sim_dict)
+        _reflectivityWidget = reflectivityWidget(_sampleWidget, data, data_dict, sim_dict)
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.sampleButton.clicked.connect(self.activate_tab_1)
@@ -1149,12 +1208,7 @@ class ReflectometryApp(QMainWindow):
 
 
 if __name__ == '__main__':
-    sample = ms.slab(3)
-    sample.addlayer(0,'SrTiO3', 50)
-    sample.addlayer(1,'LaMnO3', 20)
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.5,0.5],['Mn','Fe'])
-    sample.magnetization(1,['Mn2+','Mn3+'], [0.001,0.001],['Ni','Co'])
-    sample.addlayer(2, 'LaAlO3', 5)
+
 
     fname = 'Pim10uc.h5'
 

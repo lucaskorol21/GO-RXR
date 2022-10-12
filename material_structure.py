@@ -88,7 +88,8 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
                         phi = structure[0][ele].phi
 
         # Determines the magnetization direction of the other layers
-        if transition[layer] <= thickness[m_j] and layer < len(transition) - 1:
+        trans = max(transition[layer])
+        if trans <= thickness[m_j] and layer < len(transition[0]) - 1:
             layer = layer + 1
             if layer_magnetized[layer]:
                 for ele in structure[layer].keys():
@@ -788,7 +789,7 @@ class slab:
         thick = max(thick1,thick2,thick3)
 
         #step = 0.05  # thickness step size
-        thickness = np.arange(-10,thick+15+step, step) # Creates thickness array
+        thickness = np.arange(-20,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
@@ -1200,7 +1201,10 @@ class slab:
 
             # Need to redo this
             # Determines the magnetization direction of the other layers
-            if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
+
+            transition = max(self.transition[layer])
+
+            if transition<=thickness[m_j] and layer<len(self.transition[0])-1:
                 layer = layer + 1
                 if self.layer_magnetized[layer]:
                     for ele in self.structure[layer].keys():
