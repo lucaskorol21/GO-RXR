@@ -1095,6 +1095,11 @@ class reflectivityWidget(QWidget):
         self.sample = sWidget.sample
         self.data = data
         self.data_dict = data_dict
+
+        self.fit = []  # scans to be fit
+        self.bounds = []  # bounds
+        self.weights = []  # weights of the bounds
+
         # Adding the plotting Widget
         self.spectrumWidget = pg.PlotWidget()
         self.spectrumWidget.setBackground('w')
@@ -1109,11 +1114,88 @@ class reflectivityWidget(QWidget):
         self.whichScan.setCurrentIndex(0)
         self.plot_scans()
 
-        pagelayout = QHBoxLayout()
-        pagelayout.addWidget(self.spectrumWidget)
-        pagelayout.addWidget(self.whichScan)
+        self.fitButton = QPushButton('Fit Scan')
+        self.fitButton.clicked.connect(self._scanSelection)
+
+        self.boundWeightTable = QTableWidget()
+
+        self.selectedScans = QComboBox()
+        self.selectedScans.activated.connect(self.plot_selected_scans)
+        self.selectedScans.activated.connect(self.setTable)
+
+        self.addBoundaryButton = QPushButton('Add Boundary')
+        self.removeBoundaryButton = QPushButton('Remove Boundary')
+        self.removeScan = QPushButton('Remove Scan')
+        self.removeScan.clicked.connect(self._removeScanSelection)
+
+
+        scanSelectionLayout = QVBoxLayout()
+        scanSelectionLayout.addWidget(self.fitButton)
+        scanSelectionLayout.addWidget(self.whichScan)
+
+        toplayout = QHBoxLayout()
+        toplayout.addWidget(self.spectrumWidget)
+        toplayout.addLayout(scanSelectionLayout)
+
+        boundLayout = QVBoxLayout()
+        boundLayout.addWidget(self.addBoundaryButton)
+        boundLayout.addWidget(self.removeBoundaryButton)
+        boundLayout.addWidget(self.removeScan)
+        boundLayout.addWidget(self.selectedScans)
+
+        bottomlayout = QHBoxLayout()
+        bottomlayout.addWidget(self.boundWeightTable)
+        bottomlayout.addLayout(boundLayout)
+
+        pagelayout = QVBoxLayout()
+        pagelayout.addLayout(toplayout)
+        pagelayout.addLayout(bottomlayout)
 
         self.setLayout(pagelayout)
+
+    def setTable(self):
+
+        idx = self.selectedScans.currentIndex()
+        scan = self.fit[idx]
+        if scan != '':
+            bound = self.bounds[idx]
+            weight = self.weights[idx]
+            col = len(bound)
+            row = 3
+
+            self.boundWeightTable.setRowCount(row)
+            self.boundWeightTable.setColumnCount(col)
+
+            self.boundWeightTable.setVerticalHeaderLabels(['Lower Bound', 'Upper Bound', 'Weight'])
+
+            for i in range(row):
+                for j in range(col):
+                    if i == 0:
+                        item = QTableWidgetItem(bound[j][0])
+                        self.boundWeightTable.setItem(row, col, item)
+                    elif i == 1:
+                        item = QTableWidgetItem(bound[j][1])
+                        self.boundWeightTable.setItem(row, col, item)
+                    elif i == 2:
+                        item = QTableWidgetItem(weight[j][0])
+                        self.boundWeightTable.setItem(row, col, item)
+
+    def _scanSelection(self):
+        idx = self.whichScan.currentIndex()
+        name = self.whichScan.currentText()
+        if name not in self.fit:
+            self.fit.append(name)
+            self.bounds.append([['0','1']])
+            self.weights.append([['1']])
+            self.selectedScans.addItem(name)
+
+
+    def _removeScanSelection(self):
+        idx = self.selectedScans.currentIndex()
+        self.selectedScans.removeItem(idx)
+        self.fit.pop(idx)
+        self.bounds.pop(idx)
+        self.weights.pop(idx)
 
     def plot_scans(self):
         self.sample = self.sWidget.sample
@@ -1148,7 +1230,48 @@ class reflectivityWidget(QWidget):
             self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
             self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
+    def plot_selected_scans(self):
+        self.sample = self.sWidget.sample
+        self.spectrumWidget.clear()
+        name = self.selectedScans.currentText()
+        if name != '':
+            idx=0
+            notDone = True
+            while notDone and idx==len(self.data)-1:
+                temp_name = self.data[idx][2]
+                if temp_name == name:
+                    notDone=False
+                else:
+                    idx = idx + 1
 
+
+            dat = self.data_dict[name]['Data']
+            pol = self.data_dict[name]['Polarization']
+            scan_type = self.data[idx][1]
+
+            if scan_type == 'Reflectivity':
+                qz = dat[0]
+                R = dat[2]
+                E = self.data_dict[name]['Energy']
+                qz, Rsim = self.sample.reflectivity(E,qz)
+                Rsim = Rsim[pol]
+                if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
+
+                    self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    self.spectrumWidget.setLogMode(False,True)
+                elif pol == 'AL' or pol =='AC':
+                    self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+
+            elif scan_type == 'Energy':
+                E = dat[3]
+                R = dat[2]
+                Theta = self.data_dict[name]['Angle']
+                E, Rsim = self.sample.energy_scan(Theta,E)
+                Rsim = Rsim[pol]
+                self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
