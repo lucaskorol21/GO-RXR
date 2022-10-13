@@ -1100,6 +1100,7 @@ class reflectivityWidget(QWidget):
         self.bounds = []  # bounds
         self.weights = []  # weights of the bounds
         self.axis_state = True
+        self.previousIdx = 0
 
         # Adding the plotting Widget
         self.spectrumWidget = pg.PlotWidget()
@@ -1128,7 +1129,9 @@ class reflectivityWidget(QWidget):
         self.boundWeightTable = QTableWidget()
 
         self.selectedScans = QComboBox()
+
         self.selectedScans.activated.connect(self.changeColorFit)
+        self.selectedScans.activated.connect(self.readTable)
         self.whichScan.activated.connect(self.changeColorScan)
         self.selectedScans.activated.connect(self.plot_selected_scans)
         self.selectedScans.activated.connect(self.setTable)
@@ -1143,7 +1146,7 @@ class reflectivityWidget(QWidget):
         self.qz.toggled.connect(self.updateAxis)
         self.angle = QRadioButton('Theta (degrees)', self)
         self.angle.toggled.connect(self.updateAxis)
-        axis_label = QLabel('Axis: ')
+        axis_label = QLabel('Reflectivity Axis: ')
         hbox = QHBoxLayout()
         hbox.addWidget(axis_label)
         hbox.addWidget(self.qz)
@@ -1207,8 +1210,7 @@ class reflectivityWidget(QWidget):
         scan = self.fit[idx]
 
         if scan != '':
-            print(self.fit)
-            print(scan)
+
             bound = self.bounds[idx]
             weight = self.weights[idx]
             col = len(bound)
@@ -1238,25 +1240,83 @@ class reflectivityWidget(QWidget):
         name = self.whichScan.currentText()
 
         if name not in self.fit:
+            if 'Angle' in list(self.data_dict[name].keys()):
+                lower = str(self.data_dict[name]['Data'][3][0])[0:7]
+                upper = str(self.data_dict[name]['Data'][3][-1])[0:7]
+            else:
+                lower = str(self.data_dict[name]['Data'][0][0])[0:7]
+                upper = str(self.data_dict[name]['Data'][0][-1])[0:7]
+
             self.fit.append(name)
-            self.bounds.append([['0','1']])
+            self.bounds.append([[lower,upper]])
             self.weights.append([['1']])
             self.selectedScans.addItem(name)
 
 
     def _removeScanSelection(self):
         idx = self.selectedScans.currentIndex()
+
+        # takes care of proper indexing
+        if idx == self.previousIdx and self.previousIdx != 0:
+            self.previousIdx = self.previousIdx - 1
+
         self.selectedScans.removeItem(idx)
         self.fit.pop(idx)
         self.bounds.pop(idx)
         self.weights.pop(idx)
+
     def addBoundWeight(self):
         col = self.boundWeightTable.columnCount()
+        idx = self.selectedScans.currentIndex()
+        n = len(self.bounds[idx])
+        upper = self.bounds[idx][n-1][1]
+        self.bounds[idx][n-1][1] = ''
+        self.bounds[idx].append(['',upper])
+        self.weights[idx].append('1')
         self.boundWeightTable.setColumnCount(col+1)
+        self.setTable()
+
     def removeBoundWeight(self):
         col = self.boundWeightTable.columnCount()
+        idx = self.selectedScans.currentIndex()
+
         if col != 1:
+            n = len(self.bounds[idx])
+            upper = self.bounds[idx][n - 1][1]
+            self.bounds[idx][n - 2][1] = upper
+            self.bounds[idx].pop()
+            self.weights[idx].pop()
             self.boundWeightTable.setColumnCount(col-1)
+
+
+        self.setTable()
+
+    def readTable(self):
+        idx = self.selectedScans.currentIndex()
+        name = self.selectedScans.currentText()
+
+        row = self.boundWeightTable.rowCount()
+        column = self.boundWeightTable.columnCount()
+
+        for i in range(row):
+            for j in range(column):
+                item = self.boundWeightTable.item(i,j).text()
+                if i == 0:
+                    if 'Angle' not in list(self.data_dict[name].keys()):
+                        if not(self.axis_state):  # we are in angle state
+                            #item = str(np.sin(float(item)*(np.pi))*E*)
+                            #Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
+                            pass
+                    self.bounds[self.previousIdx][j][0] = item
+                elif i == 1:
+                    if 'Angle' not in list(self.data_dict[name].keys()):
+                        if not (self.axis_state):  # we are in angle state
+                            pass
+                    self.bounds[self.previousIdx][j][1] = item
+                elif i == 2:
+                    self.weights[self.previousIdx][j] = item
+
+        self.previousIdx = idx
 
     def plot_scans(self):
 
@@ -1274,16 +1334,25 @@ class reflectivityWidget(QWidget):
             R = dat[2]
             E = self.data_dict[name]['Energy']
             qz, Rsim = self.sample.reflectivity(E,qz)
+            Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
             Rsim = Rsim[pol]
             if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
+                if self.axis_state:
+                    self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                else:
+                    self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                    self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.spectrumWidget.setLogMode(False,True)
             elif pol == 'AL' or pol =='AC':
-                self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                if self.axis_state:
+                    self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                else:
+                    self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                    self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
         elif scan_type == 'Energy':
             E = dat[3]
@@ -1298,7 +1367,14 @@ class reflectivityWidget(QWidget):
         self.sample = self.sWidget.sample
         self.spectrumWidget.clear()
         name = self.selectedScans.currentText()
+        b_idx = self.selectedScans.currentIndex()
+
+
         if name != '':
+            bound = self.bounds[b_idx]
+            lower = float(bound[0][0])
+            upper = float(bound[-1][-1])
+
             idx=0
             notDone = True
             while notDone and idx==len(self.data)-1:
@@ -1311,24 +1387,38 @@ class reflectivityWidget(QWidget):
 
             dat = self.data_dict[name]['Data']
             pol = self.data_dict[name]['Polarization']
-            scan_type = self.data[idx][1]
 
-            if scan_type == 'Reflectivity':
+            if 'Angle' not in list(self.data_dict[name].keys()):
                 qz = dat[0]
                 R = dat[2]
                 E = self.data_dict[name]['Energy']
                 qz, Rsim = self.sample.reflectivity(E,qz)
+                Theta = np.arcsin(qz/(E*0.001013546143))*180/np.pi
+
                 Rsim = Rsim[pol]
                 if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
-                    self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-                    self.spectrumWidget.setLogMode(False,True)
-                elif pol == 'AL' or pol =='AC':
-                    self.spectrumWidget.plot(qz,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    if self.axis_state:
+                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    else:
+                        self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        lower = np.arcsin(lower/(E*0.001013546143))*180/np.pi
+                        upper = np.arcsin(upper/(E*0.001013546143))*180/np.pi
 
-            elif scan_type == 'Energy':
+                    self.spectrumWidget.setLogMode(False,True)
+
+                    self.spectrumWidget.setXRange(lower,upper)
+                elif pol == 'AL' or pol =='AC':
+                    if self.axis_state:
+                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    else:
+                        self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    self.spectrumWidget.setXRange(lower, upper)
+            else:
                 E = dat[3]
                 R = dat[2]
                 Theta = self.data_dict[name]['Angle']
@@ -1340,7 +1430,7 @@ class reflectivityWidget(QWidget):
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
         super().__init__()
-        sample = ds.ReadSampleHDF5(fname)  # temopary way of loading in data
+        sample = ds.ReadSampleHDF5(fname)  # temporary way of loading in data
         data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
         # set the title
         self.setWindowTitle('Reflectometry of Quantum Materials')
