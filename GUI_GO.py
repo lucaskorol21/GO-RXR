@@ -1115,6 +1115,8 @@ class reflectivityWidget(QWidget):
         super().__init__()
 
         self.rom = [True, False, False]
+        self.bs = []  # background shift
+        self.sf = []  # scaling factor
 
         self.sWidget = sWidget
         self.sample = sWidget.sample
@@ -1163,8 +1165,11 @@ class reflectivityWidget(QWidget):
         self.selectedScans.activated.connect(self.setTable)
 
         self.addBoundaryButton = QPushButton('Add Boundary')
+        self.addBoundaryButton.setFixedWidth(250)
         self.removeBoundaryButton = QPushButton('Remove Boundary')
+        self.removeBoundaryButton.setMaximumWidth(250)
         self.removeScan = QPushButton('Remove Scan')
+        self.removeScan.setMaximumWidth(250)
         self.removeScan.clicked.connect(self._removeScanSelection)
         self.removeScan.setStyleSheet("background-color : cyan")
 
@@ -1209,14 +1214,15 @@ class reflectivityWidget(QWidget):
         scanSelectionLayout = QVBoxLayout()
         scanSelectionLayout.addLayout(whichScanLayout)
         scanSelectionLayout.addWidget(self.fitButton)
+        scanSelectionLayout.addStretch(1)
         scanSelectionLayout.addLayout(hbox)
         scanSelectionLayout.addLayout(stepLayout)
         scanSelectionLayout.addStretch(1)
         scanSelectionLayout.addWidget(self.rButton)
         scanSelectionLayout.addWidget(self.opButton)
         scanSelectionLayout.addWidget(self.opmButton)
-        scanSelectionLayout.addStretch(1)
-        scanSelectionLayout.addLayout(selectedScansLayout)
+        #scanSelectionLayout.addStretch(1)
+        #scanSelectionLayout.addLayout(selectedScansLayout)
 
 
         toplayout = QHBoxLayout()
@@ -1224,29 +1230,83 @@ class reflectivityWidget(QWidget):
         toplayout.addLayout(scanSelectionLayout)
 
 
-
+        boundWidget = QWidget()
         boundLayout = QVBoxLayout()
+        boundLayout.addLayout(selectedScansLayout)
         self.addBoundaryButton.clicked.connect(self.addBoundWeight)
         boundLayout.addWidget(self.addBoundaryButton)
         self.removeBoundaryButton.clicked.connect(self.removeBoundWeight)
         boundLayout.addWidget(self.removeBoundaryButton)
         boundLayout.addWidget(self.removeScan)
 
+        boundWidget.setLayout(boundLayout)
+        allScansLayout = QHBoxLayout()
+        allScanLabel = QLabel('All Scans: ')
+        allScanLabel.setFixedWidth(65)
+        self.allScan = QCheckBox()
+        self.allScan.setChecked(1)
+        allScansLayout.addWidget(allScanLabel)
+        allScansLayout.addWidget(self.allScan)
 
+        sfbsLayout = QVBoxLayout()
+
+        bsLayout = QHBoxLayout()
+        bsLabel = QLabel('Background Shift:')
+        bsLabel.setFixedWidth(90)
+        self.backgroundShift = QLineEdit()
+        self.scalingFactor = QLineEdit()
+        self.backgroundShift.textChanged.connect(self.changeSFandBS)
+        self.backgroundShift.setFixedWidth(100)
+        self.backgroundShift.setFixedHeight(25)
+        bsLayout.addWidget(bsLabel)
+        bsLayout.addWidget(self.backgroundShift)
+
+        sfLayout = QHBoxLayout()
+        sfLabel = QLabel('Scaling Factor:')
+        sfLabel.setFixedWidth(90)
+        self.scalingFactor.textChanged.connect(self.changeSFandBS)
+        self.scalingFactor.setFixedWidth(100)
+        self.scalingFactor.setFixedHeight(25)
+        sfLayout.addWidget(sfLabel)
+        sfLayout.addWidget(self.scalingFactor)
+
+        sfbsLayout.addLayout(allScansLayout)
+        sfbsLayout.addLayout(bsLayout)
+        sfbsLayout.addLayout(sfLayout)
+
+        semiBotLayout = QHBoxLayout()
+        semiBotLayout.addLayout(sfbsLayout)
+        semiBotLayout.addWidget(self.boundWeightTable)
 
 
         bottomlayout = QHBoxLayout()
-        bottomlayout.addWidget(self.boundWeightTable)
-        bottomlayout.addLayout(boundLayout)
+        bottomlayout.addLayout(semiBotLayout)
+        bottomlayout.addWidget(boundWidget)
 
         pagelayout = QVBoxLayout()
         pagelayout.addLayout(toplayout)
         pagelayout.addLayout(bottomlayout)
 
         self.setLayout(pagelayout)
+
+    def changeSFandBS(self):
+        idx = self.selectedScans.currentIndex()
+        state = self.allScan.checkState()
+
+        bs = self.backgroundShift.text()
+        sf = self.scalingFactor.text()
+        if bs != '' and sf != '':
+            if self.allScan.checkState() == 0:
+                self.bs[idx] = bs
+                self.sf[idx] = sf
+            else:
+                for i in range(len(self.bs)):
+                    self.bs[i] = bs
+                    self.sf[i] = sf
+
+
     def changeStepSize(self):
         self.sWidget._step_size = self.stepWidget.text()
-
 
     def myPlotting(self):
         idx = self.rom.index(True)
@@ -1370,6 +1430,9 @@ class reflectivityWidget(QWidget):
     def setTable(self):
 
         idx = self.selectedScans.currentIndex()
+        self.scalingFactor.setText(self.sf[idx]) # setting the appropriate scaling factor
+
+        self.backgroundShift.setText(self.bs[idx])  # setting the appropriate background shift
         scan = self.fit[idx]
 
         if scan != '':
@@ -1440,6 +1503,24 @@ class reflectivityWidget(QWidget):
             self.weights.append(['1'])
             self.selectedScans.addItem(name)
 
+            idx = self.selectedScans.currentIndex()
+            if self.allScan.checkState() == 0:
+                self.bs.append('0')  # background shift
+                self.sf.append('1')  # scaling factor
+            else:
+                if len(self.bs) != 0 and len(self.bs) != 1:
+                    if idx == 0:
+                        self.bs.append(self.bs[idx+1])
+                        self.sf.append(self.sf[idx+1])
+                    else:
+                        self.bs.append(self.bs[idx - 1])
+                        self.sf.append(self.sf[idx - 1])
+                elif len(self.bs) == 1:
+                    self.bs.append(self.bs[0])
+                    self.sf.append(self.sf[0])
+                else:
+                    self.bs.append('0')  # background shift
+                    self.sf.append('1')  # scaling factor
 
     def _removeScanSelection(self):
         idx = self.selectedScans.currentIndex()
@@ -1452,6 +1533,9 @@ class reflectivityWidget(QWidget):
         self.fit.pop(idx)
         self.bounds.pop(idx)
         self.weights.pop(idx)
+
+        self.bs.pop(idx)  # background shift
+        self.sf.pop(idx)  # scaling factor
 
     def addBoundWeight(self):
         col = self.boundWeightTable.columnCount()
