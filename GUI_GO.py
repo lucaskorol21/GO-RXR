@@ -281,13 +281,23 @@ class variationWidget(QDialog):
 
         row = len(self.mainWidget.varData[element][current_layer][0])
         for lay in range(len(self.mainWidget.varData[element])):
-            self.mainWidget.varData[element][lay][0].append('')  # add another element to name list
-            self.mainWidget.varData[element][lay][1].append('')  # add another element to name list
-            self.mainWidget.varData[element][lay][2].append('')  # add another element to name list
+            if type(self.mainWidget.varData[element][lay][0]) == np.ndarray:
+                self.mainWidget.varData[element][lay][0] = np.append(self.mainWidget.varData[element][lay][0], '')
+                self.mainWidget.varData[element][lay][1] = np.append(self.mainWidget.varData[element][lay][1], '')
+                self.mainWidget.varData[element][lay][2] = np.append(self.mainWidget.varData[element][lay][2], '')
 
-            self.mainWidget.magData[element][lay][0].append('') # make appropriate changes to magnetic data
-            self.mainWidget.magData[element][lay][1].append('')
-            self.mainWidget.magData[element][lay][2].append('')
+                self.mainWidget.magData[element][lay][0] = np.append(self.mainWidget.magData[element][lay][0], '')
+                self.mainWidget.magData[element][lay][1] = np.append(self.mainWidget.magData[element][lay][1], '')
+                self.mainWidget.magData[element][lay][2] = np.append(self.mainWidget.magData[element][lay][2], '')
+            else:
+                self.mainWidget.varData[element][lay][0].append('')  # add another element to name list
+                self.mainWidget.varData[element][lay][1].append('')  # add another element to name list
+                self.mainWidget.varData[element][lay][2].append('')  # add another element to name list
+
+                self.mainWidget.magData[element][lay][0].append('')  # make appropriate changes to magnetic data
+                self.mainWidget.magData[element][lay][1].append('')
+                self.mainWidget.magData[element][lay][2].append('')
+
 
         #row = self.mainWidget.varTable.rowCount()
         self.mainWidget.varTable.setRowCount(row + 1)
@@ -303,13 +313,23 @@ class variationWidget(QDialog):
 
         if row != 2:
             for lay in range(len(self.mainWidget.varData[element])):
-                self.mainWidget.varData[element][lay][0].pop()  # add another element to name list
-                self.mainWidget.varData[element][lay][1].pop()  # add another element to name list
-                self.mainWidget.varData[element][lay][2].pop()  # add another element to name list
 
-                self.mainWidget.magData[element][lay][0].pop() # make changes to magnetic data
-                self.mainWidget.magData[element][lay][1].pop()
-                self.mainWidget.magData[element][lay][2].pop()
+                if type(self.mainWidget.varData[element][lay][0]) == np.ndarray:
+                    self.mainWidget.varData[element][lay][0] = self.mainWidget.varData[element][lay][0][:-1]
+                    self.mainWidget.varData[element][lay][1] = self.mainWidget.varData[element][lay][1][:-1]
+                    self.mainWidget.varData[element][lay][2] = self.mainWidget.varData[element][lay][2][:-1]
+
+                    self.mainWidget.magData[element][lay][0] = self.mainWidget.magData[element][lay][0][:-1]
+                    self.mainWidget.magData[element][lay][1] = self.mainWidget.magData[element][lay][1][:-1]
+                    self.mainWidget.magData[element][lay][2] = self.mainWidget.magData[element][lay][2][:-1]
+                else:
+                    self.mainWidget.varData[element][lay][0].pop()  # add another element to name list
+                    self.mainWidget.varData[element][lay][1].pop()  # add another element to name list
+                    self.mainWidget.varData[element][lay][2].pop()  # add another element to name list
+
+                    self.mainWidget.magData[element][lay][0].pop() # make changes to magnetic data
+                    self.mainWidget.magData[element][lay][1].pop()
+                    self.mainWidget.magData[element][lay][2].pop()
 
             self.mainWidget.varTable.setRowCount(row-1)
 
