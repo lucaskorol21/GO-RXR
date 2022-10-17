@@ -414,8 +414,10 @@ class sampleWidget(QWidget):
         self.previousLayer = 0
         self.firstStruct = True
 
+        self._step_size = '0.1'
         self.step_size = QLineEdit()
-        self.step_size.setText('0.1')
+        self.step_size.textChanged.connect(self.changeStepSize)
+        self.step_size.setText(self._step_size)
         self.step_size.setMaximumWidth(100)
         step_size_label = QLabel('Step Size (Å):')
         step_size_label.setMaximumWidth(65)
@@ -542,6 +544,8 @@ class sampleWidget(QWidget):
         self.setLayout(mylayout)
 
 
+    def changeStepSize(self):
+        self._step_size = self.step_size.text()
 
     def setStructFromSample(self, idx):
         # this function will take the upon initialization and load in all parameters
@@ -597,7 +601,6 @@ class sampleWidget(QWidget):
             ele_idx = self.elementBox.currentIndex()
             self.element_index = copy.deepcopy(ele_idx)
 
-        #print(layer_idx, ele_idx)
         if ele_idx != -1:
             ele = self.structTableInfo[layer_idx][ele_idx][0]
 
@@ -629,6 +632,7 @@ class sampleWidget(QWidget):
 
                     item = QTableWidgetItem('')
                     self.varTable.setItem(row, 2, item)
+
     def setTableMag(self):
 
         layer_idx = self.layerBox.currentIndex()
@@ -1109,6 +1113,9 @@ class sampleWidget(QWidget):
 class reflectivityWidget(QWidget):
     def __init__(self, sWidget, data, data_dict, sim_dict):
         super().__init__()
+
+        self.rom = [True, False, False]
+
         self.sWidget = sWidget
         self.sample = sWidget.sample
         self.data = data
@@ -1132,7 +1139,7 @@ class reflectivityWidget(QWidget):
         for scan in data:
             self.whichScan.addItem(scan[2])
 
-        self.whichScan.currentIndexChanged.connect(self.plot_scans)
+        self.whichScan.currentIndexChanged.connect(self.myPlotting)
 
         self.whichScan.setCurrentIndex(0)
         whichScanLayout = QHBoxLayout()
@@ -1152,13 +1159,14 @@ class reflectivityWidget(QWidget):
         self.selectedScans.activated.connect(self.changeColorFit)
         self.selectedScans.activated.connect(self.readTable)
         self.whichScan.activated.connect(self.changeColorScan)
-        self.selectedScans.activated.connect(self.plot_selected_scans)
+        self.selectedScans.activated.connect(self.myPlotting)
         self.selectedScans.activated.connect(self.setTable)
 
         self.addBoundaryButton = QPushButton('Add Boundary')
         self.removeBoundaryButton = QPushButton('Remove Boundary')
         self.removeScan = QPushButton('Remove Scan')
         self.removeScan.clicked.connect(self._removeScanSelection)
+        self.removeScan.setStyleSheet("background-color : cyan")
 
         self.qz = QRadioButton('qz (A)', self)
         self.qz.setChecked(True)
@@ -1167,6 +1175,27 @@ class reflectivityWidget(QWidget):
         self.angle.toggled.connect(self.updateAxis)
         axis_label = QLabel('Reflectivity Axis: ')
         hbox = QHBoxLayout()
+
+        self.rButton = QPushButton('Reflectometry')
+        self.rButton.setStyleSheet('background: cyan')
+        self.rButton.clicked.connect(self.rPlot)
+        self.opButton = QPushButton('Optical Profile')
+        self.opButton.setStyleSheet('background: grey')
+        self.opButton.clicked.connect(self.opPlot)
+        self.opmButton = QPushButton('Magneto-Optical Profile')
+        self.opmButton.setStyleSheet('background: grey')
+        self.opmButton.clicked.connect(self.opmPlot)
+
+        self.stepWidget = QLineEdit()
+        self.stepWidget.textChanged.connect(self.changeStepSize)
+        self.stepWidget.setText(self.sWidget._step_size)
+        self.stepWidget.setMaximumWidth(175)
+        stepLabel = QLabel('Step Size (Å):')
+        stepLabel.setMaximumWidth(65)
+        stepLayout = QHBoxLayout()
+        stepLayout.addWidget(stepLabel)
+        stepLayout.addWidget(self.stepWidget)
+
         hbox.addWidget(axis_label)
         hbox.addWidget(self.qz)
         hbox.addWidget(self.angle)
@@ -1178,9 +1207,14 @@ class reflectivityWidget(QWidget):
         selectedScansLayout.addWidget(self.selectedScans)
 
         scanSelectionLayout = QVBoxLayout()
-        scanSelectionLayout.addWidget(self.fitButton)
         scanSelectionLayout.addLayout(whichScanLayout)
+        scanSelectionLayout.addWidget(self.fitButton)
         scanSelectionLayout.addLayout(hbox)
+        scanSelectionLayout.addLayout(stepLayout)
+        scanSelectionLayout.addStretch(1)
+        scanSelectionLayout.addWidget(self.rButton)
+        scanSelectionLayout.addWidget(self.opButton)
+        scanSelectionLayout.addWidget(self.opmButton)
         scanSelectionLayout.addStretch(1)
         scanSelectionLayout.addLayout(selectedScansLayout)
 
@@ -1189,12 +1223,16 @@ class reflectivityWidget(QWidget):
         toplayout.addWidget(self.spectrumWidget)
         toplayout.addLayout(scanSelectionLayout)
 
+
+
         boundLayout = QVBoxLayout()
         self.addBoundaryButton.clicked.connect(self.addBoundWeight)
         boundLayout.addWidget(self.addBoundaryButton)
         self.removeBoundaryButton.clicked.connect(self.removeBoundWeight)
         boundLayout.addWidget(self.removeBoundaryButton)
         boundLayout.addWidget(self.removeScan)
+
+
 
 
         bottomlayout = QHBoxLayout()
@@ -1206,6 +1244,106 @@ class reflectivityWidget(QWidget):
         pagelayout.addLayout(bottomlayout)
 
         self.setLayout(pagelayout)
+    def changeStepSize(self):
+        self.sWidget._step_size = self.stepWidget.text()
+
+
+    def myPlotting(self):
+        idx = self.rom.index(True)
+        if idx == 0:
+            self.rPlot()
+        elif idx == 1:
+            self.opPlot()
+        elif idx == 2:
+            self.opmPlot()
+
+    def rPlot(self):
+        self.rom = [True, False, False]
+
+        self.rButton.setStyleSheet('background: cyan')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: grey')
+
+        if self.scan_state:
+            self.plot_scans()
+        else:
+            self.plot_selected_scans()
+            self.setTable()
+
+    def opPlot(self):
+        self.rom = [False,True, False]
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: cyan')
+        self.opmButton.setStyleSheet('background: grey')
+        name = ''
+        self.spectrumWidget.clear()
+
+        if self.scan_state:
+            name = self.whichScan.currentText()
+        else:
+            name = self.selectedScans.currentText()
+
+        E = self.data_dict[name]['Energy']
+
+        step_size = float(self.sWidget._step_size)
+        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
+
+        sf = dict()  # form factors of non-magnetic components
+        sfm = dict()  # form factors of magnetic components
+
+        # Non-Magnetic Scattering Factor
+        for e in self.sample.find_sf[0].keys():
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
+        # Magnetic Scattering Factor
+        for em in self.sample.find_sf[1].keys():
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+
+        delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+
+        self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
+        self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
+        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+        self.spectrumWidget.setLogMode(False, False)
+        #delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+
+    def opmPlot(self):
+        self.rom = [False, False, True]
+
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: white')
+        self.opmButton.setStyleSheet('background: grey')
+        name = ''
+        self.spectrumWidget.clear()
+
+        if self.scan_state:
+            name = self.whichScan.currentText()
+        else:
+            name = self.selectedScans.currentText()
+
+        E = self.data_dict[name]['Energy']
+
+        step_size = float(self.sWidget._step_size)
+        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
+
+        sf = dict()  # form factors of non-magnetic components
+        sfm = dict()  # form factors of magnetic components
+
+        # Non-Magnetic Scattering Factor
+        for e in self.sample.find_sf[0].keys():
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
+        # Magnetic Scattering Factor
+        for em in self.sample.find_sf[1].keys():
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+
+        delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+
+        self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
+        self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
+        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+        self.spectrumWidget.setLogMode(False, False)
+
     def updateAxis(self):
         self.readTable()
         rbtn = self.sender()
@@ -1216,11 +1354,8 @@ class reflectivityWidget(QWidget):
             else:
                 self.axis_state = False
 
-        if self.scan_state:
-            self.plot_scans()
-        else:
-            self.plot_selected_scans()
-            self.setTable()
+        self.myPlotting()
+
 
     def changeColorScan(self):
         self.selectedScans.setStyleSheet('background: white; selection-background-color: grey')
@@ -1284,7 +1419,8 @@ class reflectivityWidget(QWidget):
                         item = QTableWidgetItem(myitem)
                         self.boundWeightTable.setItem(i, j, item)
                     elif i == 2:
-                        item = QTableWidgetItem(weight[j][0])
+
+                        item = QTableWidgetItem(weight[j])
                         self.boundWeightTable.setItem(i, j, item)
 
     def _scanSelection(self):
@@ -1362,7 +1498,11 @@ class reflectivityWidget(QWidget):
                                 if len(item) != 0:
                                     item = str(np.sin(float(item)*np.pi/180)*(E * 0.001013546143))
                         if len(item) != 0:
-                            self.bounds[self.previousIdx][j][0] = item[:7]
+
+                            if len(item) < 8:
+                                self.bounds[self.previousIdx][j][0] = item
+                            else:
+                                self.bounds[self.previousIdx][j][0] = item[:7]
                         else:
                             self.bounds[self.previousIdx][j][0] = ''
                     elif i == 1:
@@ -1372,13 +1512,19 @@ class reflectivityWidget(QWidget):
                                     item = str(np.sin(float(item)*np.pi/180)*(E * 0.001013546143))
 
                         if len(item) != 0:
-                            self.bounds[self.previousIdx][j][1] = item[:7]
+                            if len(item) < 8:
+                                self.bounds[self.previousIdx][j][1] = item
+                            else:
+                                self.bounds[self.previousIdx][j][1] = item[:7]
                         else:
                             self.bounds[self.previousIdx][j][1] = ''
                     elif i == 2:
+
                         self.weights[self.previousIdx][j] = item
 
+
             self.previousIdx = idx
+
     def plot_scans(self):
 
         self.sample = self.sWidget.sample
@@ -1388,13 +1534,14 @@ class reflectivityWidget(QWidget):
         dat = self.data_dict[name]['Data']
         pol = self.data_dict[name]['Polarization']
         scan_type = self.data[idx][1]
+        step_size = float(self.sWidget._step_size)
 
         if scan_type == 'Reflectivity':
             qz = dat[0]
 
             R = dat[2]
             E = self.data_dict[name]['Energy']
-            qz, Rsim = self.sample.reflectivity(E,qz)
+            qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
             Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
             Rsim = Rsim[pol]
             if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
@@ -1424,7 +1571,7 @@ class reflectivityWidget(QWidget):
             E = dat[3]
             R = dat[2]
             Theta = self.data_dict[name]['Angle']
-            E, Rsim = self.sample.energy_scan(Theta,E)
+            E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
             Rsim = Rsim[pol]
             self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
             self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
@@ -1432,6 +1579,7 @@ class reflectivityWidget(QWidget):
             self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
     def plot_selected_scans(self):
+        step_size = float(self.sWidget._step_size)
         self.sample = self.sWidget.sample
         self.spectrumWidget.clear()
         name = self.selectedScans.currentText()
@@ -1460,7 +1608,7 @@ class reflectivityWidget(QWidget):
                 qz = dat[0]
                 R = dat[2]
                 E = self.data_dict[name]['Energy']
-                qz, Rsim = self.sample.reflectivity(E,qz)
+                qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
                 Theta = np.arcsin(qz/(E*0.001013546143))*180/np.pi
 
                 Rsim = Rsim[pol]
@@ -1494,7 +1642,7 @@ class reflectivityWidget(QWidget):
                 E = dat[3]
                 R = dat[2]
                 Theta = self.data_dict[name]['Angle']
-                E, Rsim = self.sample.energy_scan(Theta,E)
+                E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
                 Rsim = Rsim[pol]
                 self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                 self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
@@ -1527,18 +1675,18 @@ class ReflectometryApp(QMainWindow):
         self.reflButton = QPushButton('Reflectivity')
         self.goButton = QPushButton('Global Optimization')
 
-        _sampleWidget = sampleWidget(sample)  # initialize the sample widget
-        _reflectivityWidget = reflectivityWidget(_sampleWidget, data, data_dict, sim_dict)
+        self._sampleWidget = sampleWidget(sample)  # initialize the sample widget
+        self._reflectivityWidget = reflectivityWidget(self._sampleWidget, data, data_dict, sim_dict)
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.sampleButton.clicked.connect(self.activate_tab_1)
         buttonlayout.addWidget(self.sampleButton)
-        self.stackedlayout.addWidget(_sampleWidget)
+        self.stackedlayout.addWidget(self._sampleWidget)
 
         self.reflButton.setStyleSheet("background-color : pink")
         self.reflButton.clicked.connect(self.activate_tab_2)
         buttonlayout.addWidget(self.reflButton)
-        self.stackedlayout.addWidget(_reflectivityWidget)
+        self.stackedlayout.addWidget(self._reflectivityWidget)
 
         self.goButton.setStyleSheet("background-color : pink")
         self.goButton.clicked.connect(self.activate_tab_3)
@@ -1550,8 +1698,10 @@ class ReflectometryApp(QMainWindow):
         self.setCentralWidget(widget)
 
     def activate_tab_1(self):
+        self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.stackedlayout.setCurrentIndex(0)
     def activate_tab_2(self):
+        self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.stackedlayout.setCurrentIndex(1)
     def activate_tab_3(self):
         self.stackedlayout.setCurrentIndex(2)
