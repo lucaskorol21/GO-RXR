@@ -276,7 +276,7 @@ class variationWidget(QDialog):
     def addVarEle(self):
         current_layer = self.mainWidget.layerBox.currentIndex()
         current_element = self.mainWidget.elementBox.currentIndex()
-
+        print()
         element = self.mainWidget.structTableInfo[current_layer][current_element][0]
 
         row = len(self.mainWidget.varData[element][current_layer][0])
