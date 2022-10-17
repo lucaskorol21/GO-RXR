@@ -1207,6 +1207,7 @@ class reflectivityWidget(QWidget):
 
         self.setLayout(pagelayout)
     def updateAxis(self):
+        self.readTable()
         rbtn = self.sender()
 
         if rbtn.isChecked() == True:
@@ -1219,6 +1220,7 @@ class reflectivityWidget(QWidget):
             self.plot_scans()
         else:
             self.plot_selected_scans()
+            self.setTable()
 
     def changeColorScan(self):
         self.selectedScans.setStyleSheet('background: white; selection-background-color: grey')
@@ -1237,6 +1239,9 @@ class reflectivityWidget(QWidget):
 
         if scan != '':
 
+            E = self.data_dict[scan]['Energy']
+            mykeys = list(self.data_dict[scan].keys())
+
             bound = self.bounds[idx]
             weight = self.weights[idx]
             col = len(bound)
@@ -1250,12 +1255,33 @@ class reflectivityWidget(QWidget):
             for i in range(row):
                 for j in range(col):
                     if i == 0:
-                        item = QTableWidgetItem(bound[j][0])
+                        myitem = ''
+                        if 'Angle' not in mykeys:
+                            if not self.axis_state:
+                                if len(bound[j][0]) != 0:
+                                    myitem = str(np.arcsin(float(bound[j][0])/(E * 0.001013546143))* 180 / np.pi)[:7]
+                            else:
+                                myitem = copy.copy(bound[j][0])
+                        else:
+                            myitem = copy.copy(bound[j][0])
+
+
+                        item = QTableWidgetItem(myitem)
                         self.boundWeightTable.setItem(i,j,item)
 
                         #self.boundWeightTable.setItem(i, j, item)
                     elif i == 1:
-                        item = QTableWidgetItem(bound[j][1])
+                        myitem = ''
+                        if 'Angle' not in mykeys:
+                            if not self.axis_state:
+                                if len(bound[j][1]) != 0:
+                                    myitem = str(np.arcsin(float(bound[j][1])/(E * 0.001013546143)) * 180 / np.pi)[:7]
+                            else:
+                                myitem = copy.copy(bound[j][1])
+                        else:
+                            myitem = copy.copy(bound[j][1])
+
+                        item = QTableWidgetItem(myitem)
                         self.boundWeightTable.setItem(i, j, item)
                     elif i == 2:
                         item = QTableWidgetItem(weight[j][0])
@@ -1275,7 +1301,7 @@ class reflectivityWidget(QWidget):
 
             self.fit.append(name)
             self.bounds.append([[lower,upper]])
-            self.weights.append([['1']])
+            self.weights.append(['1'])
             self.selectedScans.addItem(name)
 
 
@@ -1300,6 +1326,7 @@ class reflectivityWidget(QWidget):
         self.bounds[idx].append(['',upper])
         self.weights[idx].append('1')
         self.boundWeightTable.setColumnCount(col+1)
+
         self.setTable()
 
     def removeBoundWeight(self):
@@ -1323,27 +1350,35 @@ class reflectivityWidget(QWidget):
 
         row = self.boundWeightTable.rowCount()
         column = self.boundWeightTable.columnCount()
+        if name != '':
+            E = self.data_dict[name]['Energy']
+            for i in range(row):
+                for j in range(column):
 
-        for i in range(row):
-            for j in range(column):
-                item = self.boundWeightTable.item(i,j).text()
-                if i == 0:
-                    if 'Angle' not in list(self.data_dict[name].keys()):
-                        if not(self.axis_state):  # we are in angle state
-                            #item = str(np.sin(float(item)*(np.pi))*E*)
-                            #Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
-                            pass
-                    self.bounds[self.previousIdx][j][0] = item
-                elif i == 1:
-                    if 'Angle' not in list(self.data_dict[name].keys()):
-                        if not (self.axis_state):  # we are in angle state
-                            pass
-                    self.bounds[self.previousIdx][j][1] = item
-                elif i == 2:
-                    self.weights[self.previousIdx][j] = item
+                    item = self.boundWeightTable.item(i,j).text()
+                    if i == 0:
+                        if 'Angle' not in list(self.data_dict[name].keys()):
+                            if not(self.axis_state):  # we are in angle state
+                                if len(item) != 0:
+                                    item = str(np.sin(float(item)*np.pi/180)*(E * 0.001013546143))
+                        if len(item) != 0:
+                            self.bounds[self.previousIdx][j][0] = item[:7]
+                        else:
+                            self.bounds[self.previousIdx][j][0] = ''
+                    elif i == 1:
+                        if 'Angle' not in list(self.data_dict[name].keys()):
+                            if not (self.axis_state):  # we are in angle state
+                                if len(item) != 0:
+                                    item = str(np.sin(float(item)*np.pi/180)*(E * 0.001013546143))
 
-        self.previousIdx = idx
+                        if len(item) != 0:
+                            self.bounds[self.previousIdx][j][1] = item[:7]
+                        else:
+                            self.bounds[self.previousIdx][j][1] = ''
+                    elif i == 2:
+                        self.weights[self.previousIdx][j] = item
 
+            self.previousIdx = idx
     def plot_scans(self):
 
         self.sample = self.sWidget.sample
