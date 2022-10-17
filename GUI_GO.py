@@ -204,7 +204,6 @@ class variationWidget(QDialog):
 
         pagelayout = QHBoxLayout()
 
-        self.element_idx = 0
         self.elelayout = QVBoxLayout()
         self.mainWidget = mainWidget
         self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)
@@ -271,12 +270,12 @@ class variationWidget(QDialog):
             self.mainWidget.elementBox.addItem(ele)
 
         self.mainWidget.change_elements = False
-        self.mainWidget.elementBox.setCurrentIndex(self.element_idx)
+        self.mainWidget.elementBox.setCurrentIndex(self.mainWidget.element_index)
 
     def addVarEle(self):
         current_layer = self.mainWidget.layerBox.currentIndex()
         current_element = self.mainWidget.elementBox.currentIndex()
-        print()
+
         element = self.mainWidget.structTableInfo[current_layer][current_element][0]
 
         row = len(self.mainWidget.varData[element][current_layer][0])
@@ -340,7 +339,6 @@ class magneticWidget(QDialog):
 
         pagelayout = QHBoxLayout()
 
-        self.element_idx = 0
         self.mainWidget = mainWidget
 
 
@@ -594,10 +592,10 @@ class sampleWidget(QWidget):
 
         layer_idx = self.layerBox.currentIndex()
         ele_idx = self.elementBox.currentIndex()
-
         # makes sure that when we switch layers we show the same positional element
         if not self.change_elements:
-            self.element_idx = ele_idx
+            ele_idx = self.elementBox.currentIndex()
+            self.element_index = copy.deepcopy(ele_idx)
 
         #print(layer_idx, ele_idx)
         if ele_idx != -1:
