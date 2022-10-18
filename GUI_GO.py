@@ -389,10 +389,10 @@ class magneticWidget(QDialog):
 
 class sampleWidget(QWidget):
     def __init__(self, sample):
-        super().__init__()
+        super(sampleWidget,self).__init__()
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
-
+        self.parameterFit = []
         self.varData = {ele: [[['',''],['',''],['','']] for i in range(len(sample.structure))] for ele in sample.myelements}
 
         self.varTable = QTableWidget()
@@ -471,7 +471,6 @@ class sampleWidget(QWidget):
 
         self.structTable = QTableWidget()
 
-
         self.structTable.setRowCount(3)
         self.structTable.setColumnCount(6)
         self.structTable.setHorizontalHeaderLabels(
@@ -490,6 +489,8 @@ class sampleWidget(QWidget):
         self.sampleInfoLayout.addWidget(self.structTable)
         self.sampleInfoLayout.addWidget(elementVariation)
         self.sampleInfoLayout.addWidget(elementMagnetic)
+
+        self.structTable.viewport().installEventFilter(self)
 
         selectlayout = QVBoxLayout()
 
@@ -543,7 +544,165 @@ class sampleWidget(QWidget):
 
         self.setLayout(mylayout)
 
+    def eventFilter(self, source, event):
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                idx = self.sampleInfoLayout.currentIndex()
+                if idx == 0:
+                    self.structure_handler()
+        return False
 
+    def structure_handler(self):
+        idx = self.sampleInfoLayout.currentIndex()
+
+        top_menu = QMenu()
+
+        menu = top_menu.addMenu("Menu")
+
+        _element_fit = menu.addAction('Element Fit')
+        _compound_fit = menu.addAction('Compound Fit')
+        _remove_fit = menu.addAction('Remove Fit')
+
+        row = self.structTable.currentRow()
+        column = self.structTable.currentColumn()
+
+        # only allows user to fit certain parameters
+        if column == 5:
+            _compound_fit.setDisabled(True)
+        elif column == 0:
+            _element_fit.setDisabled(True)
+            _compound_fit.setDisabled(True)
+            _remove_fit.setDisabled(True)
+
+        action = menu.exec_(QtGui.QCursor.pos())
+
+        # Element Mode
+        if action == _element_fit:
+
+
+            element = self.structTable.item(row, 0).text()
+            alreadySelected = False
+
+            # Check to make sure parameter is not already selected
+            for fit in self.parameterFit:
+                # check if layer and parameter in compound mode
+                n = len(fit)
+                if n == 2:  # scattering factor
+                    if column == 5:  # trying to fit scattering factor
+                        item = self.structTable.currentItem().text()
+                        if item == fit[1]:
+                            alreadySelected = True
+
+                elif n == 3:  # compound mode
+                    layer = fit[0]
+                    param = fit[2]
+                    param_num = 1
+                    if param == 'THICKNESS':
+                        param_num = 1
+                    elif param == 'DENSITY':
+                        param_num = 2
+                    elif param == 'ROUGHNESS':
+                        param_num = 3
+                    elif param == 'LINKED ROUGHNESS':
+                        param_num = 4
+
+                    if layer == idx and column == param_num:
+                        self.parameterFit.remove(fit)
+
+                elif n == 4:  # element mode
+                    layer = fit[0]
+                    ele = fit[2]
+                    param = fit[3]
+                    my_ele = self.structTableInfo[idx][row][0]
+
+                    param_num = 1
+                    if param == 'THICKNESS':
+                        param_num = 1
+                    elif param == 'DENSITY':
+                        param_num = 2
+                    elif param == 'ROUGHNESS':
+                        param_num = 3
+                    elif param == 'LINKED ROUGHNESS':
+                        param_num = 4
+
+                    if layer == idx and column == param_num and ele == my_ele:
+                        alreadySelected = True
+
+            if not alreadySelected:
+                if column == 1:  # thickness
+                    self.parameterFit.append([idx, 'ELEMENT', element, 'THICKNESS'])
+                elif column == 2:  # density
+                    self.parameterFit.append([idx, 'ELEMENT', element, 'DENSITY'])
+                elif column == 3:  # roughness
+                    self.parameterFit.append([idx, 'ELEMENT', element, 'ROUGHNESS'])
+                elif column == 4:  # linked roughness
+                    self.parameterFit.append([idx, 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                elif column == 5:  # scattering factor
+                    #### NEED TO CHECK IF ELEMENT IS POLYMORPHOUS
+                    self.parameterFit.append(['SCATTERING FACTOR', element])
+
+        elif action == _compound_fit:
+
+
+            alreadySelected = False
+            for fit in self.parameterFit:
+                n = len(fit)
+
+                if n == 3:  # compound check
+                    layer = fit[0]
+                    param = fit[2]
+
+                    param_n = 1
+                    if param == 'THICKNESS':
+                        param_n = 1
+                    elif param == 'DENSITY':
+                        param_n = 2
+                    elif param == 'ROUGHNESS':
+                        param_n = 3
+                    elif param == 'LINKED ROUGHNESS':
+                        param_n = 4
+
+                    if layer == idx and param_n == column:
+                        alreadySelected = True
+
+                elif n == 4:  # element check
+                    layer = fit[0]
+                    ele = fit[2]
+                    param = fit[3]
+
+                    my_ele = self.structTableInfo[idx][row][0]
+
+                    param_n = 1
+                    if param == 'THICKNESS':
+                        param_n = 1
+                    elif param == 'DENSITY':
+                        param_n = 2
+                    elif param == 'ROUGHNESS':
+                        param_n = 3
+                    elif param == 'LINKED ROUGHNESS':
+                        param_n = 4
+                    if param_n == column and my_ele == ele and layer == idx:
+                        self.parameterFit.remove(fit)
+            # check for compound
+
+            # check for element
+            if not alreadySelected:
+                if column == 1:  # thickness
+                    self.parameterFit.append([idx, 'COMPOUND', 'THICKNESS'])
+                elif column == 2:  # density
+                    self.parameterFit.append([idx, 'COMPOUND', 'DENSITY'])
+                elif column == 3:  # roughness
+                    self.parameterFit.append([idx, 'COMPOUND', 'ROUGHNESS'])
+                elif column == 4:  # linked roughness
+                    self.parameterFit.append([idx, 'COMPOUND', 'LINKED ROUGHNESS'])
+
+
+        elif action == _remove_fit:
+            # structural case
+            if idx == 0:
+                pass
+
+        print(self.parameterFit)
     def changeStepSize(self):
         self._step_size = self.step_size.text()
 
@@ -592,6 +751,7 @@ class sampleWidget(QWidget):
             for col in range(6):
                 item = QTableWidgetItem(str(tableInfo[row][col]))
                 self.structTable.setItem(row,col, item)
+
     def setTableVar(self):
 
         layer_idx = self.layerBox.currentIndex()
@@ -1371,8 +1531,8 @@ class reflectivityWidget(QWidget):
         self.rom = [False, False, True]
 
         self.rButton.setStyleSheet('background: grey')
-        self.opButton.setStyleSheet('background: white')
-        self.opmButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: cyan')
         name = ''
         self.spectrumWidget.clear()
 
@@ -1649,6 +1809,7 @@ class reflectivityWidget(QWidget):
                     self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                     self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
+                self.spectrumWidget.setLogMode(False, False)
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
                 self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
         elif scan_type == 'Energy':
@@ -1657,6 +1818,7 @@ class reflectivityWidget(QWidget):
             Theta = self.data_dict[name]['Angle']
             E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
             Rsim = Rsim[pol]
+            self.spectrumWidget.setLogMode(False, False)
             self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
             self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
             self.spectrumWidget.setLabel('left', "Reflectivity, R")
@@ -1719,6 +1881,7 @@ class reflectivityWidget(QWidget):
                         self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                         self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
+                    self.spectrumWidget.setLogMode(False, False)
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
                     self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
                     self.spectrumWidget.setXRange(lower, upper)
@@ -1728,10 +1891,15 @@ class reflectivityWidget(QWidget):
                 Theta = self.data_dict[name]['Angle']
                 E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
                 Rsim = Rsim[pol]
+                self.spectrumWidget.setLogMode(False, False)
                 self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                 self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
                 self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
+
+class GlobalOptimization(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
