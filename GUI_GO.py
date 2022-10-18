@@ -662,6 +662,7 @@ class sampleWidget(QWidget):
                     elif param == 'LINKED ROUGHNESS':
                         param_n = 4
 
+
                     if layer == idx and param_n == column:
                         alreadySelected = True
 
