@@ -562,7 +562,7 @@ class sampleWidget(QWidget):
     def mag_handler(self):
         idx = self.sampleInfoLayout.currentIndex()  # keeps track of which parameters are to be fit
         my_layer = self.layerBox.currentIndex()  # layer index
-
+        copy_fit_list = copy.deepcopy(self.parameterFit)
         row = self.magTable.currentRow()
         column = self.magTable.currentColumn()
 
@@ -576,13 +576,48 @@ class sampleWidget(QWidget):
                 if name in self.magData[key][my_layer][0]:
                     element = key
 
-        # I now have the layer, element and the name of the element
-        if column == 0:
-            pass
-        elif column == 1:
-            scattering_factor = self.magTable.item(row, column).text()
-            self.parameterFit.append(['Magnetic Scattering Factor'])
+        top_menu = QMenu()
 
+        menu = top_menu.addMenu("Menu")
+
+        _fit = menu.addAction('Fit')
+        _remove_fit = menu.addAction('Remove Fit')
+
+        action = menu.exec_(QtGui.QCursor.pos())
+        if action == _fit:
+
+            # determines if the element has already been selected
+            alreadySelected = False
+            for fit in copy_fit_list:
+                if column == 0:
+                    if len(fit) == 3:
+                        if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element:
+                            alreadySelected = True
+                    elif len(fit) == 4:
+                        if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element and fit[2] == name:
+                            alreadySelected = True
+                elif column == 1:
+                    scattering_factor = self.magTable.item(row,1)
+                    if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] ==  scattering_factor:
+                        alreadySelected = True
+
+            # Check to make sure that parameter not already selected
+            if not alreadySelected:
+                if column == 1:
+                    scattering_factor = self.magTable.item(row, column).text()
+                    self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
+
+                elif column == 0:
+
+                    if name == element:
+                        self.parameterFit.append([my_layer, 'MAGNETIC', element])
+                    else:
+                        self.parameterFit.append([my_layer, 'MAGNETIC', element, name])
+        print(self.parameterFit)
+        if action == _remove_fit:
+            pass
+
+        self.setTableMag()
     def var_handler(self):
         idx = self.sampleInfoLayout.currentIndex()  # keeps track of which parameters are to be fit
         my_layer = self.layerBox.currentIndex()  # layer index
@@ -610,13 +645,13 @@ class sampleWidget(QWidget):
             alreadySelected = False
             for fit in copy_fit_list:
                 if column == 1:
-                    if fit[1] == 'Polymorphous' and fit[0] == my_layer:
+                    if fit[1] == 'POLYMORPHOUS' and fit[0] == my_layer:
                         name = self.varTable.item(row, 0).text()
                         if element == fit[2] and name == fit[3]:
                             alreadySelected = True
                 elif column == 2:
                     scattering_factor = self.varTable.item(row,column).text()
-                    if len(fit) == 2 and scattering_factor == fit[1]:
+                    if len(fit) == 3 and scattering_factor == fit[2]:
                         alreadySelected = True
 
             if not alreadySelected:
@@ -625,24 +660,24 @@ class sampleWidget(QWidget):
                     ratio = self.varTable.item(row, 1).text()
 
                     if ratio != '':
-                        self.parameterFit.append([my_layer, 'Polymorphous', element, name])
+                        self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
                 elif column == 2:
                     scattering_factor = self.varTable.item(row,2).text()
                     if scattering_factor != '':
-                        self.parameterFit.append(['Scattering Factor', scattering_factor])
+                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL','SCATTERING FACTOR'])
 
         elif action == _remove_fit:
 
             for fit in copy_fit_list:
                 if column == 1:
-                    if len(fit) == 4 and fit[1] == 'Polymorphous':
+                    if len(fit) == 4 and fit[1] == 'POLYMORPHOUS':
                         name = self.varTable.item(row,0).text()
                         if my_layer == fit[0] and element == fit[2] and name == fit[3]:
                             self.parameterFit.remove(fit)
                 elif column == 2:
-                    if len(fit) == 2:
+                    if len(fit) == 3:
                         scattering_factor = self.varTable.item(row,2).text()
-                        if scattering_factor == fit[1]:
+                        if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
                             self.parameterFit.remove(fit)
         self.setTableVar()
 
@@ -683,42 +718,42 @@ class sampleWidget(QWidget):
             for fit in copy_fit_list:
                 # check if layer and parameter in compound mode
                 n = len(fit)
-                if n == 2:  # scattering factor
+                if n == 3:  # scattering factor
                     if column == 5:  # trying to fit scattering factor
                         item = self.structTable.currentItem().text()
-                        if item == fit[1]:
+                        if item == fit[2]:
                             alreadySelected = True
 
-                elif n == 3:  # compound mode
+                elif n == 4:  # compound mode
                     layer = fit[0]
-                    param = fit[2]
-                    param_num = 1
-                    if param == 'Thickness':
+                    param = fit[3]
+                    param_num = 0
+                    if param == 'THICKNESS':
                         param_num = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_num = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_num = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_num = 4
 
                     if layer == my_layer and column == param_num:
                         self.parameterFit.remove(fit)
 
-                elif n == 4:  # element mode
+                elif n == 5:  # element mode
                     layer = fit[0]
-                    ele = fit[2]
-                    param = fit[3]
+                    ele = fit[3]
+                    param = fit[4]
                     my_ele = self.structTableInfo[idx][row][0]
 
                     param_num = 1
-                    if param == 'Thickness':
+                    if param == 'THICKNESS':
                         param_num = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_num = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_num = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_num = 4
 
                     if layer == my_layer and column == param_num and ele == my_ele:
@@ -726,17 +761,17 @@ class sampleWidget(QWidget):
 
             if not alreadySelected:
                 if column == 1:  # thickness
-                    self.parameterFit.append([my_layer, 'Element', element, 'Thickness'])
+                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
                 elif column == 2:  # density
-                    self.parameterFit.append([my_layer, 'Element', element, 'Density'])
+                    self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'DENSITY'])
                 elif column == 3:  # roughness
-                    self.parameterFit.append([my_layer, 'Element', element, 'Roughness'])
+                    self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'ROUGHNESS'])
                 elif column == 4:  # linked roughness
-                    self.parameterFit.append([my_layer, 'Element', element, 'Linked Roughness'])
+                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
                 elif column == 5:  # scattering factor
                     scattering_factor = self.structTable.item(row, 5).text()
                     if scattering_factor[0] != '[':
-                        self.parameterFit.append(['Scattering Factor', scattering_factor])
+                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
 
         elif action == _compound_fit:
 
@@ -748,30 +783,30 @@ class sampleWidget(QWidget):
                     param = fit[2]
 
                     param_n = 1
-                    if param == 'Thickness':
+                    if param == 'THICKNESS':
                         param_n = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_n = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_n = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_n = 4
 
 
                     if layer == my_layer and param_n == column:
                         alreadySelected = True
 
-                elif n == 4:  # element check
+                elif n == 5:  # element check
                     layer = fit[0]
-                    param = fit[3]
+                    param = fit[4]
                     param_n = 1
-                    if param == 'Thickness':
+                    if param == 'THICKNESS':
                         param_n = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_n = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_n = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_n = 4
 
 
@@ -781,16 +816,16 @@ class sampleWidget(QWidget):
                 if not alreadySelected:
 
                     if column == 1:  # thickness
-                        my_fit = [my_layer, 'Compound', 'Thickness']
+                        my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
                         self.parameterFit.append(my_fit)
                     elif column == 2:  # density
-                        my_fit = [my_layer, 'Compound', 'Density']
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
                         self.parameterFit.append(my_fit)
                     elif column == 3:  # roughness
-                        my_fit = [my_layer, 'Compound', 'Roughness']
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
                         self.parameterFit.append(my_fit)
                     elif column == 4:  # linked roughness
-                        my_fit = [my_layer, 'Compound', 'Linked Roughness']
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
                         self.parameterFit.append(my_fit)
 
         elif action == _remove_fit:
@@ -799,43 +834,43 @@ class sampleWidget(QWidget):
             for fit in copy_fit_list:
                 n = len(fit)
                 if column == 1:
-                    mode = fit[1]
-                    if mode == "Element":
-                        ele = fit[2]
-                        if ele == element and fit[3] == 'Thickness':
+                    mode = fit[2]
+                    if mode == "ELEMENT":
+                        ele = fit[3]
+                        if ele == element and fit[4] == 'THICKNESS':
                             self.parameterFit.remove(fit)
-                    elif mode == 'Compound':
-                        if fit[2] == 'Thickness':
+                    elif mode == 'COMPOUND':
+                        if fit[3] == 'THICKNESS':
                             self.parameterFit.remove(fit)
                 elif column == 2:
-                    mode = fit[1]
-                    if mode == "Element":
-                        ele = fit[2]
-                        if ele == element and fit[3] == 'Density':
+                    mode = fit[2]
+                    if mode == "ELEMENT":
+                        ele = fit[3]
+                        if ele == element and fit[4] == 'DENSITY':
                             self.parameterFit.remove(fit)
-                    elif mode == 'Compound':
-                        if fit[2] == 'Density':
+                    elif mode == 'COMPOUND':
+                        if fit[3] == 'DENSITY':
                             self.parameterFit.remove(fit)
                 elif column == 3:
-                    mode = fit[1]
-                    if mode == "Element":
-                        ele = fit[2]
-                        if ele == element and fit[3] == 'Roughness':
+                    mode = fit[2]
+                    if mode == "ELEMENT":
+                        ele = fit[3]
+                        if ele == element and fit[4] == 'ROUGHNESS':
                             self.parameterFit.remove(fit)
-                    elif mode == 'Compound':
-                        if fit[2] == 'Roughness':
+                    elif mode == 'COMPOUND':
+                        if fit[2] == 'ROUGHNESS':
                             self.parameterFit.remove(fit)
                 elif column == 4:
-                    mode = fit[1]
-                    if mode == "Element":
-                        ele = fit[2]
-                        if ele == element and fit[3] == 'Linked Roughness':
+                    mode = fit[2]
+                    if mode == "ELEMENT":
+                        ele = fit[3]
+                        if ele == element and fit[4] == 'LINKED ROUGHNESS':
                             self.parameterFit.remove(fit)
-                    elif mode == 'Compound':
-                        if fit[2] == 'Linked Roughness':
+                    elif mode == 'COMPOUND':
+                        if fit[3] == 'Linked Roughness':
                             self.parameterFit.remove(fit)
-                elif column == 5 and n == 2:
-                    if scattering_factor == fit[1]:
+                elif column == 5 and n == 3:
+                    if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
                         self.parameterFit.remove(fit)
 
         self.setTable(my_layer)
@@ -896,34 +931,34 @@ class sampleWidget(QWidget):
             layer = fit[0]
             n = len(fit)
             if layer == idx:  # not scattering factor parameters
-                if n == 3: # compound mode
-                    param = fit[2]
+                if n == 4: # compound mode
+                    param = fit[3]
                     param_n = 0
 
-                    if param == 'Thickness':
+                    if param == 'THICKNESS':
                         param_n = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_n = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_n = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_n = 4
 
                     for row in range(num_rows):
                         if param_n != 0:
                             self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 150, 255))
-                elif n == 4:  # element mode
-                    ele = fit[2]
-                    param = fit[3]
+                elif n == 5:  # element mode
+                    ele = fit[3]
+                    param = fit[4]
 
                     param_n = 0
-                    if param == 'Thickness':
+                    if param == 'THICKNESS':
                         param_n = 1
-                    elif param == 'Density':
+                    elif param == 'DENSITY':
                         param_n = 2
-                    elif param == 'Roughness':
+                    elif param == 'ROUGHNESS':
                         param_n = 3
-                    elif param == 'Linked Roughness':
+                    elif param == 'LINKED ROUGHNESS':
                         param_n = 4
 
                     for row in range(num_rows):
@@ -931,9 +966,9 @@ class sampleWidget(QWidget):
                         if my_ele == ele:
                             if param_n != 0:
                                 self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 255, 150))
-            if layer == 'Scattering Factor':
+            if layer == 'SCATTERING FACTOR':
                 for row in range(num_rows):
-                    if fit[1] == self.structTableInfo[idx][row][5]:
+                    if fit[2] == self.structTableInfo[idx][row][5] and fit[1] == 'STRUCTURAL':
                         self.structTable.item(row,5).setBackground(QtGui.QColor(150, 255, 150))
 
 
@@ -970,10 +1005,10 @@ class sampleWidget(QWidget):
 
                     if idx == 1:
                         for fit in self.parameterFit:
-                            if len(fit) == 2 and fit[1] == info[2][row]:
+                            if len(fit) == 3 and fit[2] == info[2][row] and fit[1] == 'STRUCTURAL':
                                 self.varTable.item(row,2).setBackground(QtGui.QColor(150, 255, 150))
                             elif len(fit) == 4:
-                                if fit[0] == layer_idx and fit[1] == "Polymorphous" and fit[2] == ele and fit[3] == info[0][row]:
+                                if fit[0] == layer_idx and fit[1] == "POLYMORPHOUS" and fit[2] == ele and fit[3] == info[0][row]:
                                     self.varTable.item(row,1).setBackground(QtGui.QColor(150, 255, 150))
             else:
                 for row in range(self.varTable.rowCount()):
@@ -1047,7 +1082,7 @@ class sampleWidget(QWidget):
         self.magTable.resizeColumnsToContents()  # resizes columns to fit
 
         for row in range(row_num):
-
+            name = self.magTable.verticalHeaderItem(row).text()  # for color purposes
             mydensity = density[row]
             mysf = sf[row]
             if mydensity == '':
@@ -1057,13 +1092,24 @@ class sampleWidget(QWidget):
                 item = QTableWidgetItem(str(mydensity))
                 self.magTable.setItem(row, 0, item)
 
+                for fit in self.parameterFit:
+                    if len(fit) == 3 and fit[0] != 'SCATTERING FACTOR':
+                        if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[2] == name:
+                            self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
+                    elif len(fit) == 4 and fit[1] == 'MAGNETIC':
+                        if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[3] == name:
+                            self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
             if mysf == '':
                 item = QTableWidgetItem('')
                 self.magTable.setItem(row, 1, item)
             else:
                 item = QTableWidgetItem(mysf)
                 self.magTable.setItem(row, 1, item)
-
+                for fit in self.parameterFit:
+                    if len(fit) == 3:
+                        scattering_factor = self.magTable.item(row,1).text()
+                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
+                            self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
 
     def changetable(self):
 
