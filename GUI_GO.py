@@ -1694,15 +1694,14 @@ class reflectivityWidget(QWidget):
 
     def changeSFandBS(self):
         idx = self.selectedScans.currentIndex()
-        state = self.allScan.checkState()
 
         bs = self.backgroundShift.text()
         sf = self.scalingFactor.text()
         if bs != '' and sf != '':
-            if self.allScan.checkState() == 0:
+            if self.allScan.checkState() == 0:  # case where all scans have different bs and sf
                 self.bs[idx] = bs
                 self.sf[idx] = sf
-            else:
+            else: # case where all scans have same bs and sf
                 for i in range(len(self.bs)):
                     self.bs[i] = bs
                     self.sf[i] = sf
@@ -1932,13 +1931,16 @@ class reflectivityWidget(QWidget):
         if idx == self.previousIdx and self.previousIdx != 0:
             self.previousIdx = self.previousIdx - 1
 
-        self.selectedScans.removeItem(idx)
+        self.selectedScans.removeItem(idx)  # selected scans# case where all scans have same bs and sf
         self.fit.pop(idx)
         self.bounds.pop(idx)
         self.weights.pop(idx)
 
         self.bs.pop(idx)  # background shift
         self.sf.pop(idx)  # scaling factor
+
+        self.setTable()  # makes sure that the table is switched
+        self.myPlotting()
 
     def addBoundWeight(self):
         col = self.boundWeightTable.columnCount()
@@ -1954,11 +1956,11 @@ class reflectivityWidget(QWidget):
 
     def removeBoundWeight(self):
         col = self.boundWeightTable.columnCount()
-        idx = self.selectedScans.currentIndex()
+        idx = self.selectedScans.currentIndex()  # gets the selected scan
 
         if col != 1:
-            n = len(self.bounds[idx])
-            upper = self.bounds[idx][n - 1][1]
+            n = len(self.bounds[idx])  # get the number of boundaries
+            upper = self.bounds[idx][n - 1][1]  # gets the proper upper boundary
             self.bounds[idx][n - 2][1] = upper
             self.bounds[idx].pop()
             self.weights[idx].pop()
