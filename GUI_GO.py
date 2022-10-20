@@ -1532,6 +1532,8 @@ class reflectivityWidget(QWidget):
         self.bs = []  # background shift
         self.sf = []  # scaling factor
 
+        self.sfBsFitParams = []  # variable used to keep track of the fitting parameters
+
         self.sWidget = sWidget
         self.sample = sWidget.sample
         self.data = data
@@ -1577,6 +1579,7 @@ class reflectivityWidget(QWidget):
         self.whichScan.activated.connect(self.changeColorScan)
         self.selectedScans.activated.connect(self.myPlotting)
         self.selectedScans.activated.connect(self.setTable)
+        self.selectedScans.activated.connect(self.changeFitColor)
 
         self.addBoundaryButton = QPushButton('Add Boundary')
         self.addBoundaryButton.setFixedWidth(250)
@@ -1659,6 +1662,7 @@ class reflectivityWidget(QWidget):
         allScanLabel.setFixedWidth(65)
         self.allScan = QCheckBox()
         self.allScan.setChecked(1)
+        self.allScan.stateChanged.connect(self.allScanStateChanged)
         allScansLayout.addWidget(allScanLabel)
         allScansLayout.addWidget(self.allScan)
 
@@ -1684,9 +1688,27 @@ class reflectivityWidget(QWidget):
         sfLayout.addWidget(sfLabel)
         sfLayout.addWidget(self.scalingFactor)
 
+        self.bsFit = QPushButton('Fit')
+        self.bsFit.clicked.connect(self.fitBackgroundShift)
+        self.bsUnfit = QPushButton('Remove Fit')
+        self.bsUnfit.clicked.connect(self.unfitBackgroundShift)
+        bsFitLayout = QHBoxLayout()
+        bsFitLayout.addWidget(self.bsFit)
+        bsFitLayout.addWidget(self.bsUnfit)
+
+        self.sfFit = QPushButton('Fit')
+        self.sfFit.clicked.connect(self.fitScalingFactor)
+        self.sfUnfit = QPushButton('Remove Fit')
+        self.sfUnfit.clicked.connect(self.unfitScalingFactor)
+        sfFitLayout = QHBoxLayout()
+        sfFitLayout.addWidget(self.sfFit)
+        sfFitLayout.addWidget(self.sfUnfit)
+
         sfbsLayout.addLayout(allScansLayout)
         sfbsLayout.addLayout(bsLayout)
+        sfbsLayout.addLayout(bsFitLayout)
         sfbsLayout.addLayout(sfLayout)
+        sfbsLayout.addLayout(sfFitLayout)
 
         semiBotLayout = QHBoxLayout()
         semiBotLayout.addLayout(sfbsLayout)
@@ -1702,6 +1724,83 @@ class reflectivityWidget(QWidget):
         pagelayout.addLayout(bottomlayout)
 
         self.setLayout(pagelayout)
+
+    def changeFitColor(self):
+        name = self.selectedScans.currentText()
+        self.backgroundShift.setStyleSheet('background: white')
+        self.scalingFactor.setStyleSheet('background: white')
+        for fit in self.sfBsFitParams:
+
+            if fit[0] == 'BACKGROUND SHIFT' and fit[1] == 'ALL SCANS':
+                self.backgroundShift.setStyleSheet('background: red')
+            elif fit[0] == 'BACKGROUND SHIFT' and fit[1] == name:
+                self.backgroundShift.setStyleSheet('background: red')
+
+
+            if fit[0] == 'SCALING FACTOR' and fit[1] == 'ALL SCANS':
+                self.scalingFactor.setStyleSheet('background: red')
+            elif fit[0] == 'SCALING FACTOR' and fit[1] == name:
+                self.scalingFactor.setStyleSheet('background: red')
+
+
+    def allScanStateChanged(self):
+        # erase the fitting parameters previously input by the user
+        self.sfBsFitParams = []
+        self.changeFitColor()
+
+    def fitBackgroundShift(self):
+        state = self.allScan.checkState()
+        name = self.selectedScans.currentText()
+        if name != '':
+            if state == 2:
+                fit = ['BACKGROUND SHIFT', 'ALL SCANS']
+                if fit not in self.sfBsFitParams:
+                    self.sfBsFitParams.append(fit)
+            else:
+                fit = ['BACKGROUND SHIFT', name]
+                if fit not in self.sfBsFitParams:
+                    self.sfBsFitParams.append(fit)
+
+
+        self.changeFitColor()
+
+    def fitScalingFactor(self):
+        state = self.allScan.checkState()
+        name = self.selectedScans.currentText()
+        if name != '':
+            if state == 2:
+                fit = ['SCALING FACTOR', 'ALL SCANS']
+                if fit not in self.sfBsFitParams:
+                    self.sfBsFitParams.append(fit)
+            else:
+                fit = ['SCALING FACTOR', name]
+                if fit not in self.sfBsFitParams:
+                    self.sfBsFitParams.append(fit)
+
+        self.changeFitColor()
+    def unfitBackgroundShift(self):
+        state = self.allScan.checkState()
+        name = self.selectedScans.currentText()
+        if name != '':
+            if state == 2:
+                if ['BACKGROUND SHIFT', 'ALL SCANS'] in self.sfBsFitParams:
+                    self.sfBsFitParams.remove(['BACKGROUND SHIFT', 'ALL SCANS'])
+            else:
+                if ['BACKGROUND SHIFT', name] in self.sfBsFitParams:
+                    self.sfBsFitParams.remove(['BACKGROUND SHIFT', name])
+        self.changeFitColor()
+    def unfitScalingFactor(self):
+        state = self.allScan.checkState()
+        name = self.selectedScans.currentText()
+        if name != '':
+            if state == 2:
+                if ['SCALING FACTOR', 'ALL SCANS'] in self.sfBsFitParams:
+                    self.sfBsFitParams.remove(['SCALING FACTOR', 'ALL SCANS'])
+            else:
+                if ['SCALING FACTOR', name] in self.sfBsFitParams:
+                    self.sfBsFitParams.remove(['SCALING FACTOR', name])
+
+        self.changeFitColor()
 
     def changeSFandBS(self):
         idx = self.selectedScans.currentIndex()
