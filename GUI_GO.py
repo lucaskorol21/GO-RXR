@@ -613,9 +613,22 @@ class sampleWidget(QWidget):
                         self.parameterFit.append([my_layer, 'MAGNETIC', element])
                     else:
                         self.parameterFit.append([my_layer, 'MAGNETIC', element, name])
-        print(self.parameterFit)
+
         if action == _remove_fit:
-            pass
+            for fit in copy_fit_list:
+                if column == 0:  # magnetic density
+                    if len(fit) == 3 and fit[1] == 'MAGNETIC':  # not polymorphous case
+                        if fit[0] == my_layer and fit[2] == name:
+                            self.parameterFit.remove(fit)
+                    elif len(fit) == 4 and fit[1] == 'MAGNETIC': # polymorphous case
+                        if fit[0] == my_layer and fit[3] == name:
+                            self.parameterFit.remove(fit)
+
+                elif column == 1:  # Magnetic Scattering Factor
+                    if len(fit) == 3 and fit[0] == 'SCATTERING FACTOR':
+                        scattering_factor = self.magTable.item(row, 1).text()
+                        if scattering_factor == fit[2] and fit[1] == 'MAGNETIC':
+                            self.parameterFit.remove(fit)
 
         self.setTableMag()
     def var_handler(self):
@@ -664,7 +677,7 @@ class sampleWidget(QWidget):
                 elif column == 2:
                     scattering_factor = self.varTable.item(row,2).text()
                     if scattering_factor != '':
-                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL','SCATTERING FACTOR'])
+                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL',scattering_factor])
 
         elif action == _remove_fit:
 
