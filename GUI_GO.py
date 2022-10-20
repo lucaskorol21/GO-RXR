@@ -556,7 +556,7 @@ class sampleWidget(QWidget):
                     self.var_handler()
                 elif idx == 2:
                     self.mag_handler()
-
+                print(self.parameterFit)
         return False
 
     def mag_handler(self):
@@ -774,15 +774,15 @@ class sampleWidget(QWidget):
                         self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
 
         elif action == _compound_fit:
-
+            print('hello')
             alreadySelected = False
             for fit in copy_fit_list:
                 n = len(fit)
-                if n == 3:  # compound check
+                if n == 4:  # compound check
                     layer = fit[0]
-                    param = fit[2]
+                    param = fit[3]
 
-                    param_n = 1
+                    param_n = 0
                     if param == 'THICKNESS':
                         param_n = 1
                     elif param == 'DENSITY':
@@ -791,7 +791,6 @@ class sampleWidget(QWidget):
                         param_n = 3
                     elif param == 'LINKED ROUGHNESS':
                         param_n = 4
-
 
                     if layer == my_layer and param_n == column:
                         alreadySelected = True
@@ -813,20 +812,19 @@ class sampleWidget(QWidget):
                     if param_n == column and layer == my_layer:
                         self.parameterFit.remove(fit)
 
-                if not alreadySelected:
-
-                    if column == 1:  # thickness
-                        my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
-                        self.parameterFit.append(my_fit)
-                    elif column == 2:  # density
-                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
-                        self.parameterFit.append(my_fit)
-                    elif column == 3:  # roughness
-                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
-                        self.parameterFit.append(my_fit)
-                    elif column == 4:  # linked roughness
-                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
-                        self.parameterFit.append(my_fit)
+            if not alreadySelected:
+                if column == 1:  # thickness
+                    my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
+                    self.parameterFit.append(my_fit)
+                elif column == 2:  # density
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
+                    self.parameterFit.append(my_fit)
+                elif column == 3:  # roughness
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
+                    self.parameterFit.append(my_fit)
+                elif column == 4:  # linked roughness
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
+                    self.parameterFit.append(my_fit)
 
         elif action == _remove_fit:
             element = self.structTableInfo[my_layer][row][0]
@@ -858,7 +856,7 @@ class sampleWidget(QWidget):
                         if ele == element and fit[4] == 'ROUGHNESS':
                             self.parameterFit.remove(fit)
                     elif mode == 'COMPOUND':
-                        if fit[2] == 'ROUGHNESS':
+                        if fit[3] == 'ROUGHNESS':
                             self.parameterFit.remove(fit)
                 elif column == 4:
                     mode = fit[2]
@@ -867,7 +865,7 @@ class sampleWidget(QWidget):
                         if ele == element and fit[4] == 'LINKED ROUGHNESS':
                             self.parameterFit.remove(fit)
                     elif mode == 'COMPOUND':
-                        if fit[3] == 'Linked Roughness':
+                        if fit[3] == 'LINKED ROUGHNESS':
                             self.parameterFit.remove(fit)
                 elif column == 5 and n == 3:
                     if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
@@ -1931,7 +1929,7 @@ class reflectivityWidget(QWidget):
         if idx == self.previousIdx and self.previousIdx != 0:
             self.previousIdx = self.previousIdx - 1
 
-        self.selectedScans.removeItem(idx)  # selected scans# case where all scans have same bs and sf
+        self.selectedScans.removeItem(idx)  # selected scans case where all scans have same bs and sf
         self.fit.pop(idx)
         self.bounds.pop(idx)
         self.weights.pop(idx)
