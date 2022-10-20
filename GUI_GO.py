@@ -2252,9 +2252,115 @@ class reflectivityWidget(QWidget):
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
                 self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
-class GlobalOptimization(QMainWindow):
-    def __init__(self):
+class GlobalOptimizationWidget(QWidget):
+    def __init__(self, sWidget, rWidget, data, data_dict, sim_dict):
         super().__init__()
+
+        self.sWidget = sWidget
+        self.rWidget = rWidget
+
+        self.sampleBounds = []
+        self.sfBounds = []
+        self.otherBounds = []
+
+        # plotting layout ---------------------------------------------------------------------------------------------
+        plotLayout = QHBoxLayout()
+
+        buttonLayout = QVBoxLayout()
+
+        selectedScansLayout = QHBoxLayout()
+        self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
+        selectedScansLabel = QLabel('Fit Scans:')
+        selectedScansLayout.addWidget(selectedScansLabel)
+        selectedScansLayout.addWidget(self.selectedScans)
+
+        # Adding the plotting Widget
+        self.plotWidget = pg.PlotWidget()
+        self.plotWidget.setBackground('w')
+
+        self.plotWidget.addLegend()
+
+
+        # Global optimization parameters and fitting
+        self.sampleButton = QPushButton('Sample')
+        self.sfButton = QPushButton('Scattering Factor')
+        self.sfBsButton = QPushButton('Other Parameters')
+        self.goParamButton = QPushButton('Global Optimization')
+        self.runButton = QPushButton('Run')
+        self.runButton.setStyleSheet('background: green')
+
+        buttonLayout.addWidget(self.sampleButton)
+        buttonLayout.addWidget(self.sfButton)
+        buttonLayout.addWidget(self.sfBsButton)
+        buttonLayout.addWidget(self.goParamButton)
+        buttonLayout.addWidget(self.runButton)
+
+        # Addinng Widgets to plotting layout
+        plotLayout.addWidget(self.plotWidget)
+        plotLayout.addWidget(self.selectedScans)
+
+        bottomLayout = QHBoxLayout()
+        # stacked widget layout
+        self.stackedLayout = QStackedLayout()
+
+        # setting up sample fitting parameter info
+        sampleInfoLayout = QHBoxLayout()
+        self.sampleInfoWidget = QWidget()
+
+        sampleButtonLayout = QVBoxLayout()
+
+        self.structButton = QPushButton('Structural')
+        self.structButton.clicked.connect(self.showStructFit)
+        sampleButtonLayout.addWidget(self.structButton)
+        self.varButton = QPushButton('Element Variation')
+        self.structButton.clicked.connect(self.showVarFit)
+        sampleButtonLayout.addWidget(self.varButton)
+        self.magButton = QPushButton('Magnetic')
+        self.structButton.clicked.connect(self.showMagFit)
+        sampleButtonLayout.addWidget(self.magButton)
+
+        self.tableStackedLayout = QStackedLayout()
+        self.structTable = QTableWidget()
+        self.tableStackedLayout.addWidget(self.structTable)
+        self.varTable = QTableWidget()
+        self.tableStackedLayout.addWidget(self.varTable)
+        self.magTable = QTableWidget()
+        self.tableStackedLayout.addWidget(self.magTable)
+
+        sampleInfoLayout.addLayout(sampleButtonLayout)
+        sampleInfoLayout.addLayout(self.tableStackedLayout)
+
+        self.sampleInfoWidget.setLayout(sampleInfoLayout)
+
+        # setting up scattering factor info
+
+        # setting up background shift and scaling factor information
+
+        # setting up global optimization info
+
+        self.stackedLayout.addWidget(self.sampleInfoWidget)
+
+        bottomLayout.addLayout(self.stackedLayout)
+        bottomLayout.addLayout(buttonLayout)
+
+        pagelayout = QVBoxLayout()
+        pagelayout.addLayout(plotLayout)
+        pagelayout.addLayout(bottomLayout)
+        self.setLayout(pagelayout)
+
+    def updateScreen(self):
+
+        # shows only the selected scans for fitting
+        self.selectedScans.clear()
+        for text in self.rWidget.fit:
+            self.selectedScans.addItem(text)
+
+    def showStructFit(self):
+        self.tableStackedLayout.setCurrentIndex(0)  # sets to sample layout
+    def showVarFit(self):
+        self.tableStackedLayout.setCurrentIndex(1)  # sets to sample layout
+    def showMagFit(self):
+        self.tableStackedLayout.setCurrentIndex(2)  # sets to sample layout
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
@@ -2284,6 +2390,7 @@ class ReflectometryApp(QMainWindow):
 
         self._sampleWidget = sampleWidget(sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, data, data_dict, sim_dict)
+        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, data, data_dict, sim_dict)
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.sampleButton.clicked.connect(self.activate_tab_1)
@@ -2298,7 +2405,7 @@ class ReflectometryApp(QMainWindow):
         self.goButton.setStyleSheet("background-color : pink")
         self.goButton.clicked.connect(self.activate_tab_3)
         buttonlayout.addWidget(self.goButton)
-        self.stackedlayout.addWidget(label3)
+        self.stackedlayout.addWidget(self._goWidget)
 
         widget = QWidget()
         widget.setLayout(pagelayout)
@@ -2311,6 +2418,7 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.stackedlayout.setCurrentIndex(1)
     def activate_tab_3(self):
+        self._goWidget.updateScreen()
         self.stackedlayout.setCurrentIndex(2)
 
 
