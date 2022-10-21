@@ -605,12 +605,16 @@ class sampleWidget(QWidget):
             if not alreadySelected:
                 if column == 1:
                     scattering_factor = self.magTable.item(row, column).text()
-                    self.currentVal.append(0)
+                    self.currentVal.append([0,[-0.5,0.5]])
                     self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
 
                 elif column == 0:
                     value = self.magTable.currentItem.text()
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 0.01
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 0.01
+                    self.currentVal.append([float(value),[lower, upper]])
                     if name == element:
                         self.parameterFit.append([my_layer, 'MAGNETIC', element])
                     else:
@@ -682,12 +686,17 @@ class sampleWidget(QWidget):
 
                     if ratio != '':
                         self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
-                        self.currentVal.append(float(ratio))
+                        lower = float(ratio) - 0.2
+                        if lower < 0:
+                            lower = 0
+                        upper = float(ratio) + 0.01
+                        self.currentVal.append([float(ratio), [lower, upper]])
+
                 elif column == 2:
                     scattering_factor = self.varTable.item(row,2).text()
                     if scattering_factor != '':
                         self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL',scattering_factor])
-                        self.currentVal.append(0)
+                        self.currentVal.append([0, [-0.5,0.5]])
 
         elif action == _remove_fit:
 
@@ -792,21 +801,37 @@ class sampleWidget(QWidget):
             if not alreadySelected:
                 if column == 1:  # thickness
                     self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 5
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 5
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 2:  # density
                     self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'DENSITY'])
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 0.01
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 0.01
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 3:  # roughness
                     self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'ROUGHNESS'])
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 1
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 1
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 4:  # linked roughness
                     self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 1
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 1
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 5:  # scattering factor
                     scattering_factor = self.structTable.item(row, 5).text()
                     if scattering_factor[0] != '[':
                         self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
-                        self.currentVal.append(0)
+                        self.currentVal.append([0,[-0.5,0.5]])
 
         elif action == _compound_fit:
             alreadySelected = False
@@ -852,19 +877,35 @@ class sampleWidget(QWidget):
                 if column == 1:  # thickness
                     my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
                     self.parameterFit.append(my_fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 5
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 5
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 2:  # density
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
                     self.parameterFit.append(my_fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 0.01
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 0.01
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 3:  # roughness
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
                     self.parameterFit.append(my_fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 1
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 1
+                    self.currentVal.append([float(value), [lower, upper]])
                 elif column == 4:  # linked roughness
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
                     self.parameterFit.append(my_fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 1
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 1
+                    self.currentVal.append([float(value), [lower, upper]])
 
         elif action == _remove_fit:
             element = self.structTableInfo[my_layer][row][0]
@@ -1803,12 +1844,20 @@ class reflectivityWidget(QWidget):
                 fit = ['BACKGROUND SHIFT', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 5e-8
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 5e-8
+                    self.currentVal.append([float(value), [lower, upper]])
             else:
                 fit = ['BACKGROUND SHIFT', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 5e-8
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 5e-8
+                    self.currentVal.append([float(value), [lower, upper]])
 
 
         self.changeFitColor()
@@ -1822,12 +1871,20 @@ class reflectivityWidget(QWidget):
                 fit = ['SCALING FACTOR', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 0.2
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 0.2
+                    self.currentVal.append([float(value), [lower, upper]])
             else:
                 fit = ['SCALING FACTOR', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
-                    self.currentVal.append(float(value))
+                    lower = float(value) - 0.2
+                    if lower < 0:
+                        lower = 0
+                    upper = float(value) + 0.2
+                    self.currentVal.append([float(value), [lower, upper]])
 
         self.changeFitColor()
 
@@ -2393,13 +2450,12 @@ class GlobalOptimizationWidget(QWidget):
         # create the names and set number of rows
         row = 0
         for idx,param in enumerate(self.sWidget.parameterFit):
-            name, shift = self.getName(param)
-            value = self.sWidget.currentVal[idx]
+            name = self.getName(param)
+            value = str(self.sWidget.currentVal[idx][0])
+            lower = str(self.sWidget.currentVal[idx][1][0])
+            upper = str(self.sWidget.currentVal[idx][1][1])
             item1 = QTableWidgetItem(name)
-            item2 = QTableWidgetItem(str(value))
-
-            lower = str(value-shift)
-            upper = str(value+shift)
+            item2 = QTableWidgetItem(value)
 
             item3 = QTableWidgetItem(lower)
             item4 = QTableWidgetItem(upper)
@@ -2412,14 +2468,13 @@ class GlobalOptimizationWidget(QWidget):
             row = row + 1
 
         for idx, param in enumerate(self.rWidget.sfBsFitParams):
-            name, shift = self.getName(param)
+            name = self.getName(param)
             value = self.rWidget.currentVal[idx]
+            lower = str(self.sWidget.currentVal[idx][1][0])
+            upper = str(self.sWidget.currentVal[idx][1][1])
 
-            tem1 = QTableWidgetItem(name)
+            item1 = QTableWidgetItem(name)
             item2 = QTableWidgetItem(str(value))
-
-            lower = str(value - shift)
-            upper = str(value + shift)
 
             item3 = QTableWidgetItem(lower)
             item4 = QTableWidgetItem(upper)
@@ -2449,16 +2504,12 @@ class GlobalOptimizationWidget(QWidget):
                         char = p[4]
                         if char == 'THICKNESS':
                             name = element + '-' + 'th. ' + str(layer)
-                            shift = 5
                         elif char == 'DENSITY':
                             name = element + '-' + 'dens. ' + str(layer)
-                            shift = 0.05
                         elif char == 'ROUGHNESS':
                             name = element + '-' + 'rough. ' + str(layer)
-                            shift = 1
                         elif char == 'LINKED ROUGHNESS':
                             name = element + '-' + 'Lrough. ' + str(layer)
-                            shift = 1
                     elif mode == 'COMPOUND':
                         char = p[3]
                         compound = ''
@@ -2469,25 +2520,20 @@ class GlobalOptimizationWidget(QWidget):
 
                         if char == 'THICKNESS':
                             name = compound + '-th. ' + str(layer)
-                            shift = 5
                         elif char == 'DENSITY':
                             name = compound + '-dens. ' + str(layer)
-                            shift = 0.05
                         elif char == 'ROUGHNESS':
                             name = compound + '-rough. ' + str(layer)
-                            shift = 1
                         elif char == 'LINKED ROUGHNESS':
                             name = compound + '-Lrough. ' + str(layer)
-                            shift = 1
+
                 elif param_type == 'POLYMORPHOUS':
                     var = p[-1]
                     name = var + ' -ratio ' + str(layer)
-                    shift = 0.1
 
                 elif param_type == 'MAGNETIC':
                     var = p[-1]
                     name = var + ' -mdens. ' + str(layer)
-                    shift = 0.1
 
             elif p[0] == 'SCATTERING FACTOR':  # scattering factor case
                 name = name + 'ff'
@@ -2499,21 +2545,19 @@ class GlobalOptimizationWidget(QWidget):
                 else:
                     name = name + '-' + scattering_factor
 
-                shift = 0.5
             elif p[0] == 'BACKGROUND SHIFT':  # background shift case
                 if p[1] == 'ALL SCANS':
                     name = 'bShift-All'
                 else:
                     name = 'bShift-'+p[1]
-                shift = 5e-7
             elif p[0] == 'SCALING FACTOR':  # scaling factor
                 if p[1] == 'ALL SCANS':
                     name = 'sFactor-All'
                 else:
                     name = 'sFactor-' + p[1]
-                shift = 0.2
 
-        return name, shift
+
+        return name
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
