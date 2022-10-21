@@ -1979,7 +1979,62 @@ class reflectivityWidget(QWidget):
         pagelayout.addLayout(toplayout)
         pagelayout.addLayout(bottomlayout)
 
+        self.backgroundShift.editingFinished.connect(self.bsChange)
+        self.scalingFactor.editingFinished.connect(self.sfChange)
         self.setLayout(pagelayout)
+
+    def bsChange(self):
+        name = self.selectedScans.currentText()
+        idx = self.selectedScans.currentIndex()
+        var = self.backgroundShift.text()
+        copy_of_fit = copy.deepcopy(self.sfBsFitParams)
+        old_var = ''
+        if name != '':
+            # first change the value
+            if self.allScan.checkState() == 0:
+                old_var = self.bs[idx]
+                self.bs[idx] = var
+            else:
+                old_var = self.bs[idx]
+                for i in range(len(self.bs)):
+                    self.bs[i] = var
+
+            for fit in copy_of_fit:
+                if fit[0] == 'BACKGROUND SHIFT':
+                    upper = str(float(var) + 5e-8)
+                    lower = str(float(var) - 5e-8)
+                    if self.allScan.checkState() != 0:
+                        idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', 'ALL SCANS'])
+                        self.currentVal[idx] = [var, [lower, upper]]
+                    else:
+                        idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', name])
+                        self.currentVal[idx] = [var, [lower, upper]]
+
+
+    def sfChange(self):
+        name = self.selectedScans.currentText()
+        idx = self.selectedScans.currentIndex()
+        var = self.scalingFactor.text()
+        copy_of_fit = copy.deepcopy(self.sfBsFitParams)
+
+        if name != '':
+            # first change the value
+            if self.allScan.checkState() == 0:
+                self.sf[idx] = var
+            else:
+                for i in range(len(self.bs)):
+                    self.sf[i] = var
+
+            for fit in copy_of_fit:
+                if fit[0] == 'SCALING FACTOR':
+                    upper = str(float(var) + 0.2)
+                    lower = str(float(var) - 0.2)
+                    if self.allScan.checkState() != 0:
+                        idx = self.sfBsFitParams.index(['SCALING FACTOR', 'ALL SCANS'])
+                        self.currentVal[idx] = [var, [lower, upper]]
+                    else:
+                        idx = self.sfBsFitParams.index(['SCALING FACTOR', name])
+                        self.currentVal[idx] = [var, [lower, upper]]
 
     def changeFitColor(self):
         name = self.selectedScans.currentText()
@@ -2014,8 +2069,6 @@ class reflectivityWidget(QWidget):
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
                     lower = float(value) - 5e-8
-                    if lower < 0:
-                        lower = 0
                     upper = float(value) + 5e-8
                     self.currentVal.append([float(value), [lower, upper]])
             else:
@@ -2023,8 +2076,6 @@ class reflectivityWidget(QWidget):
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
                     lower = float(value) - 5e-8
-                    if lower < 0:
-                        lower = 0
                     upper = float(value) + 5e-8
                     self.currentVal.append([float(value), [lower, upper]])
 
@@ -2638,9 +2689,9 @@ class GlobalOptimizationWidget(QWidget):
 
         for idx, param in enumerate(self.rWidget.sfBsFitParams):
             name = self.getName(param)
-            value = self.rWidget.currentVal[idx]
-            lower = str(self.sWidget.currentVal[idx][1][0])
-            upper = str(self.sWidget.currentVal[idx][1][1])
+            value = str(self.rWidget.currentVal[idx][0])
+            lower = str(self.rWidget.currentVal[idx][1][0])
+            upper = str(self.rWidget.currentVal[idx][1][1])
 
             item1 = QTableWidgetItem(name)
             item2 = QTableWidgetItem(str(value))
