@@ -402,6 +402,7 @@ class sampleWidget(QWidget):
 
         self.magData = {ele: [[[''], [''], ['']] for i in range(len(sample.structure))] for ele in
                         sample.myelements}
+        self.magGo = True
         self.magDirection = ['z' for i in range(len(sample.structure))]
         self.magDirBox = QComboBox()
         self.getData() # gets the element variation and magnetic information
@@ -545,15 +546,100 @@ class sampleWidget(QWidget):
 
         mylayout.addWidget(self.densityWidget)
 
+        # change parameters when clicked
         self.structTable.itemChanged.connect(self.changeStructValues)
+        self.varTable.itemChanged.connect(self.changeVarValues)
+        self.magTable.itemChanged.connect(self.changeMagValues)
+
         self.setLayout(mylayout)
+
+    def changeMagValues(self):
+        layer = self.layerBox.currentIndex()
+
+        column = self.magTable.currentColumn()
+        row = self.magTable.currentRow()
+
+        if self.magTable.item(row, column) is not None and not(self.changeLayer) and self.magGo and self.magTable.verticalHeaderItem(row) is not None:
+            name = self.magTable.verticalHeaderItem(row).text()
+            element = ''
+            idx = 0
+            for i in range(len(self.structTableInfo[layer])):
+
+                ele = self.structTableInfo[layer][i][0]
+                if name in self.magData[ele][layer][0]:
+                    idx = list(self.magData[ele][layer][0]).index(name)
+                    element = copy.copy(ele)
+
+            value = self.magTable.item(row, column).text()
+
+            prev_value = self.magData[element][layer][column+1][idx]
+            self.magData[element][layer][column+1][idx] = value
+
+            copy_of_list = copy.deepcopy(self.parameterFit)
+            for fit in copy_of_list:
+                if column == 0: # density
+                    if layer == fit[0] and fit[1] == 'MAGNETIC' and fit[-1] == name:
+                        idx = self.parameterFit.index(fit)
+                        lower = float(value) - 0.01
+                        if lower < 0:
+                            lower = 0
+
+                        upper = str(float(value) + 0.01)
+                        self.currentVal[idx] = [value, [str(lower), upper]]
+                elif column == 1 and fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC': # magnetic scattering factor
+                    if value != prev_value and prev_value == fit[2]:
+                        self.parameterFit.remove(fit)
+                        self.magTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
+
+
+    def changeVarValues(self):
+
+        # change the polymorphous parameters
+        layer = self.layerBox.currentIndex()
+        ele_idx = self.elementBox.currentIndex()
+        element = self.structTableInfo[layer][ele_idx][0]
+        column = self.varTable.currentColumn()
+        row = self.varTable.currentRow()
+
+
+
+        if self.varTable.item(row, column) is not None and not(self.changeLayer) and not(self.change_elements):
+            copy_of_list = copy.deepcopy(self.parameterFit)
+
+            value = self.varTable.item(row, column).text()  # setting varData correctly depending on user input
+            prev_value = self.varData[element][layer][column][row]
+
+            self.varData[element][layer][column][row] = value
+
+            for fit in copy_of_list:
+                if fit[0] == layer and fit[1] == 'POLYMORPHOUS' and column != 2:
+                    idx = self.parameterFit.index(fit)
+                    if column == 0:  # case where we changed the element variation name
+                        if prev_value != value and fit[3] == prev_value:
+                            self.parameterFit[idx][3] = value
+                    elif column == 1:  # case for change in ratio
+                        if fit[2] == element and fit[3] == self.varData[element][layer][0][row]:
+                            lower = float(value)-0.2
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 0.2
+                            if upper > 1:
+                                upper = 1
+                            self.currentVal[idx] = [value, [str(lower), str(upper)]]
+
+
+                        #self.parameterFit[idx][3] =
+                elif fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and column == 2:
+                    if fit[2] == prev_value and value != prev_value:
+                        self.parameterFit.remove(fit)
+                        self.varTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
 
     def changeStructValues(self):
         layer = self.layerBox.currentIndex()
         row = self.structTable.currentRow()
         column = self.structTable.currentColumn()
 
-        if self.structTable.item(row, column) is not None and not self.changeLayer:
+        if self.structTable.item(row, column) is not None and not(self.changeLayer):
             copy_of_list = self.parameterFit
             value = self.structTable.item(row, column).text()
             prev_value = copy.copy(self.structTableInfo[layer][row][column])
@@ -561,31 +647,72 @@ class sampleWidget(QWidget):
 
             for fit in copy_of_list:
                 if fit[0] == layer and fit[1] == 'STRUCTURAL':
+                    element = self.structTableInfo[layer][row][0]
                     if column == 1:  # thickness
                         if fit[2] == 'COMPOUND' and fit[3] == 'THICKNESS':
-                            pass
-                        elif fit[2] == 'ELEMENT' and fit[4] == 'THICKNESS':
-                            pass
+                            idx = self.parameterFit.index([layer,'STRUCTURAL','COMPOUND', 'THICKNESS'])
+                            lower = float(value) - 5
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 5)
+                            self.currentVal[idx] = [value,[str(lower), upper]]
+                        elif fit[2] == 'ELEMENT' and fit[3] == element and fit[4] == 'THICKNESS':
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
+                            lower = float(value) - 5
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 5)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 2: # density
                         if fit[2] == 'COMPOUND' and fit[3] == 'DENSITY':
-                            pass
-                        elif fit[2] == 'ELEMENT' and fit[4] == 'DENSITY':
-                            pass
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY'])
+                            lower = float(value) - 0.01
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 0.01)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
+                        elif fit[2] == 'ELEMENT' and fit[3] == element and fit[4] == 'DENSITY':
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
+                            lower = float(value) - 0.01
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 0.01)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 3: # roughness
                         if fit[2] == 'COMPOUND' and fit[3] == 'ROUGHNESS':
-                            pass
-                        elif fit[2] == 'ELEMENT' and fit[3] == 'ROUGHNESS':
-                            pass
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 1)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
+                        elif fit[2] == 'ELEMENT' and fit[3] == element and fit[3] == 'ROUGHNESS':
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 1)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 4: # linked roughness
                         if fit[2] == 'COMPOUND' and fit[3] == 'LINKED ROUGHNESS':
-                            pass
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 1)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
                         elif fit[2] == 'ELEMENT' and fit[3] == 'LINKED ROUGHNESS':
-                            pass
-                elif fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL':
-                    if value != prev_value and value == fit[2]:
+                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = str(float(value) + 1)
+                            self.currentVal[idx] = [value, [str(lower), upper]]
+                elif fit[0] == 'SCATTERING FACTOR' and fit[3] == element and fit[1] == 'STRUCTURAL':
+                    if value != prev_value and prev_value == fit[2]:
                         self.parameterFit.remove(fit)
                         self.structTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
-                    pass
+
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.MouseButtonPress:
@@ -649,7 +776,7 @@ class sampleWidget(QWidget):
                     self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
 
                 elif column == 0:
-                    value = self.magTable.currentItem.text()
+                    value = self.magTable.item(row,column).text()
                     lower = float(value) - 0.01
                     if lower < 0:
                         lower = 0
@@ -1164,6 +1291,7 @@ class sampleWidget(QWidget):
 
     def setTableMag(self):
 
+        self.magGo = False
         layer_idx = self.layerBox.currentIndex()
 
         # set the magnetic direction combobox to the correct magnetization direction
@@ -1247,7 +1375,7 @@ class sampleWidget(QWidget):
                         scattering_factor = self.magTable.item(row,1).text()
                         if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
                             self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
-
+        self.magGo = True
     def changetable(self):
 
         self.changeLayer = True
