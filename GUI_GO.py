@@ -394,6 +394,7 @@ class sampleWidget(QWidget):
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
         self.parameterFit = []
         self.varData = {ele: [[['',''],['',''],['','']] for i in range(len(sample.structure))] for ele in sample.myelements}
+        self.currentVal = []
 
         self.varTable = QTableWidget()
         self.elementBox = QComboBox()
@@ -556,7 +557,6 @@ class sampleWidget(QWidget):
                     self.var_handler()
                 elif idx == 2:
                     self.mag_handler()
-                print(self.parameterFit)
         return False
 
     def mag_handler(self):
@@ -605,10 +605,12 @@ class sampleWidget(QWidget):
             if not alreadySelected:
                 if column == 1:
                     scattering_factor = self.magTable.item(row, column).text()
+                    self.currentVal.append(0)
                     self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
 
                 elif column == 0:
-
+                    value = self.magTable.currentItem.text()
+                    self.currentVal.append(float(value))
                     if name == element:
                         self.parameterFit.append([my_layer, 'MAGNETIC', element])
                     else:
@@ -619,16 +621,22 @@ class sampleWidget(QWidget):
                 if column == 0:  # magnetic density
                     if len(fit) == 3 and fit[1] == 'MAGNETIC':  # not polymorphous case
                         if fit[0] == my_layer and fit[2] == name:
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                     elif len(fit) == 4 and fit[1] == 'MAGNETIC': # polymorphous case
                         if fit[0] == my_layer and fit[3] == name:
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
 
                 elif column == 1:  # Magnetic Scattering Factor
                     if len(fit) == 3 and fit[0] == 'SCATTERING FACTOR':
                         scattering_factor = self.magTable.item(row, 1).text()
                         if scattering_factor == fit[2] and fit[1] == 'MAGNETIC':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
 
         self.setTableMag()
     def var_handler(self):
@@ -674,10 +682,12 @@ class sampleWidget(QWidget):
 
                     if ratio != '':
                         self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
+                        self.currentVal.append(float(ratio))
                 elif column == 2:
                     scattering_factor = self.varTable.item(row,2).text()
                     if scattering_factor != '':
                         self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL',scattering_factor])
+                        self.currentVal.append(0)
 
         elif action == _remove_fit:
 
@@ -686,12 +696,16 @@ class sampleWidget(QWidget):
                     if len(fit) == 4 and fit[1] == 'POLYMORPHOUS':
                         name = self.varTable.item(row,0).text()
                         if my_layer == fit[0] and element == fit[2] and name == fit[3]:
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                 elif column == 2:
                     if len(fit) == 3:
                         scattering_factor = self.varTable.item(row,2).text()
                         if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
         self.setTableVar()
 
     def structure_handler(self):
@@ -720,6 +734,7 @@ class sampleWidget(QWidget):
 
         action = menu.exec_(QtGui.QCursor.pos())
 
+        value = self.structTable.currentItem().text()
         # Element Mode
         if action == _element_fit:
 
@@ -751,7 +766,9 @@ class sampleWidget(QWidget):
                         param_num = 4
 
                     if layer == my_layer and column == param_num:
+                        idx = self.parameterFit.index(fit)
                         self.parameterFit.remove(fit)
+                        self.currentVal.pop(idx)
 
                 elif n == 5:  # element mode
                     layer = fit[0]
@@ -775,19 +792,23 @@ class sampleWidget(QWidget):
             if not alreadySelected:
                 if column == 1:  # thickness
                     self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
+                    self.currentVal.append(float(value))
                 elif column == 2:  # density
                     self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'DENSITY'])
+                    self.currentVal.append(float(value))
                 elif column == 3:  # roughness
                     self.parameterFit.append([my_layer, 'STRUCTURAL' , 'ELEMENT', element, 'ROUGHNESS'])
+                    self.currentVal.append(float(value))
                 elif column == 4:  # linked roughness
                     self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                    self.currentVal.append(float(value))
                 elif column == 5:  # scattering factor
                     scattering_factor = self.structTable.item(row, 5).text()
                     if scattering_factor[0] != '[':
                         self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
+                        self.currentVal.append(0)
 
         elif action == _compound_fit:
-            print('hello')
             alreadySelected = False
             for fit in copy_fit_list:
                 n = len(fit)
@@ -823,21 +844,27 @@ class sampleWidget(QWidget):
 
 
                     if param_n == column and layer == my_layer:
+                        idx = self.parameterFit.index(fit)
                         self.parameterFit.remove(fit)
+                        self.currentVal.pop(idx)
 
             if not alreadySelected:
                 if column == 1:  # thickness
                     my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
                     self.parameterFit.append(my_fit)
+                    self.currentVal.append(float(value))
                 elif column == 2:  # density
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
                     self.parameterFit.append(my_fit)
+                    self.currentVal.append(float(value))
                 elif column == 3:  # roughness
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
                     self.parameterFit.append(my_fit)
+                    self.currentVal.append(float(value))
                 elif column == 4:  # linked roughness
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
                     self.parameterFit.append(my_fit)
+                    self.currentVal.append(float(value))
 
         elif action == _remove_fit:
             element = self.structTableInfo[my_layer][row][0]
@@ -849,40 +876,58 @@ class sampleWidget(QWidget):
                     if mode == "ELEMENT":
                         ele = fit[3]
                         if ele == element and fit[4] == 'THICKNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                     elif mode == 'COMPOUND':
                         if fit[3] == 'THICKNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                 elif column == 2:
                     mode = fit[2]
                     if mode == "ELEMENT":
                         ele = fit[3]
                         if ele == element and fit[4] == 'DENSITY':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                     elif mode == 'COMPOUND':
                         if fit[3] == 'DENSITY':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                 elif column == 3:
                     mode = fit[2]
                     if mode == "ELEMENT":
                         ele = fit[3]
                         if ele == element and fit[4] == 'ROUGHNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                     elif mode == 'COMPOUND':
                         if fit[3] == 'ROUGHNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                 elif column == 4:
                     mode = fit[2]
                     if mode == "ELEMENT":
                         ele = fit[3]
                         if ele == element and fit[4] == 'LINKED ROUGHNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                     elif mode == 'COMPOUND':
                         if fit[3] == 'LINKED ROUGHNESS':
+                            idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
                 elif column == 5 and n == 3:
                     if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
+                        idx = self.parameterFit.index(fit)
                         self.parameterFit.remove(fit)
+                        self.currentVal.pop(idx)
 
         self.setTable(my_layer)
 
@@ -1533,6 +1578,7 @@ class reflectivityWidget(QWidget):
         self.sf = []  # scaling factor
 
         self.sfBsFitParams = []  # variable used to keep track of the fitting parameters
+        self.currentVal = []
 
         self.sWidget = sWidget
         self.sample = sWidget.sample
@@ -1751,15 +1797,18 @@ class reflectivityWidget(QWidget):
     def fitBackgroundShift(self):
         state = self.allScan.checkState()
         name = self.selectedScans.currentText()
+        value = self.backgroundShift.text()
         if name != '':
             if state == 2:
                 fit = ['BACKGROUND SHIFT', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
+                    self.currentVal.append(float(value))
             else:
                 fit = ['BACKGROUND SHIFT', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
+                    self.currentVal.append(float(value))
 
 
         self.changeFitColor()
@@ -1767,38 +1816,51 @@ class reflectivityWidget(QWidget):
     def fitScalingFactor(self):
         state = self.allScan.checkState()
         name = self.selectedScans.currentText()
+        value = self.scalingFactor.text()
         if name != '':
             if state == 2:
                 fit = ['SCALING FACTOR', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
+                    self.currentVal.append(float(value))
             else:
                 fit = ['SCALING FACTOR', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
+                    self.currentVal.append(float(value))
 
         self.changeFitColor()
+
     def unfitBackgroundShift(self):
         state = self.allScan.checkState()
         name = self.selectedScans.currentText()
         if name != '':
             if state == 2:
                 if ['BACKGROUND SHIFT', 'ALL SCANS'] in self.sfBsFitParams:
+                    idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', 'ALL SCANS'])
                     self.sfBsFitParams.remove(['BACKGROUND SHIFT', 'ALL SCANS'])
+                    self.currentVal.pop(idx)
             else:
                 if ['BACKGROUND SHIFT', name] in self.sfBsFitParams:
+                    idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', name])
                     self.sfBsFitParams.remove(['BACKGROUND SHIFT', name])
+                    self.currentVal.pop(idx)
         self.changeFitColor()
+
     def unfitScalingFactor(self):
         state = self.allScan.checkState()
         name = self.selectedScans.currentText()
         if name != '':
             if state == 2:
                 if ['SCALING FACTOR', 'ALL SCANS'] in self.sfBsFitParams:
+                    idx = self.sfBsFitParams.index(['SCALING FACTOR', 'ALL SCANS'])
                     self.sfBsFitParams.remove(['SCALING FACTOR', 'ALL SCANS'])
+                    self.currentVal.pop(idx)
             else:
                 if ['SCALING FACTOR', name] in self.sfBsFitParams:
+                    idx = self.sfBsFitParams.index(['SCALING FACTOR', name])
                     self.sfBsFitParams.remove(['SCALING FACTOR', name])
+                    self.currentVal.pop(idx)
 
         self.changeFitColor()
 
@@ -2266,7 +2328,7 @@ class GlobalOptimizationWidget(QWidget):
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
 
-        buttonLayout = QVBoxLayout()
+
 
         selectedScansLayout = QHBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
@@ -2282,17 +2344,15 @@ class GlobalOptimizationWidget(QWidget):
 
 
         # Global optimization parameters and fitting
-        self.sampleButton = QPushButton('Sample')
-        self.sfButton = QPushButton('Scattering Factor')
-        self.sfBsButton = QPushButton('Other Parameters')
-        self.goParamButton = QPushButton('Global Optimization')
-        self.runButton = QPushButton('Run')
+        buttonLayout = QVBoxLayout()
+
+        self.fitBoundsButton = QPushButton('Fitting Parameters')
+        self.goButton = QPushButton('Global Optimization')
+        self.runButton = QPushButton('Run Optimization')
         self.runButton.setStyleSheet('background: green')
 
-        buttonLayout.addWidget(self.sampleButton)
-        buttonLayout.addWidget(self.sfButton)
-        buttonLayout.addWidget(self.sfBsButton)
-        buttonLayout.addWidget(self.goParamButton)
+        buttonLayout.addWidget(self.fitBoundsButton)
+        buttonLayout.addWidget(self.goButton)
         buttonLayout.addWidget(self.runButton)
 
         # Addinng Widgets to plotting layout
@@ -2300,53 +2360,22 @@ class GlobalOptimizationWidget(QWidget):
         plotLayout.addWidget(self.selectedScans)
 
         bottomLayout = QHBoxLayout()
-        # stacked widget layout
-        self.stackedLayout = QStackedLayout()
 
-        # setting up sample fitting parameter info
-        sampleInfoLayout = QHBoxLayout()
-        self.sampleInfoWidget = QWidget()
 
-        sampleButtonLayout = QVBoxLayout()
+        self.fittingParamTable = QTableWidget()
+        self.fittingParamTable.setColumnCount(4)
+        self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary'])
 
-        self.structButton = QPushButton('Structural')
-        self.structButton.clicked.connect(self.showStructFit)
-        sampleButtonLayout.addWidget(self.structButton)
-        self.varButton = QPushButton('Element Variation')
-        self.structButton.clicked.connect(self.showVarFit)
-        sampleButtonLayout.addWidget(self.varButton)
-        self.magButton = QPushButton('Magnetic')
-        self.structButton.clicked.connect(self.showMagFit)
-        sampleButtonLayout.addWidget(self.magButton)
-
-        self.tableStackedLayout = QStackedLayout()
-        self.structTable = QTableWidget()
-        self.tableStackedLayout.addWidget(self.structTable)
-        self.varTable = QTableWidget()
-        self.tableStackedLayout.addWidget(self.varTable)
-        self.magTable = QTableWidget()
-        self.tableStackedLayout.addWidget(self.magTable)
-
-        sampleInfoLayout.addLayout(sampleButtonLayout)
-        sampleInfoLayout.addLayout(self.tableStackedLayout)
-
-        self.sampleInfoWidget.setLayout(sampleInfoLayout)
-
-        # setting up scattering factor info
-
-        # setting up background shift and scaling factor information
-
-        # setting up global optimization info
-
-        self.stackedLayout.addWidget(self.sampleInfoWidget)
-
-        bottomLayout.addLayout(self.stackedLayout)
+        bottomLayout.addWidget(self.fittingParamTable)
         bottomLayout.addLayout(buttonLayout)
+
 
         pagelayout = QVBoxLayout()
         pagelayout.addLayout(plotLayout)
         pagelayout.addLayout(bottomLayout)
         self.setLayout(pagelayout)
+
+        self.setTableFit()
 
     def updateScreen(self):
 
@@ -2355,12 +2384,136 @@ class GlobalOptimizationWidget(QWidget):
         for text in self.rWidget.fit:
             self.selectedScans.addItem(text)
 
-    def showStructFit(self):
-        self.tableStackedLayout.setCurrentIndex(0)  # sets to sample layout
-    def showVarFit(self):
-        self.tableStackedLayout.setCurrentIndex(1)  # sets to sample layout
-    def showMagFit(self):
-        self.tableStackedLayout.setCurrentIndex(2)  # sets to sample layout
+    def setTableFit(self):
+
+        # initialize the boundaries
+        rows = len(self.sWidget.parameterFit) + len(self.rWidget.sfBsFitParams)  # total number of rows required
+        self.fittingParamTable.setRowCount(rows)
+
+        # create the names and set number of rows
+        row = 0
+        for idx,param in enumerate(self.sWidget.parameterFit):
+            name, shift = self.getName(param)
+            value = self.sWidget.currentVal[idx]
+            item1 = QTableWidgetItem(name)
+            item2 = QTableWidgetItem(str(value))
+
+            lower = str(value-shift)
+            upper = str(value+shift)
+
+            item3 = QTableWidgetItem(lower)
+            item4 = QTableWidgetItem(upper)
+
+            self.fittingParamTable.setItem(row,0, item1)
+            self.fittingParamTable.setItem(row, 1, item2)
+            self.fittingParamTable.setItem(row, 2, item3)
+            self.fittingParamTable.setItem(row, 3, item4)
+
+            row = row + 1
+
+        for idx, param in enumerate(self.rWidget.sfBsFitParams):
+            name, shift = self.getName(param)
+            value = self.rWidget.currentVal[idx]
+
+            tem1 = QTableWidgetItem(name)
+            item2 = QTableWidgetItem(str(value))
+
+            lower = str(value - shift)
+            upper = str(value + shift)
+
+            item3 = QTableWidgetItem(lower)
+            item4 = QTableWidgetItem(upper)
+
+            self.fittingParamTable.setItem(row, 0, item1)
+            self.fittingParamTable.setItem(row, 1, item2)
+            self.fittingParamTable.setItem(row, 2, item3)
+            self.fittingParamTable.setItem(row, 3, item4)
+
+            row = row + 1
+
+
+
+    def getName(self, p):
+        name = ''
+        n = len(p)
+        shift = 0
+        if n != 0:
+            if type(p[0]) == int:  # sample parameters
+                layer = p[0]
+                param_type = p[1]
+
+                if param_type == 'STRUCTURAL':  # structural case
+                    mode = p[2]
+                    if mode == 'ELEMENT':
+                        element = p[3]
+                        char = p[4]
+                        if char == 'THICKNESS':
+                            name = element + '-' + 'th. ' + str(layer)
+                            shift = 5
+                        elif char == 'DENSITY':
+                            name = element + '-' + 'dens. ' + str(layer)
+                            shift = 0.05
+                        elif char == 'ROUGHNESS':
+                            name = element + '-' + 'rough. ' + str(layer)
+                            shift = 1
+                        elif char == 'LINKED ROUGHNESS':
+                            name = element + '-' + 'Lrough. ' + str(layer)
+                            shift = 1
+                    elif mode == 'COMPOUND':
+                        char = p[3]
+                        compound = ''
+
+                        # gets all the elements in the layer
+                        for e in self.sWidget.structTableInfo[layer]:
+                            compound = compound + e[0]
+
+                        if char == 'THICKNESS':
+                            name = compound + '-th. ' + str(layer)
+                            shift = 5
+                        elif char == 'DENSITY':
+                            name = compound + '-dens. ' + str(layer)
+                            shift = 0.05
+                        elif char == 'ROUGHNESS':
+                            name = compound + '-rough. ' + str(layer)
+                            shift = 1
+                        elif char == 'LINKED ROUGHNESS':
+                            name = compound + '-Lrough. ' + str(layer)
+                            shift = 1
+                elif param_type == 'POLYMORPHOUS':
+                    var = p[-1]
+                    name = var + ' -ratio ' + str(layer)
+                    shift = 0.1
+
+                elif param_type == 'MAGNETIC':
+                    var = p[-1]
+                    name = var + ' -mdens. ' + str(layer)
+                    shift = 0.1
+
+            elif p[0] == 'SCATTERING FACTOR':  # scattering factor case
+                name = name + 'ff'
+                scattering_factor = p[2]
+                param_type = p[1]
+
+                if param_type == 'MAGNETIC':
+                    name = name + 'm-' + scattering_factor
+                else:
+                    name = name + '-' + scattering_factor
+
+                shift = 0.5
+            elif p[0] == 'BACKGROUND SHIFT':  # background shift case
+                if p[1] == 'ALL SCANS':
+                    name = 'bShift-All'
+                else:
+                    name = 'bShift-'+p[1]
+                shift = 5e-7
+            elif p[0] == 'SCALING FACTOR':  # scaling factor
+                if p[1] == 'ALL SCANS':
+                    name = 'sFactor-All'
+                else:
+                    name = 'sFactor-' + p[1]
+                shift = 0.2
+
+        return name, shift
 
 class ReflectometryApp(QMainWindow):
     def __init__(self, fname):
@@ -2419,6 +2572,7 @@ class ReflectometryApp(QMainWindow):
         self.stackedlayout.setCurrentIndex(1)
     def activate_tab_3(self):
         self._goWidget.updateScreen()
+        self._goWidget.setTableFit()
         self.stackedlayout.setCurrentIndex(2)
 
 
