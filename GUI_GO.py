@@ -413,6 +413,7 @@ class sampleWidget(QWidget):
         self.element_index = 0
 
         self.previousLayer = 0
+        self.changeLayer = False
         self.firstStruct = True
 
         self._step_size = '0.1'
@@ -544,8 +545,47 @@ class sampleWidget(QWidget):
 
         mylayout.addWidget(self.densityWidget)
 
-
+        self.structTable.itemChanged.connect(self.changeStructValues)
         self.setLayout(mylayout)
+
+    def changeStructValues(self):
+        layer = self.layerBox.currentIndex()
+        row = self.structTable.currentRow()
+        column = self.structTable.currentColumn()
+
+        if self.structTable.item(row, column) is not None and not self.changeLayer:
+            copy_of_list = self.parameterFit
+            value = self.structTable.item(row, column).text()
+            prev_value = copy.copy(self.structTableInfo[layer][row][column])
+            self.structTableInfo[layer][row][column] = self.structTable.item(row, column).text()
+
+            for fit in copy_of_list:
+                if fit[0] == layer and fit[1] == 'STRUCTURAL':
+                    if column == 1:  # thickness
+                        if fit[2] == 'COMPOUND' and fit[3] == 'THICKNESS':
+                            pass
+                        elif fit[2] == 'ELEMENT' and fit[4] == 'THICKNESS':
+                            pass
+                    elif column == 2: # density
+                        if fit[2] == 'COMPOUND' and fit[3] == 'DENSITY':
+                            pass
+                        elif fit[2] == 'ELEMENT' and fit[4] == 'DENSITY':
+                            pass
+                    elif column == 3: # roughness
+                        if fit[2] == 'COMPOUND' and fit[3] == 'ROUGHNESS':
+                            pass
+                        elif fit[2] == 'ELEMENT' and fit[3] == 'ROUGHNESS':
+                            pass
+                    elif column == 4: # linked roughness
+                        if fit[2] == 'COMPOUND' and fit[3] == 'LINKED ROUGHNESS':
+                            pass
+                        elif fit[2] == 'ELEMENT' and fit[3] == 'LINKED ROUGHNESS':
+                            pass
+                elif fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL':
+                    if value != prev_value and value == fit[2]:
+                        self.parameterFit.remove(fit)
+                        self.structTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
+                    pass
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.MouseButtonPress:
@@ -1210,6 +1250,7 @@ class sampleWidget(QWidget):
 
     def changetable(self):
 
+        self.changeLayer = True
         idx = self.layerBox.currentIndex()
 
         if self.structBool:
@@ -1324,7 +1365,7 @@ class sampleWidget(QWidget):
 
         self.setTable(idx)
 
-
+        self.changeLayer = False
 
     def _addLayer(self):
 
