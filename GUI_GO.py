@@ -2616,7 +2616,9 @@ class GlobalOptimizationWidget(QWidget):
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
 
-
+        self.goParameters = {'differential evolution': ['currenttobestbin',150,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
+                             'simplicial homology': ['None', 1, 'simplicial'],
+                             'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
 
         selectedScansLayout = QHBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
@@ -2634,28 +2636,255 @@ class GlobalOptimizationWidget(QWidget):
         # Global optimization parameters and fitting
         buttonLayout = QVBoxLayout()
 
-        self.fitBoundsButton = QPushButton('Fitting Parameters')
-        self.goButton = QPushButton('Global Optimization')
+
         self.runButton = QPushButton('Run Optimization')
         self.runButton.setStyleSheet('background: green')
 
-        buttonLayout.addWidget(self.fitBoundsButton)
-        buttonLayout.addWidget(self.goButton)
+        buttonLayout.addWidget(self.selectedScans)
         buttonLayout.addWidget(self.runButton)
 
         # Addinng Widgets to plotting layout
         plotLayout.addWidget(self.plotWidget)
-        plotLayout.addWidget(self.selectedScans)
+        plotLayout.addLayout(buttonLayout)
 
-        bottomLayout = QHBoxLayout()
+
 
 
         self.fittingParamTable = QTableWidget()
         self.fittingParamTable.setColumnCount(4)
         self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary'])
+        tableLayout = QVBoxLayout()
+        tableLayout.addWidget(self.fittingParamTable)
 
-        bottomLayout.addWidget(self.fittingParamTable)
-        bottomLayout.addLayout(buttonLayout)
+        # Include the different input parameters for the global optimization and their algorithms
+        self.goParamWidget = QWidget()
+
+        # start with the layout of the "main" window
+        algorithmLayout = QVBoxLayout()
+        algorithmLabel = QLabel('Algorithm Selection')
+        self.algorithmSelect = QComboBox()
+        self.algorithmSelect.addItems(['differential evolution', 'simplicial homology', 'dual annealing'])
+        self.algorithmSelect.currentIndexChanged.connect(self.change_algorithm)
+        algorithmLayout.addWidget(algorithmLabel)
+        algorithmLayout.addWidget(self.algorithmSelect)
+        algorithmLayout.addStretch(1)
+
+
+
+        self.goStackLayout = QStackedLayout()
+
+        # differential evolution
+        self.evolutionWidget = QWidget()
+        evolutionLayout = QVBoxLayout()
+
+        eStrategyLayout = QHBoxLayout()
+        self.eStrategy = QComboBox()
+        self.eStrategy.addItems(['best1bin','best1exp', 'rand1exp','randtobest1exp', 'best2exp', 'rand2exp',
+                                  'randtobest1bin','currenttobest1bin', 'best2bin', 'rand2bin', 'rand1bin'])
+        self.eStrategy.setCurrentIndex(7)
+        stratLabel = QLabel('Strategy: ')
+        stratLabel.setFixedWidth(70)
+        eStrategyLayout.addWidget(stratLabel)
+        eStrategyLayout.addWidget(self.eStrategy)
+        evolutionLayout.addLayout(eStrategyLayout)
+
+        eMaxiterLayout = QHBoxLayout()
+        self.eMaxiter = QLineEdit()
+        eMaxiterLabel = QLabel('maxIter')
+        eMaxiterLabel.setFixedWidth(70)
+        eMaxiterLayout.addWidget(eMaxiterLabel)
+        eMaxiterLayout.addWidget(self.eMaxiter)
+        evolutionLayout.addLayout(eMaxiterLayout)
+
+        ePopsizeLayout = QHBoxLayout()
+        self.ePopsize = QLineEdit()
+        popsizeLabel = QLabel('popsize: ')
+        popsizeLabel.setFixedWidth(70)
+        ePopsizeLayout.addWidget(popsizeLabel)
+        ePopsizeLayout.addWidget(self.ePopsize)
+        evolutionLayout.addLayout(ePopsizeLayout)
+
+
+        eTolLayout = QHBoxLayout()
+        self.eTol = QLineEdit()
+        eTolLabel = QLabel('tol: ')
+        eTolLabel.setFixedWidth(70)
+        eTolLayout.addWidget(eTolLabel)
+        eTolLayout.addWidget(self.eTol)
+        evolutionLayout.addLayout(eTolLayout)
+
+        eAtolLayout = QHBoxLayout()
+        self.eAtol = QLineEdit()
+        eAtolLabel = QLabel('atol: ')
+        eAtolLabel.setFixedWidth(70)
+        eAtolLayout.addWidget(eAtolLabel)
+        eAtolLayout.addWidget(self.eAtol)
+        evolutionLayout.addLayout(eAtolLayout)
+
+        eMinMutationLayout = QHBoxLayout()
+        self.eMinMutation = QLineEdit()
+        eMinMutationLabel = QLabel('min. mutation: ')
+        eMinMutationLabel.setFixedWidth(70)
+        eMinMutationLayout.addWidget(eMinMutationLabel)
+        eMinMutationLayout.addWidget(self.eMinMutation)
+        evolutionLayout.addLayout(eMinMutationLayout)
+
+        eMaxMutationLayout = QHBoxLayout()
+        self.eMaxMutation = QLineEdit()
+        eMaxMutationLabel = QLabel('max. mutation: ')
+        eMaxMutationLabel.setFixedWidth(70)
+        eMaxMutationLayout.addWidget(eMaxMutationLabel)
+        eMaxMutationLayout.addWidget(self.eMaxMutation)
+        evolutionLayout.addLayout(eMinMutationLayout)
+
+        eRecombLayout = QHBoxLayout()
+        self.eRecomb = QLineEdit()
+        recombLabel = QLabel('recombination: ')
+        recombLabel.setFixedWidth(70)
+        eRecombLayout.addWidget(recombLabel)
+        eRecombLayout.addWidget(self.eRecomb)
+        evolutionLayout.addLayout(eRecombLayout)
+
+        ePolishLayout = QHBoxLayout()
+        self.ePolish = QCheckBox()
+        polishLabel = QLabel('polish')
+        polishLabel.setFixedWidth(70)
+        ePolishLayout.addWidget(polishLabel)
+        ePolishLayout.addWidget(self.ePolish)
+        evolutionLayout.addLayout(ePolishLayout)
+
+        eInitLayout = QHBoxLayout()
+        self.eInit = QComboBox()
+        self.eInit.addItems(['latinhypercube','sobol','halton','random'])
+        self.eInit.setCurrentIndex(0)
+        initLabel = QLabel('init: ')
+        initLabel.setFixedWidth(70)
+        eInitLayout.addWidget(initLabel)
+        eInitLayout.addWidget(self.eInit)
+        evolutionLayout.addLayout(eInitLayout)
+
+        eUpdatingLayout = QHBoxLayout()
+        self.eUpdating = QComboBox()
+        self.eUpdating.addItems(['immediate', 'deferred'])
+        self.eUpdating.setCurrentIndex(0)
+        updateLabel = QLabel('updating: ')
+        updateLabel.setFixedWidth(70)
+        eUpdatingLayout.addWidget(updateLabel)
+        eUpdatingLayout.addWidget(self.eUpdating)
+        evolutionLayout.addLayout(eUpdatingLayout)
+
+        self.evolutionWidget.setLayout(evolutionLayout)
+
+        # shgo algorithm
+        shgoLayout = QVBoxLayout()
+        self.shgoWidget = QWidget()
+
+        shgoNLayout = QHBoxLayout()
+        nLabel = QLabel('n: ')
+        nLabel.setFixedWidth(70)
+        self.shgoN = QLineEdit()
+        shgoNLayout.addWidget(nLabel)
+        shgoNLayout.addWidget(self.shgoN)
+        shgoLayout.addLayout(shgoNLayout)
+
+        shgoIterLayout = QHBoxLayout()
+        iterLabel = QLabel('iter: ')
+        iterLabel.setFixedWidth(70)
+        self.shgoIter = QLineEdit()
+        shgoIterLayout.addWidget(iterLabel)
+        shgoIterLayout.addWidget(self.shgoIter)
+        shgoLayout.addLayout(shgoIterLayout)
+
+        shgoSamplingLayout = QHBoxLayout()
+        samplingLabel = QLabel('sampling: ')
+        samplingLabel.setFixedWidth(70)
+        self.shgoSampling = QComboBox()
+        self.shgoSampling.addItems(['simplicial','halton','sobol'])
+        shgoSamplingLayout.addWidget(samplingLabel)
+        shgoSamplingLayout.addWidget(self.shgoSampling)
+        shgoLayout.addLayout(shgoSamplingLayout)
+
+        self.shgoWidget.setLayout(shgoLayout)
+
+        # dual annealing parameters
+
+        self.dualWidget = QWidget()
+        dualLayout = QVBoxLayout()
+
+        dualMaxiterLayout = QHBoxLayout()
+        dualMaxiterLabel = QLabel('maxiter: ')
+        dualMaxiterLabel.setFixedWidth(70)
+        self.dualMaxiter = QLineEdit()
+        dualMaxiterLayout.addWidget(dualMaxiterLabel)
+        dualMaxiterLayout.addWidget(self.dualMaxiter)
+        dualLayout.addLayout(dualMaxiterLayout)
+
+        dualInitTempLayout = QHBoxLayout()
+        dualInitTempLabel = QLabel('initial temp: ')
+        dualInitTempLabel.setFixedWidth(70)
+        self.dualInitTemp = QLineEdit()
+        dualInitTempLayout.addWidget(dualInitTempLabel)
+        dualInitTempLayout.addWidget(self.dualInitTemp)
+        dualLayout.addLayout(dualInitTempLayout)
+
+        dualRestartTempLayout = QHBoxLayout()
+        dualRestartTempLabel = QLabel('restart temp: ')
+        dualRestartTempLabel.setFixedWidth(70)
+        self.dualRestartTemp = QLineEdit()
+        dualRestartTempLayout.addWidget(dualRestartTempLabel)
+        dualRestartTempLayout.addWidget(self.dualRestartTemp)
+        dualLayout.addLayout(dualRestartTempLayout)
+
+        dualVisitLayout = QHBoxLayout()
+        dualVisitLabel = QLabel('visit: ')
+        dualVisitLabel.setFixedWidth(70)
+        self.dualVisit = QLineEdit()
+        dualVisitLayout.addWidget(dualVisitLabel)
+        dualVisitLayout.addWidget(self.dualVisit)
+        dualLayout.addLayout(dualVisitLayout)
+
+        dualAcceptLayout = QHBoxLayout()
+        dualAcceptLabel = QLabel('accept: ')
+        dualAcceptLabel.setFixedWidth(70)
+        self.dualAccept = QLineEdit()
+        dualAcceptLayout.addWidget(dualAcceptLabel)
+        dualAcceptLayout.addWidget(self.dualAccept)
+        dualLayout.addLayout(dualAcceptLayout)
+
+        dualMaxfunLayout = QHBoxLayout()
+        dualMaxfunLabel = QLabel('maxfun: ')
+        dualMaxfunLabel.setFixedWidth(70)
+        self.dualMaxfun = QLineEdit()
+        dualMaxfunLayout.addWidget(dualMaxfunLabel)
+        dualMaxfunLayout.addWidget(self.dualMaxfun)
+        dualLayout.addLayout(dualMaxfunLayout)
+
+        dualLocalLayout = QHBoxLayout()
+        dualLocalLabel = QLabel('local search: ')
+        dualLocalLabel.setFixedWidth(70)
+        self.dualLocal = QCheckBox()
+        dualLocalLayout.addWidget(dualLocalLabel)
+        dualLocalLayout.addWidget(self.dualLocal)
+        dualLayout.addLayout(dualLocalLayout)
+
+
+        self.dualWidget.setLayout(dualLayout)
+
+        # adding the algorithm widgets to stacked layout
+        self.goStackLayout.addWidget(self.evolutionWidget)
+        self.goStackLayout.addWidget(self.shgoWidget)
+        self.goStackLayout.addWidget(self.dualWidget)
+
+        goLayout = QHBoxLayout()
+        goLayout.addLayout(algorithmLayout)
+        goLayout.addLayout(self.goStackLayout)
+
+        self.goParamWidget.setLayout(goLayout)
+
+        bottomLayout = QHBoxLayout()
+        bottomLayout.addLayout(tableLayout)
+        bottomLayout.addWidget(self.goParamWidget)
+
 
 
         pagelayout = QVBoxLayout()
@@ -2664,6 +2893,13 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
 
         self.setTableFit()
+
+    def getGOParameters(self):
+        pass
+    def change_algorithm(self):
+        # set the proper algorithm widget
+        idx = self.algorithmSelect.currentIndex()
+        self.goStackLayout.setCurrentIndex(idx)
 
     def updateScreen(self):
 
