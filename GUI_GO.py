@@ -11,7 +11,7 @@ import os
 import pyqtgraph as pg
 import data_structure as ds
 import copy
-import GlobalOptimization as go
+import global_optimization as go
 
 def stringcheck(string):
 
@@ -2915,6 +2915,7 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
 
         self.setTableFit()
+
     def _run_optimization(self):
         pass
 
