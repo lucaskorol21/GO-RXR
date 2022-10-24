@@ -1798,6 +1798,7 @@ class reflectivityWidget(QWidget):
         self.fit = []  # scans to be fit
         self.bounds = []  # bounds
         self.weights = []  # weights of the bounds
+        self.isChangeTable = False
         self.axis_state = True
         self.scan_state = True
         self.previousIdx = 0
@@ -1969,7 +1970,7 @@ class reflectivityWidget(QWidget):
         semiBotLayout = QHBoxLayout()
         semiBotLayout.addLayout(sfbsLayout)
         semiBotLayout.addWidget(self.boundWeightTable)
-
+        self.boundWeightTable.itemChanged.connect(self.value_changed)
 
         bottomlayout = QHBoxLayout()
         bottomlayout.addLayout(semiBotLayout)
@@ -1982,6 +1983,17 @@ class reflectivityWidget(QWidget):
         self.backgroundShift.editingFinished.connect(self.bsChange)
         self.scalingFactor.editingFinished.connect(self.sfChange)
         self.setLayout(pagelayout)
+
+    def value_changed(self):
+        if not self.isChangeTable:
+            idx = self.selectedScans.currentIndex()
+            row = self.boundWeightTable.currentRow()
+            column = self.boundWeightTable.currentColumn()
+            item = self.boundWeightTable.currentItem().text()
+            if row == 0 or row == 1: # upper or lower bounds
+                self.bounds[idx][column][row] = item
+            elif row == 2:  # weights
+                self.weights[idx][column] = item
 
     def bsChange(self):
         name = self.selectedScans.currentText()
@@ -2241,9 +2253,7 @@ class reflectivityWidget(QWidget):
         sfm = dict()  # form factors of magnetic components
 
         # Non-Magnetic Scattering Factor
-        for e in self.sample.find_sf[0].keys():
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
-        # Magnetic Scattering Factor
+
         for em in self.sample.find_sf[1].keys():
             sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
 
@@ -2280,6 +2290,7 @@ class reflectivityWidget(QWidget):
 
     def setTable(self):
 
+        self.isChangeTable = True
         idx = self.selectedScans.currentIndex()
         self.scalingFactor.setText(self.sf[idx]) # setting the appropriate scaling factor
 
@@ -2336,7 +2347,7 @@ class reflectivityWidget(QWidget):
 
                         item = QTableWidgetItem(weight[j])
                         self.boundWeightTable.setItem(i, j, item)
-
+        self.isChangeTable = False
     def _scanSelection(self):
         idx = self.whichScan.currentIndex()
         name = self.whichScan.currentText()
