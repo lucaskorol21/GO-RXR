@@ -2616,10 +2616,11 @@ class GlobalOptimizationWidget(QWidget):
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
 
-        self.goParameters = {'differential evolution': ['currenttobestbin',150,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
+        self.goParameters = {'differential evolution': ['currenttobest1bin',150,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
                              'simplicial homology': ['None', 1, 'simplicial'],
                              'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
 
+        self.paramChange = True
         selectedScansLayout = QHBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
         selectedScansLabel = QLabel('Fit Scans:')
@@ -2681,7 +2682,7 @@ class GlobalOptimizationWidget(QWidget):
         self.eStrategy = QComboBox()
         self.eStrategy.addItems(['best1bin','best1exp', 'rand1exp','randtobest1exp', 'best2exp', 'rand2exp',
                                   'randtobest1bin','currenttobest1bin', 'best2bin', 'rand2bin', 'rand1bin'])
-        self.eStrategy.setCurrentIndex(7)
+        self.eStrategy.currentIndexChanged.connect(self.getGOParameters)
         stratLabel = QLabel('Strategy: ')
         stratLabel.setFixedWidth(70)
         eStrategyLayout.addWidget(stratLabel)
@@ -2690,6 +2691,7 @@ class GlobalOptimizationWidget(QWidget):
 
         eMaxiterLayout = QHBoxLayout()
         self.eMaxiter = QLineEdit()
+        self.eMaxiter.textChanged.connect(self.getGOParameters)
         eMaxiterLabel = QLabel('maxIter')
         eMaxiterLabel.setFixedWidth(70)
         eMaxiterLayout.addWidget(eMaxiterLabel)
@@ -2698,6 +2700,7 @@ class GlobalOptimizationWidget(QWidget):
 
         ePopsizeLayout = QHBoxLayout()
         self.ePopsize = QLineEdit()
+        self.ePopsize.textChanged.connect(self.getGOParameters)
         popsizeLabel = QLabel('popsize: ')
         popsizeLabel.setFixedWidth(70)
         ePopsizeLayout.addWidget(popsizeLabel)
@@ -2708,6 +2711,7 @@ class GlobalOptimizationWidget(QWidget):
         eTolLayout = QHBoxLayout()
         self.eTol = QLineEdit()
         eTolLabel = QLabel('tol: ')
+        self.eTol.textChanged.connect(self.getGOParameters)
         eTolLabel.setFixedWidth(70)
         eTolLayout.addWidget(eTolLabel)
         eTolLayout.addWidget(self.eTol)
@@ -2715,6 +2719,7 @@ class GlobalOptimizationWidget(QWidget):
 
         eAtolLayout = QHBoxLayout()
         self.eAtol = QLineEdit()
+        self.eAtol.textChanged.connect(self.getGOParameters)
         eAtolLabel = QLabel('atol: ')
         eAtolLabel.setFixedWidth(70)
         eAtolLayout.addWidget(eAtolLabel)
@@ -2723,6 +2728,7 @@ class GlobalOptimizationWidget(QWidget):
 
         eMinMutationLayout = QHBoxLayout()
         self.eMinMutation = QLineEdit()
+        self.eMinMutation.textChanged.connect(self.getGOParameters)
         eMinMutationLabel = QLabel('min. mutation: ')
         eMinMutationLabel.setFixedWidth(70)
         eMinMutationLayout.addWidget(eMinMutationLabel)
@@ -2731,14 +2737,16 @@ class GlobalOptimizationWidget(QWidget):
 
         eMaxMutationLayout = QHBoxLayout()
         self.eMaxMutation = QLineEdit()
+        self.eMaxMutation.textChanged.connect(self.getGOParameters)
         eMaxMutationLabel = QLabel('max. mutation: ')
         eMaxMutationLabel.setFixedWidth(70)
         eMaxMutationLayout.addWidget(eMaxMutationLabel)
         eMaxMutationLayout.addWidget(self.eMaxMutation)
-        evolutionLayout.addLayout(eMinMutationLayout)
+        evolutionLayout.addLayout(eMaxMutationLayout)
 
         eRecombLayout = QHBoxLayout()
         self.eRecomb = QLineEdit()
+        self.eRecomb.textChanged.connect(self.getGOParameters)
         recombLabel = QLabel('recombination: ')
         recombLabel.setFixedWidth(70)
         eRecombLayout.addWidget(recombLabel)
@@ -2747,6 +2755,7 @@ class GlobalOptimizationWidget(QWidget):
 
         ePolishLayout = QHBoxLayout()
         self.ePolish = QCheckBox()
+        self.ePolish.stateChanged.connect(self.getGOParameters)
         polishLabel = QLabel('polish')
         polishLabel.setFixedWidth(70)
         ePolishLayout.addWidget(polishLabel)
@@ -2756,7 +2765,7 @@ class GlobalOptimizationWidget(QWidget):
         eInitLayout = QHBoxLayout()
         self.eInit = QComboBox()
         self.eInit.addItems(['latinhypercube','sobol','halton','random'])
-        self.eInit.setCurrentIndex(0)
+        self.eInit.currentIndexChanged.connect(self.getGOParameters)
         initLabel = QLabel('init: ')
         initLabel.setFixedWidth(70)
         eInitLayout.addWidget(initLabel)
@@ -2766,7 +2775,7 @@ class GlobalOptimizationWidget(QWidget):
         eUpdatingLayout = QHBoxLayout()
         self.eUpdating = QComboBox()
         self.eUpdating.addItems(['immediate', 'deferred'])
-        self.eUpdating.setCurrentIndex(0)
+        self.eUpdating.currentIndexChanged.connect(self.getGOParameters)
         updateLabel = QLabel('updating: ')
         updateLabel.setFixedWidth(70)
         eUpdatingLayout.addWidget(updateLabel)
@@ -2783,6 +2792,7 @@ class GlobalOptimizationWidget(QWidget):
         nLabel = QLabel('n: ')
         nLabel.setFixedWidth(70)
         self.shgoN = QLineEdit()
+        self.shgoN.textChanged.connect(self.getGOParameters)
         shgoNLayout.addWidget(nLabel)
         shgoNLayout.addWidget(self.shgoN)
         shgoLayout.addLayout(shgoNLayout)
@@ -2791,6 +2801,7 @@ class GlobalOptimizationWidget(QWidget):
         iterLabel = QLabel('iter: ')
         iterLabel.setFixedWidth(70)
         self.shgoIter = QLineEdit()
+        self.shgoIter.textChanged.connect(self.getGOParameters)
         shgoIterLayout.addWidget(iterLabel)
         shgoIterLayout.addWidget(self.shgoIter)
         shgoLayout.addLayout(shgoIterLayout)
@@ -2800,6 +2811,7 @@ class GlobalOptimizationWidget(QWidget):
         samplingLabel.setFixedWidth(70)
         self.shgoSampling = QComboBox()
         self.shgoSampling.addItems(['simplicial','halton','sobol'])
+        self.shgoSampling.currentIndexChanged.connect(self.getGOParameters)
         shgoSamplingLayout.addWidget(samplingLabel)
         shgoSamplingLayout.addWidget(self.shgoSampling)
         shgoLayout.addLayout(shgoSamplingLayout)
@@ -2815,6 +2827,7 @@ class GlobalOptimizationWidget(QWidget):
         dualMaxiterLabel = QLabel('maxiter: ')
         dualMaxiterLabel.setFixedWidth(70)
         self.dualMaxiter = QLineEdit()
+        self.dualMaxiter.textChanged.connect(self.getGOParameters)
         dualMaxiterLayout.addWidget(dualMaxiterLabel)
         dualMaxiterLayout.addWidget(self.dualMaxiter)
         dualLayout.addLayout(dualMaxiterLayout)
@@ -2823,6 +2836,7 @@ class GlobalOptimizationWidget(QWidget):
         dualInitTempLabel = QLabel('initial temp: ')
         dualInitTempLabel.setFixedWidth(70)
         self.dualInitTemp = QLineEdit()
+        self.dualInitTemp.textChanged.connect(self.getGOParameters)
         dualInitTempLayout.addWidget(dualInitTempLabel)
         dualInitTempLayout.addWidget(self.dualInitTemp)
         dualLayout.addLayout(dualInitTempLayout)
@@ -2831,6 +2845,7 @@ class GlobalOptimizationWidget(QWidget):
         dualRestartTempLabel = QLabel('restart temp: ')
         dualRestartTempLabel.setFixedWidth(70)
         self.dualRestartTemp = QLineEdit()
+        self.dualRestartTemp.textChanged.connect(self.getGOParameters)
         dualRestartTempLayout.addWidget(dualRestartTempLabel)
         dualRestartTempLayout.addWidget(self.dualRestartTemp)
         dualLayout.addLayout(dualRestartTempLayout)
@@ -2839,6 +2854,7 @@ class GlobalOptimizationWidget(QWidget):
         dualVisitLabel = QLabel('visit: ')
         dualVisitLabel.setFixedWidth(70)
         self.dualVisit = QLineEdit()
+        self.dualVisit.textChanged.connect(self.getGOParameters)
         dualVisitLayout.addWidget(dualVisitLabel)
         dualVisitLayout.addWidget(self.dualVisit)
         dualLayout.addLayout(dualVisitLayout)
@@ -2847,6 +2863,7 @@ class GlobalOptimizationWidget(QWidget):
         dualAcceptLabel = QLabel('accept: ')
         dualAcceptLabel.setFixedWidth(70)
         self.dualAccept = QLineEdit()
+        self.dualAccept.textChanged.connect(self.getGOParameters)
         dualAcceptLayout.addWidget(dualAcceptLabel)
         dualAcceptLayout.addWidget(self.dualAccept)
         dualLayout.addLayout(dualAcceptLayout)
@@ -2855,6 +2872,7 @@ class GlobalOptimizationWidget(QWidget):
         dualMaxfunLabel = QLabel('maxfun: ')
         dualMaxfunLabel.setFixedWidth(70)
         self.dualMaxfun = QLineEdit()
+        self.dualMaxfun.textChanged.connect(self.getGOParameters)
         dualMaxfunLayout.addWidget(dualMaxfunLabel)
         dualMaxfunLayout.addWidget(self.dualMaxfun)
         dualLayout.addLayout(dualMaxfunLayout)
@@ -2863,6 +2881,7 @@ class GlobalOptimizationWidget(QWidget):
         dualLocalLabel = QLabel('local search: ')
         dualLocalLabel.setFixedWidth(70)
         self.dualLocal = QCheckBox()
+        self.dualLocal.stateChanged.connect(self.getGOParameters)
         dualLocalLayout.addWidget(dualLocalLabel)
         dualLocalLayout.addWidget(self.dualLocal)
         dualLayout.addLayout(dualLocalLayout)
@@ -2890,12 +2909,127 @@ class GlobalOptimizationWidget(QWidget):
         pagelayout = QVBoxLayout()
         pagelayout.addLayout(plotLayout)
         pagelayout.addLayout(bottomLayout)
+
+        self.setGOParameters()
         self.setLayout(pagelayout)
 
         self.setTableFit()
 
     def getGOParameters(self):
-        pass
+
+
+        idx = self.algorithmSelect.currentIndex()
+        if idx == 0:
+            self.goParameters['differential evolution'][0] = self.eStrategy.currentText()
+            self.goParameters['differential evolution'][1] = self.eMaxiter.text()
+            self.goParameters['differential evolution'][2] = self.ePopsize.text()
+            self.goParameters['differential evolution'][3] = self.eTol.text()
+            self.goParameters['differential evolution'][4] = self.eAtol.text()
+            self.goParameters['differential evolution'][5] = self.eMinMutation.text()
+            self.goParameters['differential evolution'][6] = self.eMaxMutation.text()
+            self.goParameters['differential evolution'][7] = self.eRecomb.text()
+            if self.ePolish.checkState == 0:
+                self.goParameters['differential evolution'][8] = 'True'
+            else:
+                self.goParameters['differential evolution'][8] = 'False'
+            self.goParameters['differential evolution'][9] = self.eInit.currentText()
+            self.goParameters['differential evolution'][10] = self.eUpdating.currentText()
+
+        elif idx == 1:  # simplicial homology
+            self.goParameters['simplicial homology'][0] = self.shgoN.text()
+            self.goParameters['simplicial homology'][1] = self.shgoIter.text()
+            self.goParameters['simplicial homology'][2] = self.shgoSampling.currentText()
+        elif idx == 2:  # dual annealing
+            self.goParameters['dual annealing'][0] = self.dualMaxiter.text()
+            self.goParameters['dual annealing'][1] = self.dualInitTemp.text()
+            self.goParameters['dual annealing'][2] = self.dualRestartTemp.text()
+            self.goParameters['dual annealing'][3] = self.dualVisit.text()
+            self.goParameters['dual annealing'][4] = self.dualAccept.text()
+            self.goParameters['dual annealing'][5] = self.dualMaxfun.text()
+            if self.dualLocal.checkState() == 0:
+                self.goParameters['dual annealing'][6] = 'False'
+            else:
+                self.goParameters['dual annealing'][6] = 'True'
+
+        self.setGOParameters()
+    def setGOParameters(self):
+        self.eStrategy.blockSignals(True)
+        self.eMaxiter.blockSignals(True)
+        self.ePopsize.blockSignals(True)
+        self.eTol.blockSignals(True)
+        self.eAtol.blockSignals(True)
+        self.eMinMutation.blockSignals(True)
+        self.eMaxMutation.blockSignals(True)
+        self.eRecomb.blockSignals(True)
+        self.ePolish.blockSignals(True)
+        self.eInit.blockSignals(True)
+        self.eUpdating.blockSignals(True)
+        self.shgoN.blockSignals(True)
+        self.shgoIter.blockSignals(True)
+        self.shgoSampling.blockSignals(True)
+        self.dualMaxiter.blockSignals(True)
+        self.dualInitTemp.blockSignals(True)
+        self.dualRestartTemp.blockSignals(True)
+        self.dualVisit.blockSignals(True)
+        self.dualAccept.blockSignals(True)
+        self.dualMaxfun.blockSignals(True)
+        self.dualLocal.blockSignals(True)
+
+
+        idx = self.algorithmSelect.currentIndex()
+
+        self.eStrategy.setCurrentText(self.goParameters['differential evolution'][0])
+        self.eMaxiter.setText(str(self.goParameters['differential evolution'][1]))
+        self.ePopsize.setText(str(self.goParameters['differential evolution'][2]))
+        self.eTol.setText(str(self.goParameters['differential evolution'][3]))
+        self.eAtol.setText(str(self.goParameters['differential evolution'][4]))
+        self.eMinMutation.setText(str(self.goParameters['differential evolution'][5]))
+        self.eMaxMutation.setText(str(self.goParameters['differential evolution'][6]))
+        self.eRecomb.setText(str(self.goParameters['differential evolution'][7]))
+        if str(self.goParameters['differential evolution'][8]) == 'True':
+            self.ePolish.setCheckState(2)
+        elif str(self.goParameters['differential evolution'][8]) == 'False':
+            self.ePolish.setCheckState(0)
+        self.eInit.setCurrentText(str(self.goParameters['differential evolution'][9]))
+        self.eUpdating.setCurrentText(str(self.goParameters['differential evolution'][10]))
+
+
+        self.shgoN.setText(str(self.goParameters['simplicial homology'][0]))
+        self.shgoIter.setText(str(self.goParameters['simplicial homology'][1]))
+        self.shgoSampling.setCurrentText(str(self.goParameters['simplicial homology'][2]))
+
+        self.dualMaxiter.setText(str(self.goParameters['dual annealing'][0]))
+        self.dualInitTemp.setText(str(self.goParameters['dual annealing'][1]))
+        self.dualRestartTemp.setText(str(self.goParameters['dual annealing'][2]))
+        self.dualVisit.setText(str(self.goParameters['dual annealing'][3]))
+        self.dualAccept.setText(str(self.goParameters['dual annealing'][4]))
+        self.dualMaxfun.setText(str(self.goParameters['dual annealing'][5]))
+        if self.goParameters['dual annealing'][6] == 'False':
+            self.dualLocal.setChecked(2)
+        elif self.goParameters['dual annealing'][6] == 'True':
+            self.dualLocal.setChecked(0)
+
+        self.eStrategy.blockSignals(False)
+        self.eMaxiter.blockSignals(False)
+        self.ePopsize.blockSignals(False)
+        self.eTol.blockSignals(False)
+        self.eAtol.blockSignals(False)
+        self.eMinMutation.blockSignals(False)
+        self.eMaxMutation.blockSignals(False)
+        self.eRecomb.blockSignals(False)
+        self.ePolish.blockSignals(False)
+        self.eInit.blockSignals(False)
+        self.eUpdating.blockSignals(False)
+        self.shgoN.blockSignals(False)
+        self.shgoIter.blockSignals(False)
+        self.shgoSampling.blockSignals(False)
+        self.dualMaxiter.blockSignals(False)
+        self.dualInitTemp.blockSignals(False)
+        self.dualRestartTemp.blockSignals(False)
+        self.dualVisit.blockSignals(False)
+        self.dualAccept.blockSignals(False)
+        self.dualMaxfun.blockSignals(False)
+        self.dualLocal.blockSignals(False)
     def change_algorithm(self):
         # set the proper algorithm widget
         idx = self.algorithmSelect.currentIndex()
