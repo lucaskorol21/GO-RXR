@@ -110,17 +110,18 @@ def scanCompute(x, *args):
     data = args[2]  # data dict
     sims = args[3]  # simulation dict
     parameters = args[4]  # defines which parameters to change
-    scanBounds = args[5]  # defines the bounds of the scans
+    sBounds = args[5]  # defines the bounds of the scans
+    sWeights = args[6]
 
     sample = changeSampleParams(x, parameters, sample)
 
 
     for scan in scans:
+
         scan_number = int(scan[0])
         scanType = scan[1]
         name = scan[2]
-        scanbounds = scanBounds[scan_number]
-        xbound = scanbounds[0]
+        #xbound = scanbounds[0]
         weights = scanbounds[1]
 
         if scanType == 'Reflectivity':
@@ -162,20 +163,19 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=True):
+def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=True):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
+
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
-    # makes sure that scan is a list
-    if type(scan) != list and type(scan) != np.ndarray:
-        scan = [scan]
 
-    scan = [s - 1 for s in scan]  # makes sure the indices are correct
+    scans = []
+    for s, info in enumerate(data_info):
+       if info[2] in scan:
+           scans.append(info)
 
-    scans = data_info[scan]  # gets the appropriate scans
-
-    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
+    params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     # This line will be used to select and use different global optimization algorithms
     ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=strat,
@@ -189,17 +189,17 @@ def differential_evolution(fname,scan, parameters, bounds,scanBounds, strat = 'c
 
     return x, fun
 
-def shgo(fname, scan,parameters, bounds, scanBounds, N=64, iterations=3):
+def shgo(fname, scans,parameters, bounds, scanBounds, N=64, iterations=3):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
-    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     # makes sure that scan is a list
-    if type(scan) != list or type(scan) != np.ndarray:
-        scan = [scan]
+    #if type(scan) != list or type(scan) != np.ndarray:
+    #    scan = [scan]
 
-    scan = [s - 1 for s in scan]  # makes sure the indices are correct
-    scans = data_info[tuple(scan)]
+    #scan = [s - 1 for s in scan]  # makes sure the indices are correct
+    #scans = data_info[tuple(scan)]
 
     params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
 
@@ -213,17 +213,17 @@ def shgo(fname, scan,parameters, bounds, scanBounds, N=64, iterations=3):
     f.close()
     return x, fun
 
-def dual_annealing(fname, scan, parameters, bounds,scanBounds, mIter=300):
+def dual_annealing(fname, scans, parameters, bounds,scanBounds, mIter=300):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
-    f, data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     # makes sure that scan is a list
-    if type(scan) != list or type(scan) != np.ndarray:
-        scan = [scan]
+    #if type(scan) != list or type(scan) != np.ndarray:
+    #    scan = [scan]
 
-    scan = [s - 1 for s in scan]  # makes sure the indices are correct
-    scans = data_info[tuple(scan)]
+    #scan = [s - 1 for s in scan]  # makes sure the indices are correct
+    #scans = data_info[tuple(scan)]
 
     params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
 

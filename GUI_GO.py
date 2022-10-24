@@ -2604,11 +2604,12 @@ class reflectivityWidget(QWidget):
                 self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
 class GlobalOptimizationWidget(QWidget):
-    def __init__(self, sWidget, rWidget, data, data_dict, sim_dict):
+    def __init__(self, sWidget, rWidget, rApp):
         super().__init__()
 
         self.sWidget = sWidget
         self.rWidget = rWidget
+        self.rApp = rApp
 
         self.sampleBounds = []
         self.sfBounds = []
@@ -2640,6 +2641,7 @@ class GlobalOptimizationWidget(QWidget):
 
 
         self.runButton = QPushButton('Run Optimization')
+        self.runButton.clicked.connect(self._run_optimization)
         self.runButton.setStyleSheet('background: green')
 
         buttonLayout.addWidget(self.selectedScans)
@@ -2917,7 +2919,67 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
 
     def _run_optimization(self):
-        pass
+
+        fname = self.rApp.fname
+
+        # getting the scans and putting them in their proper format
+        # putting the parameters and their boundaries in the proper format!
+        parameters = copy.deepcopy(self.sWidget.parameterFit)
+        for fit in self.rWidget.sfBsFitParams:
+            parameters.append(fit)
+
+        lw = []
+        up = []
+
+        for b in self.sWidget.currentVal:
+            lw.append(float(b[1][0]))
+            up.append(float(b[1][1]))
+        for b in self.rWidget.currentVal:
+            lw.append(float(b[1][0]))
+            up.append(float(b[1][1]))
+
+        bounds = list(zip(lw, up))
+
+        scans = copy.deepcopy(self.rWidget.fit)
+
+        # determines the boundaries of the scans
+        sBounds = []
+        for bound in self.rWidget.bounds:
+            temp = []
+            for b in bound:
+                temp.append((float(b[0]), float(b[1])))
+            sBounds.append(temp)
+
+
+        sWeights = []
+        for weight in self.rWidget.weights:
+            temp = []
+            for w in weight:
+                temp.append(float(w))
+            sWeights.append(temp)
+
+
+
+        x = 0
+        fun = 0
+
+        idx = self.algorithmSelect.currentIndex()
+        if len(parameters) != 0 and len(scans) != 0:
+            if idx == 0:
+                x, fun = go.differential_evolution(fname, scans, parameters, bounds,sBounds, sWeights)
+            elif idx == 1:
+                x, fun = go.shgo(fname, scans, parameters, bounds, sBounds)
+            elif idx == 2:
+                x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds)
+        else:
+            print('Try try again')
+
+
+        # get all the boundaries, weights and scans
+        # - convert into a usable form
+        # - perform the analysis
+
+
 
     def getGOParameters(self):
 
@@ -3169,6 +3231,9 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         sample = ds.ReadSampleHDF5(fname)  # temporary way of loading in data
         data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+
+        self.fname = fname
+
         # set the title
         self.setWindowTitle('Reflectometry of Quantum Materials')
 
@@ -3192,7 +3257,7 @@ class ReflectometryApp(QMainWindow):
 
         self._sampleWidget = sampleWidget(sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, data, data_dict, sim_dict)
-        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, data, data_dict, sim_dict)
+        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self)
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.sampleButton.clicked.connect(self.activate_tab_1)
