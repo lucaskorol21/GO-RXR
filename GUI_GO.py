@@ -11,6 +11,7 @@ import os
 import pyqtgraph as pg
 import data_structure as ds
 import copy
+import GlobalOptimization as go
 
 def stringcheck(string):
 
@@ -708,7 +709,7 @@ class sampleWidget(QWidget):
                                 lower = 0
                             upper = str(float(value) + 1)
                             self.currentVal[idx] = [value, [str(lower), upper]]
-                elif fit[0] == 'SCATTERING FACTOR' and fit[3] == element and fit[1] == 'STRUCTURAL':
+                elif fit[0] == 'SCATTERING FACTOR' and fit[2] == element and fit[1] == 'STRUCTURAL':
                     if value != prev_value and prev_value == fit[2]:
                         self.parameterFit.remove(fit)
                         self.structTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
@@ -2914,6 +2915,8 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
 
         self.setTableFit()
+    def _run_optimization(self):
+        pass
 
     def getGOParameters(self):
 
