@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.figure as Figure
@@ -12,6 +13,7 @@ import pyqtgraph as pg
 import data_structure as ds
 import copy
 import global_optimization as go
+from multiprocessing import Process
 
 def stringcheck(string):
 
@@ -2918,8 +2920,10 @@ class GlobalOptimizationWidget(QWidget):
 
         self.setTableFit()
 
+
     def _run_optimization(self):
 
+        # need to figure out how to run this, but not allow for this process to over run everything else
         fname = self.rApp.fname
 
         # getting the scans and putting them in their proper format
@@ -2950,7 +2954,6 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append((float(b[0]), float(b[1])))
             sBounds.append(temp)
 
-
         sWeights = []
         for weight in self.rWidget.weights:
             temp = []
@@ -2958,26 +2961,22 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append(float(w))
             sWeights.append(temp)
 
-
-
         x = 0
         fun = 0
 
         idx = self.algorithmSelect.currentIndex()
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
-                x, fun = go.differential_evolution(fname, scans, parameters, bounds,sBounds, sWeights)
+                x, fun = go.differential_evolution(fname, scans, parameters, bounds, sBounds, sWeights,
+                                                   self.goParameters['differential evolution'])
             elif idx == 1:
-                x, fun = go.shgo(fname, scans, parameters, bounds, sBounds)
+                x, fun = go.shgo(fname, scans, parameters, bounds, sBounds, sWeights,
+                                 self.goParameters['simplicial homology'])
             elif idx == 2:
-                x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds)
+                x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds, sWeights,
+                                           self.goParameters['dual annealing'])
         else:
             print('Try try again')
-
-
-        # get all the boundaries, weights and scans
-        # - convert into a usable form
-        # - perform the analysis
 
 
 

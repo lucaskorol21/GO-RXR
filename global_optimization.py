@@ -167,7 +167,7 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, strat = 'currenttobest1exp', mIter=25, tolerance=0.1, display=True):
+def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, goParam):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
 
@@ -180,9 +180,16 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, str
 
     params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
 
+    p=True
+    if goParam[8] == 'True':
+        p = True
+    else:
+        p = False
     # This line will be used to select and use different global optimization algorithms
-    ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=strat,
-                                          maxiter=mIter, tol=tolerance, disp=display)
+    ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=goParam[0], maxiter=int(goParam[1]),
+                                          popsize=int(goParam[2]),tol=float(goParam[3]), atol=float(goParam[4]),
+                                          mutation=(float(goParam[5]), float(goParam[6])), recombination=float(goParam[7]),
+                                          polish=p, init=goParam[9], updating=goParam[10])
     x = ret.x
     fun = ret.fun
 
@@ -192,7 +199,7 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, str
 
     return x, fun
 
-def shgo(fname, scan,parameters, bounds, sBounds, sWeights, N=64, iterations=3):
+def shgo(fname, scan,parameters, bounds, sBounds, sWeights, goParam):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
@@ -204,7 +211,12 @@ def shgo(fname, scan,parameters, bounds, sBounds, sWeights, N=64, iterations=3):
 
     params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
 
-    ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=N, iters=iterations)
+    p = None
+    if goParam[0] == 'None':
+        p = None
+    else:
+        p = int(goParam[0])
+    ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=p, iters=int(goParam[1]),sampling_method=goParam[2])
     x = ret.x
     fun = ret.fun
 
@@ -214,7 +226,7 @@ def shgo(fname, scan,parameters, bounds, sBounds, sWeights, N=64, iterations=3):
     f.close()
     return x, fun
 
-def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, mIter=300):
+def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, goParam):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
@@ -226,8 +238,15 @@ def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, mIter=300)
 
     params = [sample, scans, data, sims, parameters, sBounds, sWeights]
 
+    p = True
+    if goParam[6] == 'True':
+        p = False
+    else:
+        p = True
 
-    ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=mIter)
+    ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=int(goParam[0]), initial_temp=float(goParam[1]),
+                                  restart_temp_ratio=float(goParam[2]), visit=float(goParam[3]), accept=float(goParam[4]),
+                                  maxfun=float(goParam[5]), no_local_search=p)
     x = ret.x
     fun = ret.fun
 
