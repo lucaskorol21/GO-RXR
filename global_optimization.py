@@ -36,6 +36,7 @@ def changeSampleParams(x, parameters, sample):
             dE = x[p]
 
             if mode == 'STRUCTURAL':
+                # may need to change this implementation
                 FfEnergyShift(element, dE, opt=True)
             elif mode == 'MAGNETIC':
                 FfmEnergyShift(element, dE, opt=True)
@@ -115,14 +116,15 @@ def scanCompute(x, *args):
 
     sample = changeSampleParams(x, parameters, sample)
 
-
+    i = 0 # keeps track of which boundary to use
     for scan in scans:
 
-        scan_number = int(scan[0])
         scanType = scan[1]
         name = scan[2]
-        #xbound = scanbounds[0]
-        weights = scanbounds[1]
+
+        xbound = sBounds[i]
+        weights = sWeights[i]
+        i = i + 1
 
         if scanType == 'Reflectivity':
             myDataScan = data[name]
@@ -132,6 +134,8 @@ def scanCompute(x, *args):
             qz = np.array(myData[0])
             Rdat = np.log10(np.array(myData[2]))
             qz, Rsim = sample.reflectivity(E, qz)
+
+            # need to toggle between log10 and not depending on the polarization
             Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
 
 
@@ -169,11 +173,10 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, str
 
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
-
     scans = []
     for s, info in enumerate(data_info):
-       if info[2] in scan:
-           scans.append(info)
+        if info[2] in scan:
+            scans.append(info)
 
     params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
 
@@ -189,19 +192,17 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, str
 
     return x, fun
 
-def shgo(fname, scans,parameters, bounds, scanBounds, N=64, iterations=3):
+def shgo(fname, scan,parameters, bounds, sBounds, sWeights, N=64, iterations=3):
 
     sample = ReadSampleHDF5(fname)  # import the sample information
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
-    # makes sure that scan is a list
-    #if type(scan) != list or type(scan) != np.ndarray:
-    #    scan = [scan]
+    scans = []
+    for s, info in enumerate(data_info):
+        if info[2] in scan:
+            scans.append(info)
 
-    #scan = [s - 1 for s in scan]  # makes sure the indices are correct
-    #scans = data_info[tuple(scan)]
-
-    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
+    params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=N, iters=iterations)
     x = ret.x
@@ -213,19 +214,17 @@ def shgo(fname, scans,parameters, bounds, scanBounds, N=64, iterations=3):
     f.close()
     return x, fun
 
-def dual_annealing(fname, scans, parameters, bounds,scanBounds, mIter=300):
+def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, mIter=300):
     sample = ReadSampleHDF5(fname)  # import the sample information
 
     data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
-    # makes sure that scan is a list
-    #if type(scan) != list or type(scan) != np.ndarray:
-    #    scan = [scan]
+    scans = []
+    for s, info in enumerate(data_info):
+        if info[2] in scan:
+            scans.append(info)
 
-    #scan = [s - 1 for s in scan]  # makes sure the indices are correct
-    #scans = data_info[tuple(scan)]
-
-    params = [sample, scans, data, sims, parameters, scanBounds]  # required format for function scanCompute
+    params = [sample, scans, data, sims, parameters, sBounds, sWeights]
 
 
     ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=mIter)
