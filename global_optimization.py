@@ -189,7 +189,7 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, goP
     ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=goParam[0], maxiter=int(goParam[1]),
                                           popsize=int(goParam[2]),tol=float(goParam[3]), atol=float(goParam[4]),
                                           mutation=(float(goParam[5]), float(goParam[6])), recombination=float(goParam[7]),
-                                          polish=p, init=goParam[9], updating=goParam[10])
+                                          polish=p, init=goParam[9], updating=goParam[10], disp=True)
     x = ret.x
     fun = ret.fun
 
@@ -216,7 +216,8 @@ def shgo(fname, scan,parameters, bounds, sBounds, sWeights, goParam):
         p = None
     else:
         p = int(goParam[0])
-    ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=p, iters=int(goParam[1]),sampling_method=goParam[2])
+    ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=p, iters=int(goParam[1]),sampling_method=goParam[2],
+                        options={'disp': True})
     x = ret.x
     fun = ret.fun
 

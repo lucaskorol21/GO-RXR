@@ -2654,7 +2654,7 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.setStyleSheet('background: green')
 
         self.stopButton = QPushButton('Stop Optimization')
-        self.optButton = QPushButton('Save Optimization')
+        self.optButton = QPushButton('Update Sample')
         self.optButton.clicked.connect(self._save_optimization)
         self.optButton.setStyleSheet('background: cyan')
 
