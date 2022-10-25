@@ -13,7 +13,8 @@ import pyqtgraph as pg
 import data_structure as ds
 import copy
 import global_optimization as go
-from multiprocessing import Process
+import multiprocessing as mp
+
 
 def stringcheck(string):
 
@@ -2619,6 +2620,7 @@ class GlobalOptimizationWidget(QWidget):
 
         self.x = []
         self.fun = 0
+        self.progressFinished = True
 
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
@@ -2630,6 +2632,7 @@ class GlobalOptimizationWidget(QWidget):
         self.paramChange = True
         selectedScansLayout = QHBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
+        self.selectedScans.currentTextChanged.connect(self.plot_scan)
         selectedScansLabel = QLabel('Fit Scans:')
         selectedScansLayout.addWidget(selectedScansLabel)
         selectedScansLayout.addWidget(self.selectedScans)
@@ -2646,11 +2649,21 @@ class GlobalOptimizationWidget(QWidget):
 
 
         self.runButton = QPushButton('Run Optimization')
-        self.runButton.clicked.connect(self._run_optimization)
+        self.runButton.pressed.connect(self.run_first)
+        self.runButton.released.connect(self._optimizer)
         self.runButton.setStyleSheet('background: green')
 
+        self.stopButton = QPushButton('Stop Optimization')
+        self.optButton = QPushButton('Save Optimization')
+        self.optButton.clicked.connect(self._save_optimization)
+        self.optButton.setStyleSheet('background: cyan')
+
         buttonLayout.addWidget(self.selectedScans)
+        buttonLayout.addStretch(1)
         buttonLayout.addWidget(self.runButton)
+        buttonLayout.addWidget(self.stopButton)
+        buttonLayout.addStretch(1)
+        buttonLayout.addWidget(self.optButton)
 
         # Addinng Widgets to plotting layout
         plotLayout.addWidget(self.plotWidget)
@@ -2660,8 +2673,8 @@ class GlobalOptimizationWidget(QWidget):
 
 
         self.fittingParamTable = QTableWidget()
-        self.fittingParamTable.setColumnCount(4)
-        self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary'])
+        self.fittingParamTable.setColumnCount(5)
+        self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary', 'New'])
         tableLayout = QVBoxLayout()
         tableLayout.addWidget(self.fittingParamTable)
 
@@ -2921,6 +2934,21 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
 
         self.setTableFit()
+    def _save_optimization(self):
+        # saves the optimizations
+        row = 0
+        print(self.sWidget.parameterFit)
+        for idx in range(len(self.sWidget.currentVal)):
+            self.sWidget.currentVal[idx][0] = str(self.x[row])
+            row = row + 1
+
+
+        for idx in range(len(self.rWidget.currentVal)):
+            self.rWidget.currentVal[idx][0] = str(self.x[row])
+            row = row + 1
+
+        self.sWidget.sample = go.changeSampleParams(self.x, self.parameters, self.sWidget.sample)
+        self.setTableFit()
 
     def plot_scan(self):
 
@@ -3023,69 +3051,78 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
+    def run_first(self):
+        self.runButton.setStyleSheet('background: red')
 
-    def _run_optimization(self):
+
+    def _optimizer(self):
 
         # need to figure out how to run this, but not allow for this process to over run everything else
-        fname = self.rApp.fname
+        if self.progressFinished:
+            self.progressFinished = False
+            fname = self.rApp.fname
 
-        # getting the scans and putting them in their proper format
-        # putting the parameters and their boundaries in the proper format!
-        parameters = copy.deepcopy(self.sWidget.parameterFit)
-        for fit in self.rWidget.sfBsFitParams:
-            parameters.append(fit)
+            # getting the scans and putting them in their proper format
+            # putting the parameters and their boundaries in the proper format!
+            parameters = copy.deepcopy(self.sWidget.parameterFit)
+            for fit in self.rWidget.sfBsFitParams:
+                parameters.append(fit)
+            self.parameters = parameters  # needed for creating new sample
+            lw = []
+            up = []
 
-        self.parameters = parameters  # needed for creating new sample
-        lw = []
-        up = []
+            for b in self.sWidget.currentVal:
+                lw.append(float(b[1][0]))
+                up.append(float(b[1][1]))
+            for b in self.rWidget.currentVal:
+                lw.append(float(b[1][0]))
+                up.append(float(b[1][1]))
 
-        for b in self.sWidget.currentVal:
-            lw.append(float(b[1][0]))
-            up.append(float(b[1][1]))
-        for b in self.rWidget.currentVal:
-            lw.append(float(b[1][0]))
-            up.append(float(b[1][1]))
+            bounds = list(zip(lw, up))
 
-        bounds = list(zip(lw, up))
+            scans = copy.deepcopy(self.rWidget.fit)
 
-        scans = copy.deepcopy(self.rWidget.fit)
+            # determines the boundaries of the scans
+            sBounds = []
+            for bound in self.rWidget.bounds:
+                temp = []
+                for b in bound:
+                    temp.append((float(b[0]), float(b[1])))
+                sBounds.append(temp)
 
-        # determines the boundaries of the scans
-        sBounds = []
-        for bound in self.rWidget.bounds:
-            temp = []
-            for b in bound:
-                temp.append((float(b[0]), float(b[1])))
-            sBounds.append(temp)
+            sWeights = []
+            for weight in self.rWidget.weights:
+                temp = []
+                for w in weight:
+                    temp.append(float(w))
+                sWeights.append(temp)
 
-        sWeights = []
-        for weight in self.rWidget.weights:
-            temp = []
-            for w in weight:
-                temp.append(float(w))
-            sWeights.append(temp)
+            x = []
+            fun = 0
 
-        x = []
-        fun = 0
+            idx = self.algorithmSelect.currentIndex()
+            if len(parameters) != 0 and len(scans) != 0:
+                if idx == 0:
+                    x, fun = go.differential_evolution(fname, scans, parameters, bounds, sBounds, sWeights,
+                                                       self.goParameters['differential evolution'])
+                elif idx == 1:
+                    x, fun = go.shgo(fname, scans, parameters, bounds, sBounds, sWeights,
+                                     self.goParameters['simplicial homology'])
+                elif idx == 2:
+                    x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds, sWeights,
+                                               self.goParameters['dual annealing'])
+            else:
+                print('Try try again')
 
-        idx = self.algorithmSelect.currentIndex()
-        if len(parameters) != 0 and len(scans) != 0:
-            if idx == 0:
-                x, fun = go.differential_evolution(fname, scans, parameters, bounds, sBounds, sWeights,
-                                                   self.goParameters['differential evolution'])
-            elif idx == 1:
-                x, fun = go.shgo(fname, scans, parameters, bounds, sBounds, sWeights,
-                                 self.goParameters['simplicial homology'])
-            elif idx == 2:
-                x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds, sWeights,
-                                           self.goParameters['dual annealing'])
-        else:
-            print('Try try again')
+            self.x = x
+            self.fun = fun
 
-        self.x = x
-        self.fun = fun
+            self.plot_scan()
 
-        self.plot_scan()
+            self.runButton.setStyleSheet('background: green')
+            self.setTableFit()
+            self.progressFinished = True
+
 
     def getGOParameters(self):
 
@@ -3124,6 +3161,7 @@ class GlobalOptimizationWidget(QWidget):
                 self.goParameters['dual annealing'][6] = 'True'
 
         self.setGOParameters()
+
     def setGOParameters(self):
         self.eStrategy.blockSignals(True)
         self.eMaxiter.blockSignals(True)
@@ -3202,6 +3240,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dualAccept.blockSignals(False)
         self.dualMaxfun.blockSignals(False)
         self.dualLocal.blockSignals(False)
+
     def change_algorithm(self):
         # set the proper algorithm widget
         idx = self.algorithmSelect.currentIndex()
@@ -3259,6 +3298,9 @@ class GlobalOptimizationWidget(QWidget):
 
             row = row + 1
 
+        for idx in range(len(self.x)):
+            item = QTableWidgetItem(str(self.x[idx]))
+            self.fittingParamTable.setItem(idx, 4, item)
 
 
     def getName(self, p):
