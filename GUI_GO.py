@@ -2617,6 +2617,9 @@ class GlobalOptimizationWidget(QWidget):
         self.sfBounds = []
         self.otherBounds = []
 
+        self.x = []
+        self.fun = 0
+
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
 
@@ -2914,11 +2917,111 @@ class GlobalOptimizationWidget(QWidget):
         pagelayout = QVBoxLayout()
         pagelayout.addLayout(plotLayout)
         pagelayout.addLayout(bottomLayout)
-
         self.setGOParameters()
         self.setLayout(pagelayout)
 
         self.setTableFit()
+
+    def plot_scan(self):
+
+        self.plotWidget.clear()
+        name = self.selectedScans.currentText()
+
+        if name != '':
+            dat = self.rWidget.data_dict[name]['Data']
+            pol = self.rWidget.data_dict[name]['Polarization']
+
+
+            idx = 0
+            notDone = True
+            while notDone and idx == len(self.rWidget.data) - 1:
+                temp_name = self.rWidget.data[idx][2]
+                if temp_name == name:
+                    notDone = False
+                else:
+                    idx = idx + 1
+
+            scan_type = self.rWidget.data[idx][1]
+            step_size = float(self.sWidget._step_size)
+
+            sample1 = self.sWidget.sample
+            sample2 = self.sWidget.sample  # just to make python happy
+            isGO = False
+            if len(self.x) != 0:
+                sample2 = go.changeSampleParams(self.x,self.parameters, copy.deepcopy(sample1))
+                isGO = True
+
+
+
+            if scan_type == 'Reflectivity':
+                qz = dat[0]
+
+                R = dat[2]
+                E = self.rWidget.data_dict[name]['Energy']
+                qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size)
+                if isGO:
+                    qz,Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
+                Rsim = Rsim[pol]
+                if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+
+                    if self.rWidget.axis_state:
+                        self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        if isGO:
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                            Rgo = Rgo[pol]
+                            self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+
+                    else:
+                        self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        if isGO:
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                            Rgo = Rgo[pol]
+                            self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+
+                    self.plotWidget.setLabel('left', "Reflectivity, R")
+                    self.plotWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+                    self.plotWidget.setLogMode(False, True)
+                elif pol == 'AL' or pol == 'AC':
+                    if self.rWidget.axis_state:
+                        self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        if isGO:
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                            Rgo = Rgo[pol]
+                            self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+                    else:
+                        self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        if isGO:
+                            qz, Rgo = sample2.energy_scan(E, qz, s_min=step_size)
+                            Rgo = Rgo[pol]
+                            self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+
+                    self.plotWidget.setLogMode(False, False)
+                    self.plotWidget.setLabel('left', "Reflectivity, R")
+                    self.plotWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+            elif scan_type == 'Energy':
+                E = dat[3]
+                R = dat[2]
+                Theta = self.rWidget.data_dict[name]['Angle']
+                E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size)
+                if isGO:
+                    qz,Rgo = sample2.energy_scan(Theta, E, s_min=step_size)
+                    Rgo = Rgo[pol]
+
+                Rsim = Rsim[pol]
+                self.plotWidget.setLogMode(False, False)
+                self.plotWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                if isGO:
+                    qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size)
+                    Rgo = Rgo[pol]
+                    self.plotWidget.plot(E,Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+                self.plotWidget.setLabel('left', "Reflectivity, R")
+                self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
 
     def _run_optimization(self):
@@ -2932,6 +3035,7 @@ class GlobalOptimizationWidget(QWidget):
         for fit in self.rWidget.sfBsFitParams:
             parameters.append(fit)
 
+        self.parameters = parameters  # needed for creating new sample
         lw = []
         up = []
 
@@ -2961,7 +3065,7 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append(float(w))
             sWeights.append(temp)
 
-        x = 0
+        x = []
         fun = 0
 
         idx = self.algorithmSelect.currentIndex()
@@ -2978,7 +3082,10 @@ class GlobalOptimizationWidget(QWidget):
         else:
             print('Try try again')
 
+        self.x = x
+        self.fun = fun
 
+        self.plot_scan()
 
     def getGOParameters(self):
 
