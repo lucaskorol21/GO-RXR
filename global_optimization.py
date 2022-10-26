@@ -257,3 +257,18 @@ def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, goParam):
 
     f.close()
     return x, fun
+
+class MinimizeStopper(object):
+    def __init__(self, max_sec=0.3):
+        self.max_sec = max_sec
+        self.start = time.time()
+
+    def __call__(self, xk=None, convergence=None):
+        elapsed = time.time() - self.start
+        if elapsed > self.max_sec:
+            print("Terminating optimization: time limit reached")
+            return True
+        else:
+            # you might want to report other stuff here
+            # print("Elapsed: %.3f sec" % elapsed)
+            return False

@@ -194,9 +194,6 @@ class compoundInput(QDialog):
             self.val = np.array(tempArray)
             self.accept()
 
-        # gets the roughness
-
-        # gets the linked roughness
 
 
 
@@ -239,13 +236,8 @@ class variationWidget(QDialog):
 
         self.mainWidget.setTableVar()
 
-
-
         self.elelayout.addWidget(addButton)
         self.elelayout.addWidget(deleteButton)
-
-
-
 
         self.mainWidget.varTable.setRowCount(2)
         self.mainWidget.varTable.setColumnCount(3)
@@ -256,8 +248,6 @@ class variationWidget(QDialog):
         pagelayout.addWidget(self.mainWidget.varTable)
 
         self.setLayout(pagelayout)
-
-
 
 
     def changeElements(self):
@@ -398,8 +388,9 @@ class sampleWidget(QWidget):
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
         self.parameterFit = []
         self.varData = {ele: [[['',''],['',''],['','']] for i in range(len(sample.structure))] for ele in sample.myelements}
+        self.eShift = dict()  # keep track of the energy shift
         self.currentVal = []
-
+        self.change_eShift = True
         self.varTable = QTableWidget()
         self.elementBox = QComboBox()
         self.variationElements = sample.poly_elements
@@ -452,6 +443,7 @@ class sampleWidget(QWidget):
         self.structInfo = self.sample.structure
         self.layerBox = QComboBox(self)
 
+
         layerList = []
         for i in range(len(self.sample.structure)):
             if i == 0:
@@ -461,9 +453,9 @@ class sampleWidget(QWidget):
 
         # change this for an arbitrary sample model
         self.layerBox.addItems(layerList)
-
+        self.layerBox.currentIndexChanged.connect(self.setTable)
         # changes the table on the screen when new layer selected
-        self.layerBox.currentIndexChanged.connect(self.changetable)
+
 
         # buttons for adding and removing layers
         cblayout.addWidget(addlayerButton)
@@ -486,7 +478,11 @@ class sampleWidget(QWidget):
             self.setStructFromSample(i)
 
         # setTable
-        self.setTable(0)
+        self.setTable()
+
+        self.energyShiftTable = QTableWidget()
+        self.energyShiftTable.setColumnCount(1)
+        self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
 
 
         # Element Variation Stuff
@@ -496,10 +492,12 @@ class sampleWidget(QWidget):
         self.sampleInfoLayout.addWidget(self.structTable)
         self.sampleInfoLayout.addWidget(self.elementVariation)
         self.sampleInfoLayout.addWidget(self.elementMagnetic)
+        self.sampleInfoLayout.addWidget(self.energyShiftTable)
 
         self.structTable.viewport().installEventFilter(self)
         self.varTable.viewport().installEventFilter(self)
         self.magTable.viewport().installEventFilter(self)
+        # need to add fitting option to energy shift
 
         selectlayout = QVBoxLayout()
 
@@ -520,12 +518,15 @@ class sampleWidget(QWidget):
         magButton.clicked.connect(self.setTableMag)
         selectlayout.addWidget(magButton)
 
+        shiftButton = QPushButton('Energy Shift')  # energy shift button
+        shiftButton.clicked.connect(self._energy_shift)
+        selectlayout.addWidget(shiftButton)
+
         self.structBool = True
         self.polyBool = False
         self.magBool = False
 
         dpButton = QPushButton('Density Profile')
-        dpButton.clicked.connect(self.changetable)
         dpButton.clicked.connect(self._densityprofile)
         dpButton.setStyleSheet("background-color : cyan")
         selectlayout.addWidget(dpButton)
@@ -534,11 +535,8 @@ class sampleWidget(QWidget):
         pagelayout.addLayout(self.sampleInfoLayout)
         pagelayout.addLayout(selectlayout)
 
-
-
         mylayout = QVBoxLayout()
         mylayout.addLayout(pagelayout)
-
 
         # Adding the plotting Widget
         self.densityWidget = pg.PlotWidget()
@@ -546,16 +544,35 @@ class sampleWidget(QWidget):
 
         self.densityWidget.addLegend()
 
-
-
         mylayout.addWidget(self.densityWidget)
 
         # change parameters when clicked
         self.structTable.itemChanged.connect(self.changeStructValues)
         self.varTable.itemChanged.connect(self.changeVarValues)
         self.magTable.itemChanged.connect(self.changeMagValues)
-
+        self.energyShiftTable.itemChanged.connect(self.changeEShiftValues)
         self.setLayout(mylayout)
+
+    def _energy_shift(self):
+        self.sampleInfoLayout.setCurrentIndex(3)
+        self.setTableEShift()
+
+    def setTableEShift(self):
+        self.energyShiftTable.blockSignals(True)
+        keys = list(self.eShift.keys())
+        self.energyShiftTable.setColumnCount(len(keys))
+        self.energyShiftTable.setRowCount(1)
+        self.energyShiftTable.setHorizontalHeaderLabels(keys)
+        for column,key in enumerate(keys):
+            item = QTableWidgetItem(str(self.eShift[key]))
+            self.energyShiftTable.setItem(0, column, item)
+        self.energyShiftTable.blockSignals(False)
+
+    def changeEShiftValues(self):
+        column = self.energyShiftTable.currentColumn()
+        key = self.energyShiftTable.horizontalHeaderItem(column).text()
+        value = self.energyShiftTable.item(0,column).text()
+        self.eShift[key] = float(value)
 
     def changeMagValues(self):
         layer = self.layerBox.currentIndex()
@@ -607,13 +624,40 @@ class sampleWidget(QWidget):
 
 
 
-        if self.varTable.item(row, column) is not None and not(self.changeLayer) and not(self.change_elements):
+        if self.varTable.item(row, column) is not None and not(self.change_elements):
+
             copy_of_list = copy.deepcopy(self.parameterFit)
 
             value = self.varTable.item(row, column).text()  # setting varData correctly depending on user input
             prev_value = self.varData[element][layer][column][row]
-
+            print(prev_value)
             self.varData[element][layer][column][row] = value
+            if column == 0:
+                if prev_value != value:
+                    for i in range(len(self.varData[element])):
+                        inLayer = False
+
+                        for j in range(len(self.structTableInfo[i])):
+                            if element == self.structTableInfo[i][j][0]:
+                                inLayer = True
+
+                        if inLayer:
+                            self.varData[element][i][0][row] = value
+                            self.magData[element][i][0][row] = value
+
+            # changing the scattering factor
+            if column == 2:
+                if prev_value != value:
+                    # takes into account the scattering factor change
+                    prev_dict_name = 'ff-' + prev_value
+                    if prev_value != '':
+                        del self.eShift[prev_dict_name]
+                    dict_name = 'ff-' + value
+                    self.eShift[dict_name] = 0
+                    for i in range(len(self.varData[element])):
+                        if prev_value in self.varData[element][i][2]:
+                            idx = list(self.varData[element][i][2]).index(prev_value)
+                            self.varData[element][i][2][idx] = value
 
             for fit in copy_of_list:
                 if fit[0] == layer and fit[1] == 'POLYMORPHOUS' and column != 2:
@@ -631,8 +675,6 @@ class sampleWidget(QWidget):
                                 upper = 1
                             self.currentVal[idx] = [value, [str(lower), str(upper)]]
 
-
-                        #self.parameterFit[idx][3] =
                 elif fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and column == 2:
                     if fit[2] == prev_value and value != prev_value:
                         self.parameterFit.remove(fit)
@@ -643,10 +685,27 @@ class sampleWidget(QWidget):
         row = self.structTable.currentRow()
         column = self.structTable.currentColumn()
 
-        if self.structTable.item(row, column) is not None and not(self.changeLayer):
+        if self.structTable.item(row, column) is not None:
             copy_of_list = self.parameterFit
             value = self.structTable.item(row, column).text()
             prev_value = copy.copy(self.structTableInfo[layer][row][column])
+
+            # change name or scattering factor if it is changed (eShift name change)
+            if column == 5:
+                name = self.structTable.item(row, 0).text()
+                if value != prev_value:
+                    # changing scattering factor info
+                    prev_dict_name = 'ff-'+prev_value
+                    del self.eShift[prev_dict_name]
+                    dict_name = 'ff-'+ value
+                    self.eShift[dict_name] = 0
+
+                    self.eShift[dict_name] = value
+                    for i in range(len(self.structTableInfo)):
+                        for j in range(len(self.structTableInfo[i])):
+                            if self.structTableInfo[i][j][0] == name:
+                                self.structTableInfo[i][j][5] = value  # changes the scattering factor for all
+
             self.structTableInfo[layer][row][column] = self.structTable.item(row, column).text()
 
             for fit in copy_of_list:
@@ -814,6 +873,7 @@ class sampleWidget(QWidget):
                             self.currentVal.pop(idx)
 
         self.setTableMag()
+
     def var_handler(self):
         idx = self.sampleInfoLayout.currentIndex()  # keeps track of which parameters are to be fit
         my_layer = self.layerBox.currentIndex()  # layer index
@@ -1141,7 +1201,7 @@ class sampleWidget(QWidget):
                         self.parameterFit.remove(fit)
                         self.currentVal.pop(idx)
 
-        self.setTable(my_layer)
+        self.setTable()
 
     def changeStepSize(self):
         self._step_size = self.step_size.text()
@@ -1175,6 +1235,13 @@ class sampleWidget(QWidget):
                 elif col == 5:
                     element = list(structInfo[idx].keys())[row]
                     scattering_factor = structInfo[idx][element].scattering_factor
+
+                    # keeps track of the scattering factors - implementation will change when loading data
+                    if type(scattering_factor) is not list and type(scattering_factor) is not np.ndarray:
+                        name = 'ff-'+scattering_factor
+                        if name not in list(self.eShift.keys()):
+                            self.eShift[name] = 0
+
                     tempArray[row,col] = str(scattering_factor)
                 elif col == 6:
                     element = list(structInfo[idx].keys())[row]
@@ -1184,16 +1251,16 @@ class sampleWidget(QWidget):
 
         self.structTableInfo.append(tempArray)
 
-    def setTable(self, idx):
+    def setTable(self):
+        self.structTable.blockSignals(True)
+        idx = self.layerBox.currentIndex()
         tableInfo = self.structTableInfo[idx]
         num_rows = self.structTable.rowCount()
 
         for col in range(6):
             for row in range(num_rows):
-
                 item = QTableWidgetItem(str(tableInfo[row][col]))
                 self.structTable.setItem(row,col, item)
-
 
         for fit in self.parameterFit:
             layer = fit[0]
@@ -1239,8 +1306,10 @@ class sampleWidget(QWidget):
                     if fit[2] == self.structTableInfo[idx][row][5] and fit[1] == 'STRUCTURAL':
                         self.structTable.item(row,5).setBackground(QtGui.QColor(150, 255, 150))
 
+        self.structTable.blockSignals(False)
 
     def setTableVar(self):
+        self.varTable.blockSignals(True)
         idx = self.sampleInfoLayout.currentIndex()
         layer_idx = self.layerBox.currentIndex()
         ele_idx = self.elementBox.currentIndex()
@@ -1289,13 +1358,10 @@ class sampleWidget(QWidget):
                     item = QTableWidgetItem('')
                     self.varTable.setItem(row, 2, item)
 
-
-
-
+        self.varTable.blockSignals(False)
 
     def setTableMag(self):
-
-        self.magGo = False
+        self.magTable.blockSignals(True)
         layer_idx = self.layerBox.currentIndex()
 
         # set the magnetic direction combobox to the correct magnetization direction
@@ -1379,125 +1445,9 @@ class sampleWidget(QWidget):
                         scattering_factor = self.magTable.item(row,1).text()
                         if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
                             self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
-        self.magGo = True
-    def changetable(self):
 
-        self.changeLayer = True
-        idx = self.layerBox.currentIndex()
+        self.magTable.blockSignals(True)
 
-        if self.structBool:
-            for row in range(len(self.structTableInfo[self.previousLayer])):
-                for col in range(len(self.structTableInfo[self.previousLayer][0])-1):
-                    item = self.structTable.item(row,col).text()
-                    self.structTableInfo[self.previousLayer][row][col] = str(item)
-
-            self.previousLayer = idx
-
-
-        if self.polyBool:
-            # get information from variation table
-            if not self.change_elements:
-                self.element_index = self.elementBox.currentIndex()
-
-            ele = self.structTableInfo[self.previousLayer][self.element_index][0]
-
-            name = ['' for i in range(self.varTable.rowCount())]  # initialize for no input case
-            ratio = ['' for i in range(self.varTable.rowCount())]
-            scat = ['' for i in range(self.varTable.rowCount())]
-
-            for row in range(self.varTable.rowCount()):
-                for col in range(self.varTable.columnCount()):
-                    if self.varTable.item(row, col) == None:
-                        pass
-                    else:
-                        item = self.varTable.item(row, col).text()
-                        if col == 0:
-                            name[row] = item
-                        elif col == 1:
-                            ratio[row] = item
-                        elif col == 2:
-                            scat[row] = item
-
-            # Makes sure that if the name or scattering factor is changed, that we change it throughout
-            for i in range(len(self.structTableInfo)):
-                for j in range(len(self.structTableInfo[i])):
-
-                    new_ele = self.structTableInfo[i][j][0]
-                    if new_ele == ele and i != self.previousLayer:
-
-                        self.varData[ele][i][0] = name
-                        self.varData[ele][i][2] = scat
-
-                        if self.magData[ele][i][0][0] != '' and len(self.magData[ele][i][0]) != 1:
-                            self.magData[ele][i][0] = name  # makes sure that magnetic components has correct names
-
-
-
-            self.varData[ele][self.previousLayer] = [name, ratio, scat]
-            if self.magData[ele][self.previousLayer][0][0] != '' and len(self.magData[ele][self.previousLayer][0]) != 1:
-                self.magData[ele][self.previousLayer][0] = name  # makes sure that magnetic components has correct names
-
-            self.previousLayer = idx
-
-        if self.magBool:
-            layer = self.structTableInfo[self.previousLayer]
-
-            elements = []
-
-            for ele_idx in range(len(layer)):
-                ele = layer[ele_idx][0]
-                elements.append(ele)
-
-
-            e = 0  # element index
-            v = 0 # element variation index
-            for row in range(self.magTable.rowCount()):
-
-                element = elements[e]  # gets the proper element
-
-
-                names = self.magData[element][self.previousLayer][0]
-                num_v = len(names)
-
-                for col in range(self.magTable.columnCount()):
-                    item = self.magTable.item(row,col).text()  # gets the current item
-
-                    if num_v == 1:
-                        if col == 0:
-                            self.magData[element][self.previousLayer][1][0] = item
-                        elif col == 1:
-                            self.magData[element][self.previousLayer][2][0] = item
-                            e = e + 1
-
-                    else:
-
-                        if col == 0:
-                            self.magData[element][self.previousLayer][1][v] = item
-                        elif col == 1:
-                            self.magData[element][self.previousLayer][2][v] = item
-                            v = v + 1
-                            if v > num_v-1:
-                                v = 0
-                                e = e + 1
-
-                        # Makes sure that if the name or scattering factor is changed, that we change it throughout
-            for i in range(len(self.structTableInfo[self.previousLayer])):
-                element = self.structTableInfo[self.previousLayer][i][0]
-                new_sf = self.magData[element][self.previousLayer][2]
-                for lay_idx in range(len(self.magData[element])):
-
-                    if self.magData[element][lay_idx][0][0] != '':
-                        self.magData[element][lay_idx][2] = new_sf
-                        if self.magData[element][lay_idx][1][0] == '' and new_sf[0] != '':
-                            self.magData[element][lay_idx][1][0] = 0
-                        elif new_sf[0] == '':
-                            self.magData[element][lay_idx][1][0] = ''
-
-            self.previousLayer = idx
-
-        self.setTable(idx)
-
-        self.changeLayer = False
 
     def _addLayer(self):
 
@@ -1581,7 +1531,7 @@ class sampleWidget(QWidget):
             self.varData[key].pop(idx)
             self.magData[key].pop(idx)
 
-        self.setTable(idx)  # sets the table for layer that replaces the removed layer
+        self.setTable()  # sets the table for layer that replaces the removed layer
 
     def _copyLayer(self):
         num = self.layerBox.count()
@@ -1609,35 +1559,14 @@ class sampleWidget(QWidget):
         self.magDirection.insert(idx+1,new_dir)
 
     def _structural(self):
-        self.changetable()
-
-        self.structBool = True
-        self.polyBool = False
-        self.magBool = False
-
-        self.changetable()
 
         self.sampleInfoLayout.setCurrentIndex(0)
 
     def _elementVariation(self):
-        self.changetable()
-
-        self.structBool = False
-        self.polyBool = True
-        self.magBool = False
-
-        self.changetable()
 
         self.sampleInfoLayout.setCurrentIndex(1)
 
     def _magnetic(self):
-        self.changetable()
-
-        self.structBool = False
-        self.polyBool = False
-        self.magBool = True
-
-        self.changetable()
 
         self.sampleInfoLayout.setCurrentIndex(2)
 
@@ -1678,6 +1607,7 @@ class sampleWidget(QWidget):
             self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2, style=Qt.DashLine), name=myname)
 
     def _createSample(self):
+        # This function takes the information from the tables and converts it into a usable form
 
         m = len(self.structTableInfo)  # determines how many layers in the sample
         sample = ms.slab(m)  # initializes the slab class
@@ -1742,11 +1672,13 @@ class sampleWidget(QWidget):
                 if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx,names,ratio,scattering_factor)
+
         return sample
 
 
     def getData(self):
 
+        # this function retrieves all of the important data from the sample
         for j in range(len(self.sample.structure)):
             layer = self.sample.structure[j]
             elekeys = list(layer.keys())
@@ -1759,11 +1691,26 @@ class sampleWidget(QWidget):
                     self.varData[ele][j] = [layer[ele].polymorph, list(layer[ele].poly_ratio),
                                             layer[ele].scattering_factor]
 
+                    # implementation will change eventually
+                    for scat in layer[ele].scattering_factor:
+                        name = 'ff-'+scat
+                        if name not in list(self.eShift.keys()):
+                            self.eShift[name] = 0
+
                     if len(layer[ele].mag_density) != 0:
                         mag_density = list(layer[ele].mag_density)
                     if len(layer[ele].mag_scattering_factor) != 0:
                         mag_sf = layer[ele].mag_scattering_factor
+
+                        # implementation will change
+                        for scat in mag_sf:
+                            name = 'ffm-'+scat
+                            if name not in list(self.eShift.keys()):
+                                self.eShift[name] = 0
+
                     self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf]
+
+
                 else:
                     mag_density = ['']
                     mag_sf = ['']
@@ -1771,6 +1718,12 @@ class sampleWidget(QWidget):
                         mag_density = list(layer[ele].mag_density)
                     if len(layer[ele].mag_scattering_factor) != 0:
                         mag_sf = layer[ele].mag_scattering_factor
+
+                        # implementation will change
+                        for scat in mag_sf:
+                            name = 'ffm-'+scat
+                            if name not in list(self.eShift.keys()):
+                                self.eShift[name] = 0
                     self.magData[ele][j] = [[ele],mag_density, mag_sf]
 
             # gets the magnetic direction for that particular layer
@@ -2654,6 +2607,7 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.setStyleSheet('background: green')
 
         self.stopButton = QPushButton('Stop Optimization')
+        self.stopButton.clicked.connect(self._stop_optimization)
         self.optButton = QPushButton('Update Sample')
         self.optButton.clicked.connect(self._save_optimization)
         self.optButton.setStyleSheet('background: cyan')
@@ -2934,6 +2888,11 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
 
         self.setTableFit()
+
+    def _stop_optimization(self):
+        print('stop')
+        pass
+
     def _save_optimization(self):
         # saves the optimizations
         row = 0
@@ -3370,7 +3329,6 @@ class GlobalOptimizationWidget(QWidget):
                     name = 'sFactor-All'
                 else:
                     name = 'sFactor-' + p[1]
-
 
         return name
 
