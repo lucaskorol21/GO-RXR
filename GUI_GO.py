@@ -497,6 +497,7 @@ class sampleWidget(QWidget):
         self.structTable.viewport().installEventFilter(self)
         self.varTable.viewport().installEventFilter(self)
         self.magTable.viewport().installEventFilter(self)
+        self.energyShiftTable.viewport().installEventFilter(self)
         # need to add fitting option to energy shift
 
         selectlayout = QVBoxLayout()
@@ -566,6 +567,27 @@ class sampleWidget(QWidget):
         for column,key in enumerate(keys):
             item = QTableWidgetItem(str(self.eShift[key]))
             self.energyShiftTable.setItem(0, column, item)
+
+
+        copy_of_list = copy.deepcopy(self.parameterFit)
+        my_fits = []
+        for fit in copy_of_list:
+            for column, key in enumerate(keys):
+                if len(fit) == 3:
+                    if key[:3] == 'ff-':
+                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and fit[2] == key[3:]:
+                            my_fits.append(column)
+                        else:
+                            self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+                    elif key[:3] == 'ffm':
+                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == key[4:]:
+                            my_fits.append(column)
+                        else:
+                            self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+
+        for col in my_fits:
+            self.energyShiftTable.item(0, col).setBackground(QtGui.QColor(150, 255, 150))
+
         self.energyShiftTable.blockSignals(False)
 
     def changeEShiftValues(self):
@@ -573,6 +595,18 @@ class sampleWidget(QWidget):
         key = self.energyShiftTable.horizontalHeaderItem(column).text()
         value = self.energyShiftTable.item(0,column).text()
         self.eShift[key] = float(value)
+
+        for idx, fit in enumerate(self.parameterFit):
+            if key[:3] == 'ff-':
+                if fit == ['SCATTERING FACTOR', 'STRUCTURAL', key[3:]]:
+                    upper = str(float(value) + 0.5)
+                    lower = str(float(value) - 0.5)
+                    self.currentVal[idx] = [value, [lower, upper]]
+            elif key[:4] == 'ffm':
+                if fit == ['SCATTERING FACTOR', 'MAGNETIC', key[4:]]:
+                    upper = str(float(value) + 0.5)
+                    lower = str(float(value) - 0.5)
+                    self.currentVal[idx] = [value, [lower, upper]]
 
     def changeMagValues(self):
         layer = self.layerBox.currentIndex()
@@ -650,7 +684,7 @@ class sampleWidget(QWidget):
 
             value = self.varTable.item(row, column).text()  # setting varData correctly depending on user input
             prev_value = self.varData[element][layer][column][row]
-            print(prev_value)
+
             self.varData[element][layer][column][row] = value
             if column == 0:
                 if prev_value != value:
@@ -729,8 +763,8 @@ class sampleWidget(QWidget):
             self.structTableInfo[layer][row][column] = self.structTable.item(row, column).text()
 
             for fit in copy_of_list:
+                element = self.structTableInfo[layer][row][0]
                 if fit[0] == layer and fit[1] == 'STRUCTURAL':
-                    element = self.structTableInfo[layer][row][0]
                     if column == 1:  # thickness
                         if fit[2] == 'COMPOUND' and fit[3] == 'THICKNESS':
                             idx = self.parameterFit.index([layer,'STRUCTURAL','COMPOUND', 'THICKNESS'])
@@ -807,7 +841,54 @@ class sampleWidget(QWidget):
                     self.var_handler()
                 elif idx == 2:
                     self.mag_handler()
+                elif idx == 3:
+                    self.eShift_handler()
         return False
+
+    def eShift_handler(self):
+        column = self.energyShiftTable.currentColumn()
+        copy_fit_list = copy.deepcopy(self.parameterFit)
+        name = self.energyShiftTable.horizontalHeaderItem(column).text()
+        val = self.energyShiftTable.currentItem().text()
+
+        top_menu = QMenu()
+
+        menu = top_menu.addMenu("Menu")
+
+        _fit = menu.addAction('Fit')
+        _remove_fit = menu.addAction('Remove Fit')
+
+        action = menu.exec_(QtGui.QCursor.pos())
+
+        if action == _fit:
+            fit = []
+            if name[:3] == 'ff-':
+                fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+            elif name[:3] == 'ffm':
+                fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+
+            if fit != []:
+                self.parameterFit.append(fit)
+                lower = str(float(val) - 0.5)
+                upper = str(float(val) + 0.5)
+                self.currentVal.append([val, [lower, upper]])
+
+        elif action == _remove_fit:
+            fit = []
+            if name[:3] == 'ff-':
+                fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+            elif name[:3] == 'ffm':
+                fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+
+            if fit in self.parameterFit:
+                idx = self.parameterFit.index(fit)
+                self.parameterFit.remove(fit)
+                self.currentVal.pop(idx)
+
+        self.setTableEShift()
+        self.setTable()
+        self.setTableMag()
+        self.setTableVar()
 
     def mag_handler(self):
         idx = self.sampleInfoLayout.currentIndex()  # keeps track of which parameters are to be fit
