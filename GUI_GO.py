@@ -3085,11 +3085,34 @@ class GlobalOptimizationWidget(QWidget):
 
             else: # scattering factor, background shift, scaling factor
                 if fit[0] == 'SCATTERING FACTOR':
-                    pass
+                    my_type = fit[1]
+                    if my_type == 'STRUCTURAL':
+                        sf = fit[2]
+                        name = 'ff-' + sf
+                        self.sWidget.eShift[name] = self.x[idx]
+                    elif my_type == 'MAGNETIC':
+                        sf = fit[2]
+                        name = 'ffm-' + sf
+                        self.sWidget.eShift[name] = self.x[idx]
+
                 elif fit[0] == 'BACKGROUND SHIFT':
-                    pass
+                    scans = self.rWidget.fit
+                    if fit[1] == 'ALL SCANS':
+                        for i in range(len(scans)):
+                            self.rWidget.bs[i] = self.x[idx]
+                    else:
+                        i = scans.index(fit[1])
+                        self.rWidget.bs[i] = self.x[idx]
+
+
                 elif fit[0] == 'SCALING FACTOR':
-                    pass
+                    scans = self.rWidget.fit
+                    if fit[1] == 'ALL SCANS':
+                        for i in range(len(scans)):
+                            self.rWidget.sf[i] = self.x[idx]
+                    else:
+                        i = scans.index(fit[1])
+                        self.rWidget.sf[i] = self.x[idx]
 
 
     def _save_optimization(self):
