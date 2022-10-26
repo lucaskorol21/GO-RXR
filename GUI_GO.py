@@ -3104,7 +3104,6 @@ class GlobalOptimizationWidget(QWidget):
                         i = scans.index(fit[1])
                         self.rWidget.bs[i] = self.x[idx]
 
-
                 elif fit[0] == 'SCALING FACTOR':
                     scans = self.rWidget.fit
                     if fit[1] == 'ALL SCANS':
@@ -3610,6 +3609,12 @@ class ReflectometryApp(QMainWindow):
         widget.setLayout(pagelayout)
         self.setCentralWidget(widget)
 
+        # starting my menu bar
+        menuBar = self.menuBar()
+        fileMenu = QMenu("&File", self)
+        menuBar.addMenu(fileMenu)
+        editMenu = menuBar.addMenu("&Edit")
+        helpMenu = menuBar.addMenu("&Help")
     def activate_tab_1(self):
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.stackedlayout.setCurrentIndex(0)
