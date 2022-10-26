@@ -3004,50 +3004,50 @@ class GlobalOptimizationWidget(QWidget):
                 if my_type == 'STRUCTURAL':
                     mode = fit[2]
                     if mode == 'COMPOUND':
-                        element = fit[3]
-                        char = fit[4]
+                        char = fit[3]
 
-                        # finds the element index
                         ele_idx = 0
-                        for i in range(len(self.sWidget.structTableInfo[layer])):
-                            if self.sWidget.structTableInfo[layer][i][0] == element:
-                                ele_idx = i
-
                         if char == 'THICKNESS':
-                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][1]) - float(self.x[idx])
+                            p = float(self.sWidget.structTableInfo[layer][ele_idx][4])
+                            diff = p - float(self.x[idx])
                             for i in range(len(self.sWidget.structTableInfo[layer])):
                                 if i == ele_idx:  # makes sure that we are subtracting the difference value
                                     self.sWidget.structTableInfo[layer][ele_idx][1] = self.x[idx]
                                 else:
-                                    self.sWidget.structTableInfo[layer][i][1] = float(self.x[idx]) - diff
+                                    self.sWidget.structTableInfo[layer][i][1] = float(self.sWidget.structTableInfo[layer][i][1]) - diff
 
                         elif char == 'DENSITY':
-                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][2]) - float(self.x[idx])
+                            p = float(self.sWidget.structTableInfo[layer][ele_idx][2])
+                            diff = p - float(self.x[idx])
                             for i in range(len(self.sWidget.structTableInfo[layer])):
+                                s = float(self.sWidget.structTableInfo[layer][i][6])
                                 if i == ele_idx:  # makes sure that we are subtracting the difference value
                                     self.sWidget.structTableInfo[layer][ele_idx][2] = self.x[idx]
                                 else:
-                                    self.sWidget.structTableInfo[layer][i][2] = float(self.x[idx]) - diff
+                                    self.sWidget.structTableInfo[layer][i][2] = float(self.sWidget.structTableInfo[layer][i][2]) - s*diff
 
                         elif char == 'ROUGHNESS':
-                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][3]) - float(self.x[idx])
+                            p = float(self.sWidget.structTableInfo[layer][ele_idx][3])
+                            diff = p - float(self.x[idx])
                             for i in range(len(self.sWidget.structTableInfo[layer])):
                                 if i == ele_idx:  # makes sure that we are subtracting the difference value
                                     self.sWidget.structTableInfo[layer][ele_idx][3] = self.x[idx]
                                 else:
-                                    self.sWidget.structTableInfo[layer][i][3] = float(self.x[idx]) - diff
+                                    self.sWidget.structTableInfo[layer][i][3] = float(self.sWidget.structTableInfo[layer][i][3]) - diff
 
                         elif char == 'LINKED ROUGHNESS':
-                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][4]) - float(self.x[idx])
+                            p = float(self.sWidget.structTableInfo[layer][ele_idx][4])
+                            diff = p - float(self.x[idx])
                             for i in range(len(self.sWidget.structTableInfo[layer])):
                                 if i == ele_idx:  # makes sure that we are subtracting the difference value
                                     self.sWidget.structTableInfo[layer][ele_idx][4] = self.x[idx]
                                 else:
-                                    self.sWidget.structTableInfo[layer][i][4] = float(self.x[idx]) - diff
+                                    self.sWidget.structTableInfo[layer][i][4] = float(self.sWidget.structTableInfo[layer][i][4]) - diff
 
                     elif mode == 'ELEMENT':  # element mode
                         element = fit[3]
                         char = fit[4]
+
                         ele_idx = 0
                         for i in range(len(self.sWidget.structTableInfo[layer])):
                             if self.sWidget.structTableInfo[layer][i][0] == element:
