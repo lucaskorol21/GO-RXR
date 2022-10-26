@@ -580,7 +580,7 @@ class sampleWidget(QWidget):
         column = self.magTable.currentColumn()
         row = self.magTable.currentRow()
 
-        if self.magTable.item(row, column) is not None and not(self.changeLayer) and self.magGo and self.magTable.verticalHeaderItem(row) is not None:
+        if self.magTable.item(row, column) is not None and self.magTable.verticalHeaderItem(row) is not None:
             name = self.magTable.verticalHeaderItem(row).text()
             element = ''
             idx = 0
@@ -593,7 +593,27 @@ class sampleWidget(QWidget):
 
             value = self.magTable.item(row, column).text()
 
-            prev_value = self.magData[element][layer][column+1][idx]
+
+            prev_value = self.magData[element][layer][column + 1][idx]
+            if column == 1:
+                prev_dict_name = 'ffm-'+prev_value
+                if prev_value != '':
+                    del self.eShift[prev_dict_name]
+                dict_name = 'ffm-' + value
+                self.eShift[dict_name] = 0
+
+                if prev_value != value:
+                    for i in range(len(self.magData[element])):
+                        inLayer = False
+                        for j in range(len(self.structTableInfo[i])):
+                            if element == self.structTableInfo[i][j][0]:
+                                inLayer = True
+                        if inLayer:
+                            self.magData[element][i][column+1][idx] = value
+                            if self.magData[element][i][1][idx] == '':
+                                self.magData[element][i][1][idx] = '0'
+
+
             self.magData[element][layer][column+1][idx] = value
 
             copy_of_list = copy.deepcopy(self.parameterFit)
@@ -1446,7 +1466,7 @@ class sampleWidget(QWidget):
                         if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
                             self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
 
-        self.magTable.blockSignals(True)
+        self.magTable.blockSignals(False)
 
 
     def _addLayer(self):
