@@ -2684,6 +2684,7 @@ class GlobalOptimizationWidget(QWidget):
                              'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
 
         self.paramChange = True
+        self.parameters = []
         selectedScansLayout = QHBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
         self.selectedScans.currentTextChanged.connect(self.plot_scan)
@@ -2991,8 +2992,105 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
 
     def _stop_optimization(self):
-        print('stop')
+
         pass
+
+    def changeFitParameters(self):
+        # This function simply takes all the fitting parameters and saves the new fit
+        for idx,fit in enumerate(self.parameters):
+            if type(fit[0]) != str: # structural, polymorphous, magnetic
+                layer = fit[0]
+                my_type = fit[1]
+                if my_type == 'STRUCTURAL':
+                    mode = fit[2]
+                    if mode == 'COMPOUND':
+                        element = fit[3]
+                        char = fit[4]
+
+                        # finds the element index
+                        ele_idx = 0
+                        for i in range(len(self.sWidget.structTableInfo[layer])):
+                            if self.sWidget.structTableInfo[layer][i][0] == element:
+                                ele_idx = i
+
+                        if char == 'THICKNESS':
+                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][1]) - float(self.x[idx])
+                            for i in range(len(self.sWidget.structTableInfo[layer])):
+                                if i == ele_idx:  # makes sure that we are subtracting the difference value
+                                    self.sWidget.structTableInfo[layer][ele_idx][1] = self.x[idx]
+                                else:
+                                    self.sWidget.structTableInfo[layer][i][1] = float(self.x[idx]) - diff
+
+                        elif char == 'DENSITY':
+                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][2]) - float(self.x[idx])
+                            for i in range(len(self.sWidget.structTableInfo[layer])):
+                                if i == ele_idx:  # makes sure that we are subtracting the difference value
+                                    self.sWidget.structTableInfo[layer][ele_idx][2] = self.x[idx]
+                                else:
+                                    self.sWidget.structTableInfo[layer][i][2] = float(self.x[idx]) - diff
+
+                        elif char == 'ROUGHNESS':
+                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][3]) - float(self.x[idx])
+                            for i in range(len(self.sWidget.structTableInfo[layer])):
+                                if i == ele_idx:  # makes sure that we are subtracting the difference value
+                                    self.sWidget.structTableInfo[layer][ele_idx][3] = self.x[idx]
+                                else:
+                                    self.sWidget.structTableInfo[layer][i][3] = float(self.x[idx]) - diff
+
+                        elif char == 'LINKED ROUGHNESS':
+                            diff = float(self.sWidget.structTableInfo[layer][ele_idx][4]) - float(self.x[idx])
+                            for i in range(len(self.sWidget.structTableInfo[layer])):
+                                if i == ele_idx:  # makes sure that we are subtracting the difference value
+                                    self.sWidget.structTableInfo[layer][ele_idx][4] = self.x[idx]
+                                else:
+                                    self.sWidget.structTableInfo[layer][i][4] = float(self.x[idx]) - diff
+
+                    elif mode == 'ELEMENT':  # element mode
+                        element = fit[3]
+                        char = fit[4]
+                        ele_idx = 0
+                        for i in range(len(self.sWidget.structTableInfo[layer])):
+                            if self.sWidget.structTableInfo[layer][i][0] == element:
+                                ele_idx = i
+
+                        if char == 'THICKNESS':
+                            self.sWidget.structTableInfo[layer][ele_idx][1] = self.x[idx]
+                        elif char == 'DENSITY':
+                            self.sWidget.structTableInfo[layer][ele_idx][2] = self.x[idx]
+                        elif char == 'ROUGHNESS':
+                            self.sWidget.structTableInfo[layer][ele_idx][3] = self.x[idx]
+                        elif char == 'LINKED ROUGHNESS':
+                            self.sWidget.structTableInfo[layer][ele_idx][4] = self.x[idx]
+                elif my_type == 'POLYMORPHOUS':
+                    element = fit[2]
+                    poly = fit[3]
+                    j = list(self.sWidget.varData[element][layer][0]).index(poly)
+                    self.sWidget.varData[element][layer][1][j] = self.x[idx]
+
+                    # will need to change for more than 2 element variations
+                    if j == 1:
+                        self.sWidget.varData[element][layer][1][0] = 1-float(self.x[idx])
+                    elif j == 0:
+                        self.sWidget.varData[element][layer][1][1] = 1-float(self.x[idx])
+
+                elif my_type == 'MAGNETIC':
+                    if len(fit) == 3:
+                        element = fit[2]
+                        self.sWidget.magData[element][layer][1][0] = self.x[idx]
+                    elif len(fit) == 4:
+                        element = fit[2]
+                        poly = fit[3]
+                        j = list(self.sWidget.magData[element][layer][0]).index(poly)
+                        self.sWidget.magData[element][layer][1][j] = self.x[idx]
+
+            else: # scattering factor, background shift, scaling factor
+                if fit[0] == 'SCATTERING FACTOR':
+                    pass
+                elif fit[0] == 'BACKGROUND SHIFT':
+                    pass
+                elif fit[0] == 'SCALING FACTOR':
+                    pass
+
 
     def _save_optimization(self):
         # saves the optimizations
@@ -3002,13 +3100,16 @@ class GlobalOptimizationWidget(QWidget):
             self.sWidget.currentVal[idx][0] = str(self.x[row])
             row = row + 1
 
-
         for idx in range(len(self.rWidget.currentVal)):
             self.rWidget.currentVal[idx][0] = str(self.x[row])
             row = row + 1
 
+        self.changeFitParameters()
         self.sWidget.sample = go.changeSampleParams(self.x, self.parameters, self.sWidget.sample)
         self.setTableFit()
+        self.sWidget.setTable()
+        self.sWidget.setTableVar()
+        self.sWidget.setTableMag()
 
     def plot_scan(self):
 
@@ -3127,6 +3228,7 @@ class GlobalOptimizationWidget(QWidget):
             parameters = copy.deepcopy(self.sWidget.parameterFit)
             for fit in self.rWidget.sfBsFitParams:
                 parameters.append(fit)
+
             self.parameters = parameters  # needed for creating new sample
             lw = []
             up = []

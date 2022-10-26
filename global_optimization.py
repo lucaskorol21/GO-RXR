@@ -90,14 +90,16 @@ def changeSampleParams(x, parameters, sample):
                     sample.structure[layer][element].poly_ratio[0] = ratio
 
             elif property == 'MAGNETIC':
-                element = params[3]  # determines the magnetic element to use
+
+                element = params[2]  # determines the magnetic element to use
 
                 # determines if magnetic element is polymorphous
                 if len(params) == 3:
                     sample.structure[layer][element].mag_density[0] = x[p]  # non-polymorphous case
                 else:
-                    polymorph = params[4]  # polymorphous case
-                    poly = np.where(sample.structure[layer][element].polymorph == polymorph)
+                    polymorph = params[3]  # polymorphous case
+                    poly = list(sample.structure[layer][element].polymorph).index(polymorph)
+                    #poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
     return sample
