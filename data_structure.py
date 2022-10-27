@@ -8,7 +8,8 @@ import ast
 import h5py
 
 
-
+def WriteOptHDF5(fname):
+    pass
 
 def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     """
@@ -328,6 +329,42 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
                 dsNum = dsNum + 1
 
+    grp4 = f.create_group("Optimization")
+
+    diff_ev = grp4.create_group("Differential Evolution")
+    shgo = grp4.create_group("Simplicial Homology")
+    dual = grp4.create_group("Dual Annealing")
+
+    # load in optimization parameters for differential evolution
+    diff_ev.attrs['strategy'] = 'currenttobest1bin'
+    diff_ev.attrs['maxIter'] = 150
+    diff_ev.attrs['popsize'] = 15
+    diff_ev.attrs['tol'] = 1e-6
+    diff_ev.attrs['atol'] = 0
+    diff_ev.attrs['min_mutation'] = 0.5
+    diff_ev.attrs['max_mutation'] = 1
+    diff_ev.attrs['recombination'] = 0.7
+    diff_ev.attrs['polish'] = 'True'
+    diff_ev.attrs['init'] = 'latinhypercube'
+    diff_ev.attrs['updating'] = 'immediate'
+
+    # load in optimization parameters for simplicial homology
+    shgo.attrs['n'] = 'None'
+    shgo.attrs['iter'] = 1
+    shgo.attrs['sampling'] = 'simplicial'
+
+    # load in optimization parameters for simplicial homology
+    dual.attrs['maxiter'] = 150
+    dual.attrs['initial_temp'] = 5230.0
+    dual.attrs['restart_temp'] = 2e-5
+    dual.attrs['visit'] = 2.62
+    dual.attrs['accept'] = 5.0
+    dual.attrs['maxfun'] = 10000000.0
+    dual.attrs['local_search'] = 'False'
+
+    grp5 = f.create_group('Fitting Parameters')
+    grp5.attrs['Sample'] = ''
+    grp5.attrs['Scans'] = ''
     f.close()
 
 def ReadSampleHDF5(fname):
