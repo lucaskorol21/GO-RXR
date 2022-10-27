@@ -1345,15 +1345,10 @@ class sampleWidget(QWidget):
                     self.magDirection[idx] = 'x'
                 elif gamma == 0 and phi == 0:
                     self.magDirection[idx] = 'z'
-        #for i in range(len(userinput)):
-        #   my_elements.append(userinput[i][0])
-        #    if userinput[i][0] not in list(self.varData.keys()):
-        #        self.varData[userinput[i][0]] = [[['',''],['',''],['','']] for i in range(num_layers)]
-        #        self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for i in range(num_layers)]
-        print(self.varData)
-        print(self.magData)
+
 
     def _setStructFromSample(self, sample):
+        self.sample = sample
         self.structTableInfo = []
         for idx in range(len(sample.structure)):
             # this function will take the upon initialization and load in all parameters
@@ -1904,6 +1899,7 @@ class reflectivityWidget(QWidget):
         self.fit = []  # scans to be fit
         self.bounds = []  # bounds
         self.weights = []  # weights of the bounds
+
         self.isChangeTable = False
         self.axis_state = True
         self.scan_state = True
@@ -2311,30 +2307,30 @@ class reflectivityWidget(QWidget):
             name = self.whichScan.currentText()
         else:
             name = self.selectedScans.currentText()
+        if name != '':
+            E = self.data_dict[name]['Energy']
 
-        E = self.data_dict[name]['Energy']
+            step_size = float(self.sWidget._step_size)
+            thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
 
-        step_size = float(self.sWidget._step_size)
-        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
+            sf = dict()  # form factors of non-magnetic components
+            sfm = dict()  # form factors of magnetic components
 
-        sf = dict()  # form factors of non-magnetic components
-        sfm = dict()  # form factors of magnetic components
+            # Non-Magnetic Scattering Factor
+            for e in self.sample.find_sf[0].keys():
+                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
+            # Magnetic Scattering Factor
+            for em in self.sample.find_sf[1].keys():
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
 
-        # Non-Magnetic Scattering Factor
-        for e in self.sample.find_sf[0].keys():
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
-        # Magnetic Scattering Factor
-        for em in self.sample.find_sf[1].keys():
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+            delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
 
-        delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
-
-        self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
-        self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
-        self.spectrumWidget.setLabel('left', "Reflectivity, R")
-        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
-        self.spectrumWidget.setLogMode(False, False)
-        #delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+            self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
+            self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
+            self.spectrumWidget.setLabel('left', "Reflectivity, R")
+            self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+            self.spectrumWidget.setLogMode(False, False)
+            #delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
 
     def opmPlot(self):
         self.rom = [False, False, True]
@@ -2350,26 +2346,27 @@ class reflectivityWidget(QWidget):
         else:
             name = self.selectedScans.currentText()
 
-        E = self.data_dict[name]['Energy']
+        if name != '':
+            E = self.data_dict[name]['Energy']
 
-        step_size = float(self.sWidget._step_size)
-        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
+            step_size = float(self.sWidget._step_size)
+            thickness, density, density_magnetic = self.sample.density_profile(step=step_size)  # Computes the density profile
 
-        sf = dict()  # form factors of non-magnetic components
-        sfm = dict()  # form factors of magnetic components
+            sf = dict()  # form factors of non-magnetic components
+            sfm = dict()  # form factors of magnetic components
 
-        # Non-Magnetic Scattering Factor
+            # Non-Magnetic Scattering Factor
 
-        for em in self.sample.find_sf[1].keys():
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+            for em in self.sample.find_sf[1].keys():
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
 
-        delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+            delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
 
-        self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
-        self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
-        self.spectrumWidget.setLabel('left', "Reflectivity, R")
-        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
-        self.spectrumWidget.setLogMode(False, False)
+            self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
+            self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
+            self.spectrumWidget.setLabel('left', "Reflectivity, R")
+            self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+            self.spectrumWidget.setLogMode(False, False)
 
     def updateAxis(self):
         self.readTable()
@@ -2454,6 +2451,7 @@ class reflectivityWidget(QWidget):
                         item = QTableWidgetItem(weight[j])
                         self.boundWeightTable.setItem(i, j, item)
         self.isChangeTable = False
+
     def _scanSelection(self):
         idx = self.whichScan.currentIndex()
         name = self.whichScan.currentText()
@@ -2586,54 +2584,55 @@ class reflectivityWidget(QWidget):
             self.spectrumWidget.clear()
             idx = self.whichScan.currentIndex()
             name = self.whichScan.currentText()
-            dat = self.data_dict[name]['Data']
-            pol = self.data_dict[name]['Polarization']
-            scan_type = self.data[idx][1]
-            step_size = float(self.sWidget._step_size)
+            if name != '':
+                dat = self.data_dict[name]['Data']
+                pol = self.data_dict[name]['Polarization']
+                scan_type = self.data[idx][1]
+                step_size = float(self.sWidget._step_size)
 
-            if scan_type == 'Reflectivity':
-                qz = dat[0]
+                if scan_type == 'Reflectivity':
+                    qz = dat[0]
 
-                R = dat[2]
-                E = self.data_dict[name]['Energy']
-                qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
-                Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
-                Rsim = Rsim[pol]
-                if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
+                    R = dat[2]
+                    E = self.data_dict[name]['Energy']
+                    qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
+                    Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
+                    Rsim = Rsim[pol]
+                    if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
-                    if self.axis_state:
-                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        if self.axis_state:
+                            self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                            self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                    else:
-                        self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        else:
+                            self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                            self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                    self.spectrumWidget.setLabel('left', "Reflectivity, R")
-                    self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
-                    self.spectrumWidget.setLogMode(False,True)
-                elif pol == 'AL' or pol =='AC':
-                    if self.axis_state:
-                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-                    else:
-                        self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+                        self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+                        self.spectrumWidget.setLogMode(False,True)
+                    elif pol == 'AL' or pol =='AC':
+                        if self.axis_state:
+                            self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                            self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        else:
+                            self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                            self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
+                        self.spectrumWidget.setLogMode(False, False)
+                        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+                        self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+                elif scan_type == 'Energy':
+                    E = dat[3]
+                    R = dat[2]
+                    Theta = self.data_dict[name]['Angle']
+                    E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
+                    Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
+                    self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                    self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
-                    self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
-            elif scan_type == 'Energy':
-                E = dat[3]
-                R = dat[2]
-                Theta = self.data_dict[name]['Angle']
-                E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
-                Rsim = Rsim[pol]
-                self.spectrumWidget.setLogMode(False, False)
-                self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-                self.spectrumWidget.setLabel('left', "Reflectivity, R")
-                self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
+                    self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
     def plot_selected_scans(self):
         step_size = float(self.sWidget._step_size)
@@ -3725,6 +3724,36 @@ class ReflectometryApp(QMainWindow):
                 self._sampleWidget.layerBox.clear()
                 # change this for an arbitrary sample model
                 self._sampleWidget.layerBox.addItems(layerList)
+
+                self._reflectivityWidget.data = self.data
+                self._reflectivityWidget.data_dict = self.data_dict
+
+                # now it's time to load the other information
+                self._reflectivityWidget.selectedScans.clear()
+                self._reflectivityWidget.whichScan.clear()
+
+                for scan in self.data:
+                    self._reflectivityWidget.whichScan.addItem(scan[2])
+
+                # need to load in background shift and the global optimization parameters
+
+                # for now let's clear all the fitting parameters
+                self._reflectivityWidget.bs = []
+                self._reflectivityWidget.sf = []
+                self._reflectivityWidget.sfbsFitParams = []
+                self._reflectivityWidget.currentVal = []
+                self._reflectivityWidget.rom = [True, False, False]
+                self._reflectivityWidget.fit = []
+                self._reflectivityWidget.bounds = []
+                self._reflectivityWidget.weights = []
+
+                self._sampleWidget.parameterFit = []
+                self._sampleWidget.currentVal = []
+
+                self._goWidget.x = []
+                self._goWidget.fun = 0
+
+                self._goWidget.parameters = []
 
             elif fname.endswith('.all'):
                 print('Currently no implementation')
