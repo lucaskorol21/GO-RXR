@@ -353,7 +353,7 @@ def ReadSampleHDF5(fname):
     for ff in scattering_factor:
         sample.eShift[ff[0]] = ff[1]
 
-    for ffm in scattering_factor:
+    for ffm in mag_scattering_factors:
         sample.mag_eShift[ffm[0]] = ff[1]
 
     # Retrieves the general layer information

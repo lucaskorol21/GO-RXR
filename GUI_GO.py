@@ -610,6 +610,7 @@ class sampleWidget(QWidget):
                     self.currentVal[idx] = [value, [lower, upper]]
 
     def changeMagValues(self):
+
         layer = self.layerBox.currentIndex()
 
         column = self.magTable.currentColumn()
@@ -633,6 +634,7 @@ class sampleWidget(QWidget):
             if column == 1:
                 prev_dict_name = 'ffm-'+prev_value
                 if prev_value != '':
+
                     del self.eShift[prev_dict_name]
                 dict_name = 'ffm-' + value
                 self.eShift[dict_name] = 0
@@ -1835,22 +1837,10 @@ class sampleWidget(QWidget):
                     self.varData[ele][j] = [layer[ele].polymorph, list(layer[ele].poly_ratio),
                                             layer[ele].scattering_factor]
 
-                    # implementation will change eventually
-                    for scat in layer[ele].scattering_factor:
-                        name = 'ff-'+scat
-                        if name not in list(self.eShift.keys()):
-                            self.eShift[name] = 0
-
                     if len(layer[ele].mag_density) != 0:
                         mag_density = list(layer[ele].mag_density)
                     if len(layer[ele].mag_scattering_factor) != 0:
                         mag_sf = layer[ele].mag_scattering_factor
-
-                        # implementation will change
-                        for scat in mag_sf:
-                            name = 'ffm-'+scat
-                            if name not in list(self.eShift.keys()):
-                                self.eShift[name] = 0
 
                     self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf]
 
@@ -1868,6 +1858,7 @@ class sampleWidget(QWidget):
                             name = 'ffm-'+scat
                             if name not in list(self.eShift.keys()):
                                 self.eShift[name] = 0
+
                     self.magData[ele][j] = [[ele],mag_density, mag_sf]
 
             # gets the magnetic direction for that particular layer
@@ -3709,10 +3700,26 @@ class ReflectometryApp(QMainWindow):
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5'):
                 self.sample = ds.ReadSampleHDF5(path)
-                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
                 self._sampleWidget._setStructFromSample(self.sample)
                 self._sampleWidget._setVarMagFromSample(self.sample)
 
+                self._sampleWidget.eShift = dict()
+
+                for scan in self.data:
+                    self._reflectivityWidget.whichScan.addItem(scan[2])
+
+                for key in list(self.sample.eShift.keys()):
+                    name = 'ff-'+key
+                    self._sampleWidget.eShift[name] = self.sample.eShift[key]
+
+                for key in list(self.sample.mag_eShift.keys()):
+                    name = 'ffm-'+key
+
+                    self._sampleWidget.eShift[name] = self.sample.mag_eShift[key]
+
+                self._sampleWidget.setTableEShift()
+
+                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
 
                 layerList = []
                 for i in range(len(self.sample.structure)):
@@ -3732,8 +3739,6 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.selectedScans.clear()
                 self._reflectivityWidget.whichScan.clear()
 
-                for scan in self.data:
-                    self._reflectivityWidget.whichScan.addItem(scan[2])
 
                 # need to load in background shift and the global optimization parameters
 
