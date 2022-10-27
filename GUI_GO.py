@@ -3281,7 +3281,7 @@ class GlobalOptimizationWidget(QWidget):
         # need to figure out how to run this, but not allow for this process to over run everything else
         if self.progressFinished:
             self.progressFinished = False
-            fname = self.rApp.fname
+            fname = 'Pim10uc.h5'
 
             # getting the scans and putting them in their proper format
             # putting the parameters and their boundaries in the proper format!
