@@ -474,8 +474,9 @@ class sampleWidget(QWidget):
         self.structTable.setColumnCount(6)
         self.structTable.setHorizontalHeaderLabels(
             ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
-        for i in range(len(self.sample.structure)):
-            self.setStructFromSample(i)
+
+        self._setStructFromSample(sample)
+
 
         # setTable
         self.setTable()
@@ -1306,57 +1307,104 @@ class sampleWidget(QWidget):
 
     def changeStepSize(self):
         self._step_size = self.step_size.text()
+    def _setVarMagFromSample(self, sample):
 
-    def setStructFromSample(self, idx):
-        # this function will take the upon initialization and load in all parameters
-        structInfo = self.sample.structure
-        numLay = len(structInfo)
-        tempArray = np.empty((3,7), dtype=object)
-        for row in range(3):
-            for col in range(7):
-                if col == 0:
-                    element = list(structInfo[idx].keys())[row]
-                    tempArray[row,col] = str(element)
-                elif col == 1:
-                    element = list(structInfo[idx].keys())[row]
-                    thickness = structInfo[idx][element].thickness
-                    tempArray[row,col] = str(thickness)
-                elif col == 2:
-                    element = list(structInfo[idx].keys())[row]
-                    density = structInfo[idx][element].density
-                    tempArray[row,col] = str(density)
-                elif col == 3:
-                    element = list(structInfo[idx].keys())[row]
-                    roughness = structInfo[idx][element].roughness
-                    tempArray[row,col] = str(roughness)
-                elif col == 4:
-                    element = list(structInfo[idx].keys())[row]
-                    linked_roughness = structInfo[idx][element].linked_roughness
-                    tempArray[row,col] = str(linked_roughness)
-                elif col == 5:
-                    element = list(structInfo[idx].keys())[row]
-                    scattering_factor = structInfo[idx][element].scattering_factor
+        # setting up the varData and magData dictionaries
+        num_layers = len(sample.structure)
+        self.magDirection = ['z' for i in range(num_layers)]
+        for ele in sample.myelements:
+            self.varData[ele] = [[['',''],['',''],['','']] for i in range(num_layers)]
+            self.magData[ele] = [[[ele], [''], ['']] for i in range(num_layers)]
 
-                    # keeps track of the scattering factors - implementation will change when loading data
-                    if type(scattering_factor) is not list and type(scattering_factor) is not np.ndarray:
-                        name = 'ff-'+scattering_factor
-                        if name not in list(self.eShift.keys()):
-                            self.eShift[name] = 0
+        for idx, layer in enumerate(sample.structure):
 
-                    tempArray[row,col] = str(scattering_factor)
-                elif col == 6:
-                    element = list(structInfo[idx].keys())[row]
-                    stoichiometry = structInfo[idx][element].stoichiometry
-                    tempArray[row,col] = str(stoichiometry)
+            for ele in list(layer.keys()):
+                element = layer[ele]
 
+                if len(element.polymorph) != 0:
+                    self.varData[ele][idx][0] = element.polymorph
+                    self.magData[ele][idx][0] = element.polymorph
 
-        self.structTableInfo.append(tempArray)
+                    self.varData[ele][idx][1] = element.poly_ratio
+                    self.magData[ele][idx][1] = ['' for i in range(len(element.polymorph))]
+
+                    self.varData[ele][idx][2] = element.scattering_factor
+                    self.magData[ele][idx][2] = ['' for i in range(len(element.polymorph))]
+
+                # element writing
+                if len(element.mag_density) != 0:
+                    self.magData[ele][idx][1] = element.mag_density
+                    self.magData[ele][idx][2] = element.mag_scattering_factor
+
+                # retrieve the correct magnetization direction
+                gamma = layer[ele].gamma
+                phi = layer[ele].phi
+                if gamma == 90 and phi == 90:
+                    self.magDirection[idx] = 'y'
+                elif gamma == 0 and phi == 90:
+                    self.magDirection[idx] = 'x'
+                elif gamma == 0 and phi == 0:
+                    self.magDirection[idx] = 'z'
+        #for i in range(len(userinput)):
+        #   my_elements.append(userinput[i][0])
+        #    if userinput[i][0] not in list(self.varData.keys()):
+        #        self.varData[userinput[i][0]] = [[['',''],['',''],['','']] for i in range(num_layers)]
+        #        self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for i in range(num_layers)]
+        print(self.varData)
+        print(self.magData)
+
+    def _setStructFromSample(self, sample):
+        self.structTableInfo = []
+        for idx in range(len(sample.structure)):
+            # this function will take the upon initialization and load in all parameters
+            structInfo = sample.structure
+            rows = len(structInfo[idx])
+            tempArray = np.empty((rows, 7), dtype=object)
+            for row in range(rows):
+                for col in range(7):
+                    if col == 0:
+                        element = list(structInfo[idx].keys())[row]
+                        tempArray[row, col] = str(element)
+                    elif col == 1:
+                        element = list(structInfo[idx].keys())[row]
+                        thickness = structInfo[idx][element].thickness
+                        tempArray[row, col] = str(thickness)
+                    elif col == 2:
+                        element = list(structInfo[idx].keys())[row]
+                        density = structInfo[idx][element].density
+                        tempArray[row, col] = str(density)
+                    elif col == 3:
+                        element = list(structInfo[idx].keys())[row]
+                        roughness = structInfo[idx][element].roughness
+                        tempArray[row, col] = str(roughness)
+                    elif col == 4:
+                        element = list(structInfo[idx].keys())[row]
+                        linked_roughness = structInfo[idx][element].linked_roughness
+                        tempArray[row, col] = str(linked_roughness)
+                    elif col == 5:
+                        element = list(structInfo[idx].keys())[row]
+                        scattering_factor = structInfo[idx][element].scattering_factor
+
+                        # keeps track of the scattering factors - implementation will change when loading data
+                        if type(scattering_factor) is not list and type(scattering_factor) is not np.ndarray:
+                            name = 'ff-' + scattering_factor
+                            if name not in list(self.eShift.keys()):
+                                self.eShift[name] = 0
+
+                        tempArray[row, col] = str(scattering_factor)
+                    elif col == 6:
+                        element = list(structInfo[idx].keys())[row]
+                        stoichiometry = structInfo[idx][element].stoichiometry
+                        tempArray[row, col] = str(stoichiometry)
+
+            self.structTableInfo.append(tempArray)
+
 
     def setTable(self):
         self.structTable.blockSignals(True)
         idx = self.layerBox.currentIndex()
         tableInfo = self.structTableInfo[idx]
-        num_rows = self.structTable.rowCount()
+        num_rows = len(tableInfo)
 
         for col in range(6):
             for row in range(num_rows):
@@ -2533,59 +2581,59 @@ class reflectivityWidget(QWidget):
             self.previousIdx = idx
 
     def plot_scans(self):
+        if len(self.data) != 0:
+            self.sample = self.sWidget.sample
+            self.spectrumWidget.clear()
+            idx = self.whichScan.currentIndex()
+            name = self.whichScan.currentText()
+            dat = self.data_dict[name]['Data']
+            pol = self.data_dict[name]['Polarization']
+            scan_type = self.data[idx][1]
+            step_size = float(self.sWidget._step_size)
 
-        self.sample = self.sWidget.sample
-        self.spectrumWidget.clear()
-        idx = self.whichScan.currentIndex()
-        name = self.whichScan.currentText()
-        dat = self.data_dict[name]['Data']
-        pol = self.data_dict[name]['Polarization']
-        scan_type = self.data[idx][1]
-        step_size = float(self.sWidget._step_size)
+            if scan_type == 'Reflectivity':
+                qz = dat[0]
 
-        if scan_type == 'Reflectivity':
-            qz = dat[0]
+                R = dat[2]
+                E = self.data_dict[name]['Energy']
+                qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
+                Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
+                Rsim = Rsim[pol]
+                if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
-            R = dat[2]
-            E = self.data_dict[name]['Energy']
-            qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
-            Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
-            Rsim = Rsim[pol]
-            if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
+                    if self.axis_state:
+                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                if self.axis_state:
-                    self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    else:
+                        self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                else:
-                    self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
-                    self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    self.spectrumWidget.setLabel('left', "Reflectivity, R")
+                    self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+                    self.spectrumWidget.setLogMode(False,True)
+                elif pol == 'AL' or pol =='AC':
+                    if self.axis_state:
+                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    else:
+                        self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
-                self.spectrumWidget.setLabel('left', "Reflectivity, R")
-                self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
-                self.spectrumWidget.setLogMode(False,True)
-            elif pol == 'AL' or pol =='AC':
-                if self.axis_state:
-                    self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                    self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-                else:
-                    self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                    self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-
+                    self.spectrumWidget.setLogMode(False, False)
+                    self.spectrumWidget.setLabel('left', "Reflectivity, R")
+                    self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+            elif scan_type == 'Energy':
+                E = dat[3]
+                R = dat[2]
+                Theta = self.data_dict[name]['Angle']
+                E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
+                Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
+                self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
-                self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
-        elif scan_type == 'Energy':
-            E = dat[3]
-            R = dat[2]
-            Theta = self.data_dict[name]['Angle']
-            E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
-            Rsim = Rsim[pol]
-            self.spectrumWidget.setLogMode(False, False)
-            self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-            self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
-            self.spectrumWidget.setLabel('left', "Reflectivity, R")
-            self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
+                self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
     def plot_selected_scans(self):
         step_size = float(self.sWidget._step_size)
@@ -3558,12 +3606,15 @@ class GlobalOptimizationWidget(QWidget):
         return name
 
 class ReflectometryApp(QMainWindow):
-    def __init__(self, fname):
+    def __init__(self):
         super().__init__()
-        sample = ds.ReadSampleHDF5(fname)  # temporary way of loading in data
-        data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+        #sample = ds.ReadSampleHDF5(fname)  # temporary way of loading in data
+        self.data = []
+        self.data_dict = dict()
+        self.sim_dict = dict()
 
-        self.fname = fname
+        self.sample = ms.slab(1)  # app is initialized and no project is selected
+        self.sample.addlayer(0,'SrTiO3',50)
 
         # set the title
         self.setWindowTitle('Reflectometry of Quantum Materials')
@@ -3586,8 +3637,8 @@ class ReflectometryApp(QMainWindow):
         self.reflButton = QPushButton('Reflectivity')
         self.goButton = QPushButton('Global Optimization')
 
-        self._sampleWidget = sampleWidget(sample)  # initialize the sample widget
-        self._reflectivityWidget = reflectivityWidget(self._sampleWidget, data, data_dict, sim_dict)
+        self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
+        self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
         self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self)
 
         self.sampleButton.setStyleSheet("background-color : pink")
@@ -3614,8 +3665,14 @@ class ReflectometryApp(QMainWindow):
 
         # saving and loading area
         fileMenu = QMenu("&File", self)
+
         self.newFile = QAction("&New", self)
         fileMenu.addAction(self.newFile)
+
+        self.loadFile = QAction("&Load", self)
+        self.loadFile.triggered.connect(self._loadFile)
+        fileMenu.addAction(self.loadFile)
+
         self.saveFile = QAction("&Save", self)
         fileMenu.addAction(self.saveFile)
         self.saveAsFile = QAction("&Save As", self)
@@ -3644,6 +3701,34 @@ class ReflectometryApp(QMainWindow):
         self.about = QAction('About',self)
         helpMenu.addAction(self.about)
 
+    def _loadFile(self):
+        path = QFileDialog.getOpenFileName(self, 'Open File')
+        path = path[0]
+        fname = path.split('/')[-1]
+
+        # when loading files I need to be able to scan the entire
+        if fname.endswith('.h5') or fname.endswith('.all'):
+            if fname.endswith('.h5'):
+                self.sample = ds.ReadSampleHDF5(path)
+                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
+                self._sampleWidget._setStructFromSample(self.sample)
+                self._sampleWidget._setVarMagFromSample(self.sample)
+
+
+                layerList = []
+                for i in range(len(self.sample.structure)):
+                    if i == 0:
+                        layerList.append('Substrate')
+                    else:
+                        layerList.append('Layer ' + str(i))
+
+                self._sampleWidget.layerBox.clear()
+                # change this for an arbitrary sample model
+                self._sampleWidget.layerBox.addItems(layerList)
+
+            elif fname.endswith('.all'):
+                print('Currently no implementation')
+
     def _exitApplication(self):
         # exit the program
         sys.exit()
@@ -3669,7 +3754,7 @@ if __name__ == '__main__':
     fname = 'Pim10uc.h5'
 
     app = QApplication(sys.argv)
-    demo = ReflectometryApp(fname)
+    demo = ReflectometryApp()
 
     demo.show()
 
