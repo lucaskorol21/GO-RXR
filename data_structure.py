@@ -37,8 +37,10 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
-    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
+
+
+    scattering_factor = []
+    mag_scattering_factor = []
 
     dsLayer = 0
     for my_layer in sample.structure:
@@ -80,10 +82,44 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 element.attrs['MagDensity'] = my_layer[ele].mag_density
                 element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
 
+                if type(my_layer[ele].mag_scattering_factor) is list or type(my_layer[ele].mag_scattering_factor) is np.ndarray:
+                    for msf in my_layer[ele].mag_scattering_factor:
+                        if msf not in mag_scattering_factor:
+                            mag_scattering_factor.append([msf, 0])
+                else:
+                    if my_layer[ele].mag_scattering_factor not in mag_scattering_factor:
+                        mag_scattering_factor.append([my_layer[ele].mag_scattering_factor, 0])
+
+
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            if type(my_layer[ele].scattering_factor) is list or type(my_layer[ele].scattering_factor) is np.ndarray:
+                for my_sf in my_layer[ele].scattering_factor:
+                    if my_sf not in scattering_factor:
+                        scattering_factor.append([my_sf, 0])
+            else:
+                if my_layer[ele].scattering_factor not in scattering_factor:
+                    scattering_factor.append([my_layer[ele].scattering_factor, 0])
             element.attrs['Position'] = my_layer[ele].position
 
         dsLayer = dsLayer + 1
+
+    # setting the eShift parameters depending on the user input
+    if len(list(sample.eShift.keys())) == 0:
+        grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
+    else:
+        temp = []
+        for key in list(sample.eShift.key()):
+            temp.append([key, sample.eShift[key]])
+        grp1.attrs['FormFactors'] = str(temp)
+
+    # setting the mag eShift depending on the user input
+    if len(list(sample.mag_eShift.keys())) == 0:
+        grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)  # magnetic scattering factors
+    else:
+        temp = []
+        for key in list(sample.mag_eShift.key()):
+            temp.append([key, sample.mag_eShift[key]])
+        grp1.attrs['FormFactors'] = str(temp)
 
     # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
@@ -128,6 +164,14 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         dset.attrs['Energy'] = float(energy)
         dset1.attrs['Energy'] = float(energy)
 
+        # newly added
+        dset.attrs['Background Shift'] = float(0)
+        dset1.attrs['Background Shift'] = float(0)
+
+        # newly added
+        dset.attrs['Scaling Factor'] = float(1)
+        dset1.attrs['Scaling Factor'] = float(1)
+
         dset.attrs['Polarization'] = str(polarization)
         dset1.attrs['Polarization'] = str(polarization)
 
@@ -162,6 +206,14 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
                 dset.attrs['Energy'] = float(energy)
                 dset1.attrs['Energy'] = float(energy)
+
+                # newly added
+                dset.attrs['Background Shift'] = float(0)
+                dset1.attrs['Background Shift'] = float(0)
+
+                # newly added
+                dset.attrs['Scaling Factor'] = float(1)
+                dset1.attrs['Scaling Factor'] = float(1)
 
                 dset.attrs['Polarization'] = polarization
                 dset1.attrs['Polarization'] = polarization
@@ -206,6 +258,14 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         dset.attrs['Energy'] = float(energy)
         dset1.attrs['Energy'] = float(energy)
 
+        # newly added
+        dset.attrs['Background Shift'] = float(0)
+        dset1.attrs['Background Shift'] = float(0)
+
+        # newly added
+        dset.attrs['Scaling Factor'] = float(1)
+        dset1.attrs['Scaling Factor'] = float(1)
+
         dset.attrs['Polarization'] = polarization
         dset1.attrs['Polarization'] = polarization
 
@@ -246,6 +306,14 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 dset.attrs['Energy'] = float(energy)
                 dset1.attrs['Energy'] = float(energy)
 
+                # newly added
+                dset.attrs['Background Shift'] = float(0)
+                dset1.attrs['Background Shift'] = float(0)
+
+                # newly added
+                dset.attrs['Scaling Factor'] = float(1)
+                dset1.attrs['Scaling Factor'] = float(1)
+
                 dset.attrs['Polarization'] = polarization
                 dset1.attrs['Polarization'] = polarization
 
@@ -263,6 +331,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     f.close()
 
 def ReadSampleHDF5(fname):
+
     """
     Purpose: Read the sample info from hdf5 file and recreate the sample object
     :param fname: File name
@@ -278,8 +347,14 @@ def ReadSampleHDF5(fname):
     sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
     sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
     sample.layer_magnetized = S.attrs['LayerMagnetized']
-    sample.scaling_factor = S.attrs['ScalingFactor']
-    sample.background_shift = S.attrs['BackgroundShift']
+    scattering_factor = ast.literal_eval(S.attrs['FormFactors'])
+    mag_scattering_factors = ast.literal_eval(S.attrs['MagFormFactors'])
+
+    for ff in scattering_factor:
+        sample.eShift[ff[0]] = ff[1]
+
+    for ffm in scattering_factor:
+        sample.mag_eShift[ffm[0]] = ff[1]
 
     # Retrieves the general layer information
     for lay_key in S.keys():
@@ -352,52 +427,7 @@ def ReadDataHDF5(fname):
     data = data[sort_idx]
 
 
-    """
-    # Loop that continuously asks user which scan they want to have shown
-    val = input('Choose scan # you want to use: ')
-    while val in data[:,0]:
-        idx = int(val)-1  # retrieve the proper indices
-        myScan = data[idx]
-        scanType = myScan[1]
-        scanName = myScan[2]
 
-        if scanType == 'Reflectivity':
-            Rdata = list(RS[scanName])  # experimental data
-            Rsim = list(SimR[scanName])  # simulated data
-            qz = Rdata[0]  # momentum transfer
-            R = Rdata[2]  # experimental data reflectivity
-            Rs = Rsim[2]  # simulated data reflectivity
-            
-            # plotting of reflectivity scan
-            plt.figure()
-            plt.plot(qz, R)
-            plt.plot(qz, Rs)
-
-            # yscale is set to log only and only if scan is not an asymmetry scan
-            if not(RS[scanName].attrs['Polarization'] == 'AL') and not(RS[scanName].attrs['Polarization'] == 'AC'):
-                plt.yscale('log', base=20)
-
-            plt.legend(['Data', 'Simulation'])
-            plt.suptitle(scanName)
-
-        elif scanType == 'Energy':
-            Edata = list(ES[scanName])  # experimental data
-            ESim = list(SimE[scanName])  # simulated data
-            E = Edata[3]  # energy array
-            R = Edata[2]  # experimental reflectivity data
-            Rs = ESim[2]  # simulated reflectivity data
-
-            # plotting the energy scan
-            plt.figure()
-            plt.plot(E,R)
-            plt.plot(E, Rs)
-            plt.legend(['Data','Simulation'])
-
-        plt.show()
-        val = input('Choose another scan # you want to use: ')  # Choose another scan
-
-    """
-    #f.close()
     data_dict = hdf5ToDict(data_dict)
     sim_dict = hdf5ToDict(sim_dict)
     f.close()
@@ -428,8 +458,99 @@ def WriteSampleHDF5(fname, sample):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
-    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
+
+    scattering_factor = []
+    mag_scattering_factor = sample.mag_eshift
+
+    for key in list(sample.eShift.keys()):
+        scattering_factor.append([key,sample.eShift[key]])
+
+    for key in list(sample.mag_eShift.keys()):
+        mag_scattering_factor.append([key,sample.mag_eShift[key]])
+
+    grp1.attrs['FormFactors'] = np.array(scattering_factor)
+    grp1.attrs['MagFormFactors'] = np.array(mag_scattering_factor)
+
+    # Sets the information for each layer
+    dsLayer = 0
+    for my_layer in sample.structure:
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+        ### Need to change back to previous version
+
+        formula = ''
+        for ele in list(my_layer.keys()):
+            stoich = my_layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+        layer.attrs['Formula'] = formula
+
+        # Sets the information for each element
+        for ele in list(my_layer.keys()):
+            element = layer.create_group(ele)
+
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['Position'] = my_layer[ele].position
+
+        dsLayer = dsLayer + 1
+
+
+
+def WriteHDF5Simulation():
+    """
+        Purpose: Write a new sample to the hdf5 file fname
+        :param fname: File name
+        :param sample: new sample information as sample type
+        :return:
+        """
+
+    # deletes the previous sample information
+    with h5py.File(fname, "a") as f:
+        if 'Sample' in f:
+            del f['Sample']
+    f.close()
+
+    f = h5py.File(fname, "a")
+    grp1 = f.create_group('Sample')
+
+    # Sets the general sample information
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = int(m)
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+
+    scattering_factor = []
+    mag_scattering_factor = sample.mag_eshift
+
+    for key in list(sample.eShift.keys()):
+        scattering_factor.append([key, sample.eShift[key]])
+
+    for key in list(sample.mag_eShift.keys()):
+        mag_scattering_factor.append([key, sample.mag_eShift[key]])
+
+    grp1.attrs['FormFactors'] = np.array(scattering_factor)
+    grp1.attrs['MagFormFactors'] = np.array(mag_scattering_factor)
 
     # Sets the information for each layer
     dsLayer = 0
@@ -506,6 +627,35 @@ def WriteSampleHDF5(fname, sample):
         dset[...] = Edata  # overwrites previous data with new data
 
     f.close()
+
+def updateHDF5Data(fname, scalingFactor, backgroundShift):
+
+    h = 4.135667696e-15  # Plank's constant eV*s
+    c = 2.99792458e8  # speed of light m/s
+
+    f = h5py.File(fname, 'r')
+    experiment = f['Experimental_data']
+
+    RS = experiment['Reflectivity_Scan']
+
+    ES = experiment['Energy_Scan']
+
+
+    # Recalculate the simulated reflectivity scan data
+    idx = 0
+    for key in list(RS.keys()):
+        RS[key].attrs['ScalingFactor'] = scalingFactor[idx]
+        RS[key].attrs['BackgroundShift'] = backgroundShift[idx]
+        idx = idx + 1
+
+    # Recalculates the simulated energy scan data
+    for key in list(ES.keys()):
+        ES[key].attrs['ScalingFactor'] = scalingFactor[idx]
+        ES[key].attrs['BackgroundShift'] = backgroundShift[idx]
+        idx = idx + 1
+
+    f.close()
+
 
 def WriteSampleASCII(file,sample):
     """
@@ -1727,6 +1877,7 @@ def saveNewFile(fname, info, data_dict, sample):
 
     f.close()
     return
+
 if __name__ == "__main__":
 
     sample = slab(8)
@@ -1760,7 +1911,7 @@ if __name__ == "__main__":
     fnew = 'test.h5'
     info, data_dict, sim_dict=ReadDataHDF5(fname)
     #print(len(data_dict['59_E429.58_Th5.0_S']['Data'][3]))
-    saveNewFile(fnew, info, data_dict, sample)
+
     #WriteSampleHDF5(fname, sample)
 
 

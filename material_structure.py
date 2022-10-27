@@ -375,8 +375,9 @@ class slab:
         self.find_sf = [dict(), dict()]  # [structural, magnetic]
         self.transition = None
         self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
-        self.scaling_factor = 1
-        self.background_shift = 0
+        self.eShift = dict()
+        self.mag_eShift = dict()
+
 
 
     def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None):
@@ -403,18 +404,7 @@ class slab:
         # Let's user know layer already initialized
         if len(self.structure[num_layer]) != 0:
             warnings.warn('Layer '+str(num_layer)+' already initialized')
-        """"
-        # Thickness type check
-        if type(thickness) != int and type(thickness) != float:
-            raise TypeError('Layer ' +str(num_layer)+': Thickness must be integer or float type')
 
-         # Checks if thickness is in a reasonable range
-        if thickness < 0:
-            warnings.warn('Layer ' +str(num_layer)+': Thickness must be a positive number. The absolute value was taken as it was assumed the user meant to input a negative value.')
-            thickness = abs(thickness)
-        elif thickness == 0:
-            raise ValueError('Layer ' +str(num_layer)+': Thickness cannot be zero')
-        """
         # Checks Thickness
         if type(thickness) == int or type(thickness) == float:
             temp_thickness = [thickness for i in range(num_elements)]
@@ -512,6 +502,7 @@ class slab:
             elements[key].position = position
             position = position + 1
 
+
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
 
@@ -583,6 +574,7 @@ class slab:
         # Sets scattering factors
         if sf is str:
             self.structure[lay][ele].scattering_factor = polymorph
+
         else:
             self.structure[lay][ele].scattering_factor = sf
 
