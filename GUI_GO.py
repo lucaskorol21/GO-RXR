@@ -3611,10 +3611,43 @@ class ReflectometryApp(QMainWindow):
 
         # starting my menu bar
         menuBar = self.menuBar()
+
+        # saving and loading area
         fileMenu = QMenu("&File", self)
+        self.newFile = QAction("&New", self)
+        fileMenu.addAction(self.newFile)
+        self.saveFile = QAction("&Save", self)
+        fileMenu.addAction(self.saveFile)
+        self.saveAsFile = QAction("&Save As", self)
+        fileMenu.addAction(self.saveAsFile)
+        self.saveSimulationFile = QAction("&Save Simulation", self)
+        fileMenu.addAction(self.saveAsFile)
+        fileMenu.addSeparator()
+        self.importDataset = QAction("&Import Dataset", self)
+        fileMenu.addAction(self.importDataset)
+        self.saveSummary = QAction("&Save Summary", self)
+        fileMenu.addAction(self.saveSummary)
+        fileMenu.addSeparator()
+        self.exitFile = QAction("&Exit", self)
+        self.exitFile.triggered.connect(self._exitApplication)
+        fileMenu.addAction(self.exitFile)
+
+        # Tools menu
         menuBar.addMenu(fileMenu)
-        editMenu = menuBar.addMenu("&Edit")
+        toolsMenu = menuBar.addMenu("&Tools")
+        self.script = QAction('Script', self)
+        toolsMenu.addAction(self.script)
+
         helpMenu = menuBar.addMenu("&Help")
+        self.license = QAction('License', self)
+        helpMenu.addAction(self.license)
+        self.about = QAction('About',self)
+        helpMenu.addAction(self.about)
+
+    def _exitApplication(self):
+        # exit the program
+        sys.exit()
+
     def activate_tab_1(self):
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.stackedlayout.setCurrentIndex(0)
