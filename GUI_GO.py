@@ -3700,10 +3700,26 @@ class ReflectometryApp(QMainWindow):
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5'):
                 self.sample = ds.ReadSampleHDF5(path)
+                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
+
+                # loading in the background shift and scaling factor
+                self._reflectivityWidget.bs = []
+                self._reflectivityWidget.sf = []
+                for key in list(self.data_dict.keys()):
+                    self._reflectivityWidget.bs.append(str(self.data_dict[key]['Background Shift']))
+                    self._reflectivityWidget.sf.append(str(self.data_dict[key]['Scaling Factor']))
+
                 self._sampleWidget._setStructFromSample(self.sample)
                 self._sampleWidget._setVarMagFromSample(self.sample)
 
                 self._sampleWidget.eShift = dict()
+
+                # now it's time to load the other information
+                self._reflectivityWidget.selectedScans.clear()
+                self._reflectivityWidget.whichScan.clear()
+
+                self._reflectivityWidget.data = self.data
+                self._reflectivityWidget.data_dict = self.data_dict
 
                 for scan in self.data:
                     self._reflectivityWidget.whichScan.addItem(scan[2])
@@ -3719,8 +3735,6 @@ class ReflectometryApp(QMainWindow):
 
                 self._sampleWidget.setTableEShift()
 
-                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
-
                 layerList = []
                 for i in range(len(self.sample.structure)):
                     if i == 0:
@@ -3732,19 +3746,14 @@ class ReflectometryApp(QMainWindow):
                 # change this for an arbitrary sample model
                 self._sampleWidget.layerBox.addItems(layerList)
 
-                self._reflectivityWidget.data = self.data
-                self._reflectivityWidget.data_dict = self.data_dict
 
-                # now it's time to load the other information
-                self._reflectivityWidget.selectedScans.clear()
-                self._reflectivityWidget.whichScan.clear()
+
+
 
 
                 # need to load in background shift and the global optimization parameters
 
                 # for now let's clear all the fitting parameters
-                self._reflectivityWidget.bs = []
-                self._reflectivityWidget.sf = []
                 self._reflectivityWidget.sfbsFitParams = []
                 self._reflectivityWidget.currentVal = []
                 self._reflectivityWidget.rom = [True, False, False]
