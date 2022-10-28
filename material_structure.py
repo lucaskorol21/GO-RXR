@@ -1137,10 +1137,12 @@ class slab:
 
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            sf[e] = find_form_factor(self.find_sf[0][e], E, False)
+            dE = float(self.eShift[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
+            dE = float(self.mag_eShift[self.find_sf[1][em]])
+            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
 

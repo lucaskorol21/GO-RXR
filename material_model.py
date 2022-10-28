@@ -5,114 +5,19 @@ from scipy import interpolate
 
 
 # Loads all scattering factors when program imported
-with open('ff_Altered.pkl', 'rb') as f:
+with open('form_factor.pkl', 'rb') as f:
     global ff
-    global ffAltered
     ff = pickle.load(f)
-    ffAltered = ff
+
 f.close()
 
 # Loads all scattering factors when program imported
-with open('ffm_Altered.pkl','rb') as f:
+with open('form_factor_magnetic.pkl','rb') as f:
     global ffm
-    global ffmAltered
     ffm = pickle.load(f)
-    ffmAltered = ffm
+
 f.close()
 
-
-def resetAlteredSF():
-    """
-    Purpose: Reset original form factors to original values
-    :return:
-    """
-    global ff
-    with open('form_factor.pkl', 'rb') as f:
-        ff = pickle.load(f)
-
-    with open('ff_Altered.pkl', 'wb') as handle:
-        pickle.dump(ff, handle)
-    return
-def resetSF():
-    """
-        Purpose: Reset original form factors to original values
-        :return:
-        """
-    global ff
-    with open('ff_Altered.pkl', 'rb') as f:
-        ff = pickle.load(f)
-
-    return
-
-def resetAlteredSFM():
-    """
-    Purpose: Reset original form factors to original value
-    :return:
-    """
-    global ffm
-    with open('form_factor_magnetic.pkl', 'rb') as f:
-        ffm = pickle.load(f)
-
-    with open('ffm_Altered.pkl', 'wb') as handle:
-        pickle.dump(ffm, handle)
-
-    return
-
-def resetSFM():
-    """
-    Purpose: Reset original form factors to original values
-    :return:
-    """
-    global ffm
-    with open('ffm_Altered.pkl', 'rb') as f:
-        ffm = pickle.load(f)
-    return
-
-def FfEnergyShift(element, dE, opt=False):
-    """
-    Purpose: set the energy shift for the form factor of a specified element
-    :param element: the element symbol
-    :param dE: the energy shift in eV
-    :param opt: boolean that determines if you want to optimize the energy shift
-                    True - use the optimization capability
-                    False - set the form factor to the new shifted value
-    :return:
-    """
-    global ff
-    if not(opt):  # no optimization
-        ff[element][:,0] = ffAltered[element][:,0] + dE  #energy shift
-
-        # save shifted value to file
-        with open('ff_Altered.pkl') as f:
-            pickle.dump(ff, f)
-        f.close()
-    else:  # optimization
-        ff[element][:,0] = ffAltered[element][:,0] + dE
-
-    return
-
-
-def FfmEnergyShift(element,dE, opt = False):
-    """
-    Purpose: set the energy shift for the magnetic scattering factor
-    :param element: symbol for desired element to shift
-    :param dE: desired energy shift
-    :param opt: boolean that specifies if energy shift will be optimized
-                    True - optimization
-                    False - no-optimization and save to altered form factor file
-    :return:
-    """
-
-    global ffm
-    if not(opt): # non-optimization
-        ffm[element][:,0] = ffmAltered[element][:,0] + dE  # energy shift
-
-        with open("ffm_Altered.pkl") as f:  # save shifted magnetic form factor to altered file
-            pickle.dump(ffm, f)
-        f.close()
-    else:  # optimization
-
-        ffm[element][:,0] = ffmAltered[element][:,0] + dE  # energy shift
 
 def form_factor(f,E):
 
@@ -130,6 +35,7 @@ def form_factor(f,E):
         F = np.array([np.array([fr(x), fi(x)]) if x > f[0, 0] and x < f[-1, 0] else np.array([0, 0]) for x in E])
     else:  # handle single energy case
         F = np.array([fr(E), fi(E)]) if E>f[0,0] and E<f[-1,0] else np.array([0,0])
+
     return F
 
 def find_form_factor(element, E, mag):
@@ -140,8 +46,9 @@ def find_form_factor(element, E, mag):
     :param mag: Boolean specifying if the magnetic form factor is desired
     :return:
     """
-    global ffm
-    global ff
+    #global ffm
+    #global ff
+
     if mag:
         mag_keys = list(ffm.keys())
         if element not in mag_keys:
@@ -155,16 +62,9 @@ def find_form_factor(element, E, mag):
 
     return F
 
+"""
 def find_form_factors(element, E, mag):
-    """
-    Purpose: Retrieve form factor from database
-    :param element: String containing element symbol
-    :param E: Float or integer of desired energy in units of eV
-    :param mag: Boolean
-                    True - Magnetic form factor
-                    False - Non-magnetic form factor
-    :return: Return form factor at energy 'E'
-    """
+    
     F = 0  # pre-initialized form factor
 
     if mag:  # looking for magnetic form factors
@@ -177,7 +77,7 @@ def find_form_factors(element, E, mag):
         if ifile.endswith(element + '.txt'):
             F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
     return F
-
+"""
 def MOC(rho, sfm, E, n):
     """
     Purpose: computes the magneto-optical constant for the energy scan

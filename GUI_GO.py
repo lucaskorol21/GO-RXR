@@ -2309,10 +2309,14 @@ class reflectivityWidget(QWidget):
 
             # Non-Magnetic Scattering Factor
             for e in self.sample.find_sf[0].keys():
-                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E, False)
+                name = 'ff-' + self.sample.find_sf[0][e]
+                dE = float(self.sWidget.eShift[name])
+                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E+dE, False)
             # Magnetic Scattering Factor
             for em in self.sample.find_sf[1].keys():
-                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+                name = 'ffm-' + self.sample.find_sf[1][em]
+                dE = float(self.sWidget.eShift[name])
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E+dE, True)
 
             delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
 

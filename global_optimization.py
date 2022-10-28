@@ -49,10 +49,10 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
             dE = x[p]
 
             if mode == 'STRUCTURAL':
-                # may need to change this implementation
-                FfEnergyShift(element, dE, opt=True)
+                pass
             elif mode == 'MAGNETIC':
-                FfmEnergyShift(element, dE, opt=True)
+                pass
+
         else:
             layer = params[0]  # Determine which layer to change
             property = params[1]  # structural/polymorphous/magnetic
