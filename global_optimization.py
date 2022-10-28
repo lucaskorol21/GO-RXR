@@ -111,10 +111,9 @@ def scanCompute(x, *args):
     sample = args[0]  # slab class
     scans = args[1]  # data info
     data = args[2]  # data dict
-    sims = args[3]  # simulation dict
-    parameters = args[4]  # defines which parameters to change
-    sBounds = args[5]  # defines the bounds of the scans
-    sWeights = args[6]
+    parameters = args[3]  # defines which parameters to change
+    sBounds = args[4]  # defines the bounds of the scans
+    sWeights = args[5]
 
     sample = changeSampleParams(x, parameters, sample)
 
@@ -170,18 +169,16 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, goParam):
+def differential_evolution(sample, data_info, data,scan, parameters, bounds,sBounds, sWeights, goParam):
+    # performs the differential evolution global optimization
 
-    sample = ReadSampleHDF5(fname)  # import the sample information
-
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     scans = []
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -202,17 +199,15 @@ def differential_evolution(fname,scan, parameters, bounds,sBounds, sWeights, goP
 
     return x, fun
 
-def shgo(fname, scan,parameters, bounds, sBounds, sWeights, goParam):
+def shgo(sample, data_info, data, scan,parameters, bounds, sBounds, sWeights, goParam):
 
-    sample = ReadSampleHDF5(fname)  # import the sample information
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
 
     scans = []
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, sims, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None':
@@ -230,17 +225,14 @@ def shgo(fname, scan,parameters, bounds, sBounds, sWeights, goParam):
     f.close()
     return x, fun
 
-def dual_annealing(fname, scan, parameters, bounds,sBounds, sWeights, goParam):
-    sample = ReadSampleHDF5(fname)  # import the sample information
-
-    data_info, data, sims = ReadDataHDF5(fname)  # import the experimental data and simulated data
+def dual_annealing(sample, data_info, data, scan, parameters, bounds,sBounds, sWeights, goParam):
 
     scans = []
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, sims, parameters, sBounds, sWeights]
+    params = [sample, scans, data, parameters, sBounds, sWeights]
 
     p = True
     if goParam[6] == 'True':

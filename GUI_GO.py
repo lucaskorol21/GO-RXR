@@ -1876,8 +1876,8 @@ class reflectivityWidget(QWidget):
         super().__init__()
 
         self.rom = [True, False, False]
-        self.bs = []  # background shift
-        self.sf = []  # scaling factor
+        self.bs = dict()  # background shift
+        self.sf = dict()  # scaling factor
 
         self.sfBsFitParams = []  # variable used to keep track of the fitting parameters
         self.currentVal = []
@@ -2097,12 +2097,12 @@ class reflectivityWidget(QWidget):
         if name != '':
             # first change the value
             if self.allScan.checkState() == 0:
-                old_var = self.bs[idx]
-                self.bs[idx] = var
+                old_var = self.bs[name]
+                self.bs[name] = var
             else:
-                old_var = self.bs[idx]
-                for i in range(len(self.bs)):
-                    self.bs[i] = var
+                old_var = self.bs[name]
+                for key in list(self.bs.keys()):
+                    self.bs[key] = var
 
             for fit in copy_of_fit:
                 if fit[0] == 'BACKGROUND SHIFT':
@@ -2125,10 +2125,10 @@ class reflectivityWidget(QWidget):
         if name != '':
             # first change the value
             if self.allScan.checkState() == 0:
-                self.sf[idx] = var
+                self.sf[name] = var
             else:
-                for i in range(len(self.bs)):
-                    self.sf[i] = var
+                for key in list(self.sf.keys()):
+                    self.sf[key] = var
 
             for fit in copy_of_fit:
                 if fit[0] == 'SCALING FACTOR':
@@ -2248,17 +2248,17 @@ class reflectivityWidget(QWidget):
 
     def changeSFandBS(self):
         idx = self.selectedScans.currentIndex()
-
+        name = self.selectedScans.currentText()
         bs = self.backgroundShift.text()
         sf = self.scalingFactor.text()
         if bs != '' and sf != '':
             if self.allScan.checkState() == 0:  # case where all scans have different bs and sf
-                self.bs[idx] = bs
-                self.sf[idx] = sf
+                self.bs[name] = bs
+                self.sf[name] = sf
             else: # case where all scans have same bs and sf
-                for i in range(len(self.bs)):
-                    self.bs[i] = bs
-                    self.sf[i] = sf
+                for key in list(self.bs.keys()):
+                    self.bs[key] = bs
+                    self.sf[key] = sf
 
 
     def changeStepSize(self):
@@ -2386,9 +2386,10 @@ class reflectivityWidget(QWidget):
 
         self.isChangeTable = True
         idx = self.selectedScans.currentIndex()
-        self.scalingFactor.setText(self.sf[idx]) # setting the appropriate scaling factor
+        name = self.selectedScans.currentText()
+        self.scalingFactor.setText(self.sf[name]) # setting the appropriate scaling factor
 
-        self.backgroundShift.setText(self.bs[idx])  # setting the appropriate background shift
+        self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
         scan = self.fit[idx]
 
         if scan != '':
@@ -2460,28 +2461,23 @@ class reflectivityWidget(QWidget):
             self.weights.append(['1'])
             self.selectedScans.addItem(name)
 
-            idx = self.selectedScans.currentIndex()
-            if self.allScan.checkState() == 0:
-                self.bs.append('0')  # background shift
-                self.sf.append('1')  # scaling factor
-            else:
-                if len(self.bs) != 0 and len(self.bs) != 1:
-                    if idx == 0:
-                        self.bs.append(self.bs[idx+1])
-                        self.sf.append(self.sf[idx+1])
-                    else:
-                        self.bs.append(self.bs[idx - 1])
-                        self.sf.append(self.sf[idx - 1])
-                elif len(self.bs) == 1:
-                    self.bs.append(self.bs[0])
-                    self.sf.append(self.sf[0])
+            # sets the bs and sf values
+            if self.allScan.checkState() == 2: # all scans state checked
+                if len(self.bs) == 0:
+                    self.bs[name] = str(self.data_dict[name]['Background Shift'])
+                    self.sf[name] = str(self.data_dict[name]['Scaling Factor'])
                 else:
-                    self.bs.append('0')  # background shift
-                    self.sf.append('1')  # scaling factor
+                    key = list(self.bs.keys())[0]
+                    self.bs[name] = str(self.bs[key])
+                    self.sf[name] = str(self.sf[key])
+            else:
+                self.bs[name] = str(self.data_dict[name]['Background Shift'])
+                self.sf[name] = str(self.data_dict[name]['Scaling Factor'])
+
 
     def _removeScanSelection(self):
         idx = self.selectedScans.currentIndex()
-
+        name = self.selectedScans.currentText()
         # takes care of proper indexing
         if idx == self.previousIdx and self.previousIdx != 0:
             self.previousIdx = self.previousIdx - 1
@@ -2491,8 +2487,8 @@ class reflectivityWidget(QWidget):
         self.bounds.pop(idx)
         self.weights.pop(idx)
 
-        self.bs.pop(idx)  # background shift
-        self.sf.pop(idx)  # scaling factor
+        del self.bs[name]
+        del self.sf[name]
 
         self.setTable()  # makes sure that the table is switched
         self.myPlotting()
@@ -3321,17 +3317,20 @@ class GlobalOptimizationWidget(QWidget):
 
             x = []
             fun = 0
+            data_dict = self.rWidget.data_dict
+            data = self.rWidget.data
+            sample = self.sWidget.sample
 
             idx = self.algorithmSelect.currentIndex()
             if len(parameters) != 0 and len(scans) != 0:
                 if idx == 0:
-                    x, fun = go.differential_evolution(fname, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.differential_evolution(sample, data,data_dict, scans, parameters, bounds, sBounds, sWeights,
                                                        self.goParameters['differential evolution'])
                 elif idx == 1:
-                    x, fun = go.shgo(fname, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.shgo(sample,data,data_dict, scans, parameters, bounds, sBounds, sWeights,
                                      self.goParameters['simplicial homology'])
                 elif idx == 2:
-                    x, fun = go.dual_annealing(fname, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.dual_annealing(sample, data, data_dict, scans, parameters, bounds, sBounds, sWeights,
                                                self.goParameters['dual annealing'])
             else:
                 print('Try try again')
@@ -3700,14 +3699,13 @@ class ReflectometryApp(QMainWindow):
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5'):
                 self.sample = ds.ReadSampleHDF5(path)
+                self._sampleWidget.sample = self.sample
                 self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
 
                 # loading in the background shift and scaling factor
-                self._reflectivityWidget.bs = []
-                self._reflectivityWidget.sf = []
-                for key in list(self.data_dict.keys()):
-                    self._reflectivityWidget.bs.append(str(self.data_dict[key]['Background Shift']))
-                    self._reflectivityWidget.sf.append(str(self.data_dict[key]['Scaling Factor']))
+                self._reflectivityWidget.bs = dict()
+                self._reflectivityWidget.sf = dict()
+
 
                 self._sampleWidget._setStructFromSample(self.sample)
                 self._sampleWidget._setVarMagFromSample(self.sample)
