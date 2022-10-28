@@ -2717,7 +2717,7 @@ class GlobalOptimizationWidget(QWidget):
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
 
-        self.goParameters = {'differential evolution': ['currenttobest1bin',150,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
+        self.goParameters = {'differential evolution': ['currenttobest1bin',2,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
                              'simplicial homology': ['None', 1, 'simplicial'],
                              'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
 
@@ -3775,12 +3775,9 @@ class ReflectometryApp(QMainWindow):
                 # change this for an arbitrary sample model
                 self._sampleWidget.layerBox.addItems(layerList)
 
-
-
-
-
-
-                # need to load in background shift and the global optimization parameters
+                self._goWidget.goParameters = ds.ReadAlgorithmHDF5(fname)
+                self._goWidget.setGOParameters()
+                self._goWidget.setTableFit()
 
                 # for now let's clear all the fitting parameters
                 self._reflectivityWidget.sfbsFitParams = []

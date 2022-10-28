@@ -817,7 +817,8 @@ class slab:
                         # saves scattering factor to be used in computation
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
-
+                            name = self.structure[layer][ele].scattering_factor
+                            self.eShift[name] = 0
 
 
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
@@ -923,7 +924,8 @@ class slab:
                             # saves scattering factor of polymorphs
                             if ele not in self.find_sf[0]:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
-
+                                name = self.structure[layer][ele].scattering_factor[po]
+                                self.eShift[name] = 0
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1018,6 +1020,8 @@ class slab:
                             # finds magnetic scattering factors
                             if mag not in self.find_sf[1]:
                                 self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
+                                name = self.structure[layer][ele].mag_scattering_factor[ma]
+                                self.mag_eShift[name] = 0
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
                             ma = ma + 1

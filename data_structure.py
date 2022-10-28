@@ -109,7 +109,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
     else:
         temp = []
-        for key in list(sample.eShift.key()):
+        for key in list(sample.eShift.keys()):
             temp.append([key, sample.eShift[key]])
         grp1.attrs['FormFactors'] = str(temp)
 
@@ -118,7 +118,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)  # magnetic scattering factors
     else:
         temp = []
-        for key in list(sample.mag_eShift.key()):
+        for key in list(sample.mag_eShift.keys()):
             temp.append([key, sample.mag_eShift[key]])
         grp1.attrs['FormFactors'] = str(temp)
 
@@ -363,9 +363,93 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     dual.attrs['local_search'] = 'False'
 
     grp5 = f.create_group('Fitting Parameters')
-    grp5.attrs['Sample'] = ''
-    grp5.attrs['Scans'] = ''
+
+    sample_fit = grp5.create_group('Sample Fit')
+    scan_fit = grp5.create_group('Scan Fit')
+    results = grp5.create_group('Results')
+
+    sample_fit.attrs['sfbsFit'] = str([])
+    sample_fit.attrs['sfbsVal'] = str([])
+    sample_fit.attrs['Sample Fit'] = str([])
+    sample_fit.attrs['Sample Val'] = str([])
+    sample_fit.attrs['Selected Scans'] = str([])
+
+    scan_fit.attrs['Selected Scans'] = str([])
+    scan_fit.attrs['Bounds'] = str([])
+    scan_fit.attrs['Weights'] = str([])
+
+    results.attrs['Value'] = str([])
+    results.attrs['Chi'] = 0
+
     f.close()
+
+def ReadFitHDF5(fname):
+    pass
+
+def ReadAlgorithmHDF5(fname):
+    """
+    Purpose: Read in the algorithm parameters
+    :param fname: File name
+    :return: the algorithms parameters
+    """
+
+    f = h5py.File(fname, 'r')
+
+    parameters = dict()
+    optimization = f['Optimization']
+
+    diff_ev = optimization["Differential Evolution"]
+    shgo = optimization["Simplicial Homology"]
+    dual = optimization["Dual Annealing"]
+
+    # load in optimization parameters for differential evolution
+    eStrategy = diff_ev.attrs['strategy']
+    eMaxIter = diff_ev.attrs['maxIter']
+    ePopsize = diff_ev.attrs['popsize']
+    eTol = diff_ev.attrs['tol']
+    eAtol = diff_ev.attrs['atol']
+    eMinMutation = diff_ev.attrs['min_mutation']
+    eMaxMutation = diff_ev.attrs['max_mutation']
+    eRecombination = diff_ev.attrs['recombination']
+    ePolish = diff_ev.attrs['polish']
+    eInit = diff_ev.attrs['init']
+    eUpdating = diff_ev.attrs['updating']
+
+    if ePolish == 'True':
+        ePolish = True
+    elif ePolish == 'False':
+        ePolish = False
+
+    parameters['differential evolution'] = [eStrategy, eMaxIter, ePopsize, eTol, eAtol, eMinMutation, eMaxMutation,
+                                            eRecombination, ePolish, eInit, eUpdating]
+
+    # load in optimization parameters for simplicial homology
+    sN = shgo.attrs['n']
+    sIter = shgo.attrs['iter']
+    sSampling = shgo.attrs['sampling']
+
+    if sN == 'None':
+        sN = None
+
+    parameters['simplicial homology'] = [sN, sIter, sSampling]
+
+    # load in optimization parameters for simplicial homology
+    dMaxiter = dual.attrs['maxiter']
+    dInitTemp = dual.attrs['initial_temp']
+    dRestTemp = dual.attrs['restart_temp']
+    dVisit = dual.attrs['visit']
+    dAccept = dual.attrs['accept']
+    dMaxfun = dual.attrs['maxfun']
+    dLs = dual.attrs['local_search']
+
+    if dLs == 'True':
+        dLs = True
+    elif dLs == 'False':
+        dLs = False
+
+    parameters['dual annealing'] = [dMaxiter, dInitTemp, dRestTemp, dVisit, dAccept, dMaxfun, dLs]
+
+    return parameters
 
 def ReadSampleHDF5(fname):
 
