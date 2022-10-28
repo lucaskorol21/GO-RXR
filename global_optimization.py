@@ -14,7 +14,7 @@ from PIL import Image, ImageTk
 
 import functools
 
-def changeSampleParams(x, parameters, sample):
+def changeSampleParams(x, parameters, sample, backS, scaleF):
     """
     Purpose: Change the parameters for the input sample for x-values
     :param x: A list that contains the new parameters values
@@ -27,9 +27,22 @@ def changeSampleParams(x, parameters, sample):
         params = parameters[p]
 
         if params[0] == "SCALING FACTOR":
+            name = params[1]
+            if name == 'ALL SCANS':
+                for key in list(scaleF.keys()):
+                    scaleF[key] = str(x[p])
+            else:
+                scaleF[name] = str(x[p])
+
             sample.scaling_factor = x[p]
         elif params[0] == "BACKGROUND SHIFT":
-            sample.background_shift = x[p]
+            name = params[1]
+            if name == 'ALL SCANS':
+                for key in list(backS.keys()):
+                    backS[key] = "{:e}".format(x[p])
+            else:
+                backS[name] = "{:e}".format(x[p])
+
         elif params[0] == 'SCATTERING FACTOR':
             mode =params[1]
             element = params[2]
@@ -102,7 +115,7 @@ def changeSampleParams(x, parameters, sample):
                     #poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
-    return sample
+    return sample, backS, scaleF
 
 def scanCompute(x, *args):
 
@@ -111,11 +124,13 @@ def scanCompute(x, *args):
     sample = args[0]  # slab class
     scans = args[1]  # data info
     data = args[2]  # data dict
-    parameters = args[3]  # defines which parameters to change
-    sBounds = args[4]  # defines the bounds of the scans
-    sWeights = args[5]
+    backS = args[3]
+    scaleF = args[4]
+    parameters = args[5]  # defines which parameters to change
+    sBounds = args[6]  # defines the bounds of the scans
+    sWeights = args[7]
 
-    sample = changeSampleParams(x, parameters, sample)
+    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF)
 
     i = 0 # keeps track of which boundary to use
     for scan in scans:
@@ -126,8 +141,8 @@ def scanCompute(x, *args):
         xbound = sBounds[i]
         weights = sWeights[i]
         i = i + 1
-        background_shift = data[name]['Background Shift']
-        scaling_factor = data[name]['Scaling Factor']
+        background_shift = float(backS[name])
+        scaling_factor = float(scaleF[name])
         if scanType == 'Reflectivity':
             myDataScan = data[name]
             myData = myDataScan['Data']
@@ -138,7 +153,7 @@ def scanCompute(x, *args):
             qz, Rsim = sample.reflectivity(E, qz)
 
             # need to toggle between log10 and not depending on the polarization
-            Rsim = np.log10(Rsim[pol])*scaling_factor + np.ones(len(Rsim[pol]))*background_shift
+            Rsim = np.log10(Rsim[pol]*scaling_factor + np.ones(len(Rsim[pol]))*background_shift)
 
 
             for b in range(len(xbound)):
@@ -169,7 +184,7 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(sample, data_info, data,scan, parameters, bounds,sBounds, sWeights, goParam):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam):
     # performs the differential evolution global optimization
 
 
@@ -178,7 +193,7 @@ def differential_evolution(sample, data_info, data,scan, parameters, bounds,sBou
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -199,7 +214,7 @@ def differential_evolution(sample, data_info, data,scan, parameters, bounds,sBou
 
     return x, fun
 
-def shgo(sample, data_info, data, scan,parameters, bounds, sBounds, sWeights, goParam):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam):
 
 
     scans = []
@@ -207,7 +222,7 @@ def shgo(sample, data_info, data, scan,parameters, bounds, sBounds, sWeights, go
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None':
@@ -225,14 +240,14 @@ def shgo(sample, data_info, data, scan,parameters, bounds, sBounds, sWeights, go
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan, parameters, bounds,sBounds, sWeights, goParam):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam):
 
     scans = []
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, parameters, sBounds, sWeights]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]
 
     p = True
     if goParam[6] == 'True':

@@ -3132,20 +3132,20 @@ class GlobalOptimizationWidget(QWidget):
                 elif fit[0] == 'BACKGROUND SHIFT':
                     scans = self.rWidget.fit
                     if fit[1] == 'ALL SCANS':
-                        for i in range(len(scans)):
-                            self.rWidget.bs[i] = self.x[idx]
+                        for scan in scans:
+                            self.rWidget.bs[scan] = "{:e}".format(self.x[idx])
                     else:
-                        i = scans.index(fit[1])
-                        self.rWidget.bs[i] = self.x[idx]
+                        scan = fit[1]
+                        self.rWidget.bs[scan] = "{:e}".format(self.x[idx])
 
                 elif fit[0] == 'SCALING FACTOR':
                     scans = self.rWidget.fit
                     if fit[1] == 'ALL SCANS':
-                        for i in range(len(scans)):
-                            self.rWidget.sf[i] = self.x[idx]
+                        for scan in scans:
+                            self.rWidget.sf[scan] = str(self.x[idx])
                     else:
-                        i = scans.index(fit[1])
-                        self.rWidget.sf[i] = self.x[idx]
+                        scan = fit[1]
+                        self.rWidget.sf[scan] = str(self.x[idx])
 
 
     def _save_optimization(self):
@@ -3161,11 +3161,23 @@ class GlobalOptimizationWidget(QWidget):
             row = row + 1
 
         self.changeFitParameters()
-        self.sWidget.sample = go.changeSampleParams(self.x, self.parameters, self.sWidget.sample)
+
+        self.sWidget.sample, self.rWidget.bs, self.rWidget.sf = go.changeSampleParams(self.x, self.parameters, self.sWidget.sample, self.rWidget.bs, self.rWidget.sf)
+
+        # update the background shift and scaling factors
+        name = self.rWidget.selectedScans.currentText()
+        self.rWidget.backgroundShift.blockSignals(True)
+        self.rWidget.scalingFactor.blockSignals(True)
+        self.rWidget.backgroundShift.setText(self.rWidget.bs[name])
+        self.rWidget.scalingFactor.setText(self.rWidget.sf[name])
+        self.rWidget.backgroundShift.blockSignals(False)
+        self.rWidget.scalingFactor.blockSignals(False)
+
         self.setTableFit()
         self.sWidget.setTable()
         self.sWidget.setTableVar()
         self.sWidget.setTableMag()
+
 
     def plot_scan(self):
 
@@ -3192,38 +3204,50 @@ class GlobalOptimizationWidget(QWidget):
             sample1 = self.sWidget.sample
             sample2 = self.sWidget.sample  # just to make python happy
             isGO = False
+
+            backS = copy.deepcopy(self.rWidget.bs)
+            scaleF = copy.deepcopy(self.rWidget.sf)
             if len(self.x) != 0:
-                sample2 = go.changeSampleParams(self.x,self.parameters, copy.deepcopy(sample1))
+                sample2, backS, scaleS = go.changeSampleParams(self.x,self.parameters, copy.deepcopy(sample1), backS, scaleF)
                 isGO = True
+
 
 
 
             if scan_type == 'Reflectivity':
                 qz = dat[0]
 
+                scaling_factor_old = float(self.rWidget.sf[name])
+                background_shift_old = float(self.rWidget.bs[name])
+                #print(scaling_factor_old, background_shift_old)
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size)
                 if isGO:
                     qz,Rgo = sample2.reflectivity(E, qz, s_min=step_size)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
-                Rsim = Rsim[pol]
+                Rsim = Rsim[pol]*scaling_factor_old + np.ones(len(Rsim[pol]))*background_shift_old
+
                 if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
 
                     if self.rWidget.axis_state:
                         self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
+                            scaling_factor = float(scaleF[name])
+                            background_shift = float(backS[name])
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
-                            Rgo = Rgo[pol]
+                            Rgo = Rgo[pol]*scaling_factor + np.ones(len(Rgo[pol]))*background_shift
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     else:
                         self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
+                            scaling_factor = float(scaleF[name])
+                            background_shift = float(backS[name])
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
-                            Rgo = Rgo[pol]
+                            Rgo = Rgo[pol]*scaling_factor + np.ones(len(Rgo[pol]))*background_shift
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     self.plotWidget.setLabel('left', "Reflectivity, R")
@@ -3277,7 +3301,6 @@ class GlobalOptimizationWidget(QWidget):
         # need to figure out how to run this, but not allow for this process to over run everything else
         if self.progressFinished:
             self.progressFinished = False
-            fname = 'Pim10uc.h5'
 
             # getting the scans and putting them in their proper format
             # putting the parameters and their boundaries in the proper format!
@@ -3319,21 +3342,25 @@ class GlobalOptimizationWidget(QWidget):
             fun = 0
             data_dict = self.rWidget.data_dict
             data = self.rWidget.data
-            sample = self.sWidget.sample
+            sample = copy.deepcopy(self.sWidget.sample)
+            backS = copy.deepcopy(self.rWidget.bs)
+            scaleF = copy.deepcopy(self.rWidget.sf)
 
             idx = self.algorithmSelect.currentIndex()
+
             if len(parameters) != 0 and len(scans) != 0:
                 if idx == 0:
-                    x, fun = go.differential_evolution(sample, data,data_dict, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.differential_evolution(sample, data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                                        self.goParameters['differential evolution'])
                 elif idx == 1:
-                    x, fun = go.shgo(sample,data,data_dict, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.shgo(sample,data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                      self.goParameters['simplicial homology'])
                 elif idx == 2:
-                    x, fun = go.dual_annealing(sample, data, data_dict, scans, parameters, bounds, sBounds, sWeights,
+                    x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                                self.goParameters['dual annealing'])
             else:
                 print('Try try again')
+            print('Done')
 
             self.x = x
             self.fun = fun
