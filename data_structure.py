@@ -8,8 +8,6 @@ import ast
 import h5py
 
 
-def WriteOptHDF5(fname):
-    pass
 
 def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     """
@@ -120,7 +118,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         temp = []
         for key in list(sample.mag_eShift.keys()):
             temp.append([key, sample.mag_eShift[key]])
-        grp1.attrs['FormFactors'] = str(temp)
+        grp1.attrs['MagFormFactors'] = str(temp)
 
     # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
@@ -384,7 +382,35 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     f.close()
 
 def ReadFitHDF5(fname):
-    pass
+    """
+        Purpose: Read in the algorithm parameters
+        :param fname: File name
+        :return: the algorithms parameters
+        """
+
+    f = h5py.File(fname, 'r')
+
+    fitting_parameters = f['Fitting Parameters']
+
+    sample_fit = fitting_parameters['Sample Fit']
+    scan_fit = fitting_parameters['Scan Fit']
+    results = fitting_parameters['Results']
+
+    sfbsFit = ast.literal_eval(sample_fit.attrs['sfbsFit'])
+    sfbsVal = ast.literal_eval(sample_fit.attrs['sfbsVal'])
+    sampleFit = ast.literal_eval(sample_fit.attrs['Sample Fit'])
+    sampleVal = ast.literal_eval(sample_fit.attrs['Sample Val'])
+    selected_scans = ast.literal_eval(sample_fit.attrs['Selected Scans'])
+
+    bounds = ast.literal_eval(scan_fit.attrs['Bounds'])
+    weights = ast.literal_eval(scan_fit.attrs['Weights'])
+
+    x = ast.literal_eval(results.attrs['Value'])
+    chi = results.attrs['Chi']
+
+    f.close()
+    return [sfbsFit, sfbsVal, sampleFit, sampleVal, selected_scans, bounds, weights, x, chi]
+
 
 def ReadAlgorithmHDF5(fname):
     """
@@ -449,6 +475,7 @@ def ReadAlgorithmHDF5(fname):
 
     parameters['dual annealing'] = [dMaxiter, dInitTemp, dRestTemp, dVisit, dAccept, dMaxfun, dLs]
 
+    f.close()
     return parameters
 
 def ReadSampleHDF5(fname):

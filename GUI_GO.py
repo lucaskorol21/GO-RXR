@@ -3628,7 +3628,8 @@ class GlobalOptimizationWidget(QWidget):
 class ReflectometryApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        #sample = ds.ReadSampleHDF5(fname)  # temporary way of loading in data
+        cwd = os.getcwd()
+        self.fname = cwd + '\demo.h5'
         self.data = []
         self.data_dict = dict()
         self.sim_dict = dict()
@@ -3687,6 +3688,7 @@ class ReflectometryApp(QMainWindow):
         fileMenu = QMenu("&File", self)
 
         self.newFile = QAction("&New", self)
+        self.newFile.triggered.connect(self._newFile)
         fileMenu.addAction(self.newFile)
 
         self.loadFile = QAction("&Load", self)
@@ -3694,15 +3696,23 @@ class ReflectometryApp(QMainWindow):
         fileMenu.addAction(self.loadFile)
 
         self.saveFile = QAction("&Save", self)
+        self.saveFile.triggered.connect(self._saveFile)
         fileMenu.addAction(self.saveFile)
+
         self.saveAsFile = QAction("&Save As", self)
+        self.saveAsFile.triggered.connect(self._saveAsFile)
         fileMenu.addAction(self.saveAsFile)
+
         self.saveSimulationFile = QAction("&Save Simulation", self)
+        self.saveSimulationFile.triggered.connect(self._saveSimulation)
         fileMenu.addAction(self.saveAsFile)
         fileMenu.addSeparator()
         self.importDataset = QAction("&Import Dataset", self)
+        self.importDataset.triggered.connect(self._importDataSet)
         fileMenu.addAction(self.importDataset)
+
         self.saveSummary = QAction("&Save Summary", self)
+        self.saveSummary.triggered.connect(self._summary)
         fileMenu.addAction(self.saveSummary)
         fileMenu.addSeparator()
         self.exitFile = QAction("&Exit", self)
@@ -3714,6 +3724,8 @@ class ReflectometryApp(QMainWindow):
         toolsMenu = menuBar.addMenu("&Tools")
         self.script = QAction('Script', self)
         toolsMenu.addAction(self.script)
+        self.thickConst = QAction('Thickness Constraint', self)
+        toolsMenu.addAction(self.thickConst)
 
         helpMenu = menuBar.addMenu("&Help")
         self.license = QAction('License', self)
@@ -3721,8 +3733,19 @@ class ReflectometryApp(QMainWindow):
         self.about = QAction('About',self)
         helpMenu.addAction(self.about)
 
+    def _newFile(self):
+
+        # create a new file with the inputted
+        filename, _ = QFileDialog.getSaveFileName()
+        fname = filename.split('/')[-1]
+        if fname.endswith('.h5'):
+            self.fname = filename  # change the file name that we will be using
+
+        pass
+
     def _loadFile(self):
         path = QFileDialog.getOpenFileName(self, 'Open File')
+        self.fname = path  # change the filename path which will be useful for saving
         path = path[0]
         fname = path.split('/')[-1]
 
@@ -3779,24 +3802,61 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.setGOParameters()
                 self._goWidget.setTableFit()
 
+                fitParams = ds.ReadFitHDF5(fname)
+
                 # for now let's clear all the fitting parameters
-                self._reflectivityWidget.sfbsFitParams = []
-                self._reflectivityWidget.currentVal = []
+                self._reflectivityWidget.sfbsFitParams = fitParams[0]
+                self._reflectivityWidget.currentVal = fitParams[1]
                 self._reflectivityWidget.rom = [True, False, False]
-                self._reflectivityWidget.fit = []
-                self._reflectivityWidget.bounds = []
-                self._reflectivityWidget.weights = []
+                self._reflectivityWidget.fit = fitParams[4]
+                self._reflectivityWidget.bounds = fitParams[5]
+                self._reflectivityWidget.weights = fitParams[6]
 
-                self._sampleWidget.parameterFit = []
-                self._sampleWidget.currentVal = []
+                self._sampleWidget.parameterFit = fitParams[2]
+                self._sampleWidget.currentVal = fitParams[3]
 
-                self._goWidget.x = []
-                self._goWidget.fun = 0
+                self._goWidget.x = fitParams[7]
+                self._goWidget.fun = fitParams[8]
 
                 self._goWidget.parameters = []
+                for param in self._sampleWidget.parameterFit:
+                    self._goWidget.parameters.append(param)
+                for param in self._reflectivityWidget.sfbsFitParams:
+                    self._goWidget.parameters.append(param)
 
+                # reset all of the tables!!!
+                # - otherwise we have everything for the load function
             elif fname.endswith('.all'):
                 print('Currently no implementation')
+
+    def _saveFile(self):
+        print('save')
+
+    def _saveAsFile(self):
+        # create a new file with the inputted
+        filename, _ = QFileDialog.getSaveFileName()
+        fname = filename.split('/')[-1]
+        if fname.endswith('.h5'):
+            self.fname = filename  # change the file name that we will be using
+
+        pass
+
+    def _saveSimulation(self):
+
+        pass
+
+    def _importDataSet(self):
+        print('import dataset')
+
+    def _summary(self):
+        # create a new file with the inputted (save as a textfile!)
+        filename, _ = QFileDialog.getSaveFileName()
+        fname = filename.split('/')[-1]
+        if fname.endswith('.h5'):
+            self.fname = filename  # change the file name that we will be using
+
+        pass
+
 
     def _exitApplication(self):
         # exit the program
