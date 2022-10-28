@@ -3155,7 +3155,7 @@ class GlobalOptimizationWidget(QWidget):
     def _save_optimization(self):
         # saves the optimizations
         row = 0
-        print(self.sWidget.parameterFit)
+
         for idx in range(len(self.sWidget.currentVal)):
             self.sWidget.currentVal[idx][0] = str(self.x[row])
             row = row + 1

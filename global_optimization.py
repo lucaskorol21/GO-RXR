@@ -127,7 +127,8 @@ def scanCompute(x, *args):
         xbound = sBounds[i]
         weights = sWeights[i]
         i = i + 1
-
+        background_shift = data[name]['Background Shift']
+        scaling_factor = data[name]['Scaling Factor']
         if scanType == 'Reflectivity':
             myDataScan = data[name]
             myData = myDataScan['Data']
@@ -138,7 +139,7 @@ def scanCompute(x, *args):
             qz, Rsim = sample.reflectivity(E, qz)
 
             # need to toggle between log10 and not depending on the polarization
-            Rsim = np.log10(Rsim[pol])*sample.scaling_factor + np.ones(len(Rsim[pol]))*sample.background_shift
+            Rsim = np.log10(Rsim[pol])*scaling_factor + np.ones(len(Rsim[pol]))*background_shift
 
 
             for b in range(len(xbound)):
