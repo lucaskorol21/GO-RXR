@@ -3751,8 +3751,7 @@ class ReflectometryApp(QMainWindow):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
-        print(filename)
-        print(fname)
+
         # checks to make sure filename is in the correct format
         cont = True
         if filename == '' or fname == '':
@@ -3962,9 +3961,29 @@ class ReflectometryApp(QMainWindow):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
-        if fname.endswith('.h5'):
+
+        # checks to make sure filename is in the correct format
+        cont = True
+        if filename == '' or fname == '':
+            cont = False
+        elif fname.endswith('.h5'):
             self.fname = filename  # change the file name that we will be using
-        pass
+        elif '.' not in fname:
+            self.fname = filename + '.h5'
+        else:
+            cont = False
+
+        if cont:  # create the new file
+            data_dict = self.data_dict
+            sim_dict = self.sim_dict
+            fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
+                         self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
+                         self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
+                         self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
+
+            optParams = self._goWidget.goParameters
+
+            ds.saveAsFileHDF5(fname, self.sample,data_dict, sim_dict, fitParams, optParams)
 
     def _saveSimulation(self):
         data_dict = self.data_dict

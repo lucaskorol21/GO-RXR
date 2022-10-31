@@ -7,6 +7,182 @@ from time import *
 import ast
 import h5py
 
+def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
+
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    # clears the data file if it already exists
+    if os.path.exists(fname):
+        f.clear()
+
+    """
+        Purpose: saves the GUI information to the current file
+        :param fname: file path
+        :param sample: slab class
+        :param data_dict: data dictionary
+        :param fit: fitting parameters
+        :param optimization: optimization parameters
+        :return:
+        """
+
+    WriteSampleHDF5(fname, sample)  # save the sample information
+
+    f = h5py.File(fname, "a")
+
+    simulated = f.create_group('Simulated_data')
+    simR = simulated.create_group('Reflectivity_Scan')
+    simE = simulated.create_group('Energy_Scan')
+
+    experiment = f.create_group('Experimental_data')
+    reflScan = experiment.create_group('Reflectivity_Scan')
+    energyScan = experiment.create_group('Energy_Scan')
+    # save the data from data dict
+    for name in list(data_dict.keys()):
+
+        if 'Angle' in data_dict[name].keys():
+            dat = data_dict[name]['Data']
+            dset = energyScan.create_dataset(name, data=dat)
+            dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+            dset.attrs['Energy'] = data_dict[name]['Energy']
+            dset.attrs['Angle'] = data_dict[name]['Angle']
+            dset.attrs['Polarization'] = data_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+            dat1 = sim_dict[name]['Data']
+            dset1 = simE.create_dataset(name, data=dat1)
+            dset1.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset1.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset1.attrs['Energy'] = sim_dict[name]['Energy']
+            dset1.attrs['Angle'] = sim_dict[name]['Angle']
+            dset1.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset1.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset1.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+        else:
+            dat = data_dict[name]['Data']
+            dset = reflScan.create_dataset(name, data=dat)
+            dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+            dset.attrs['Energy'] = data_dict[name]['Energy']
+            dset.attrs['Polarization'] = data_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+            dat1 = sim_dict[name]['Data']
+            dset1 = simR.create_dataset(name, data=dat1)
+            dset1.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset1.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset1.attrs['Energy'] = sim_dict[name]['Energy']
+            dset1.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset1.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset1.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+
+
+    sfBsFitParams = fit[0]
+    sfBsVal = fit[1]
+    sampleParams = fit[2]
+    sampleVal = fit[3]
+    scans = fit[4]
+    bounds = fit[5]
+    weights = fit[6]
+    x = fit[7]
+    fun = fit[8]
+
+    # initializes the optimization information
+    opt = f.create_group("Optimization")
+
+    diff_ev = opt.create_group("Differential Evolution")
+    shgo = opt.create_group("Simplicial Homology")
+    dual = opt.create_group("Dual Annealing")
+
+    # load in optimization parameters for differential evolution
+    diff_ev.attrs['strategy'] = optimization['differential evolution'][0]
+    diff_ev.attrs['maxIter'] = optimization['differential evolution'][1]
+    diff_ev.attrs['popsize'] = optimization['differential evolution'][2]
+    diff_ev.attrs['tol'] = optimization['differential evolution'][3]
+    diff_ev.attrs['atol'] = optimization['differential evolution'][4]
+    diff_ev.attrs['min_mutation'] = optimization['differential evolution'][5]
+    diff_ev.attrs['max_mutation'] = optimization['differential evolution'][6]
+    diff_ev.attrs['recombination'] = optimization['differential evolution'][7]
+    diff_ev.attrs['polish'] = str(optimization['differential evolution'][8])
+    diff_ev.attrs['init'] = optimization['differential evolution'][9]
+    diff_ev.attrs['updating'] = optimization['differential evolution'][10]
+
+    # load in optimization parameters for simplicial homology
+    if optimization['simplicial homology'][0] == None:
+        shgo.attrs['n'] = str(optimization['simplicial homology'][0])
+    else:
+        shgo.attrs['n'] = optimization['simplicial homology'][0]
+
+    shgo.attrs['iter'] = optimization['simplicial homology'][1]
+    shgo.attrs['sampling'] = optimization['simplicial homology'][2]
+
+    # load in optimization parameters for simplicial homology
+    dual.attrs['maxiter'] = optimization['dual annealing'][0]
+    dual.attrs['initial_temp'] = optimization['dual annealing'][1]
+    dual.attrs['restart_temp'] = optimization['dual annealing'][2]
+    dual.attrs['visit'] = optimization['dual annealing'][3]
+    dual.attrs['accept'] = optimization['dual annealing'][4]
+    dual.attrs['maxfun'] = optimization['dual annealing'][5]
+    dual.attrs['local_search'] = str(optimization['dual annealing'][6])
+
+    # saving the fitting parameters
+    fitting_parameters = f.create_group('Fitting Parameters')
+
+    sample_fit = fitting_parameters.create_group('Sample Fit')
+    scan_fit = fitting_parameters.create_group('Scan Fit')
+    results = fitting_parameters.create_group('Results')
+
+    sample_fit.attrs['sfbsFit'] = str(sfBsFitParams)
+    sample_fit.attrs['sfbsVal'] = str(sfBsVal)
+    sample_fit.attrs['Sample Fit'] = str(sampleParams)
+    sample_fit.attrs['Sample Val'] = str(sampleVal)
+    sample_fit.attrs['Selected Scans'] = str(scans)
+
+    scan_fit.attrs['Selected Scans'] = str(scans)
+    scan_fit.attrs['Bounds'] = str(bounds)
+    scan_fit.attrs['Weights'] = str(weights)
+
+    results.attrs['Value'] = str(x)
+    results.attrs['Chi'] = fun
+
+    experiment = f['Experimental_data']
+    reflScan = experiment['Reflectivity_Scan']
+    energyScan = experiment['Energy_Scan']
+
+    # save the scaling factors and backgrounds shifts
+    for idx, param in enumerate(sfBsFitParams):
+        if param[0] == 'BACKGROUND SHIFT':  # background shift case
+            if param[1] == 'ALL SCANS':  # all scans change
+                for key in list(data_dict.keys()):
+                    if 'Angle' in data_dict[param[1]].keys():
+                        energyScan[key].attrs['Background Shift'] = float(sfBsVal[idx][0])
+                    else:
+                        reflScan[key].attrs['Background Shift'] = float(sfBsVal[idx][0])
+            else:  # one scan changes
+                if 'Angle' in data_dict[param[1]].keys():
+                    energyScan[param[1]].attrs['Background Shift'] = float(sfBsVal[idx][0])
+                else:
+                    reflScan[param[1]].attrs['Background Shift'] = float(sfBsVal[idx][0])
+
+        elif param[0] == 'SCALING FACTOR':  # scaling factor case
+            if param[1] == 'ALL SCANS':  # all scans change
+                for key in list(data_dict.keys()):
+                    if 'Angle' in data_dict[param[1]].keys():
+                        energyScan[key].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+                    else:
+                        reflScan[key].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+            else:  # one scan changes
+                if 'Angle' in data_dict[param[1]].keys():
+                    energyScan[param[1]].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+                else:
+                    reflScan[param[1]].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+
+    f.close()
+
+
+
 def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     """
     Purpose: saves the GUI information to the current file
