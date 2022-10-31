@@ -3964,15 +3964,130 @@ class ReflectometryApp(QMainWindow):
         print('import dataset')
 
     def _summary(self):
+        sample = self._sampleWidget._createSample()
         # create a new file with the inputted (save as a textfile!)
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
-        if fname.endswith('.h5'):
+        cont = True
+        if fname.endswith('.txt'):
             self.fname = filename  # change the file name that we will be using
+        elif fname == '':
+            cont = False
+        elif '.' not in fname:
+            filename = filename + '.txt'
 
-        pass
+        if cont:
+            with open(filename, 'w') as file:
+                file.write("# Structure \n")  # header defining that the sample information is starting
+                n = len(sample.structure)
 
+                # General information for the sample model
+                file.write("numberlayers = %s \n" % str(n))
+                file.write("polyelements = %s \n" % str(sample.poly_elements))
+                file.write("magelements = %s \n" % str(sample.mag_elements))
+                file.write("layermagnetized = %s \n" % sample.layer_magnetized)
+                file.write("energyShift = %s \n" % sample.eShift)
+                file.write("magEnergyShift = %s \n\n" % sample.mag_eShift)
 
+                # writing the layer and element information
+                num_lay = 0
+                for layer in sample.structure:
+
+                    # General layer information
+                    file.write("layer = %s \n" % str(num_lay))
+
+                    # Reconstructing the chemical formula
+                    formula = ''
+                    for ele in list(layer.keys()):
+                        stoich = layer[ele].stoichiometry
+                        if stoich == 1:
+                            formula = formula + ele
+                        else:
+                            formula = formula + ele + str(stoich)
+                    file.write("formula = %s \n\n" % formula)
+
+                    # writing the element information
+                    for ele in layer.keys():
+                        file.write("element = %s \n" % ele)
+                        file.write("molarmass = %f \n" % layer[ele].molar_mass)
+                        file.write("density = %f \n" % layer[ele].density)
+                        file.write("thickness = %f \n" % layer[ele].thickness)
+                        file.write("roughness = %f \n" % layer[ele].roughness)
+                        file.write("linkedroughness = %f \n" % layer[ele].linked_roughness)
+                        file.write("scatteringfactor = %s \n" % layer[ele].scattering_factor)
+                        file.write("polymorph = %s \n" % layer[ele].polymorph)
+
+                        poly_ratio = layer[ele].poly_ratio
+                        if type(poly_ratio) != int:
+                            poly_ratio = [str(poly) for poly in poly_ratio]
+                        file.write("polyratio = %s \n" % poly_ratio)
+
+                        file.write("gamma = %f \n" % layer[ele].gamma)
+                        file.write("phi = %f \n" % layer[ele].phi)
+
+                        mag_density = layer[ele].mag_density
+                        mag_density = [str(x) for x in mag_density]
+                        file.write("magdensity = %s \n" % mag_density)
+                        sfm = layer[ele].mag_scattering_factor
+                        file.write("magscatteringfactor = %s \n" % sfm)
+                        file.write("position = %s \n" % layer[ele].position)
+                        file.write("\n")
+
+                    num_lay = num_lay + 1
+
+                file.write("# Fit Parameters \n\n")
+
+                parameters = []
+                for param in self._sampleWidget.parameterFit:
+                    parameters.append(param)
+                for param in self._reflectivityWidget.sfBsFitParams:
+                    parameters.append(param)
+
+                current_val = []
+                for val in self._reflectivityWidget.currentVal:
+                    current_val.append(val)
+                for val in self._sampleWidget.currentVal:
+                    current_val.append(val)
+
+                file.write("scans = %s \n" % self._reflectivityWidget.fit)
+                file.write("scanBounds = %s \n" % self._reflectivityWidget.bounds)
+                file.write("scanWeights = %s \n\n" % self._reflectivityWidget.weights)
+
+                file.write("fitParams = %s \n" % parameters)
+                file.write("values = %s \n" % current_val)
+                file.write("results = %s \n" % self._goWidget.x)
+                file.write("chiSquare = %s \n\n" % self._goWidget.fun)
+
+                file.write('# Optimization Algorithms \n\n')
+
+                globOpt = self._goWidget.goParameters
+                file.write("algorithm = differential_evolution \n")
+                file.write("strategy = %s \n" % globOpt['differential evolution'][0])
+                file.write("maxIter = %s \n" % globOpt['differential evolution'][1])
+                file.write("popsize = %s \n" % globOpt['differential evolution'][2])
+                file.write("tol = %s \n" % globOpt['differential evolution'][3])
+                file.write("atol = %s \n" % globOpt['differential evolution'][4])
+                file.write("minMutation = %s \n" % globOpt['differential evolution'][5])
+                file.write("maxMutation = %s \n" % globOpt['differential evolution'][6])
+                file.write("recombination = %s \n" % globOpt['differential evolution'][7])
+                file.write("polish = %s \n" % globOpt['differential evolution'][8])
+                file.write("init = %s \n" % globOpt['differential evolution'][9])
+                file.write("updating = %s \n\n" % globOpt['differential evolution'][10])
+
+                file.write("algorithm = simplicial_homology \n")
+                file.write("n = %s \n" % globOpt['simplicial homology'][0])
+                file.write("iter = %s \n" % globOpt['simplicial homology'][1])
+                file.write("sampling = %s \n\n" % globOpt['simplicial homology'][2])
+
+                file.write("algorithm = dual annealing \n")
+                file.write("maxiter = %s \n" % globOpt['dual annealing'][0])
+                file.write("initialTemp = %s \n" % globOpt['dual annealing'][1])
+                file.write("restartTemp = %s \n" % globOpt['dual annealing'][2])
+                file.write("visit = %s \n" % globOpt['dual annealing'][3])
+                file.write("accept = %s \n" % globOpt['dual annealing'][4])
+                file.write("maxfun = %s \n" % globOpt['dual annealing'][5])
+                file.write("localSearch = %s \n\n" % globOpt['dual annealing'][6])
+                file.close()
     def _exitApplication(self):
         # exit the program
         sys.exit()

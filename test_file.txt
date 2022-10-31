@@ -1,0 +1,94 @@
+# Structure 
+numberlayers = 1 
+polyelements = {} 
+magelements = {} 
+layermagnetized = [False] 
+energyShift = {'Sr': 0, 'Ti': 0, 'O': 0} 
+magEnergyShift = {} 
+
+layer = 0 
+formula = SrTiO3 
+
+element = Sr 
+molarmass = 183.518200 
+density = 0.027899 
+thickness = 50.000000 
+roughness = 0.000000 
+linkedroughness = 0.000000 
+scatteringfactor = Sr 
+polymorph = [] 
+polyratio = 1 
+gamma = 0.000000 
+phi = 0.000000 
+magdensity = [] 
+magscatteringfactor = [] 
+position = 0 
+
+element = Ti 
+molarmass = 183.518200 
+density = 0.027899 
+thickness = 50.000000 
+roughness = 0.000000 
+linkedroughness = 0.000000 
+scatteringfactor = Ti 
+polymorph = [] 
+polyratio = 1 
+gamma = 0.000000 
+phi = 0.000000 
+magdensity = [] 
+magscatteringfactor = [] 
+position = 1 
+
+element = O 
+molarmass = 183.518200 
+density = 0.083697 
+thickness = 50.000000 
+roughness = 0.000000 
+linkedroughness = 0.000000 
+scatteringfactor = O 
+polymorph = [] 
+polyratio = 1 
+gamma = 0.000000 
+phi = 0.000000 
+magdensity = [] 
+magscatteringfactor = [] 
+position = 2 
+
+# Fit Parameters 
+scans = [] 
+scanBounds = [] 
+scanWeights = [] 
+
+fitParams = [[0, 'STRUCTURAL', 'ELEMENT', 'Sr', 'ROUGHNESS']] 
+values = [[0.0, [0, 1.0]]] 
+results = [] 
+chiSquare = 0 
+
+# Optimization Algorithms 
+algorithm = differential_evolution 
+strategy = currenttobest1bin 
+maxIter = 2 
+popsize = 15 
+tol = 1e-06 
+atol = 0 
+minMutation = 0.5 
+maxMutation = 1 
+recombination = 0.7 
+polish = True 
+init = latinhypercube 
+updating = immediate 
+
+algorithm = simplicial_homology 
+n = None 
+iter = 1 
+sampling = simplicial 
+
+algorithm = dual annealing 
+maxiter = 150 
+initialTemp = 5230.0 
+restartTemp = 2e-05 
+visit = 2.62 
+accept = 5.0 
+maxfun = 10000000.0 
+localSearch = True 
+
