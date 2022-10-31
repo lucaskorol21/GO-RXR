@@ -13,6 +13,7 @@ import pyqtgraph as pg
 import data_structure as ds
 import copy
 import global_optimization as go
+import h5py
 import multiprocessing as mp
 
 
@@ -3738,10 +3739,19 @@ class ReflectometryApp(QMainWindow):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
+
+        # checks to make sure filename is in the correct format
+        cont = True
         if fname.endswith('.h5'):
             self.fname = filename  # change the file name that we will be using
+        elif '.' not in filename:
+            self.fname = filename + '.h5'
+        else:
+            cont = False
 
-        pass
+
+        if cont:  # create the new file
+            pass
 
     def _loadFile(self):
         path = QFileDialog.getOpenFileName(self, 'Open File')

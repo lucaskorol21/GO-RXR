@@ -7,6 +7,187 @@ from time import *
 import ast
 import h5py
 
+def newFileHDF5(fname):
+    """
+        Purpose: Take in data and sample model and save it as an hdf5 file
+        :param fname: File name with .hdf5 file extension
+        :param AScans: Reflectivity scan data from ProcessRXR
+        :param AInfo: Reflectivity scan information from ProcessRXR
+        :param EScans: Energy scan data from Process RXR
+        :param EInfo: Energy scan information from Process RXR
+        :param sample: sample object
+        :return:
+        """
+
+
+
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    # clears the data file if it already exists
+    if os.path.exists(fname):
+        f.clear()
+
+    # preset slab model required for initialization of GUI
+    sample = slab(2)
+    sample.addlayer(0,'SrTiO3',50)
+    sample.addlayer(1,'LaMnO3', 10)
+
+    # creating group that will contain the sample information
+    grp1 = f.create_group("Sample")
+    m = len(sample.structure)
+    grp1.attrs['NumberLayers'] = int(m)
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
+
+    scattering_factor = []
+    mag_scattering_factor = []
+
+    dsLayer = 0
+    for my_layer in sample.structure:
+
+        # Layer information
+        name = "Layer_" + str(dsLayer)
+        layer = grp1.create_group(name)
+        layer.attrs['LayerNumber'] = int(dsLayer)
+
+        formula = ''
+        for ele in list(my_layer.keys()):
+            stoich = my_layer[ele].stoichiometry
+            if stoich == 1:
+                formula = formula + ele
+            else:
+                formula = formula + ele + str(stoich)
+        layer.attrs['Formula'] = formula
+
+        for ele in list(my_layer.keys()):
+            element = layer.create_group(ele)
+
+            # Element information
+            element.attrs['MolarMass'] = my_layer[ele].molar_mass
+            element.attrs['Density'] = my_layer[ele].density
+            element.attrs['Thickness'] = my_layer[ele].thickness
+            element.attrs['Roughness'] = my_layer[ele].roughness
+            element.attrs['LinkedRoughness'] = my_layer[ele].linked_roughness
+            element.attrs['PolyRatio'] = my_layer[ele].poly_ratio
+            element.attrs['Polymorph'] = my_layer[ele].polymorph
+            element.attrs['Gamma'] = my_layer[ele].gamma
+            element.attrs['Phi'] = my_layer[ele].phi
+
+            # May be changed in the future as layermagnetized also contains this information
+            # Original implemented to avoid problem of trying to load in the magnetic data that does not exist
+            if len(my_layer[ele].mag_density) == 0:
+                element.attrs['Magnetic'] = False
+            else:
+                element.attrs['Magnetic'] = True
+                element.attrs['MagDensity'] = my_layer[ele].mag_density
+                element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
+
+                if type(my_layer[ele].mag_scattering_factor) is list or type(
+                        my_layer[ele].mag_scattering_factor) is np.ndarray:
+                    for msf in my_layer[ele].mag_scattering_factor:
+                        if msf not in mag_scattering_factor:
+                            mag_scattering_factor.append([msf, 0])
+                else:
+                    if my_layer[ele].mag_scattering_factor not in mag_scattering_factor:
+                        mag_scattering_factor.append([my_layer[ele].mag_scattering_factor, 0])
+
+            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            if type(my_layer[ele].scattering_factor) is list or type(my_layer[ele].scattering_factor) is np.ndarray:
+                for my_sf in my_layer[ele].scattering_factor:
+                    if my_sf not in scattering_factor:
+                        scattering_factor.append([my_sf, 0])
+            else:
+                if my_layer[ele].scattering_factor not in scattering_factor:
+                    scattering_factor.append([my_layer[ele].scattering_factor, 0])
+            element.attrs['Position'] = my_layer[ele].position
+
+        dsLayer = dsLayer + 1
+
+    # setting the eShift parameters depending on the user input
+    if len(list(sample.eShift.keys())) == 0:
+        grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
+    else:
+        temp = []
+        for key in list(sample.eShift.keys()):
+            temp.append([key, sample.eShift[key]])
+        grp1.attrs['FormFactors'] = str(temp)
+
+    # setting the mag eShift depending on the user input
+    if len(list(sample.mag_eShift.keys())) == 0:
+        grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)  # magnetic scattering factors
+    else:
+        temp = []
+        for key in list(sample.mag_eShift.keys()):
+            temp.append([key, sample.mag_eShift[key]])
+        grp1.attrs['MagFormFactors'] = str(temp)
+
+
+    # initializes the experimental and simulation data (needs to be loaded later)
+    grp2 = f.create_group("Experimental_data")
+    grp3 = f.create_group("Simulated_data")
+
+    grpR = grp2.create_group("Reflectivity_Scan")
+    subR = grp3.create_group("Reflectivity_Scan")
+
+    grpE = grp2.create_group("Energy_Scan")
+    subE = grp3.create_group("Energy_Scan")
+
+
+    # initializes the optimization information
+    grp4 = f.create_group("Optimization")
+
+    diff_ev = grp4.create_group("Differential Evolution")
+    shgo = grp4.create_group("Simplicial Homology")
+    dual = grp4.create_group("Dual Annealing")
+
+    # load in optimization parameters for differential evolution
+    diff_ev.attrs['strategy'] = 'currenttobest1bin'
+    diff_ev.attrs['maxIter'] = 150
+    diff_ev.attrs['popsize'] = 15
+    diff_ev.attrs['tol'] = 1e-6
+    diff_ev.attrs['atol'] = 0
+    diff_ev.attrs['min_mutation'] = 0.5
+    diff_ev.attrs['max_mutation'] = 1
+    diff_ev.attrs['recombination'] = 0.7
+    diff_ev.attrs['polish'] = 'True'
+    diff_ev.attrs['init'] = 'latinhypercube'
+    diff_ev.attrs['updating'] = 'immediate'
+
+    # load in optimization parameters for simplicial homology
+    shgo.attrs['n'] = 'None'
+    shgo.attrs['iter'] = 1
+    shgo.attrs['sampling'] = 'simplicial'
+
+    # load in optimization parameters for simplicial homology
+    dual.attrs['maxiter'] = 150
+    dual.attrs['initial_temp'] = 5230.0
+    dual.attrs['restart_temp'] = 2e-5
+    dual.attrs['visit'] = 2.62
+    dual.attrs['accept'] = 5.0
+    dual.attrs['maxfun'] = 10000000.0
+    dual.attrs['local_search'] = 'False'
+
+    grp5 = f.create_group('Fitting Parameters')
+
+    sample_fit = grp5.create_group('Sample Fit')
+    scan_fit = grp5.create_group('Scan Fit')
+    results = grp5.create_group('Results')
+
+    sample_fit.attrs['sfbsFit'] = str([])
+    sample_fit.attrs['sfbsVal'] = str([])
+    sample_fit.attrs['Sample Fit'] = str([])
+    sample_fit.attrs['Sample Val'] = str([])
+    sample_fit.attrs['Selected Scans'] = str([])
+
+    scan_fit.attrs['Selected Scans'] = str([])
+    scan_fit.attrs['Bounds'] = str([])
+    scan_fit.attrs['Weights'] = str([])
+
+    results.attrs['Value'] = str([])
+    results.attrs['Chi'] = 0
+
+    f.close()
 
 
 def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
