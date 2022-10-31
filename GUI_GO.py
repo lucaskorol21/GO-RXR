@@ -1310,6 +1310,7 @@ class sampleWidget(QWidget):
 
     def changeStepSize(self):
         self._step_size = self.step_size.text()
+
     def _setVarMagFromSample(self, sample):
 
         # setting up the varData and magData dictionaries
@@ -1788,6 +1789,12 @@ class sampleWidget(QWidget):
                 # still need to take into account sf that are different than element
             sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness)
 
+        for key, value in self.eShift.items():
+            if str(key).startswith('ff-'):
+                sample.eShift[str(key)[3:]] = value
+            elif str(key).startswith('ffm-'):
+                sample.mag_eShift[str(key)[4:]] = value
+
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
             for ele in range(len(layer)):
@@ -1819,6 +1826,7 @@ class sampleWidget(QWidget):
                 if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx,names,ratio,scattering_factor)
+
 
         return sample
 
@@ -3663,7 +3671,7 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
         self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self)
 
-        self.sampleButton.setStyleSheet("background-color : pink")
+        self.sampleButton.setStyleSheet("background-color : magenta")
         self.sampleButton.clicked.connect(self.activate_tab_1)
         buttonlayout.addWidget(self.sampleButton)
         self.stackedlayout.addWidget(self._sampleWidget)
@@ -3703,10 +3711,14 @@ class ReflectometryApp(QMainWindow):
         self.saveAsFile = QAction("&Save As", self)
         self.saveAsFile.triggered.connect(self._saveAsFile)
         fileMenu.addAction(self.saveAsFile)
+        fileMenu.addSeparator()
+        self.saveSampleFile = QAction("&Save Sample", self)
+        self.saveSampleFile.triggered.connect(self._saveSample)
+        fileMenu.addAction(self.saveSampleFile)
 
         self.saveSimulationFile = QAction("&Save Simulation", self)
         self.saveSimulationFile.triggered.connect(self._saveSimulation)
-        fileMenu.addAction(self.saveAsFile)
+        fileMenu.addAction(self.saveSimulationFile)
         fileMenu.addSeparator()
         self.importDataset = QAction("&Import Dataset", self)
         self.importDataset.triggered.connect(self._importDataSet)
@@ -3739,32 +3751,117 @@ class ReflectometryApp(QMainWindow):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
-
+        print(filename)
+        print(fname)
         # checks to make sure filename is in the correct format
         cont = True
-        if fname.endswith('.h5'):
+        if filename == '' or fname == '':
+            cont = False
+        elif fname.endswith('.h5'):
             self.fname = filename  # change the file name that we will be using
-        elif '.' not in filename:
+        elif '.' not in fname:
             self.fname = filename + '.h5'
         else:
             cont = False
 
 
         if cont:  # create the new file
-            pass
+            ds.newFileHDF5(self.fname)
+
+            sample = ms.slab(2)
+            sample.addlayer(0, 'SrTiO3', 50)
+            sample.addlayer(1, 'LaMnO3', 10)
+            self.sample = sample
+            self._sampleWidget.sample = sample
+
+            self.data = list()
+            self.data_dict = dict()
+            self.sim_dict = dict()
+
+            # loading in the background shift and scaling factor
+            self._reflectivityWidget.bs = dict()
+            self._reflectivityWidget.sf = dict()
+
+            self._sampleWidget._setStructFromSample(sample)
+            self._sampleWidget._setVarMagFromSample(sample)
+
+            self._sampleWidget.eShift = dict()
+
+            # now it's time to load the other information
+            self._reflectivityWidget.selectedScans.clear()
+            self._reflectivityWidget.whichScan.clear()
+
+            self._reflectivityWidget.data = self.data
+            self._reflectivityWidget.data_dict = self.data_dict
+
+            for scan in self.data:
+                self._reflectivityWidget.whichScan.addItem(scan[2])
+
+            for key in list(sample.eShift.keys()):
+                name = 'ff-' + key
+                self._sampleWidget.eShift[name] = sample.eShift[key]
+
+            for key in list(sample.mag_eShift.keys()):
+                name = 'ffm-' + key
+                self._sampleWidget.eShift[name] = sample.mag_eShift[key]
+
+            self._sampleWidget.setTableEShift()
+
+            layerList = []
+            for i in range(len(sample.structure)):
+                if i == 0:
+                    layerList.append('Substrate')
+                else:
+                    layerList.append('Layer ' + str(i))
+
+            self._sampleWidget.layerBox.clear()
+            # change this for an arbitrary sample model
+            self._sampleWidget.layerBox.addItems(layerList)
+
+            self._goWidget.goParameters = {'differential evolution': ['currenttobest1bin',2,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
+                             'simplicial homology': ['None', 1, 'simplicial'],
+                             'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
+
+            self._goWidget.setGOParameters()
+            self._goWidget.setTableFit()
+
+
+            # for now let's clear all the fitting parameters
+            self._reflectivityWidget.sfbsFitParams = list()
+            self._reflectivityWidget.currentVal = list()
+            self._reflectivityWidget.rom = [True, False, False]
+            self._reflectivityWidget.fit = list()
+            self._reflectivityWidget.bounds = list()
+            self._reflectivityWidget.weights = list()
+
+            self._sampleWidget.parameterFit = list()
+            self._sampleWidget.currentVal = list()
+
+            self._goWidget.x = list()
+            self._goWidget.fun = 0
+
+            self._goWidget.parameters = []
+            for param in self._sampleWidget.parameterFit:
+                self._goWidget.parameters.append(param)
+            for param in self._reflectivityWidget.sfbsFitParams:
+                self._goWidget.parameters.append(param)
+
+            # reset all of the tables!!!
+            # - otherwise we have everything for the load function
+        else:
+            print('Unable to create the file')
 
     def _loadFile(self):
-        path = QFileDialog.getOpenFileName(self, 'Open File')
-        self.fname = path  # change the filename path which will be useful for saving
-        path = path[0]
-        fname = path.split('/')[-1]
+        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')
+
+        fname = self.fname.split('/')[-1]
 
         # when loading files I need to be able to scan the entire
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5'):
-                self.sample = ds.ReadSampleHDF5(path)
+                self.sample = ds.ReadSampleHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
-                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(path)
+                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(self.fname)
 
                 # loading in the background shift and scaling factor
                 self._reflectivityWidget.bs = dict()
@@ -3808,11 +3905,11 @@ class ReflectometryApp(QMainWindow):
                 # change this for an arbitrary sample model
                 self._sampleWidget.layerBox.addItems(layerList)
 
-                self._goWidget.goParameters = ds.ReadAlgorithmHDF5(fname)
+                self._goWidget.goParameters = ds.ReadAlgorithmHDF5(self.fname)
                 self._goWidget.setGOParameters()
                 self._goWidget.setTableFit()
 
-                fitParams = ds.ReadFitHDF5(fname)
+                fitParams = ds.ReadFitHDF5(self.fname)
 
                 # for now let's clear all the fitting parameters
                 self._reflectivityWidget.sfbsFitParams = fitParams[0]
@@ -3840,7 +3937,9 @@ class ReflectometryApp(QMainWindow):
                 print('Currently no implementation')
 
     def _saveFile(self):
-        print('save')
+        # work on saving the current file
+        # saving function is used to save entire workspace
+        print(self.fname)
 
     def _saveAsFile(self):
         # create a new file with the inputted
@@ -3848,12 +3947,18 @@ class ReflectometryApp(QMainWindow):
         fname = filename.split('/')[-1]
         if fname.endswith('.h5'):
             self.fname = filename  # change the file name that we will be using
-
         pass
 
     def _saveSimulation(self):
-
         pass
+
+    def _saveSample(self):
+        self.sample = self._sampleWidget._createSample()
+        self._sampleWidget.sample = self.sample
+        self._reflectivityWidget.sample = self.sample
+
+        # save the sample information to the file
+        ds.WriteSampleHDF5(self.fname, self.sample)
 
     def _importDataSet(self):
         print('import dataset')
@@ -3874,11 +3979,20 @@ class ReflectometryApp(QMainWindow):
 
     def activate_tab_1(self):
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
+        self.sampleButton.setStyleSheet("background-color : magenta")
+        self.reflButton.setStyleSheet("background-color : pink")
+        self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(0)
     def activate_tab_2(self):
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
+        self.sampleButton.setStyleSheet("background-color : pink")
+        self.reflButton.setStyleSheet("background-color : magenta")
+        self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(1)
     def activate_tab_3(self):
+        self.sampleButton.setStyleSheet("background-color : pink")
+        self.reflButton.setStyleSheet("background-color : pink")
+        self.goButton.setStyleSheet("background-color : magenta")
         self._goWidget.updateScreen()
         self._goWidget.setTableFit()
         self.stackedlayout.setCurrentIndex(2)

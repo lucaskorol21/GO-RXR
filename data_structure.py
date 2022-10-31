@@ -36,8 +36,8 @@ def newFileHDF5(fname):
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
-    grp1.attrs['PolyElements'] = str(sample.poly_elements)
-    grp1.attrs['MagElements'] = str(sample.mag_elements)
+    grp1.attrs['PolyElements'] = sample.poly_elements
+    grp1.attrs['MagElements'] = sample.mag_elements
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
     scattering_factor = []
@@ -283,6 +283,10 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
 
         dsLayer = dsLayer + 1
 
+    grp1.attrs['FormFactors'] = str(sample.eShift)
+    grp1.attrs['MagFormFactors'] = str(sample.mag_eShift)
+
+    """
     # setting the eShift parameters depending on the user input
     if len(list(sample.eShift.keys())) == 0:
         grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
@@ -300,7 +304,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         for key in list(sample.mag_eShift.keys()):
             temp.append([key, sample.mag_eShift[key]])
         grp1.attrs['MagFormFactors'] = str(temp)
-
+    """
     # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
@@ -673,17 +677,20 @@ def ReadSampleHDF5(fname):
     # Retieves the general information of the sample
     m = int(S.attrs['NumberLayers'])
     sample = slab(m)
-    sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
-    sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
+
+    if S.attrs['PolyElements'] == '{}':
+        sample.poly_elements = dict()
+    else:
+        sample.poly_elements = ast.literal_eval(S.attrs['PolyElements'])
+
+    if S.attrs['MagElements'] == '{}':
+        sample.mag_elements = dict()
+    else:
+        sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
     sample.layer_magnetized = S.attrs['LayerMagnetized']
-    scattering_factor = ast.literal_eval(S.attrs['FormFactors'])
-    mag_scattering_factors = ast.literal_eval(S.attrs['MagFormFactors'])
+    sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
+    sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
 
-    for ff in scattering_factor:
-        sample.eShift[ff[0]] = ff[1]
-
-    for ffm in mag_scattering_factors:
-        sample.mag_eShift[ffm[0]] = ff[1]
 
     # Retrieves the general layer information
     for lay_key in S.keys():
@@ -781,24 +788,28 @@ def WriteSampleHDF5(fname, sample):
     f = h5py.File(fname, "a")
     grp1 = f.create_group('Sample')
 
-    # Sets the general sample information
+    for key in list(sample.poly_elements):
+        sample.poly_elements[key] = list(sample.poly_elements)
+    for key in list(sample.mag_elements):
+        sample.mag_elements[key] = list(sample.mag_elements)
+
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
-    scattering_factor = []
-    mag_scattering_factor = sample.mag_eshift
+    scattering_factor = sample.eShift
+    mag_scattering_factor = sample.mag_eShift
 
-    for key in list(sample.eShift.keys()):
-        scattering_factor.append([key,sample.eShift[key]])
+    #for key in list(sample.eShift.keys()):
+    #    scattering_factor.append([key,sample.eShift[key]])
 
-    for key in list(sample.mag_eShift.keys()):
-        mag_scattering_factor.append([key,sample.mag_eShift[key]])
+    #for key in list(sample.mag_eShift.keys()):
+    #    mag_scattering_factor.append([key,sample.mag_eShift[key]])
 
-    grp1.attrs['FormFactors'] = np.array(scattering_factor)
-    grp1.attrs['MagFormFactors'] = np.array(mag_scattering_factor)
+    grp1.attrs['FormFactors'] = str(scattering_factor)
+    grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)
 
     # Sets the information for each layer
     dsLayer = 0
