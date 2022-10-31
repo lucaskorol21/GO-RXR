@@ -7,6 +7,122 @@ from time import *
 import ast
 import h5py
 
+def saveFileHDF5(fname, sample, data_dict, fit, optimization):
+    """
+    Purpose: saves the GUI information to the current file
+    :param fname: file path
+    :param sample: slab class
+    :param data_dict: data dictionary
+    :param fit: fitting parameters
+    :param optimization: optimization parameters
+    :return:
+    """
+
+    WriteSampleHDF5(fname, sample)  # save the sample information
+
+    sfBsFitParams = fit[0]
+    sfBsVal = fit[1]
+    sampleParams = fit[2]
+    sampleVal = fit[3]
+    scans = fit[4]
+    bounds = fit[5]
+    weights = fit[6]
+    x = fit[7]
+    fun = fit[8]
+
+    f = h5py.File(fname, "a")
+    # initializes the optimization information
+    opt = f["Optimization"]
+
+    diff_ev = opt["Differential Evolution"]
+    shgo = opt["Simplicial Homology"]
+    dual = opt["Dual Annealing"]
+
+    # load in optimization parameters for differential evolution
+    diff_ev.attrs['strategy'] = optimization['differential evolution'][0]
+    diff_ev.attrs['maxIter'] = optimization['differential evolution'][1]
+    diff_ev.attrs['popsize'] = optimization['differential evolution'][2]
+    diff_ev.attrs['tol'] = optimization['differential evolution'][3]
+    diff_ev.attrs['atol'] = optimization['differential evolution'][4]
+    diff_ev.attrs['min_mutation'] = optimization['differential evolution'][5]
+    diff_ev.attrs['max_mutation'] = optimization['differential evolution'][6]
+    diff_ev.attrs['recombination'] = optimization['differential evolution'][7]
+    diff_ev.attrs['polish'] = str(optimization['differential evolution'][8])
+    diff_ev.attrs['init'] = optimization['differential evolution'][9]
+    diff_ev.attrs['updating'] = optimization['differential evolution'][10]
+
+    # load in optimization parameters for simplicial homology
+    if optimization['simplicial homology'][0] == None:
+        shgo.attrs['n'] = str(optimization['simplicial homology'][0])
+    else:
+        shgo.attrs['n'] = optimization['simplicial homology'][0]
+
+    shgo.attrs['iter'] = optimization['simplicial homology'][1]
+    shgo.attrs['sampling'] = optimization['simplicial homology'][2]
+
+    # load in optimization parameters for simplicial homology
+    dual.attrs['maxiter'] = optimization['dual annealing'][0]
+    dual.attrs['initial_temp'] = optimization['dual annealing'][1]
+    dual.attrs['restart_temp'] = optimization['dual annealing'][2]
+    dual.attrs['visit'] = optimization['dual annealing'][3]
+    dual.attrs['accept'] = optimization['dual annealing'][4]
+    dual.attrs['maxfun'] = optimization['dual annealing'][5]
+    dual.attrs['local_search'] = str(optimization['dual annealing'][6])
+
+    # saving the fitting parameters
+    fitting_parameters = f['Fitting Parameters']
+
+    sample_fit = fitting_parameters['Sample Fit']
+    scan_fit = fitting_parameters['Scan Fit']
+    results = fitting_parameters['Results']
+
+    sample_fit.attrs['sfbsFit'] = str(sfBsFitParams)
+    sample_fit.attrs['sfbsVal'] = str(sfBsVal)
+    sample_fit.attrs['Sample Fit'] = str(sampleParams)
+    sample_fit.attrs['Sample Val'] = str(sampleVal)
+    sample_fit.attrs['Selected Scans'] = str(scans)
+
+    scan_fit.attrs['Selected Scans'] = str(scans)
+    scan_fit.attrs['Bounds'] = str(bounds)
+    scan_fit.attrs['Weights'] = str(weights)
+
+    results.attrs['Value'] = str(x)
+    results.attrs['Chi'] = fun
+
+    experiment = f['Experimental_data']
+    reflScan = experiment['Reflectivity_Scan']
+    energyScan = experiment['Energy_Scan']
+
+    # save the scaling factors and backgrounds shifts
+    for idx, param in enumerate(sfBsFitParams):
+        if param[0] == 'BACKGROUND SHIFT':  # background shift case
+            if param[1] == 'ALL SCANS':  # all scans change
+                for key in list(data_dict.keys()):
+                    if 'Angle' in data_dict[param[1]].keys():
+                        energyScan[key].attrs['Background Shift'] = float(sfBsVal[idx][0])
+                    else:
+                        reflScan[key].attrs['Background Shift'] = float(sfBsVal[idx][0])
+            else:  # one scan changes
+                if 'Angle' in data_dict[param[1]].keys():
+                    energyScan[param[1]].attrs['Background Shift'] = float(sfBsVal[idx][0])
+                else:
+                    reflScan[param[1]].attrs['Background Shift'] = float(sfBsVal[idx][0])
+
+        elif param[0] == 'SCALING FACTOR':  # scaling factor case
+            if param[1] == 'ALL SCANS':  # all scans change
+                for key in list(data_dict.keys()):
+                    if 'Angle' in data_dict[param[1]].keys():
+                        energyScan[key].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+                    else:
+                        reflScan[key].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+            else:  # one scan changes
+                if 'Angle' in data_dict[param[1]].keys():
+                    energyScan[param[1]].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+                else:
+                    reflScan[param[1]].attrs['Scaling Factor'] = float(sfBsVal[idx][0])
+
+    f.close()
+
 def newFileHDF5(fname):
     """
         Purpose: Take in data and sample model and save it as an hdf5 file
@@ -854,6 +970,7 @@ def WriteSampleHDF5(fname, sample):
 
         dsLayer = dsLayer + 1
 
+    f.close()
 
 
 def WriteHDF5Simulation():
@@ -1062,6 +1179,7 @@ def WriteSampleASCII(file,sample):
             file.write("\n")
 
         num_lay = num_lay + 1
+
 
 def WriteExperimentalDataASCII(file, AScans,AInfo,EScans,EInfo):
     """

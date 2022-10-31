@@ -3827,7 +3827,7 @@ class ReflectometryApp(QMainWindow):
 
 
             # for now let's clear all the fitting parameters
-            self._reflectivityWidget.sfbsFitParams = list()
+            self._reflectivityWidget.sfBsFitParams = list()
             self._reflectivityWidget.currentVal = list()
             self._reflectivityWidget.rom = [True, False, False]
             self._reflectivityWidget.fit = list()
@@ -3912,7 +3912,7 @@ class ReflectometryApp(QMainWindow):
                 fitParams = ds.ReadFitHDF5(self.fname)
 
                 # for now let's clear all the fitting parameters
-                self._reflectivityWidget.sfbsFitParams = fitParams[0]
+                self._reflectivityWidget.sfBsFitParams = fitParams[0]
                 self._reflectivityWidget.currentVal = fitParams[1]
                 self._reflectivityWidget.rom = [True, False, False]
                 self._reflectivityWidget.fit = fitParams[4]
@@ -3928,7 +3928,7 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.parameters = []
                 for param in self._sampleWidget.parameterFit:
                     self._goWidget.parameters.append(param)
-                for param in self._reflectivityWidget.sfbsFitParams:
+                for param in self._reflectivityWidget.sfBsFitParams:
                     self._goWidget.parameters.append(param)
 
                 # reset all of the tables!!!
@@ -3940,7 +3940,23 @@ class ReflectometryApp(QMainWindow):
         # work on saving the current file
         # saving function is used to save entire workspace
 
-        self.fname
+        self.sample = self._sampleWidget._createSample()
+        self._sampleWidget.sample = self.sample
+        self._reflectivityWidget.sample = self.sample
+
+        # save the sample information to the file
+        #ds.WriteSampleHDF5(self.fname, self.sample)
+
+        data_dict = self.data_dict
+
+        fitParams = [self._reflectivityWidget.sfBsFitParams,self._reflectivityWidget.currentVal,
+                     self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
+                     self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
+                     self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
+
+        optParams = self._goWidget.goParameters
+
+        ds.saveFileHDF5(fname, self.sample, data_dict,  fitParams, optParams)
 
     def _saveAsFile(self):
         # create a new file with the inputted
