@@ -3939,7 +3939,8 @@ class ReflectometryApp(QMainWindow):
     def _saveFile(self):
         # work on saving the current file
         # saving function is used to save entire workspace
-        print(self.fname)
+
+        self.fname
 
     def _saveAsFile(self):
         # create a new file with the inputted
@@ -3950,7 +3951,8 @@ class ReflectometryApp(QMainWindow):
         pass
 
     def _saveSimulation(self):
-        pass
+        data_dict = self.data_dict
+
 
     def _saveSample(self):
         self.sample = self._sampleWidget._createSample()
