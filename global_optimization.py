@@ -157,6 +157,7 @@ def scanCompute(x, *args):
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
 
+
             for b in range(len(xbound)):
                 lw = xbound[b][0]
                 up = xbound[b][1]
@@ -184,6 +185,8 @@ def scanCompute(x, *args):
             if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
+
+
 
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
