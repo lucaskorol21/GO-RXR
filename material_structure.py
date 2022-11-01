@@ -818,7 +818,7 @@ class slab:
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
                             name = self.structure[layer][ele].scattering_factor
-                            self.eShift[name] = 0
+                            #self.eShift[name] = 0
 
 
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
@@ -925,7 +925,7 @@ class slab:
                             if ele not in self.find_sf[0]:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
                                 name = self.structure[layer][ele].scattering_factor[po]
-                                self.eShift[name] = 0
+                                #self.eShift[name] = 0
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1021,7 +1021,7 @@ class slab:
                             if mag not in self.find_sf[1]:
                                 self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
                                 name = self.structure[layer][ele].mag_scattering_factor[ma]
-                                self.mag_eShift[name] = 0
+                                #self.mag_eShift[name] = 0
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
                             ma = ma + 1
@@ -1299,11 +1299,15 @@ class slab:
         # Magnetic Scattering Factor
         sfm = dict()
         sf = dict()
+
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            sf[e] = find_form_factor(self.find_sf[0][e], energy, False)
+            dE = float(self.eShift[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)
+        # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
+            dE = float(self.mag_eShift[self.find_sf[1][em]])
+            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)
 
         d_len = len(thickness)
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index

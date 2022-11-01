@@ -598,6 +598,14 @@ class sampleWidget(QWidget):
         value = self.energyShiftTable.item(0,column).text()
         self.eShift[key] = float(value)
 
+        # make changes to the sample
+        if key[:3] == 'ff-':
+            sf = key[3:]
+            self.sample.eShift[sf] = float(value)
+        elif key[:3] == 'ffm':
+            sf = key[4:]
+            self.sample.mag_eShift[sf] = float(value)
+
         for idx, fit in enumerate(self.parameterFit):
             if key[:3] == 'ff-':
                 if fit == ['SCATTERING FACTOR', 'STRUCTURAL', key[3:]]:
@@ -2274,6 +2282,7 @@ class reflectivityWidget(QWidget):
         self.sWidget._step_size = self.stepWidget.text()
 
     def myPlotting(self):
+        #self.sample = self.sWidget.sample
         idx = self.rom.index(True)
         if idx == 0:
             self.rPlot()
@@ -2579,8 +2588,10 @@ class reflectivityWidget(QWidget):
             self.previousIdx = idx
 
     def plot_scans(self):
+
+
         if len(self.data) != 0:
-            self.sample = self.sWidget.sample
+            #self.sample = self.sWidget.sample
             self.spectrumWidget.clear()
             idx = self.whichScan.currentIndex()
             name = self.whichScan.currentText()
@@ -2595,6 +2606,7 @@ class reflectivityWidget(QWidget):
 
                     R = dat[2]
                     E = self.data_dict[name]['Energy']
+
                     qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
                     Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
                     Rsim = Rsim[pol]
@@ -3055,7 +3067,7 @@ class GlobalOptimizationWidget(QWidget):
 
                         ele_idx = 0
                         if char == 'THICKNESS':
-                            p = float(self.sWidget.structTableInfo[layer][ele_idx][4])
+                            p = float(self.sWidget.structTableInfo[layer][ele_idx][1])
                             diff = p - float(self.x[idx])
                             for i in range(len(self.sWidget.structTableInfo[layer])):
                                 if i == ele_idx:  # makes sure that we are subtracting the difference value
@@ -3232,7 +3244,7 @@ class GlobalOptimizationWidget(QWidget):
 
                 scaling_factor_old = float(self.rWidget.sf[name])
                 background_shift_old = float(self.rWidget.bs[name])
-                #print(scaling_factor_old, background_shift_old)
+
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size)
@@ -3860,6 +3872,7 @@ class ReflectometryApp(QMainWindow):
             if fname.endswith('.h5'):
                 self.sample = ds.ReadSampleHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
+
                 self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(self.fname)
 
                 # loading in the background shift and scaling factor
@@ -3870,7 +3883,6 @@ class ReflectometryApp(QMainWindow):
                 self._sampleWidget._setStructFromSample(self.sample)
                 self._sampleWidget._setVarMagFromSample(self.sample)
 
-                self._sampleWidget.eShift = dict()
 
                 # now it's time to load the other information
                 self._reflectivityWidget.selectedScans.clear()
@@ -3879,8 +3891,11 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.data = self.data
                 self._reflectivityWidget.data_dict = self.data_dict
 
+                # make sure we are not plotting when we do not need to
+                self._reflectivityWidget.whichScan.blockSignals(True)
                 for scan in self.data:
                     self._reflectivityWidget.whichScan.addItem(scan[2])
+                self._reflectivityWidget.whichScan.blockSignals(False)
 
                 for key in list(self.sample.eShift.keys()):
                     name = 'ff-'+key
@@ -4130,18 +4145,29 @@ class ReflectometryApp(QMainWindow):
         sys.exit()
 
     def activate_tab_1(self):
+        self.sample = self._sampleWidget._createSample()
+        self._reflectivityWidget.sample = self.sample
+
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(0)
     def activate_tab_2(self):
+        self.sample = self._sampleWidget._createSample()
+        self._reflectivityWidget.sample = self.sample
+        self._reflectivityWidget.myPlotting()
+
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : magenta")
         self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(1)
+
     def activate_tab_3(self):
+        self.sample = self._sampleWidget._createSample()
+        self._reflectivityWidget.sample = self.sample
+
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
