@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from collections import OrderedDict
 from scipy.special import erf
+import warnings
 import copy
 
 
@@ -1336,6 +1337,14 @@ class slab:
         R = R[0]
 
         return energy, R
+
+    def energy_shift(self):
+        self.density_profile()
+        for e in self.find_sf[0].keys():
+            self.eShift[self.find_sf[0][e]] = 0
+
+        for em in self.find_sf[1].keys():
+            self.mag_eShift[self.find_sf[1][em]] = 0
 
     def showSampleParameters(self):
 

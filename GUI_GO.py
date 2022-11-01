@@ -739,6 +739,7 @@ class sampleWidget(QWidget):
                             upper = float(value) + 0.2
                             if upper > 1:
                                 upper = 1
+
                             self.currentVal[idx] = [value, [str(lower), str(upper)]]
 
                 elif fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and column == 2:
@@ -1031,9 +1032,12 @@ class sampleWidget(QWidget):
                     if ratio != '':
                         self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
                         lower = float(ratio) - 0.2
+                        upper = float(ratio) + 0.2
                         if lower < 0:
                             lower = 0
-                        upper = float(ratio) + 0.01
+                        if upper > 1:
+                            upper = 1
+
                         self.currentVal.append([float(ratio), [lower, upper]])
 
                 elif column == 2:
@@ -1618,10 +1622,15 @@ class sampleWidget(QWidget):
         my_elements = []
         # checks to see if we have a new element and adds it to the element variation list
         for i in range(len(userinput)):
+            # includes new scattering factors into the energy shift
+            if userinput[i][5] not in self.sample.eShift.keys():
+                self.sample.eShift[userinput[i][5]] = 0
+                name = 'ff-' + userinput[i][5]
+                self.eShift[name] = 0
             my_elements.append(userinput[i][0])
             if userinput[i][0] not in list(self.varData.keys()):
-                self.varData[userinput[i][0]] = [[['',''],['',''],['','']] for i in range(num_layers)]
-                self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for i in range(num_layers)]
+                self.varData[userinput[i][0]] = [[['',''],['',''],['','']] for j in range(num_layers)]
+                self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for j in range(num_layers)]
 
 
         if len(userinput) != 0:
@@ -1668,6 +1677,7 @@ class sampleWidget(QWidget):
                     else:
                         data = [['',''],['',''],['','']]
                         data_mag = [key,[''],['']]
+
                     self.varData[key].insert(idx+1, data)
                     self.magData[key].insert(idx+1,data_mag)
                     self.magDirection.insert(idx+1,'z')
@@ -3174,15 +3184,105 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def _save_optimization(self):
-        # saves the optimizations
-        row = 0
 
+
+        row = 0
+        # first we need to change the boundaries
         for idx in range(len(self.sWidget.currentVal)):
+            fit = self.parameters[idx]
             self.sWidget.currentVal[idx][0] = str(self.x[row])
+            if fit[1] == 'STRUCTURAL':
+                if fit[2] == 'COMPOUND':
+                    if fit[3] == "THICKNESS":
+                        lower = self.x[row] - 5
+                        upper = self.x[row] + 5
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[3] == "DENSITY":
+                        lower = self.x[row] - 0.01
+                        upper = self.x[row] + 0.01
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[3] == "ROUGHNESS":
+                        lower = self.x[row] - 1
+                        upper = self.x[row] + 1
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[3] == "LINKED ROUGHNESS":
+                        lower = self.x[row] - 1
+                        upper = self.x[row] + 1
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                elif fit[2] == 'ELEMENT':
+                    if fit[4] == "THICKNESS":
+                        lower = self.x[row] - 5
+                        upper = self.x[row] + 5
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[4] == "DENSITY":
+                        lower = self.x[row] - 0.01
+                        upper = self.x[row] + 0.01
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[4] == "ROUGHNESS":
+                        lower = self.x[row] - 1
+                        upper = self.x[row] + 1
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+                    elif fit[4] == "LINKED ROUGHNESS":
+                        lower = self.x[row] - 1
+                        upper = self.x[row] + 1
+                        if lower < 0:
+                            lower = 0
+
+                        self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+
+            elif fit[1] == 'POLYMORPHOUS':
+                lower = self.x[row] - 0.2
+                upper = self.x[row] + 0.2
+                if lower < 0:
+                    lower = 0
+                if upper > 1:
+                    upper = 1
+                self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+            elif fit[1] == 'MAGNETIC':
+                lower = self.x[row] - 0.01
+                upper = self.x[row] + 0.01
+                if lower < 0:
+                    lower = 0
+                self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+
             row = row + 1
 
         for idx in range(len(self.rWidget.currentVal)):
+            fit = self.parameters[idx]
             self.rWidget.currentVal[idx][0] = str(self.x[row])
+            if fit[0] == "BACKGROUND SHIFT":
+                lower = str(self.x[row] - 5e-8)
+                upper = str(self.x[row] + 5e-8)
+                self.rWidget.currentVal[idx][1] = [lower, upper]
+            elif fit[0] == "SCALING FACTOR":
+                lower = str(self.x[row] - 0.2)
+                upper = str(self.x[row] + 0.2)
+                self.rWidget.currentVal[idx][1] = [lower, upper]
+            elif fit[0] == "SCATTERING FACTOR":
+                lower = str(self.x[row] - 0.5)
+                upper = str(self.x[row] + 0.5)
+                self.rWidget.currentVal[idx][1] = [lower, upper]
             row = row + 1
 
         self.changeFitParameters()
