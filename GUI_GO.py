@@ -3336,22 +3336,23 @@ class GlobalOptimizationWidget(QWidget):
                 sample2, backS, scaleS = go.changeSampleParams(self.x,self.parameters, copy.deepcopy(sample1), backS, scaleF)
                 isGO = True
 
+            scaling_factor_old = float(self.rWidget.sf[name])
+            background_shift_old = float(self.rWidget.bs[name])
 
-
+            scaling_factor = float(scaleF[name])
+            background_shift = float(backS[name])
 
             if scan_type == 'Reflectivity':
                 qz = dat[0]
 
-                scaling_factor_old = float(self.rWidget.sf[name])
-                background_shift_old = float(self.rWidget.bs[name])
 
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
-                qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size)
+                qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size,sFactor=scaling_factor_old, bShift=background_shift_old)
                 if isGO:
-                    qz,Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                    qz,Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor, bShift=background_shift)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
-                Rsim = Rsim[pol]*scaling_factor_old + np.ones(len(Rsim[pol]))*background_shift_old
+                Rsim = Rsim[pol]
 
                 if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
 
@@ -3359,20 +3360,17 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
-                            scaling_factor = float(scaleF[name])
-                            background_shift = float(backS[name])
-                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
-                            Rgo = Rgo[pol]*scaling_factor + np.ones(len(Rgo[pol]))*background_shift
+
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size,sFactor=scaling_factor, bShift=background_shift)
+                            Rgo = Rgo[pol]
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     else:
                         self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
-                            scaling_factor = float(scaleF[name])
-                            background_shift = float(backS[name])
-                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
-                            Rgo = Rgo[pol]*scaling_factor + np.ones(len(Rgo[pol]))*background_shift
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size,sFactor=scaling_factor, bShift=background_shift)
+                            Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     self.plotWidget.setLabel('left', "Reflectivity, R")
@@ -3383,14 +3381,14 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
-                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size)
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size,bShift=background_shift, sFactor=scaling_factor)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
                     else:
                         self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
-                            qz, Rgo = sample2.energy_scan(E, qz, s_min=step_size)
+                            qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor, bShift=background_shift)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -3401,9 +3399,9 @@ class GlobalOptimizationWidget(QWidget):
                 E = dat[3]
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
-                E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size)
+                E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor_old, bShift=background_shift_old)
                 if isGO:
-                    qz,Rgo = sample2.energy_scan(Theta, E, s_min=step_size)
+                    qz,Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor, bShift=background_shift)
                     Rgo = Rgo[pol]
 
                 Rsim = Rsim[pol]
@@ -3411,7 +3409,7 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                 if isGO:
-                    qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size)
+                    qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor, bShift=background_shift)
                     Rgo = Rgo[pol]
                     self.plotWidget.plot(E,Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
                 self.plotWidget.setLabel('left', "Reflectivity, R")
