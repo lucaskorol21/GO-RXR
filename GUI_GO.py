@@ -2602,10 +2602,13 @@ class reflectivityWidget(QWidget):
 
         if len(self.data) != 0:
             #self.sample = self.sWidget.sample
+
             self.spectrumWidget.clear()
             idx = self.whichScan.currentIndex()
             name = self.whichScan.currentText()
             if name != '':
+                background_shift = self.data_dict[name]['Background Shift']
+                scaling_factor = self.data_dict[name]['Scaling Factor']
                 dat = self.data_dict[name]['Data']
                 pol = self.data_dict[name]['Polarization']
                 scan_type = self.data[idx][1]
@@ -2617,7 +2620,7 @@ class reflectivityWidget(QWidget):
                     R = dat[2]
                     E = self.data_dict[name]['Energy']
 
-                    qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
+                    qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
                     Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
                     Rsim = Rsim[pol]
                     if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
@@ -2648,7 +2651,7 @@ class reflectivityWidget(QWidget):
                     E = dat[3]
                     R = dat[2]
                     Theta = self.data_dict[name]['Angle']
-                    E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
+                    E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
                     Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
                     self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
@@ -2668,7 +2671,8 @@ class reflectivityWidget(QWidget):
             bound = self.bounds[b_idx]
             lower = float(bound[0][0])
             upper = float(bound[-1][-1])
-
+            background_shift = self.data_dict[name]['Background Shift']
+            scaling_factor = self.data_dict[name]['Scaling Factor']
             idx=0
             notDone = True
             while notDone and idx==len(self.data)-1:
@@ -2686,7 +2690,7 @@ class reflectivityWidget(QWidget):
                 qz = dat[0]
                 R = dat[2]
                 E = self.data_dict[name]['Energy']
-                qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size)
+                qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
                 Theta = np.arcsin(qz/(E*0.001013546143))*180/np.pi
 
                 Rsim = Rsim[pol]
@@ -2721,7 +2725,7 @@ class reflectivityWidget(QWidget):
                 E = dat[3]
                 R = dat[2]
                 Theta = self.data_dict[name]['Angle']
-                E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size)
+                E, Rsim = self.sample.energy_scan(Theta,E, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
                 Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
                 self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
