@@ -148,13 +148,14 @@ def scanCompute(x, *args):
             myData = myDataScan['Data']
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
+            Rdat = np.array(myData[2])
             qz = np.array(myData[0])
-            Rdat = np.log10(np.array(myData[2]))
-            qz, Rsim = sample.reflectivity(E, qz)
-
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            Rsim = Rsim[pol]
             # need to toggle between log10 and not depending on the polarization
-            Rsim = np.log10(Rsim[pol]*scaling_factor + np.ones(len(Rsim[pol]))*background_shift)
-
+            if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
 
             for b in range(len(xbound)):
                 lw = xbound[b][0]
@@ -173,12 +174,16 @@ def scanCompute(x, *args):
             myDataScan = data[name]
             myData = myDataScan['Data']
             Theta = myDataScan['Angle']
+            Rdat = np.array(myData[2])
             E = np.array(myData[3])
             pol = myDataScan['Polarization']
 
-            Rdat = np.log(np.array(myData[2]))
+
             E, Rsim = sample.energy_scan(Theta, E)
-            Rsim = np.log(Rsim[pol])
+            Rsim = Rsim[pol]
+            if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
 
             chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 

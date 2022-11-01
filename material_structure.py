@@ -123,7 +123,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
 
     return A
 
-def energy_reflectivity(A, Theta, wavelength, R, E):
+def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
     """
     Purpose: Compute the reflectivity of a specific energy for the energy scan
     :param A: Structure object as defined by pythonreflectivity
@@ -137,16 +137,16 @@ def energy_reflectivity(A, Theta, wavelength, R, E):
     Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
     if len(Rtemp) == 2:
-        R['S'][E] = Rtemp[0][0]  # s-polarized light
-        R['P'][E] = Rtemp[1][0]  # p-polarized light
-        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])  # Asymmetry linear polarized
+        R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
+        R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
+        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # Asymmetry linear polarized
     elif len(Rtemp) == 4:
-        R['S'][E] = Rtemp[0][0]
-        R['P'][E] = Rtemp[1][0]
-        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])
-        R['LC'][E] = Rtemp[2][0]
-        R['RC'][E] = Rtemp[3][0]
-        R['AC'][E] = (Rtemp[2][0] - Rtemp[3][0]) / (Rtemp[2][0] + Rtemp[3][0])
+        R['S'][E] = Rtemp[0][0]*scaleF + backS
+        R['P'][E] = Rtemp[1][0]*scaleF + backS
+        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)
+        R['LC'][E] = Rtemp[2][0]*scaleF + backS
+        R['RC'][E] = Rtemp[3][0]*scaleF + backS
+        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0])+2*backS)
     else:
         raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
     return R
@@ -1111,7 +1111,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1):
+    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1):
 
         """
         Purpose: Computes the reflectivity
@@ -1248,25 +1248,24 @@ class slab:
         plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
         """
         if len(Rtemp) == 2:
-            R['S'] = Rtemp[0]  # s-polarized light
-            R['P'] = Rtemp[1]  # p-polarized light
-            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])  # Asymmetry linear polarized
+            R['S'] = Rtemp[0]*sFactor + bShift  # s-polarized light
+            R['P'] = Rtemp[1]*sFactor + bShift   # p-polarized light
+            R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)  # Asymmetry linear polarized
             R['LC'] = np.zeros(len(Rtemp[0]))  # Left circular
             R['RC'] = np.zeros(len(Rtemp[0]))  # right circular
             R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized
-        elif len(Rtemp)==4:
-            R['S'] = Rtemp[0]
-            R['P'] = Rtemp[1]
-            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])
-            R['LC'] = Rtemp[2]
-            R['RC'] = Rtemp[3]
-            R['AC'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
+        elif len(Rtemp) == 4:
+            R['S'] = Rtemp[0]*sFactor + bShift
+            R['P'] = Rtemp[1]*sFactor + bShift
+            R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)
+            R['LC'] = Rtemp[2]*sFactor + bShift
+            R['RC'] = Rtemp[3]*sFactor + bShift
+            R['AC'] = sFactor*(Rtemp[2]-Rtemp[3])/(sFactor*(Rtemp[2]+Rtemp[3])+2*bShift)
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
         return qz, R
-
-    def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1):
+    def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1332,7 +1331,7 @@ class slab:
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
         wavelength = h * c / (energy * 1e-10)
         # reflectivity computation using list comprehension
-        R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E)) for E in range(len(all_slabs))]
+        R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E), backS=bShift, scaleF=sFactor) for E in range(len(all_slabs))]
 
         R = R[0]
 
