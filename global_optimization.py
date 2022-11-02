@@ -61,6 +61,8 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                 # Determine if user wants to use compound or element mode
                 if mode == 'COMPOUND':
                     characteristic = params[3]  # thickness/density/roughness/linked roughness
+
+                    # determine the difference parameter for compound mode (will always be the first element)
                     for ele in list(sample.structure[layer].keys()):
                         if characteristic == 'THICKNESS':
                             sample.structure[layer][ele].thickness = x[p]

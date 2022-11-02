@@ -327,6 +327,9 @@ class variationWidget(QDialog):
 
             self.mainWidget.varTable.setRowCount(row-1)
 
+class ReadOnlyDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        return
 
 class magneticWidget(QDialog):
     def __init__(self, mainWidget, sample):
@@ -554,6 +557,8 @@ class sampleWidget(QWidget):
         self.varTable.itemChanged.connect(self.changeVarValues)
         self.magTable.itemChanged.connect(self.changeMagValues)
         self.energyShiftTable.itemChanged.connect(self.changeEShiftValues)
+        delegate = ReadOnlyDelegate()
+        self.structTable.setItemDelegateForColumn(0,delegate)
         self.setLayout(mylayout)
 
     def _energy_shift(self):
@@ -747,11 +752,11 @@ class sampleWidget(QWidget):
                         self.parameterFit.remove(fit)
                         self.varTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
 
+
     def changeStructValues(self):
         layer = self.layerBox.currentIndex()
         row = self.structTable.currentRow()
         column = self.structTable.currentColumn()
-
         if self.structTable.item(row, column) is not None:
             copy_of_list = self.parameterFit
             value = self.structTable.item(row, column).text()
@@ -1084,10 +1089,25 @@ class sampleWidget(QWidget):
         # only allows user to fit certain parameters
         if column == 5:
             _compound_fit.setDisabled(True)
-        elif column == 0:
+        elif column == 0 or (column == 1 and my_layer == 0):
             _element_fit.setDisabled(True)
             _compound_fit.setDisabled(True)
             _remove_fit.setDisabled(True)
+        elif column == 4: # linked roughness case
+            LRough = self.structTableInfo[my_layer][row][4]
+            if str(LRough).upper() == 'FALSE' or LRough == '':
+                _element_fit.setDisabled(True)
+                _compound_fit.setDisabled(True)
+                _remove_fit.setDisabled(True)
+            compound = True
+            for cool in self.structTableInfo[my_layer]:
+                if str(cool[4]).upper() == 'FALSE' or cool[4] == '':
+                    compound = False
+
+            if not compound:
+                _compound_fit.setDisabled(True)
+
+
 
         action = menu.exec_(QtGui.QCursor.pos())
 
@@ -1223,13 +1243,14 @@ class sampleWidget(QWidget):
 
             if not alreadySelected:
                 if column == 1:  # thickness
-                    my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
-                    self.parameterFit.append(my_fit)
-                    lower = float(value) - 5
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 5
-                    self.currentVal.append([float(value), [lower, upper]])
+                    if my_layer != 0:
+                        my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
+                        self.parameterFit.append(my_fit)
+                        lower = float(value) - 5
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 5
+                        self.currentVal.append([float(value), [lower, upper]])
                 elif column == 2:  # density
                     my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
                     self.parameterFit.append(my_fit)
@@ -1420,7 +1441,11 @@ class sampleWidget(QWidget):
         for col in range(6):
             for row in range(num_rows):
                 item = QTableWidgetItem(str(tableInfo[row][col]))
-                self.structTable.setItem(row,col, item)
+                self.structTable.setItem(row, col, item)
+                if col == 0:
+                    self.structTable.item(row,col).setBackground(QtGui.QColor('lightGray'))
+                if col == 1 and idx == 0:
+                    self.structTable.item(row, col).setBackground(QtGui.QColor('lightGray'))
 
         for fit in self.parameterFit:
             layer = fit[0]
