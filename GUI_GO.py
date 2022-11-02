@@ -1111,11 +1111,11 @@ class sampleWidget(QWidget):
 
         action = menu.exec_(QtGui.QCursor.pos())
 
-        value = self.structTable.currentItem().text()
+
         # Element Mode
         if action == _element_fit:
 
-
+            value = self.structTable.currentItem().text()
             element = self.structTable.item(row, 0).text()
             alreadySelected = False
 
@@ -1129,7 +1129,7 @@ class sampleWidget(QWidget):
                         if item == fit[2]:
                             alreadySelected = True
 
-                elif n == 4:  # compound mode
+                elif n == 5:  # compound mode
                     layer = fit[0]
                     param = fit[3]
                     param_num = 0
@@ -1202,10 +1202,19 @@ class sampleWidget(QWidget):
                         self.currentVal.append([0,[-0.5,0.5]])
 
         elif action == _compound_fit:
+
+            # retrieve minimum value in the row
+            my_vals = list()
+            for i in range(self.structTable.rowCount()):
+                my_vals.append(float(self.structTable.item(i,column).text()))
+
+            my_row = my_vals.index(min(my_vals))
+            value = self.structTable.item(my_row, column).text()  # minimum value
+
             alreadySelected = False
             for fit in copy_fit_list:
-                n = len(fit)
-                if n == 4:  # compound check
+                mode = fit[2]
+                if mode == 'COMPOUND':  # compound check
                     layer = fit[0]
                     param = fit[3]
 
@@ -1222,7 +1231,7 @@ class sampleWidget(QWidget):
                     if layer == my_layer and param_n == column:
                         alreadySelected = True
 
-                elif n == 5:  # element check
+                elif mode == 'ELEMENT':  # element check
                     layer = fit[0]
                     param = fit[4]
                     param_n = 1
@@ -1244,7 +1253,7 @@ class sampleWidget(QWidget):
             if not alreadySelected:
                 if column == 1:  # thickness
                     if my_layer != 0:
-                        my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS']
+                        my_fit = [my_layer, 'STRUCTURAL','COMPOUND', 'THICKNESS', my_row]
                         self.parameterFit.append(my_fit)
                         lower = float(value) - 5
                         if lower < 0:
@@ -1252,7 +1261,7 @@ class sampleWidget(QWidget):
                         upper = float(value) + 5
                         self.currentVal.append([float(value), [lower, upper]])
                 elif column == 2:  # density
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY']
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY', my_row]
                     self.parameterFit.append(my_fit)
                     lower = float(value) - 0.01
                     if lower < 0:
@@ -1260,7 +1269,7 @@ class sampleWidget(QWidget):
                     upper = float(value) + 0.01
                     self.currentVal.append([float(value), [lower, upper]])
                 elif column == 3:  # roughness
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS']
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS', my_row]
                     self.parameterFit.append(my_fit)
                     lower = float(value) - 1
                     if lower < 0:
@@ -1268,7 +1277,7 @@ class sampleWidget(QWidget):
                     upper = float(value) + 1
                     self.currentVal.append([float(value), [lower, upper]])
                 elif column == 4:  # linked roughness
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS']
+                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS', my_row]
                     self.parameterFit.append(my_fit)
                     lower = float(value) - 1
                     if lower < 0:
@@ -1451,7 +1460,8 @@ class sampleWidget(QWidget):
             layer = fit[0]
             n = len(fit)
             if layer == idx:  # not scattering factor parameters
-                if n == 4: # compound mode
+                mode = fit[2]
+                if mode == 'COMPOUND': # compound mode
                     param = fit[3]
                     param_n = 0
 
@@ -1467,7 +1477,7 @@ class sampleWidget(QWidget):
                     for row in range(num_rows):
                         if param_n != 0:
                             self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 150, 255))
-                elif n == 5:  # element mode
+                elif mode == 'ELEMENT':  # element mode
                     ele = fit[3]
                     param = fit[4]
 
