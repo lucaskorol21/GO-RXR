@@ -17,6 +17,8 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import h5py
 import multiprocessing as mp
 
+global stop
+stop = False
 
 def stringcheck(string):
 
@@ -2784,6 +2786,29 @@ class Worker(QObject):
         self.function.fun = fun
         self.finished.emit()
 
+class callback():
+    def __init__(self):
+        self.Finish = False
+
+    def stop_evolution(self, x, convergence=0):
+
+        if stop:
+            return True
+        else:
+            return False
+    def stop_simplicial(self, x):
+        print('Time to stop:', stop)
+        if stop:
+            return True
+        else:
+            return False
+    def stop_annealing(self, x, f, contect):
+        print("Time to stop: ", stop)
+        if stop:
+            return True
+        else:
+            return False
+
 class GlobalOptimizationWidget(QWidget):
     def __init__(self, sWidget, rWidget, rApp):
         super().__init__()
@@ -2798,6 +2823,7 @@ class GlobalOptimizationWidget(QWidget):
 
         self.x = []
         self.fun = 0
+        self.callback = callback()
         self.progressFinished = True
 
         # plotting layout ---------------------------------------------------------------------------------------------
@@ -3114,8 +3140,10 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
 
     def _stop_optimization(self):
+        global stop
+        stop = True
 
-        pass
+
 
     def changeFitParameters(self):
         # This function simply takes all the fitting parameters and saves the new fit
@@ -3470,6 +3498,7 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def run_first(self):
+        stop = False
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
 
@@ -3498,7 +3527,6 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def _optimizer(self):
-
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
@@ -3548,13 +3576,13 @@ class GlobalOptimizationWidget(QWidget):
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 x, fun = go.differential_evolution(sample, data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                                   self.goParameters['differential evolution'])
+                                                   self.goParameters['differential evolution'],self.callback)
             elif idx == 1:
                 x, fun = go.shgo(sample,data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                 self.goParameters['simplicial homology'])
+                                 self.goParameters['simplicial homology'], self.callback)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                           self.goParameters['dual annealing'])
+                                           self.goParameters['dual annealing'], self.callback)
         else:
             print('Try try again')
         print('Done')

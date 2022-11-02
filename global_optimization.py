@@ -12,6 +12,7 @@ import sys
 import os
 from PIL import Image, ImageTk
 
+
 import functools
 
 def changeSampleParams(x, parameters, sample, backS, scaleF):
@@ -194,7 +195,7 @@ def scanCompute(x, *args):
 
     return chi2
 
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb):
     # performs the differential evolution global optimization
 
 
@@ -214,7 +215,8 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
     ret = optimize.differential_evolution(scanCompute, bounds, args=params, strategy=goParam[0], maxiter=int(goParam[1]),
                                           popsize=int(goParam[2]),tol=float(goParam[3]), atol=float(goParam[4]),
                                           mutation=(float(goParam[5]), float(goParam[6])), recombination=float(goParam[7]),
-                                          polish=p, init=goParam[9], updating=goParam[10], disp=True)
+                                          polish=p, init=goParam[9], updating=goParam[10], disp=True,
+                                          callback=cb.stop_evolution)
     x = ret.x
     fun = ret.fun
 
@@ -224,7 +226,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb):
 
 
     scans = []
@@ -235,12 +237,12 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]  # required format for function scanCompute
 
     p = None
-    if goParam[0] == 'None':
+    if goParam[0] == 'None' or goParam[0] == None:
         p = None
     else:
         p = int(goParam[0])
     ret = optimize.shgo(scanCompute, bounds, args=tuple(params), n=p, iters=int(goParam[1]),sampling_method=goParam[2],
-                        options={'disp': True})
+                        options={'disp': True}, callback=cb.stop_simplicial)
     x = ret.x
     fun = ret.fun
 
@@ -250,7 +252,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb):
 
     scans = []
     for s, info in enumerate(data_info):
@@ -267,7 +269,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
 
     ret = optimize.dual_annealing(scanCompute, bounds, args=params, maxiter=int(goParam[0]), initial_temp=float(goParam[1]),
                                   restart_temp_ratio=float(goParam[2]), visit=float(goParam[3]), accept=float(goParam[4]),
-                                  maxfun=float(goParam[5]), no_local_search=p)
+                                  maxfun=float(goParam[5]), no_local_search=p, callback=cb.stop_annealing)
     x = ret.x
     fun = ret.fun
 
