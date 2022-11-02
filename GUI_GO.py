@@ -3481,6 +3481,8 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def _run_global_optimization(self):
+
+        # runs the optimizer method to perform the global optimization
         self.thread = QThread()  # initialize the thread
         self.worker = Worker(self)
         self.worker.moveToThread(self.thread)
