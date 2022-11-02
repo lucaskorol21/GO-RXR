@@ -62,19 +62,37 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                 # Determine if user wants to use compound or element mode
                 if mode == 'COMPOUND':
                     characteristic = params[3]  # thickness/density/roughness/linked roughness
-
+                    ele_idx = params[4]
+                    my_ele = list(sample.structure[layer].keys())[ele_idx]
+                    diffT = x[p] - sample.structure[layer][my_ele].thickness
+                    diffD = x[p] - sample.structure[layer][my_ele].density
+                    diffR = x[p] - sample.structure[layer][my_ele].roughness
+                    diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
                     # determine the difference parameter for compound mode (will always be the first element)
                     for ele in list(sample.structure[layer].keys()):
                         if characteristic == 'THICKNESS':
-                            sample.structure[layer][ele].thickness = x[p]
+
+                            if ele == my_ele:
+                                sample.structure[layer][ele].thickness = x[p]
+                            else:
+                                sample.structure[layer][ele].thickness = sample.structure[layer][ele].thickness + diffT
                         elif characteristic == 'DENSITY':
                             stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
                             molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
-                            sample.structure[layer][ele].density = x[p]*stoich/molar_mass  # set density
+                            if ele == my_ele:
+                                sample.structure[layer][ele].density = x[p]  # set density
+                            else:
+                                sample.structure[layer][ele].density = sample.structure[layer][ele].density + diffD*stoich # set density
                         elif characteristic == 'ROUGHNESS':
-                            sample.structure[layer][ele].roughness = x[p]
+                            if ele == my_ele:
+                                sample.structure[layer][ele].roughness = x[p]
+                            else:
+                                sample.structure[layer][ele].roughness = sample.structure[layer][ele].roughness + diffR
                         elif characteristic == 'LINKED ROUGHNESS':
-                            sample.structure[layer][ele].linked_roughness = x[p]
+                            if ele == my_ele:
+                                sample.structure[layer][ele].linked_roughness = x[p]
+                            else:
+                                sample.structure[layer][ele].linked_roughness = sample.structure[layer][ele].linked_roughness + diffLR
 
                 elif mode == 'ELEMENT':
                     element = params[3]  # determines the element to change

@@ -1301,6 +1301,8 @@ class sampleWidget(QWidget):
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
+
+
                     elif mode == 'COMPOUND':
                         if fit[3] == 'THICKNESS':
                             idx = self.parameterFit.index(fit)
@@ -3508,7 +3510,6 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.setStyleSheet('background: green')
         self.runButton.blockSignals(False)
 
-
     def _run_global_optimization(self):
 
         # runs the optimizer method to perform the global optimization
@@ -4363,8 +4364,9 @@ class ReflectometryApp(QMainWindow):
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
-        self._goWidget.updateScreen()
         self._goWidget.setTableFit()
+        self._goWidget.updateScreen()
+
         self.stackedlayout.setCurrentIndex(2)
 
 
