@@ -1970,7 +1970,9 @@ class reflectivityWidget(QWidget):
         self.spectrumWidget.addLegend()
         # This will be used to determine which scan to view
         whichScanLabel = QLabel('Scans:')
+        whichScanLabel.setFixedWidth(30)
         self.whichScan = QComboBox()
+        self.whichScan.setFixedWidth(250)
         for scan in data:
             self.whichScan.addItem(scan[2])
 
@@ -1987,6 +1989,51 @@ class reflectivityWidget(QWidget):
         self.fitButton = QPushButton('Fit Scan')
         self.fitButton.clicked.connect(self._scanSelection)
 
+
+        # create the widgets for doing a simulation only
+        simulationLabel = QLabel('Simulations')
+
+        simEnergyLayout = QHBoxLayout()
+        simEnergyLabel = QLabel('Energy (eV): ')
+        simEnergyLabel.setFixedWidth(60)
+        self.simEnergyEdit = QLineEdit()
+        self.simEnergyEdit.setFixedWidth(220)
+        simEnergyLayout.addWidget(simEnergyLabel)
+        simEnergyLayout.addWidget(self.simEnergyEdit)
+
+        energyRangeLayout = QHBoxLayout()
+        energyRangeLabel = QLabel('Energy Range: ')
+        energyRangeLabel.setFixedWidth(100)
+        self.simLowEnergy = QLineEdit()  # energy ranges
+        self.simLowEnergy.setFixedWidth(90)
+        self.simUpEnergy = QLineEdit()
+        self.simUpEnergy.setFixedWidth(90)
+        energyRangeLayout.addWidget(energyRangeLabel)
+        energyRangeLayout.addWidget(self.simLowEnergy)
+        energyRangeLayout.addWidget(self.simUpEnergy)
+
+
+        self.reflectButton = QPushButton('Reflectivity Scan')
+        self.reflectButton.setFixedWidth(300)
+        self.energyButton = QPushButton('Energy Scan')
+        self.energyButton.setFixedWidth(300)
+
+        self.rButtonSim = QPushButton('Reflectometry')
+        self.rButtonSim.setStyleSheet('background: grey')
+        #self.rButtonSim.clicked.connect(self.rPlot)
+        self.opButtonSim = QPushButton('Optical')
+        self.opButtonSim.setStyleSheet('background: grey')
+        #self.opButtonSim.clicked.connect(self.opPlot)
+        self.opmButtonSim = QPushButton('Magneto-Optical')
+        self.opmButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.clicked.connect(self.opmPlot)
+
+        simButtonLayout = QHBoxLayout()
+        simButtonLayout.addWidget(self.rButtonSim)
+        simButtonLayout.addWidget(self.opButtonSim)
+        simButtonLayout.addWidget(self.opmButtonSim
+                                  )
+        # continue on with stuff
         self.boundWeightTable = QTableWidget()
 
         self.selectedScans = QComboBox()
@@ -2018,10 +2065,10 @@ class reflectivityWidget(QWidget):
         self.rButton = QPushButton('Reflectometry')
         self.rButton.setStyleSheet('background: cyan')
         self.rButton.clicked.connect(self.rPlot)
-        self.opButton = QPushButton('Optical Profile')
+        self.opButton = QPushButton('Optical')
         self.opButton.setStyleSheet('background: grey')
         self.opButton.clicked.connect(self.opPlot)
-        self.opmButton = QPushButton('Magneto-Optical Profile')
+        self.opmButton = QPushButton('Magneto-Optical')
         self.opmButton.setStyleSheet('background: grey')
         self.opmButton.clicked.connect(self.opmPlot)
 
@@ -2045,16 +2092,27 @@ class reflectivityWidget(QWidget):
         selectedScansLayout.addWidget(selectedScansLabel)
         selectedScansLayout.addWidget(self.selectedScans)
 
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(self.rButton)
+        buttonLayout.addWidget(self.opButton)
+        buttonLayout.addWidget(self.opmButton)
+
         scanSelectionLayout = QVBoxLayout()
         scanSelectionLayout.addLayout(whichScanLayout)
         scanSelectionLayout.addWidget(self.fitButton)
+        scanSelectionLayout.addLayout(buttonLayout)
         scanSelectionLayout.addStretch(1)
         scanSelectionLayout.addLayout(hbox)
         scanSelectionLayout.addLayout(stepLayout)
         scanSelectionLayout.addStretch(1)
-        scanSelectionLayout.addWidget(self.rButton)
-        scanSelectionLayout.addWidget(self.opButton)
-        scanSelectionLayout.addWidget(self.opmButton)
+        scanSelectionLayout.addWidget(simulationLabel)
+        scanSelectionLayout.addLayout(simButtonLayout)
+        scanSelectionLayout.addLayout(simEnergyLayout)
+        scanSelectionLayout.addLayout(energyRangeLayout)
+        scanSelectionLayout.addWidget(self.reflectButton)
+        scanSelectionLayout.addWidget(self.energyButton)
+
+
         #scanSelectionLayout.addStretch(1)
         #scanSelectionLayout.addLayout(selectedScansLayout)
 
@@ -2143,6 +2201,13 @@ class reflectivityWidget(QWidget):
         self.backgroundShift.editingFinished.connect(self.bsChange)
         self.scalingFactor.editingFinished.connect(self.sfChange)
         self.setLayout(pagelayout)
+
+    def setEnergySimulation(self):
+        pass
+
+    def setEnergyRangeSimulation(self):
+        pass
+
 
     def value_changed(self):
         if not self.isChangeTable:
@@ -2424,7 +2489,6 @@ class reflectivityWidget(QWidget):
                 sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
 
             delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
-
             self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
             self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
             self.spectrumWidget.setLabel('left', "Reflectivity, R")
