@@ -511,25 +511,29 @@ class sampleWidget(QWidget):
         selectlayout = QVBoxLayout()
 
         # buttons for choosing which parameters to choose
-        structButton = QPushButton('Structure')
-        structButton.clicked.connect(self._structural)
-        structButton.clicked.connect(self.setTableVar)
-        structButton.clicked.connect(self.setTableMag)
-        selectlayout.addWidget(structButton)
+        self.structButton = QPushButton('Structure')
+        self.structButton.setStyleSheet('background: blue; color: white')
+        self.structButton.clicked.connect(self._structural)
+        self.structButton.clicked.connect(self.setTableVar)
+        self.structButton.clicked.connect(self.setTableMag)
+        selectlayout.addWidget(self.structButton)
 
-        polyButton = QPushButton('Element Variation')
-        polyButton.clicked.connect(self._elementVariation)
-        polyButton.clicked.connect(self.setTableVar)
-        selectlayout.addWidget(polyButton)
+        self.polyButton = QPushButton('Element Variation')
+        self.polyButton.setStyleSheet('background: lightGrey')
+        self.polyButton.clicked.connect(self._elementVariation)
+        self.polyButton.clicked.connect(self.setTableVar)
+        selectlayout.addWidget(self.polyButton)
 
-        magButton = QPushButton('Magnetic')
-        magButton.clicked.connect(self._magnetic)
-        magButton.clicked.connect(self.setTableMag)
-        selectlayout.addWidget(magButton)
+        self.magButton = QPushButton('Magnetic')
+        self.magButton.setStyleSheet('background: lightGrey')
+        self.magButton.clicked.connect(self._magnetic)
+        self.magButton.clicked.connect(self.setTableMag)
+        selectlayout.addWidget(self.magButton)
 
-        shiftButton = QPushButton('Energy Shift')  # energy shift button
-        shiftButton.clicked.connect(self._energy_shift)
-        selectlayout.addWidget(shiftButton)
+        self.shiftButton = QPushButton('Energy Shift')  # energy shift button
+        self.shiftButton.setStyleSheet('background: lightGrey')
+        self.shiftButton.clicked.connect(self._energy_shift)
+        selectlayout.addWidget(self.shiftButton)
 
         self.structBool = True
         self.polyBool = False
@@ -566,6 +570,10 @@ class sampleWidget(QWidget):
 
     def _energy_shift(self):
         self.sampleInfoLayout.setCurrentIndex(3)
+        self.structButton.setStyleSheet('background: lightGrey')
+        self.polyButton.setStyleSheet('background: lightGrey')
+        self.magButton.setStyleSheet('background: lightGrey')
+        self.shiftButton.setStyleSheet('background: blue; color: white')
         self.setTableEShift()
 
     def setTableEShift(self):
@@ -1765,15 +1773,24 @@ class sampleWidget(QWidget):
         self.magDirection.insert(idx+1,new_dir)
 
     def _structural(self):
-
+        self.structButton.setStyleSheet('background: blue; color: white')
+        self.polyButton.setStyleSheet('background: lightGrey')
+        self.magButton.setStyleSheet('background: lightGrey')
+        self.shiftButton.setStyleSheet('background: lightGrey')
         self.sampleInfoLayout.setCurrentIndex(0)
 
     def _elementVariation(self):
-
+        self.structButton.setStyleSheet('background: lightGrey')
+        self.polyButton.setStyleSheet('background: blue; color: white')
+        self.magButton.setStyleSheet('background: lightGrey')
+        self.shiftButton.setStyleSheet('background: lightGrey')
         self.sampleInfoLayout.setCurrentIndex(1)
 
     def _magnetic(self):
-
+        self.structButton.setStyleSheet('background: lightGrey')
+        self.polyButton.setStyleSheet('background: lightGrey')
+        self.magButton.setStyleSheet('background: blue; color: white')
+        self.shiftButton.setStyleSheet('background: lightGrey')
         self.sampleInfoLayout.setCurrentIndex(2)
 
     def _densityprofile(self):
