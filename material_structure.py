@@ -1251,8 +1251,8 @@ class slab:
             R['S'] = Rtemp[0]*sFactor + bShift  # s-polarized light
             R['P'] = Rtemp[1]*sFactor + bShift   # p-polarized light
             R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)  # Asymmetry linear polarized
-            R['LC'] = np.zeros(len(Rtemp[0]))  # Left circular
-            R['RC'] = np.zeros(len(Rtemp[0]))  # right circular
+            R['LC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # Left circular
+            R['RC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # right circular
             R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized
         elif len(Rtemp) == 4:
             R['S'] = Rtemp[0]*sFactor + bShift

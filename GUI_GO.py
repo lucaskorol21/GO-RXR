@@ -1943,6 +1943,10 @@ class reflectivityWidget(QWidget):
         super().__init__()
 
         self.rom = [True, False, False]
+        self.romSim = [True, False, False]
+
+        self.scanType = True  # if true do reflectivity scan
+
         self.bs = dict()  # background shift
         self.sf = dict()  # scaling factor
 
@@ -1995,44 +1999,67 @@ class reflectivityWidget(QWidget):
 
         simEnergyLayout = QHBoxLayout()
         simEnergyLabel = QLabel('Energy (eV): ')
-        simEnergyLabel.setFixedWidth(60)
+        simEnergyLabel.setFixedWidth(80)
         self.simEnergyEdit = QLineEdit()
-        self.simEnergyEdit.setFixedWidth(220)
+        self.simEnergyEdit.setText('500')
+        self.simEnergyEdit.editingFinished.connect(self.setEnergy)
+        self.simEnergyEdit.setFixedWidth(200)
         simEnergyLayout.addWidget(simEnergyLabel)
         simEnergyLayout.addWidget(self.simEnergyEdit)
+
+        simAngleLayout = QHBoxLayout()
+        simAngleLabel = QLabel('Angle (degrees): ')
+        simAngleLabel.setFixedWidth(80)
+        self.simAngleEdit = QLineEdit()
+        self.simAngleEdit.setText('5')
+        self.simAngleEdit.editingFinished.connect(self.setAngle)
+        self.simAngleEdit.setFixedWidth(200)
+        simAngleLayout.addWidget(simAngleLabel)
+        simAngleLayout.addWidget(self.simAngleEdit)
 
         energyRangeLayout = QHBoxLayout()
         energyRangeLabel = QLabel('Energy Range: ')
         energyRangeLabel.setFixedWidth(100)
         self.simLowEnergy = QLineEdit()  # energy ranges
+        self.simLowEnergy.setText('450')
+        self.simLowEnergy.editingFinished.connect(self.setLowerEnergy)
         self.simLowEnergy.setFixedWidth(90)
         self.simUpEnergy = QLineEdit()
+        self.simUpEnergy.setText('550')
+        self.simUpEnergy.editingFinished.connect(self.setUpperEnergy)
         self.simUpEnergy.setFixedWidth(90)
         energyRangeLayout.addWidget(energyRangeLabel)
         energyRangeLayout.addWidget(self.simLowEnergy)
         energyRangeLayout.addWidget(self.simUpEnergy)
 
+        self.polarBox = QComboBox()
+        self.polarBox.addItems(['s-polarized', 'p-polarized', 'left circular', 'right circular',
+                                'linear asymmetry', 'circular asymmetry'])
+        self.polarBox.currentIndexChanged.connect(self.mySimPlotting)
 
         self.reflectButton = QPushButton('Reflectivity Scan')
+        self.reflectButton.clicked.connect(self.changeToReflScan)
+        self.reflectButton.setStyleSheet('background: cyan')
         self.reflectButton.setFixedWidth(300)
         self.energyButton = QPushButton('Energy Scan')
+        self.energyButton.clicked.connect(self.changeToEnergyScan)
+        self.energyButton.setStyleSheet('background: grey')
         self.energyButton.setFixedWidth(300)
 
         self.rButtonSim = QPushButton('Reflectometry')
         self.rButtonSim.setStyleSheet('background: grey')
-        #self.rButtonSim.clicked.connect(self.rPlot)
+        self.rButtonSim.clicked.connect(self.rPlotSim)
         self.opButtonSim = QPushButton('Optical')
         self.opButtonSim.setStyleSheet('background: grey')
-        #self.opButtonSim.clicked.connect(self.opPlot)
+        self.opButtonSim.clicked.connect(self.opPlotSim)
         self.opmButtonSim = QPushButton('Magneto-Optical')
         self.opmButtonSim.setStyleSheet('background: grey')
-        self.opmButtonSim.clicked.connect(self.opmPlot)
+        self.opmButtonSim.clicked.connect(self.opmPlotSim)
 
         simButtonLayout = QHBoxLayout()
         simButtonLayout.addWidget(self.rButtonSim)
         simButtonLayout.addWidget(self.opButtonSim)
-        simButtonLayout.addWidget(self.opmButtonSim
-                                  )
+        simButtonLayout.addWidget(self.opmButtonSim)
         # continue on with stuff
         self.boundWeightTable = QTableWidget()
 
@@ -2107,8 +2134,10 @@ class reflectivityWidget(QWidget):
         scanSelectionLayout.addStretch(1)
         scanSelectionLayout.addWidget(simulationLabel)
         scanSelectionLayout.addLayout(simButtonLayout)
+        scanSelectionLayout.addLayout(simAngleLayout)
         scanSelectionLayout.addLayout(simEnergyLayout)
         scanSelectionLayout.addLayout(energyRangeLayout)
+        scanSelectionLayout.addWidget(self.polarBox)
         scanSelectionLayout.addWidget(self.reflectButton)
         scanSelectionLayout.addWidget(self.energyButton)
 
@@ -2202,13 +2231,207 @@ class reflectivityWidget(QWidget):
         self.scalingFactor.editingFinished.connect(self.sfChange)
         self.setLayout(pagelayout)
 
-    def setEnergySimulation(self):
-        pass
+    def changeToReflScan(self):
+        self.energyButton.setStyleSheet('background: grey')
+        self.reflectButton.setStyleSheet('background: cyan')
+        self.scanType = True
+        self.mySimPlotting()
 
-    def setEnergyRangeSimulation(self):
-        pass
+    def changeToEnergyScan(self):
+        self.energyButton.setStyleSheet('background: cyan')
+        self.reflectButton.setStyleSheet('background: grey')
+        self.scanType = False
+        self.mySimPlotting()
+
+    def rPlotSim(self):
+        self.romSim = [True, False, False]
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: grey')
+
+        self.rButtonSim.setStyleSheet('background: cyan')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
+        self.spectrumWidget.clear()
+        pol = self.polarBox.currentText()
+        step_size = float(self.sWidget._step_size)
+        polName = 'S'
+        if pol == 's-polarized':
+            polName = 'S'
+        elif pol == 'p-polarized':
+            polName = 'P'
+        elif pol == 'left circular':
+            polName = 'LC'
+        elif pol == 'right circular':
+            polName = 'RC'
+        elif pol == 'linear asymmetry':
+            polName = 'AL'
+        else:
+            polName = 'AC'
+
+        # number of points
+        n = 1001
+        energy = float(self.simEnergyEdit.text())
+        if self.scanType:
+            Theta = np.linspace(0.1,89.1,num=n)
+            qz = np.sin(Theta*np.pi/180)*(energy * 0.001013546143)
+            qz, R = self.sample.reflectivity(energy, qz, s_min=step_size)
+            R = R[polName]
+            if self.axis_state:  # momentum transfer
+                self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 1),width=2), name='Simulation')
+                self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+            else:  # angle
+                self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0,1), width=2), name='Simulation')
+                self.spectrumWidget.setLabel('bottom', "Angle (degrees)")
+
+            self.spectrumWidget.setLabel('left', "Reflectivity, R")
+            if polName == 'S' or polName == 'P' or polName == 'LC' or polName == 'RC':
+                self.spectrumWidget.setLogMode(False, True)
+            else:
+                self.spectrumWidget.setLogMode(False, False)
+
+        else:
+            angle = float(self.simAngleEdit.text())
+            lw = float(self.simLowEnergy.text())
+            up = float(self.simUpEnergy.text())
+            E = np.linspace(lw,up, num=n)
+            E, R = self.sample.energy_scan(angle, E, s_min=step_size)
+            R = R[polName]
+
+            self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 1),width=2), name='Simulation')
+            self.spectrumWidget.setLabel('bottom', "Energy (eV)")
+            self.spectrumWidget.setLabel('left', "Reflectivity, R")
+            self.spectrumWidget.setLogMode(False, False)
 
 
+    def opPlotSim(self):
+        self.spectrumWidget.clear()
+        self.romSim = [False, True, False]
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: grey')
+
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: cyan')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
+        E = float(self.simEnergyEdit.text())
+
+        step_size = float(self.sWidget._step_size)
+        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)
+
+        sf = dict()  # form factors of non-magnetic components
+        sfm = dict()  # form factors of magnetic components
+
+        # Non-Magnetic Scattering Factor
+        for e in self.sample.find_sf[0].keys():
+            name = 'ff-' + self.sample.find_sf[0][e]
+            dE = float(self.sWidget.eShift[name])
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)
+        # Magnetic Scattering Factor
+        for em in self.sample.find_sf[1].keys():
+            name = 'ffm-' + self.sample.find_sf[1][em]
+            dE = float(self.sWidget.eShift[name])
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)
+
+        delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+
+        self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
+        self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
+        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+        self.spectrumWidget.setLogMode(False, False)
+
+    def opmPlotSim(self):
+
+        self.spectrumWidget.clear()
+        self.romSim = [False, False, True]
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: grey')
+
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: cyan')
+
+        E = float(self.simEnergyEdit.text())
+
+        step_size = float(self.sWidget._step_size)
+        thickness, density, density_magnetic = self.sample.density_profile(step=step_size)
+
+        sf = dict()  # form factors of non-magnetic components
+        sfm = dict()  # form factors of magnetic components
+
+        # Non-Magnetic Scattering Factor
+        for e in self.sample.find_sf[0].keys():
+            name = 'ff-' + self.sample.find_sf[0][e]
+            dE = float(self.sWidget.eShift[name])
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)
+        # Magnetic Scattering Factor
+        for em in self.sample.find_sf[1].keys():
+            name = 'ffm-' + self.sample.find_sf[1][em]
+            dE = float(self.sWidget.eShift[name])
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)
+
+        delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)
+
+        if len(density_magnetic) == 0:
+            self.spectrumWidget.plot(thickness, np.zeros(len(thickness)), pen=pg.mkPen((0, 2), width=2), name='delta_m')
+            self.spectrumWidget.plot(thickness, np.zeros(len(thickness)), pen=pg.mkPen((1, 2), width=2), name='beta_m')
+        else:
+            self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
+            self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
+
+        self.spectrumWidget.setLabel('left', "Reflectivity, R")
+        self.spectrumWidget.setLabel('bottom', "Thickness, Å")
+        self.spectrumWidget.setLogMode(False, False)
+
+    def setAngle(self):
+        angle = self.simAngleEdit.text()
+
+        if angle != '' and angle != '-':
+            angle = float(angle)
+            if angle < 0 or angle == 0:
+                angle = 0.1
+                self.simAngleEdit.setText(str(angle))
+                self.mySimPlotting()
+            elif angle > 90 or angle == 90:
+                angle = 89.9
+                self.simAngleEdit.setText(str(angle))
+                self.mySimPlotting()
+
+
+    def setEnergy(self):
+        energy = self.simEnergyEdit.text()
+
+        if energy != '':
+            energy = float(energy)
+            lower = str(energy - 50)
+            upper = str(energy + 50)
+            self.simLowEnergy.setText(lower)
+            self.simUpEnergy.setText(upper)
+            self.mySimPlotting()
+
+    def setLowerEnergy(self):
+        energy = float(self.simEnergyEdit.text())
+        lower = float(self.simLowEnergy.text())
+
+        if energy < lower:
+            lower = energy - 50
+
+        self.simLowEnergy.setText(str(lower))
+        self.mySimPlotting()
+
+    def setUpperEnergy(self):
+        energy = float(self.simEnergyEdit.text())
+        upper = float(self.simUpEnergy.text())
+
+        if energy > upper:
+            upper = energy + 50
+
+        self.simUpEnergy.setText(str(upper))
+        self.mySimPlotting()
     def value_changed(self):
         if not self.isChangeTable:
             idx = self.selectedScans.currentIndex()
@@ -2396,7 +2619,26 @@ class reflectivityWidget(QWidget):
     def changeStepSize(self):
         self.sWidget._step_size = self.stepWidget.text()
 
+    def mySimPlotting(self):
+        self.rButton.setStyleSheet('background: grey')
+        self.opButton.setStyleSheet('background: grey')
+        self.opmButton.setStyleSheet('background: grey')
+
+        # self.sample = self.sWidget.sample
+        idx = self.romSim.index(True)
+        if idx == 0:
+            self.rPlotSim()
+        elif idx == 1:
+            self.opPlotSim()
+        elif idx == 2:
+            self.opmPlotSim()
+
     def myPlotting(self):
+
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
         #self.sample = self.sWidget.sample
         idx = self.rom.index(True)
         if idx == 0:
@@ -2413,6 +2655,10 @@ class reflectivityWidget(QWidget):
         self.opButton.setStyleSheet('background: grey')
         self.opmButton.setStyleSheet('background: grey')
 
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
         if self.scan_state:
             self.plot_scans()
         else:
@@ -2424,6 +2670,11 @@ class reflectivityWidget(QWidget):
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: cyan')
         self.opmButton.setStyleSheet('background: grey')
+
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
         name = ''
         self.spectrumWidget.clear()
 
@@ -2466,6 +2717,11 @@ class reflectivityWidget(QWidget):
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: grey')
         self.opmButton.setStyleSheet('background: cyan')
+
+        self.rButtonSim.setStyleSheet('background: grey')
+        self.opButtonSim.setStyleSheet('background: grey')
+        self.opmButtonSim.setStyleSheet('background: grey')
+
         name = ''
         self.spectrumWidget.clear()
 
@@ -2506,6 +2762,7 @@ class reflectivityWidget(QWidget):
                 self.axis_state = False
 
         self.myPlotting()
+        self.mySimPlotting()
 
 
     def changeColorScan(self):
