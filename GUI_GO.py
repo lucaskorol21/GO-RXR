@@ -713,11 +713,33 @@ class sampleWidget(QWidget):
 
             copy_of_list = copy.deepcopy(self.parameterFit)
 
+            # check to see if element array has already been initialized
+            empty = True
+            for i in range(self.varTable.rowCount()):
+                for j in range(self.varTable.colorCount()):
+                    if self.varTable.item(i,j) is None:
+                        item = ''
+                    else:
+                        item = self.varTable.item(i, j).text()
+                    if item != '':
+                        empty = False
+
+            if empty:
+                self.magData[element][layer] = [[element], [''], ['']]
+            else:
+                if len(self.magData[element][layer][0]) == 1:
+                    self.magData[element][layer] = [['', ''], ['', ''], ['', '']]
+
             value = self.varTable.item(row, column).text()  # setting varData correctly depending on user input
             prev_value = self.varData[element][layer][column][row]
 
             self.varData[element][layer][column][row] = value
+            # everytime we need to check is all values in the table are nothing
+            # else we need to initialize a new set of polymorphs
+
+
             if column == 0:
+                self.magData[element][layer][column][row] = value
                 if prev_value != value and prev_value!='':
                     for i in range(len(self.varData[element])):
                         inLayer = False
@@ -730,19 +752,18 @@ class sampleWidget(QWidget):
                             self.varData[element][i][0][row] = value
                             self.magData[element][i][0][row] = value
 
+
             # changing the scattering factor
             if column == 2:
                 if prev_value != value:
+
                     # takes into account the scattering factor change
                     prev_dict_name = 'ff-' + prev_value
                     if prev_value != '':
                         del self.eShift[prev_dict_name]
                     dict_name = 'ff-' + value
                     self.eShift[dict_name] = 0
-                    for i in range(len(self.varData[element])):
-                        if prev_value in self.varData[element][i][2]:
-                            idx = list(self.varData[element][i][2]).index(prev_value)
-                            self.varData[element][i][2][idx] = value
+
 
             for fit in copy_of_list:
                 if fit[0] == layer and fit[1] == 'POLYMORPHOUS' and column != 2:
