@@ -1,4 +1,4 @@
-from scipy import optimize
+from scipy import optimize, signal
 from material_structure import *
 import numpy as np
 from data_structure import *
@@ -140,9 +140,31 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
     return sample, backS, scaleF
 
+
+
+def smooth_function(R):
+    return signal.savgol_filter(R, window_length=9, polyorder=1, mode="nearest")
+
+def total_variation(R, Rsim):
+
+    totVar = 0
+    for idx in range(len(R)-1):
+        totVar = totVar + abs(R[idx+1]-R[idx])
+
+    totVarSim = 0
+    for idx in range(len(Rsim)-1):
+        totVarSim = totVarSim + abs(Rsim[idx+1] - Rsim[idx])
+
+
+    return abs(totVar-totVarSim)
+
+
+
+
+
 def scanCompute(x, *args):
 
-    chi2 = 0  # what we will use to determine some values
+    fun = 0  # used to minimize the global optimization
 
     sample = args[0]  # slab class
     scans = args[1]  # data info
@@ -152,8 +174,11 @@ def scanCompute(x, *args):
     parameters = args[5]  # defines which parameters to change
     sBounds = args[6]  # defines the bounds of the scans
     sWeights = args[7]
-
+    objective = args[8]
+    shape_weight = args[9]
+    gamma = 0
     sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF)
+
 
     i = 0 # keeps track of which boundary to use
     for scan in scans:
@@ -172,9 +197,13 @@ def scanCompute(x, *args):
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
             Rdat = np.array(myData[2])
+            R = smooth_function(Rdat)
+
+
             qz = np.array(myData[0])
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
+            gamma = gamma + total_variation(np.log10(R), np.log(Rsim))
 
             if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
                 Rsim = np.log10(Rsim)
@@ -188,10 +217,18 @@ def scanCompute(x, *args):
                 idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]  # determines index boundaries
 
                 if len(idx) != 0:
-                    chi2 = chi2 + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
+                    if objective == 'Chi-Square':
+                        fun = fun + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
+                    elif objective == 'L1-Norm':
+                        #Rdat = Rdat/np.linalg.norm(Rdat, 2)
+                        #Rsim = Rsim/np.linalg.norm(Rsim, 2)
 
+                        fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif objective == 'L2-Norm':
+                        #Rdat = Rdat/np.linalg.norm(Rdat, 2)
+                        #Rsim = Rsim/np.linalg.norm(Rsim, 2)
+                        fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w
 
-            #chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
 
         elif scanType == 'Energy':
             myDataScan = data[name]
@@ -208,13 +245,28 @@ def scanCompute(x, *args):
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
 
+            for b in range(len(xbound)):
+                lw = xbound[b][0]
+                up = xbound[b][1]
+                w = weights[b]
 
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] <= up]  # determines index boundaries
 
-            chi2 = chi2 + sum((Rdat-Rsim)**2/abs(Rsim))
+                if len(idx) != 0:
+                    if objective == 'Chi-Square':
+                        fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                    elif objective == 'L1-Norm':
+                        Rdat = np.linalg.norm(Rdat, 1)
+                        Rsim = np.linalg.norm(Rsim, 1)
+                        fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif objective == 'L2-Norm':
+                        pass
 
-    return chi2
+    fun = fun + gamma*shape_weight
 
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb):
+    return fun
+
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
     # performs the differential evolution global optimization
 
 
@@ -223,7 +275,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -245,7 +297,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight):
 
 
     scans = []
@@ -253,7 +305,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -271,14 +323,14 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
 
     scans = []
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]
 
     p = True
     if goParam[6] == 'True':

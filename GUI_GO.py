@@ -14,6 +14,7 @@ import data_structure as ds
 import copy
 import global_optimization as go
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from scipy import signal
 import h5py
 import multiprocessing as mp
 
@@ -3032,19 +3033,21 @@ class reflectivityWidget(QWidget):
                             self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
                         else:
-                            self.spectrumWidget.plot(Theta,R,pen=pg.mkPen((0,2), width=2), name='Data')
+                            self.spectrumWidget.plot(Theta, R,pen=pg.mkPen((0,2), width=2), name='Data')
                             self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
                         self.spectrumWidget.setLabel('left', "Reflectivity, R")
                         self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
                         self.spectrumWidget.setLogMode(False,True)
                     elif pol == 'AL' or pol =='AC':
+                        rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                         if self.axis_state:
-                            self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                            self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+
+                            self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                            self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2), name='Simulation')
                         else:
-                            self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                            self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                            self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                            self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
                         self.spectrumWidget.setLogMode(False, False)
                         self.spectrumWidget.setLabel('left', "Reflectivity, R")
@@ -3112,12 +3115,13 @@ class reflectivityWidget(QWidget):
 
                     self.spectrumWidget.setXRange(lower,upper)
                 elif pol == 'AL' or pol =='AC':
+                    rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                     if self.axis_state:
-                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2), name='Simulation')
                     else:
-                        self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2), name='Simulation')
 
                     self.spectrumWidget.setLogMode(False, False)
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
@@ -3185,6 +3189,7 @@ class GlobalOptimizationWidget(QWidget):
         self.rWidget = rWidget
         self.rApp = rApp
 
+        self.sample = copy.deepcopy(self.sWidget.sample)
         self.sampleBounds = []
         self.sfBounds = []
         self.otherBounds = []
@@ -3548,7 +3553,10 @@ class GlobalOptimizationWidget(QWidget):
         if rbtn.isChecked() == True:
             self.objective = rbtn.text()
     def _changeShapeWeight(self):
-        self.shape_weight = float(self.totalVarWeight.text())
+        value = self.totalVarWeight.text()
+        if value != '':
+            self.shape_weight = float(self.totalVarWeight.text())
+
 
     def _stop_optimization(self):
         global stop
@@ -3856,6 +3864,7 @@ class GlobalOptimizationWidget(QWidget):
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     else:
+
                         self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
@@ -3867,20 +3876,21 @@ class GlobalOptimizationWidget(QWidget):
                     self.plotWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
                     self.plotWidget.setLogMode(False, True)
                 elif pol == 'AL' or pol == 'AC':
+                    rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                     if self.rWidget.axis_state:
-                        self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
-                        self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        self.plotWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size,bShift=background_shift, sFactor=scaling_factor)
                             Rgo = Rgo[pol]
-                            self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+                            self.plotWidget.plot(qz[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2), name='Optimized')
                     else:
-                        self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
-                        self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
+                        self.plotWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.plotWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor, bShift=background_shift)
                             Rgo = Rgo[pol]
-                            self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+                            self.plotWidget.plot(Theta[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
                     self.plotWidget.setLogMode(False, False)
                     self.plotWidget.setLabel('left', "Reflectivity, R")
@@ -3907,15 +3917,16 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def run_first(self):
+        global stop
         stop = False
-        self.sample = self.sWidget._createSample()
-        self.sWidget.sample = self.sample
-        self.rWidget.sample = self.sample
+        self.sample = copy.deepcopy(self.sWidget._createSample())
         self.worker = Worker(self)
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
 
     def optimizationFinished(self):
+        global stop
+        stop = True
         self.plot_scan()
         self.setTableFit()
         self.runButton.setStyleSheet('background: green')
@@ -3989,13 +4000,16 @@ class GlobalOptimizationWidget(QWidget):
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 x, fun = go.differential_evolution(sample, data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                                   self.goParameters['differential evolution'],self.callback)
+                                                   self.goParameters['differential evolution'],self.callback,
+                                                   self.objective, self.shape_weight)
             elif idx == 1:
                 x, fun = go.shgo(sample,data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                 self.goParameters['simplicial homology'], self.callback)
+                                 self.goParameters['simplicial homology'], self.callback,
+                                 self.objective, self.shape_weight)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
-                                           self.goParameters['dual annealing'], self.callback)
+                                           self.goParameters['dual annealing'], self.callback,
+                                           self.objective, self.shape_weight)
         else:
             print('Try try again')
         print('Done')
