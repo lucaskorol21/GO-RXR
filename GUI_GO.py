@@ -20,6 +20,9 @@ import multiprocessing as mp
 global stop
 stop = False
 
+
+
+
 def stringcheck(string):
 
     # checks to make sure that the roughness and whatnot is in the correct format
@@ -3126,24 +3129,28 @@ class Worker(QObject):
         self.function.fun = fun
         self.finished.emit()
 
+
+
+
 class callback():
     def __init__(self):
         self.Finish = False
 
-    def stop_evolution(self, x, convergence=0):
+    def stop_evolution(self, x, convergence):
 
         if stop:
             return True
         else:
             return False
+
     def stop_simplicial(self, x):
-        print('Time to stop:', stop)
+
         if stop:
             return True
         else:
             return False
     def stop_annealing(self, x, f, contect):
-        print("Time to stop: ", stop)
+
         if stop:
             return True
         else:
@@ -3839,6 +3846,10 @@ class GlobalOptimizationWidget(QWidget):
 
     def run_first(self):
         stop = False
+        self.sample = self.sWidget._createSample()
+        self.sWidget.sample = self.sample
+        self.rWidget.sample = self.sample
+        self.worker = Worker(self)
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
 
@@ -3906,7 +3917,8 @@ class GlobalOptimizationWidget(QWidget):
         fun = 0
         data_dict = self.rWidget.data_dict
         data = self.rWidget.data
-        sample = copy.deepcopy(self.sWidget.sample)
+        sample = copy.deepcopy(self.sample)
+
         backS = copy.deepcopy(self.rWidget.bs)
         scaleF = copy.deepcopy(self.rWidget.sf)
 
@@ -4400,7 +4412,7 @@ class ReflectometryApp(QMainWindow):
 
         # when loading files I need to be able to scan the entire
         if fname.endswith('.h5') or fname.endswith('.all'):
-            if fname.endswith('.h5'):
+            if fname.endswith('.h5') and fname != 'demo.h5':
                 self.sample = ds.ReadSampleHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
 
@@ -4519,7 +4531,7 @@ class ReflectometryApp(QMainWindow):
         else:
             cont = False
 
-        if cont:  # create the new file
+        if cont and fname != 'demo.h5':  # create the new file
             data_dict = self.data_dict
             sim_dict = self.sim_dict
             fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
@@ -4528,6 +4540,10 @@ class ReflectometryApp(QMainWindow):
                          self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
 
             optParams = self._goWidget.goParameters
+
+            self.sample = self._sampleWidget._createSample()
+            self._sampleWidget.sample = self.sample
+            self._reflectivityWidget.sample = self.sample
 
             ds.saveAsFileHDF5(fname, self.sample,data_dict, sim_dict, fitParams, optParams)
 
@@ -4698,7 +4714,7 @@ class ReflectometryApp(QMainWindow):
     def activate_tab_3(self):
         self.sample = self._sampleWidget._createSample()
         self._reflectivityWidget.sample = self.sample
-
+        self._goWidget.sample = self.sample
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")

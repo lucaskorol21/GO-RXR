@@ -23,6 +23,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
     :param sample: A slab object class
     :return: The new sample
     """
+
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
@@ -68,6 +69,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     diffD = x[p] - sample.structure[layer][my_ele].density
                     diffR = x[p] - sample.structure[layer][my_ele].roughness
                     diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
+                    #print(sample.structure)
                     # determine the difference parameter for compound mode (will always be the first element)
                     for ele in list(sample.structure[layer].keys()):
                         if characteristic == 'THICKNESS':
@@ -173,11 +175,10 @@ def scanCompute(x, *args):
             qz = np.array(myData[0])
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
-            # need to toggle between log10 and not depending on the polarization
+
             if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
-
 
             for b in range(len(xbound)):
                 lw = xbound[b][0]

@@ -11,7 +11,7 @@ import multiprocessing as mp
 import sys
 import os
 from PIL import Image, ImageTk
-
+from GUI_GO import function_result
 import functools
 
 def saveScans(data, data_dict, sim_dict, scans, sample):
