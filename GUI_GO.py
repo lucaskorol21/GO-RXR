@@ -718,7 +718,7 @@ class sampleWidget(QWidget):
 
             self.varData[element][layer][column][row] = value
             if column == 0:
-                if prev_value != value:
+                if prev_value != value and prev_value!='':
                     for i in range(len(self.varData[element])):
                         inLayer = False
 
