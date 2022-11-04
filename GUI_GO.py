@@ -3193,6 +3193,8 @@ class GlobalOptimizationWidget(QWidget):
         self.fun = 0
         self.callback = callback()
         self.progressFinished = True
+        self.objective = 'Chi-Square'
+        self.shape_weight = 0
 
         # plotting layout ---------------------------------------------------------------------------------------------
         plotLayout = QHBoxLayout()
@@ -3254,6 +3256,8 @@ class GlobalOptimizationWidget(QWidget):
         # Include the different input parameters for the global optimization and their algorithms
         self.goParamWidget = QWidget()
 
+        # Adding objective function parameters
+
         # start with the layout of the "main" window
         algorithmLayout = QVBoxLayout()
         algorithmLabel = QLabel('Algorithm Selection')
@@ -3264,7 +3268,38 @@ class GlobalOptimizationWidget(QWidget):
         algorithmLayout.addWidget(self.algorithmSelect)
         algorithmLayout.addStretch(1)
 
+        # parameter Labels
+        objectiveFunction = QLabel('Objective Function Parameters:')
+        self.chi = QRadioButton('Chi-Square', self)
+        self.chi.setChecked(True)
+        self.chi.toggled.connect(self._changeObjectiveFunction)
+        self.L1 = QRadioButton('L1-Norm', self)
+        self.L1.toggled.connect(self._changeObjectiveFunction)
+        self.L2 = QRadioButton('L2-Norm', self)
+        self.L2.toggled.connect(self._changeObjectiveFunction)
 
+        totLabel = QLabel('Total Variation: ')
+        totLabel.setFixedWidth(80)
+        totLayout = QHBoxLayout()
+        self.totalVarWeight = QLineEdit('0')
+        self.totalVarWeight.textChanged.connect(self._changeShapeWeight)
+        self.totalVarWeight.setFixedWidth(50)
+        totLayout.addWidget(totLabel)
+        totLayout.addWidget(self.totalVarWeight)
+        totLayout.addStretch(1)
+
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(objectiveFunction)
+        vbox.addWidget(self.chi)
+        vbox.addWidget(self.L1)
+        vbox.addWidget(self.L2)
+        vbox.addLayout(totLayout)
+
+        algorithmLayout.addLayout(vbox)
+        algorithmWidget = QWidget()
+        algorithmWidget.setStyleSheet("border: 1px solid black;")
+        algorithmWidget.setLayout(algorithmLayout)
 
         self.goStackLayout = QStackedLayout()
 
@@ -3489,7 +3524,7 @@ class GlobalOptimizationWidget(QWidget):
         self.goStackLayout.addWidget(self.dualWidget)
 
         goLayout = QHBoxLayout()
-        goLayout.addLayout(algorithmLayout)
+        goLayout.addWidget(algorithmWidget)
         goLayout.addLayout(self.goStackLayout)
 
         self.goParamWidget.setLayout(goLayout)
@@ -3507,11 +3542,17 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
         self.setTableFit()
 
+    def _changeObjectiveFunction(self):
+        rbtn = self.sender()
+
+        if rbtn.isChecked() == True:
+            self.objective = rbtn.text()
+    def _changeShapeWeight(self):
+        self.shape_weight = float(self.totalVarWeight.text())
+
     def _stop_optimization(self):
         global stop
         stop = True
-
-
 
     def changeFitParameters(self):
         # This function simply takes all the fitting parameters and saves the new fit
