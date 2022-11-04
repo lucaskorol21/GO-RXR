@@ -256,11 +256,10 @@ def scanCompute(x, *args):
                     if objective == 'Chi-Square':
                         fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                     elif objective == 'L1-Norm':
-                        Rdat = np.linalg.norm(Rdat, 1)
-                        Rsim = np.linalg.norm(Rsim, 1)
+
                         fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
-                        pass
+                        fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w
 
     fun = fun + gamma*shape_weight
 
