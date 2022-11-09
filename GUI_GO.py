@@ -4857,8 +4857,9 @@ class LoadingScreen(QDialog):
         super().__init__()
         self.setWindowTitle('Saving Simulation')
         self.sample = sample
-        self.sim_dict = sim_dict
-        self.n = len(list(self.sim_dict.keys()))
+        self.sim_dict = []
+        self.temp_sim = sim_dict
+        self.n = len(list(self.temp_sim.keys()))
         layout = QHBoxLayout()
         button = QPushButton('Start Save')
         button.clicked.connect(self.run)
@@ -4871,30 +4872,31 @@ class LoadingScreen(QDialog):
 
     def run(self):
 
-        my_keys = list(self.sim_dict.keys())
+        my_keys = list(self.temp_sim.keys())
         n = self.n
+        if n != 0:
+            for idx in range(len(my_keys)):
 
-        for idx in range(len(my_keys)):
+                if idx % 2 == 0:
+                    self.progress.setValue(idx)
 
-            if idx % 2 == 0:
-                self.progress.setValue(idx)
+                key = my_keys[idx]
+                pol = self.temp_sim[key]['Polarization']
 
-            key = my_keys[idx]
-            pol = self.sim_dict[key]['Polarization']
+                if 'Angle' in self.temp_sim[key].keys():  # energy scan
+                    E = self.temp_sim[key]['Data'][3]  # get energy axis
+                    Theta = self.temp_sim[key]['Angle']  # get angle
+                    E, R = self.sample.energy_scan(Theta, E)  # calculate energy scan
+                    R = R[pol]  # polarization
+                    self.temp_sim[key]['Data'][2] = list(R)
+                else:  # reflectivity scan
+                    qz = self.temp_sim[key]['Data'][0]
+                    energy = self.temp_sim[key]['Energy']
+                    qz, R = self.sample.reflectivity(energy, qz)
+                    R = R[pol]
+                    self.temp_sim[key]['Data'][2] = list(R)
 
-            if 'Angle' in self.sim_dict[key].keys():  # energy scan
-                E = self.sim_dict[key]['Data'][3]  # get energy axis
-                Theta = self.sim_dict[key]['Angle']  # get angle
-                E, R = self.sample.energy_scan(Theta, E)  # calculate energy scan
-                R = R[pol]  # polarization
-                self.sim_dict[key]['Data'][2] = list(R)
-            else:  # reflectivity scan
-                qz = self.sim_dict[key]['Data'][0]
-                energy = self.sim_dict[key]['Energy']
-                qz, R = self.sample.reflectivity(energy, qz)
-                R = R[pol]
-                self.sim_dict[key]['Data'][2] = list(R)
-
+            self.sim_dict = copy.deepcopy(self.temp_sim)
 
         self.accept()
 
