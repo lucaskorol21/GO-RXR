@@ -144,23 +144,19 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
 
 def smooth_function(R):
-    return signal.savgol_filter(R, window_length=9, polyorder=5, mode="nearest")
+
+    # this function will be used to smooth the data
+    # might require more detailed code and playing around with different smoothing functions
+    return signal.savgol_filter(R, window_length=9, polyorder=1, mode="nearest")
 
 def total_variation(R, Rsim):
+    # calculates the total variation (arc-length) of the function
+    # this will be a good judge of whether or not the shape of the function is right
 
-    totVar = 0
-    for idx in range(len(R)-1):
-        totVar = totVar + abs(R[idx+1]-R[idx])
-
-    totVarSim = 0
-    for idx in range(len(Rsim)-1):
-        totVarSim = totVarSim + abs(Rsim[idx+1] - Rsim[idx])
-
+    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
+    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
 
     return abs(totVar-totVarSim)
-
-
-
 
 
 def scanCompute(x, *args):
@@ -257,7 +253,6 @@ def scanCompute(x, *args):
                     if objective == 'Chi-Square':
                         fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                     elif objective == 'L1-Norm':
-
                         fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
                         fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w

@@ -22,8 +22,6 @@ global stop
 stop = False
 
 
-
-
 def stringcheck(string):
 
     # checks to make sure that the roughness and whatnot is in the correct format
@@ -4383,14 +4381,20 @@ class ReflectometryApp(QMainWindow):
         menuBar.addMenu(fileMenu)
         toolsMenu = menuBar.addMenu("&Tools")
         self.script = QAction('Script', self)
+        self.script.triggered.connect(self._script)
         toolsMenu.addAction(self.script)
-        self.thickConst = QAction('Thickness Constraint', self)
-        toolsMenu.addAction(self.thickConst)
+
+        self.showFormFactor = QAction('Form Factors', self)
+        self.showFormFactor.triggered.connect(self._showFormFactor)
+        toolsMenu.addAction(self.showFormFactor)
 
         helpMenu = menuBar.addMenu("&Help")
         self.license = QAction('License', self)
+        self.license.triggered.connect(self._license)
         helpMenu.addAction(self.license)
+
         self.about = QAction('About',self)
+        self.about.triggered.connect(self._help)
         helpMenu.addAction(self.about)
 
     def _newFile(self):
@@ -4498,8 +4502,8 @@ class ReflectometryApp(QMainWindow):
             print('Unable to create the file')
 
     def _loadFile(self):
-        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')
 
+        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')
         fname = self.fname.split('/')[-1]
 
         # when loading files I need to be able to scan the entire
@@ -4588,24 +4592,27 @@ class ReflectometryApp(QMainWindow):
     def _saveFile(self):
         # work on saving the current file
         # saving function is used to save entire workspace
+        filename = self.fname
+        fname = filename.split('/')[-1]
 
-        self.sample = self._sampleWidget._createSample()
-        self._sampleWidget.sample = self.sample
-        self._reflectivityWidget.sample = self.sample
+        if fname != 'demo.h5':
+            self.sample = self._sampleWidget._createSample()
+            self._sampleWidget.sample = self.sample
+            self._reflectivityWidget.sample = self.sample
 
-        # save the sample information to the file
-        #ds.WriteSampleHDF5(self.fname, self.sample)
+            # save the sample information to the file
+            #ds.WriteSampleHDF5(self.fname, self.sample)
 
-        data_dict = self.data_dict
+            data_dict = self.data_dict
 
-        fitParams = [self._reflectivityWidget.sfBsFitParams,self._reflectivityWidget.currentVal,
-                     self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
-                     self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
-                     self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
+            fitParams = [self._reflectivityWidget.sfBsFitParams,self._reflectivityWidget.currentVal,
+                         self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
+                         self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
+                         self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
 
-        optParams = self._goWidget.goParameters
+            optParams = self._goWidget.goParameters
 
-        ds.saveFileHDF5(fname, self.sample, data_dict,  fitParams, optParams)
+            ds.saveFileHDF5(fname, self.sample, data_dict,  fitParams, optParams)
 
     def _saveAsFile(self):
         # create a new file with the inputted
@@ -4640,7 +4647,20 @@ class ReflectometryApp(QMainWindow):
             ds.saveAsFileHDF5(fname, self.sample,data_dict, sim_dict, fitParams, optParams)
 
     def _saveSimulation(self):
-        data_dict = self.data_dict
+        sim_dict = copy.deepcopy(self.data_dict)
+
+        fname = self.fname
+
+        if len(sim_dict) != 0:
+            loadingApp = LoadingScreen(self.sample, sim_dict)
+            loadingApp.show()
+            loadingApp.exec_()
+            sim_dict = loadingApp.sim_dict
+            loadingApp.close()
+
+            ds.saveSimulationHDF5(fname, sim_dict)
+
+
 
 
     def _saveSample(self):
@@ -4779,10 +4799,22 @@ class ReflectometryApp(QMainWindow):
                 file.write("maxfun = %s \n" % globOpt['dual annealing'][5])
                 file.write("localSearch = %s \n\n" % globOpt['dual annealing'][6])
                 file.close()
+
     def _exitApplication(self):
         # exit the program
         sys.exit()
 
+    def _script(self):
+        pass
+
+    def _showFormFactor(self):
+        pass
+
+    def _license(self):
+        pass
+
+    def _help(self):
+        pass
     def activate_tab_1(self):
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
@@ -4818,6 +4850,58 @@ class ReflectometryApp(QMainWindow):
         self._goWidget.updateScreen()
 
         self.stackedlayout.setCurrentIndex(2)
+
+
+class LoadingScreen(QDialog):
+    def __init__(self, sample, sim_dict):
+        super().__init__()
+        self.setWindowTitle('Saving Simulation')
+        self.sample = sample
+        self.sim_dict = sim_dict
+        self.n = len(list(self.sim_dict.keys()))
+        layout = QHBoxLayout()
+        button = QPushButton('Start Save')
+        button.clicked.connect(self.run)
+        self.progress = QProgressBar(self)
+        self.progress.setRange(0,self.n-1)
+        self.progress.setVisible(True)
+        layout.addWidget(button)
+        layout.addWidget(self.progress)
+        self.setLayout(layout)
+
+    def run(self):
+
+        my_keys = list(self.sim_dict.keys())
+        n = self.n
+
+        for idx in range(len(my_keys)):
+
+            if idx % 2 == 0:
+                self.progress.setValue(idx)
+
+            key = my_keys[idx]
+            pol = self.sim_dict[key]['Polarization']
+
+            if 'Angle' in self.sim_dict[key].keys():  # energy scan
+                E = self.sim_dict[key]['Data'][3]  # get energy axis
+                Theta = self.sim_dict[key]['Angle']  # get angle
+                E, R = self.sample.energy_scan(Theta, E)  # calculate energy scan
+                R = R[pol]  # polarization
+                self.sim_dict[key]['Data'][2] = list(R)
+            else:  # reflectivity scan
+                qz = self.sim_dict[key]['Data'][0]
+                energy = self.sim_dict[key]['Energy']
+                qz, R = self.sample.reflectivity(energy, qz)
+                R = R[pol]
+                self.sim_dict[key]['Data'][2] = list(R)
+
+
+        self.accept()
+
+
+
+
+
 
 
 

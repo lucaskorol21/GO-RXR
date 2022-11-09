@@ -7,6 +7,39 @@ from time import *
 import ast
 import h5py
 
+def saveSimulationHDF5(fname, sim_dict):
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    simulated = f['Simulated_data']
+
+    simR = simulated['Reflectivity_Scan']
+    simE = simulated['Energy_Scan']
+
+    for name in list(sim_dict.keys()):
+
+        if 'Angle' in list(sim_dict[name].keys()):
+            dset = simE[name]
+            dset[...] = sim_dict[name]['Data']
+
+
+            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset.attrs['Energy'] = sim_dict[name]['Energy']
+            dset.attrs['Angle'] = sim_dict[name]['Angle']
+            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+        else:
+            dset = simR[name]
+            dset[...] = sim_dict[name]['Data']
+
+            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset.attrs['Energy'] = sim_dict[name]['Energy']
+            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+
 def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
 
     f = h5py.File(fname, 'a')  # create fname hdf5 file
@@ -36,9 +69,9 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     experiment = f.create_group('Experimental_data')
     reflScan = experiment.create_group('Reflectivity_Scan')
     energyScan = experiment.create_group('Energy_Scan')
+
     # save the data from data dict
     for name in list(data_dict.keys()):
-
         if 'Angle' in data_dict[name].keys():
             dat = data_dict[name]['Data']
             dset = energyScan.create_dataset(name, data=dat)
@@ -1149,7 +1182,7 @@ def WriteSampleHDF5(fname, sample):
     f.close()
 
 
-def WriteHDF5Simulation():
+def WriteHDF5Simulation(sample):
     """
         Purpose: Write a new sample to the hdf5 file fname
         :param fname: File name
