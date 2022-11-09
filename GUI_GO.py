@@ -1853,7 +1853,8 @@ class sampleWidget(QWidget):
         for idx in range(len(mag_val)):
             myname = 'Mag: ' + list(density_magnetic.keys())[idx]
             self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2, style=Qt.DashLine), name=myname)
-
+        self.densityWidget.setLabel('left', "Density (mol/cm^3)")
+        self.densityWidget.setLabel('bottom', "Thickness (Å)")
     def _createSample(self):
         # This function takes the information from the tables and converts it into a usable form
 
@@ -1881,7 +1882,7 @@ class sampleWidget(QWidget):
                 thickness.append(float(element[1]))  # gets thickness data
                 density.append(float(element[2]))  # gets density data
                 roughness.append(float(element[3]))  # gets roughness data
-                if element[4].isdigit():
+                if element[4] != '' and element[4] != 'False' and element[4] != False:
                     linked_roughness.append(float(element[4]))
                 else:
                     linked_roughness.append(False)
@@ -1979,6 +1980,7 @@ class sampleWidget(QWidget):
                 self.magDirection[j] = 'x'
             elif gamma == 0 and phi == 0:
                 self.magDirection[j] = 'z'
+
 
 class reflectivityWidget(QWidget):
     def __init__(self, sWidget, data, data_dict, sim_dict):
@@ -3190,6 +3192,7 @@ class GlobalOptimizationWidget(QWidget):
         self.rApp = rApp
 
         self.sample = copy.deepcopy(self.sWidget.sample)
+        self.temp_sample = copy.deepcopy(self.sample)
         self.sampleBounds = []
         self.sfBounds = []
         self.otherBounds = []
@@ -3572,8 +3575,7 @@ class GlobalOptimizationWidget(QWidget):
                     mode = fit[2]
                     if mode == 'COMPOUND':
                         char = fit[3]
-
-                        ele_idx = 0
+                        ele_idx = fit[4]  # keeps track of the element index
                         if char == 'THICKNESS':
                             p = float(self.sWidget.structTableInfo[layer][ele_idx][1])
                             diff = p - float(self.x[idx])
@@ -3824,8 +3826,8 @@ class GlobalOptimizationWidget(QWidget):
             scan_type = self.rWidget.data[idx][1]
             step_size = float(self.sWidget._step_size)
 
-            sample1 = self.sWidget.sample
-            sample2 = self.sWidget.sample  # just to make python happy
+            sample1 = copy.deepcopy(self.sample)
+            sample2 = self.sample  # just to make python happy
             isGO = False
 
             backS = copy.deepcopy(self.rWidget.bs)
@@ -3920,6 +3922,7 @@ class GlobalOptimizationWidget(QWidget):
         global stop
         stop = False
         self.sample = copy.deepcopy(self.sWidget._createSample())
+        self.temp_sample = copy.deepcopy(self.sample)  # makes sure that
         self.worker = Worker(self)
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
@@ -3927,6 +3930,19 @@ class GlobalOptimizationWidget(QWidget):
     def optimizationFinished(self):
         global stop
         stop = True
+        self.sample = copy.deepcopy(self.temp_sample)
+
+        # purpose of this is to reset the structure from anything the user did before optimization finished
+        self.sWidget._setStructFromSample(self.sample)
+        self.sWidget._setVarMagFromSample(self.sample)
+        self.sWidget.getData()
+        self.sWidget.setTable()
+        self.sWidget.setTableMag()
+        self.sWidget.setTableVar()
+
+        # make sure that I all the other parameters are returned back to original value after the global optimization
+
+        self.worker = Worker(self)
         self.plot_scan()
         self.setTableFit()
         self.runButton.setStyleSheet('background: green')
@@ -4768,8 +4784,9 @@ class ReflectometryApp(QMainWindow):
         sys.exit()
 
     def activate_tab_1(self):
-        self.sample = self._sampleWidget._createSample()
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
+        self._goWidget.sample = self.sample
 
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : magenta")
@@ -4777,10 +4794,12 @@ class ReflectometryApp(QMainWindow):
         self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(0)
     def activate_tab_2(self):
-        self.sample = self._sampleWidget._createSample()
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
+        self._reflectivityWidget.sample = self.sample
+        self._goWidget.sample = self.sample
+
         self._reflectivityWidget.sample = self.sample
         self._reflectivityWidget.myPlotting()
-
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : magenta")
@@ -4788,9 +4807,10 @@ class ReflectometryApp(QMainWindow):
         self.stackedlayout.setCurrentIndex(1)
 
     def activate_tab_3(self):
-        self.sample = self._sampleWidget._createSample()
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
+
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")

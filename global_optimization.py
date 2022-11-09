@@ -64,6 +64,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                 if mode == 'COMPOUND':
                     characteristic = params[3]  # thickness/density/roughness/linked roughness
                     ele_idx = params[4]
+
                     my_ele = list(sample.structure[layer].keys())[ele_idx]
                     diffT = x[p] - sample.structure[layer][my_ele].thickness
                     diffD = x[p] - sample.structure[layer][my_ele].density
@@ -143,7 +144,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
 
 def smooth_function(R):
-    return signal.savgol_filter(R, window_length=9, polyorder=1, mode="nearest")
+    return signal.savgol_filter(R, window_length=9, polyorder=5, mode="nearest")
 
 def total_variation(R, Rsim):
 
