@@ -4025,7 +4025,7 @@ class GlobalOptimizationWidget(QWidget):
                                            self.goParameters['dual annealing'], self.callback,
                                            self.objective, self.shape_weight)
         else:
-            print('Try try again')
+            print('Try again')
         print('Done')
 
         return x, fun
