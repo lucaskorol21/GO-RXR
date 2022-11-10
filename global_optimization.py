@@ -145,9 +145,13 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
 def smooth_function(R):
 
-    # this function will be used to smooth the data
-    # might require more detailed code and playing around with different smoothing functions
-    return signal.savgol_filter(R, window_length=9, polyorder=1, mode="nearest")
+    return signal.savgol_filter(R, window_length=11, polyorder=5, mode="nearest")
+
+def rolling_average(R, window):
+
+    kernel = np.ones(window) / window
+    data_convolved = np.convolve(R, kernel, mode='same')
+    return data_convolved
 
 def total_variation(R, Rsim):
     # calculates the total variation (arc-length) of the function
@@ -194,13 +198,15 @@ def scanCompute(x, *args):
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
             Rdat = np.array(myData[2])
-            R = smooth_function(Rdat)
+
+            window = 5
+            R = rolling_average(Rdat, window)
 
 
             qz = np.array(myData[0])
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
-            gamma = gamma + total_variation(np.log10(R), np.log(Rsim))
+            gamma = gamma + total_variation(np.log10(R[2*window:]), np.log(Rsim[2*window:]))
 
             if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
                 Rsim = np.log10(Rsim)
@@ -217,13 +223,8 @@ def scanCompute(x, *args):
                     if objective == 'Chi-Square':
                         fun = fun + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
                     elif objective == 'L1-Norm':
-                        #Rdat = Rdat/np.linalg.norm(Rdat, 2)
-                        #Rsim = Rsim/np.linalg.norm(Rsim, 2)
-
                         fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
-                        #Rdat = Rdat/np.linalg.norm(Rdat, 2)
-                        #Rsim = Rsim/np.linalg.norm(Rsim, 2)
                         fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w
 
 

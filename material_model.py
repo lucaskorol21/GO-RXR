@@ -160,9 +160,9 @@ def IoR(rho,sf,E):
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
     re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
     avocado = 6.02214076e23  # avagoadro's number
-    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+    k0 = 2 * np.pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
 
-    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+    constant = 2 * np.pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
     delta = np.array([np.zeros(len(rho[elements[0]])) for x in range(len(E))])  # initialization
@@ -259,5 +259,4 @@ if __name__ == "__main__":
     #print(file)
     #np.loadtxt(file)
 
-    resetAlteredSF()
 

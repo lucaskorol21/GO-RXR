@@ -3021,6 +3021,8 @@ class reflectivityWidget(QWidget):
                     qz = dat[0]
 
                     R = dat[2]
+
+
                     E = self.data_dict[name]['Energy']
 
                     qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
@@ -3038,7 +3040,8 @@ class reflectivityWidget(QWidget):
 
                         self.spectrumWidget.setLabel('left', "Reflectivity, R")
                         self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
-                        self.spectrumWidget.setLogMode(False,True)
+                        self.spectrumWidget.setLogMode(False, True)
+
                     elif pol == 'AL' or pol =='AC':
                         rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                         if self.axis_state:
@@ -4827,10 +4830,9 @@ class ReflectometryApp(QMainWindow):
         self.stackedlayout.setCurrentIndex(0)
     def activate_tab_2(self):
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
-        self._reflectivityWidget.sample = self.sample
-        self._goWidget.sample = self.sample
+        self._reflectivityWidget.sample = copy.deepcopy(self.sample)
+        self._goWidget.sample = copy.deepcopy(self.sample)
 
-        self._reflectivityWidget.sample = self.sample
         self._reflectivityWidget.myPlotting()
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
@@ -4899,13 +4901,6 @@ class LoadingScreen(QDialog):
             self.sim_dict = copy.deepcopy(self.temp_sim)
 
         self.accept()
-
-
-
-
-
-
-
 
 
 
