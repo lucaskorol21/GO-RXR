@@ -850,7 +850,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
-                            if self.structure[layer+1][ele].linked_roughness:  # roughness is NOT linked to the previous site
+                            if self.structure[layer+1][ele].linked_roughness or self.structure[layer+1][ele].linked_roughness ==0:  # roughness is NOT linked to the previous site
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:  # roughness is linked to the previous site
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -943,7 +943,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness:
+                            if self.structure[layer+1][ele].linked_roughness or self.structure[layer+1][ele].linked_roughness == 0:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1037,7 +1037,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness:
+                            if self.structure[layer+1][ele].linked_roughness or self.structure[layer+1][ele].linked_roughness == 0:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
