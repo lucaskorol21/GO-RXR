@@ -128,6 +128,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     diff_ev = opt.create_group("Differential Evolution")
     shgo = opt.create_group("Simplicial Homology")
     dual = opt.create_group("Dual Annealing")
+    least = opt.create_group('Least Squares')
 
     # load in optimization parameters for differential evolution
     diff_ev.attrs['strategy'] = optimization['differential evolution'][0]
@@ -159,6 +160,17 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     dual.attrs['accept'] = optimization['dual annealing'][4]
     dual.attrs['maxfun'] = optimization['dual annealing'][5]
     dual.attrs['local_search'] = str(optimization['dual annealing'][6])
+
+    least.attrs['jac'] = optimization['least squares'][0]
+    least.attrs['method'] = optimization['least squares'][1]
+    least.attrs['ftol'] = optimization['least squares'][2]
+    least.attrs['xtol'] = optimization['least squares'][3]
+    least.attrs['gtol'] = optimization['least squares'][4]
+    least.attrs['x_scale'] = optimization['least squares'][5]
+    least.attrs['loss'] = optimization['least squares'][6]
+    least.attrs['f_scale'] = optimization['least squares'][7]
+    least.attrs['diff_step'] = optimization['least squares'][8]
+    least.attrs['max_nfev'] = optimization['least squares'][9]
 
     # saving the fitting parameters
     fitting_parameters = f.create_group('Fitting Parameters')
@@ -246,6 +258,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     diff_ev = opt["Differential Evolution"]
     shgo = opt["Simplicial Homology"]
     dual = opt["Dual Annealing"]
+    least = opt['Least Squares']
 
     # load in optimization parameters for differential evolution
     diff_ev.attrs['strategy'] = optimization['differential evolution'][0]
@@ -277,6 +290,17 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     dual.attrs['accept'] = optimization['dual annealing'][4]
     dual.attrs['maxfun'] = optimization['dual annealing'][5]
     dual.attrs['local_search'] = str(optimization['dual annealing'][6])
+
+    least.attrs['jac'] = optimization['least squares'][0]
+    least.attrs['method'] = optimization['least squares'][1]
+    least.attrs['ftol'] = optimization['least squares'][2]
+    least.attrs['xtol'] = optimization['least squares'][3]
+    least.attrs['gtol'] = optimization['least squares'][4]
+    least.attrs['x_scale'] = optimization['least squares'][5]
+    least.attrs['loss'] = optimization['least squares'][6]
+    least.attrs['f_scale'] = optimization['least squares'][7]
+    least.attrs['diff_step'] = optimization['least squares'][8]
+    least.attrs['max_nfev'] = optimization['least squares'][9]
 
     # saving the fitting parameters
     fitting_parameters = f['Fitting Parameters']
@@ -465,6 +489,7 @@ def newFileHDF5(fname):
     diff_ev = grp4.create_group("Differential Evolution")
     shgo = grp4.create_group("Simplicial Homology")
     dual = grp4.create_group("Dual Annealing")
+    least = grp4.create_group("Least Squares")
 
     # load in optimization parameters for differential evolution
     diff_ev.attrs['strategy'] = 'currenttobest1bin'
@@ -492,6 +517,17 @@ def newFileHDF5(fname):
     dual.attrs['accept'] = 5.0
     dual.attrs['maxfun'] = 10000000.0
     dual.attrs['local_search'] = 'False'
+
+    least.attrs['jac'] = '2-point'
+    least.attrs['method'] = 'trf'
+    least.attrs['ftol'] = 1e-8
+    least.attrs['xtol'] = 1e-8
+    least.attrs['gtol'] = 1e-8
+    least.attrs['x_scale'] = 1
+    least.attrs['loss'] = 'linear'
+    least.attrs['f_scale'] = 1
+    least.attrs['diff_step'] = 'None'
+    least.attrs['max_nfev'] = 'None'
 
     grp5 = f.create_group('Fitting Parameters')
 
@@ -842,6 +878,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     diff_ev = grp4.create_group("Differential Evolution")
     shgo = grp4.create_group("Simplicial Homology")
     dual = grp4.create_group("Dual Annealing")
+    least = grp4.create_group("Least Squares")
 
     # load in optimization parameters for differential evolution
     diff_ev.attrs['strategy'] = 'currenttobest1bin'
@@ -869,6 +906,17 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     dual.attrs['accept'] = 5.0
     dual.attrs['maxfun'] = 10000000.0
     dual.attrs['local_search'] = 'False'
+
+    least.attrs['jac'] = '2-point'
+    least.attrs['method'] = 'trf'
+    least.attrs['ftol'] = 1e-8
+    least.attrs['xtol'] = 1e-8
+    least.attrs['gtol'] = 1e-8
+    least.attrs['x_scale'] = 1
+    least.attrs['loss'] = 'linear'
+    least.attrs['f_scale'] = 1
+    least.attrs['diff_step'] = 'None'
+    least.attrs['max_nfev'] = 'None'
 
     grp5 = f.create_group('Fitting Parameters')
 
@@ -937,6 +985,7 @@ def ReadAlgorithmHDF5(fname):
     diff_ev = optimization["Differential Evolution"]
     shgo = optimization["Simplicial Homology"]
     dual = optimization["Dual Annealing"]
+    least = optimization['Least Squares']
 
     # load in optimization parameters for differential evolution
     eStrategy = diff_ev.attrs['strategy']
@@ -984,6 +1033,20 @@ def ReadAlgorithmHDF5(fname):
         dLs = False
 
     parameters['dual annealing'] = [dMaxiter, dInitTemp, dRestTemp, dVisit, dAccept, dMaxfun, dLs]
+
+    jac = least.attrs['jac']
+    method = least.attrs['method']
+    ftol = least.attrs['ftol']
+    xtol = least.attrs['xtol']
+    gtol = least.attrs['gtol']
+    x_scale = least.attrs['x_scale']
+    loss = least.attrs['loss']
+    f_scale = least.attrs['f_scale']
+    diff_step = least.attrs['diff_step']
+    max_nfev = least.attrs['max_nfev']
+
+    parameters['least squares'] = [jac, method, ftol, xtol, gtol, x_scale, loss, f_scale,
+                                   diff_step, max_nfev]
 
     f.close()
     return parameters

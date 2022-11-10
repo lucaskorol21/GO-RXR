@@ -3215,7 +3215,8 @@ class GlobalOptimizationWidget(QWidget):
 
         self.goParameters = {'differential evolution': ['currenttobest1bin',2,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
                              'simplicial homology': ['None', 1, 'simplicial'],
-                             'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True]}
+                             'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True],
+                             'least squares': ['2-point','trf',1e-8,1e-8,1,'linear',1.0,'None','None',0]}
 
         self.paramChange = True
         self.parameters = []
@@ -3536,6 +3537,105 @@ class GlobalOptimizationWidget(QWidget):
 
 
         self.dualWidget.setLayout(dualLayout)
+
+        # least squares
+        # shgo algorithm
+        lsLayout = QVBoxLayout()
+        self.lsWidget = QWidget()
+
+        lsJacLayout = QHBoxLayout()
+        lsJacLabel = QLabel('Jac')
+        lsJacLabel.setFixedWidth(70)
+        self.lsJac = QComboBox()
+        self.lsJac.addItems(['2-point','3-point','cs'])
+        self.lsJac.currentIndexChanged.connect(self.getGOParameters)
+        lsJacLayout.addWidget(lsJacLabel)
+        lsJacLayout.addWidget(self.lsJac)
+        lsLayout.addLayout(lsJacLayout)
+
+        lsMethodLayout = QHBoxLayout()
+        lsMethodLabel = QLabel('Method')
+        lsMethodLabel.setFixedWidth(70)
+        self.lsMethod = QComboBox()
+        self.lsMethod.addItems(['trf','dogbox','lm'])
+        self.lsMethod.currentIndexChanged.connect(self.getGOParameters)
+        lsMethodLayout.addWidget(lsMethodLabel)
+        lsMethodLayout.addWidget(self.lsMethod)
+        lsLayout.addLayout(lsMethodLayout)
+
+        lsFtolLayout = QHBoxLayout()
+        lsFtolLabel = QLabel('ftol')
+        lsFtolLabel.setFixedWidth(70)
+        self.lsFtol = QLineEdit()
+        self.lsFtol.textChanged.connect(self.getGOParameters)
+        lsFtolLayout.addWidget(lsFtolLabel)
+        lsFtolLayout.addWidget(self.lsFtol)
+        lsLayout.addLayout(lsFtolLayout)
+
+        lsXtolLayout = QHBoxLayout()
+        lsXtolLabel = QLabel('xtol')
+        lsXtolLabel.setFixedWidth(70)
+        self.lsXtol = QLineEdit()
+        self.lsXtol.textChanged.connect(self.getGOParameters)
+        lsXtolLayout.addWidget(lsXtolLabel)
+        lsXtolLayout.addWidget(self.lsXtol)
+        lsLayout.addLayout(lsXtolLayout)
+
+        lsGtolLayout = QHBoxLayout()
+        lsGtolLabel = QLabel('gtol')
+        lsGtolLabel.setFixedWidth(70)
+        self.lsGtol = QLineEdit()
+        self.lsGtol.textChanged.connect(self.getGOParameters)
+        lsGtolLayout.addWidget(lsGtolLabel)
+        lsGtolLayout.addWidget(self.lsGtol)
+        lsLayout.addLayout(lsGtolLayout)
+
+        lsXscaleLayout = QHBoxLayout()
+        lsXscaleLabel = QLabel('x_scale')
+        lsXscaleLabel.setFixedWidth(70)
+        self.lsXscale = QLineEdit()
+        self.lsXscale.textChanged.connect(self.getGOParameters)
+        lsXscaleLayout.addWidget(lsXscaleLabel)
+        lsXscaleLayout.addWidget(self.lsXscale)
+        lsLayout.addLayout(lsXscaleLayout)
+
+        lsLossLayout = QHBoxLayout()
+        lsLossLabel = QLabel('Loss')
+        lsLossLabel.setFixedWidth(70)
+        self.lsLoss = QComboBox()
+        self.lsLoss.addItems(['linear','soft_l1','huber','cauchy','arctan'])
+        self.lsLoss.currentIndexChanged.connect(self.getGOParameters)
+        lsLossLayout.addWidget(lsLossLabel)
+        lsLossLayout.addWidget(self.lsLoss)
+        lsLayout.addLayout(lsLossLayout)
+
+        lsFscaleLayout = QHBoxLayout()
+        lsFscaleLabel = QLabel('f_scale')
+        lsFscaleLabel.setFixedWidth(70)
+        self.lsFscale = QLineEdit()
+        self.lsFscale.textChanged.connect(self.getGOParameters)
+        lsFscaleLayout.addWidget(lsFscaleLabel)
+        lsFscaleLayout.addWidget(self.lsFscale)
+        lsLayout.addLayout(lsFscaleLayout)
+
+        lsDiffLayout = QHBoxLayout()
+        lsDiffLabel = QLabel('diff_step')
+        lsDiffLabel.setFixedWidth(70)
+        self.lsDiff = QLineEdit()
+        self.lsDiff.textChanged.connect(self.getGOParameters)
+        lsDiffLayout.addWidget(lsDiffLabel)
+        lsDiffLayout.addWidget(self.lsDiff)
+        lsLayout.addLayout(lsDiffLayout)
+
+        lsMaxLayout = QHBoxLayout()
+        lsMaxLabel = QLabel('max_nfev')
+        lsMaxLabel.setFixedWidth(70)
+        self.lsMax = QLineEdit()
+        self.lsMax.textChanged.connect(self.getGOParameters)
+        lsMaxLayout.addWidget(lsMaxLabel)
+        lsMaxLayout.addWidget(self.lsMax)
+        lsLayout.addLayout(lsMaxLayout)
+
 
         # adding the algorithm widgets to stacked layout
         self.goStackLayout.addWidget(self.evolutionWidget)
@@ -4101,7 +4201,17 @@ class GlobalOptimizationWidget(QWidget):
                 self.goParameters['dual annealing'][6] = 'False'
             else:
                 self.goParameters['dual annealing'][6] = 'True'
-
+        elif idx == 3:  # least square
+            self.goParameters['least squares'][0] = self.lsJac.currentText()
+            self.goParameters['least squares'][1] = self.lsMethod.currentText()
+            self.goParameters['least squares'][2] = self.lsFtol.text()
+            self.goParameters['least squares'][3] = self.lsXtol.text()
+            self.goParameters['least squares'][4] = self.lsGtol.text()
+            self.goParameters['least squares'][5] = self.lsXscale.text()
+            self.goParameters['least squares'][6] = self.lsLoss.currentText()
+            self.goParameters['least squares'][7] = self.lsFscale.text()
+            self.goParameters['least squares'][8] = self.lsDiff.text()
+            self.goParameters['least squares'][9] = self.lsMax.text()
         self.setGOParameters()
 
     def setGOParameters(self):
@@ -4126,6 +4236,16 @@ class GlobalOptimizationWidget(QWidget):
         self.dualAccept.blockSignals(True)
         self.dualMaxfun.blockSignals(True)
         self.dualLocal.blockSignals(True)
+        self.lsJac.blockSignals(True)
+        self.lsMethod.blockSignals(True)
+        self.lsFtol.blockSignals(True)
+        self.lsXtol.blockSignals(True)
+        self.lsGtol.blockSignals(True)
+        self.lsXscale.blockSignals(True)
+        self.lsLoss.blockSignals(True)
+        self.lsFscale.blockSignals(True)
+        self.lsDiff.blockSignals(True)
+        self.lsMax.blockSignals(True)
 
 
         idx = self.algorithmSelect.currentIndex()
@@ -4161,6 +4281,18 @@ class GlobalOptimizationWidget(QWidget):
         elif self.goParameters['dual annealing'][6] == 'True':
             self.dualLocal.setChecked(0)
 
+        # least squares
+        self.lsJac.setCurrentText(str(self.goParameters['least squares'][0]))
+        self.lsMethod.setCurrentText(str(self.goParameters['least squares'][1]))
+        self.lsFtol.setText(str(self.goParameters['least squares'][2]))
+        self.lsXtol.setText(str(self.goParameters['least squares'][3]))
+        self.lsGtol.setText(str(self.goParameters['least squares'][4]))
+        self.lsXscale.setText(str(self.goParameters['least squares'][5]))
+        self.lsLoss.setCurrentText(str(self.goParameters['least squares'][6]))
+        self.lsFscale.setText(str(self.goParameters['least squares'][7]))
+        self.lsDiff.setText(str(self.goParameters['least squares'][8]))
+        self.lsMax.setText(str(self.goParameters['least squares'][9]))
+
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
         self.ePopsize.blockSignals(False)
@@ -4182,6 +4314,16 @@ class GlobalOptimizationWidget(QWidget):
         self.dualAccept.blockSignals(False)
         self.dualMaxfun.blockSignals(False)
         self.dualLocal.blockSignals(False)
+        self.lsJac.blockSignals(True)
+        self.lsMethod.blockSignals(True)
+        self.lsFtol.blockSignals(True)
+        self.lsXtol.blockSignals(True)
+        self.lsGtol.blockSignals(True)
+        self.lsXscale.blockSignals(True)
+        self.lsLoss.blockSignals(True)
+        self.lsFscale.blockSignals(True)
+        self.lsDiff.blockSignals(True)
+        self.lsMax.blockSignals(True)
 
     def change_algorithm(self):
         # set the proper algorithm widget
