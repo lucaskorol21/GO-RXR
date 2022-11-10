@@ -3282,7 +3282,7 @@ class GlobalOptimizationWidget(QWidget):
         algorithmLayout = QVBoxLayout()
         algorithmLabel = QLabel('Algorithm Selection')
         self.algorithmSelect = QComboBox()
-        self.algorithmSelect.addItems(['differential evolution', 'simplicial homology', 'dual annealing'])
+        self.algorithmSelect.addItems(['differential evolution', 'simplicial homology', 'dual annealing', 'least squares'])
         self.algorithmSelect.currentIndexChanged.connect(self.change_algorithm)
         algorithmLayout.addWidget(algorithmLabel)
         algorithmLayout.addWidget(self.algorithmSelect)
@@ -3635,12 +3635,13 @@ class GlobalOptimizationWidget(QWidget):
         lsMaxLayout.addWidget(lsMaxLabel)
         lsMaxLayout.addWidget(self.lsMax)
         lsLayout.addLayout(lsMaxLayout)
-
+        self.lsWidget.setLayout(lsLayout)
 
         # adding the algorithm widgets to stacked layout
         self.goStackLayout.addWidget(self.evolutionWidget)
         self.goStackLayout.addWidget(self.shgoWidget)
         self.goStackLayout.addWidget(self.dualWidget)
+        self.goStackLayout.addWidget(self.lsWidget)
 
         goLayout = QHBoxLayout()
         goLayout.addWidget(algorithmWidget)

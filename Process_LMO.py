@@ -1,11 +1,13 @@
 from SpecFileProcessing import *
 from data_structure import *
 
-sample = slab(2)
+sample = slab(3)
 sample.addlayer(0,"SrTiO3", 50, roughness=2)
 sample.addlayer(1, "LaMnO3", 30, roughness=2, linked_roughness=[False, 0.5, 2.5])
 sample.polymorphous(1,'Mn', ['Mn2+', 'Mn3+'], [1,0], sf = ['Mn', 'Fe'])
 sample.magnetization(1,['Mn2+', 'Mn3+'], [0.1,0], ['Co', 'Ni'])
+
+sample.addlayer(2, "CCO", 10,density=1, roughness=2)
 sample.energy_shift()
 
 def GetSampleInfo(sample):
@@ -130,7 +132,7 @@ def GetSampleInfo(sample):
 samples = ["Pim10uc", "Pim7uc"]
 #samples = ["Pim4uc"]
 
-for sam in [0]:
+for sam in [0, 1]:
     EScan,AScan,ECal,Geo,Corr = GetSampleInfo(samples[sam])
     AsData,AsInfo = ProcessRXR("Data/" + samples[sam]+".spc", AScan,ECal,Geo,Corr,"A")
     EsData,EsInfo = ProcessRXR("Data/" + samples[sam]+".spc", EScan,ECal,Geo,Corr,"E")
