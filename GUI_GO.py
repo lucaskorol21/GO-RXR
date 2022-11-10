@@ -413,6 +413,7 @@ class sampleWidget(QWidget):
 
         self.magTable = QTableWidget()
 
+        self.resetX = False
 
         self.change_elements = False
         self.element_index = 0
@@ -485,7 +486,6 @@ class sampleWidget(QWidget):
             ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
 
         self._setStructFromSample(sample)
-
 
         # setTable
         self.setTable()
@@ -913,6 +913,7 @@ class sampleWidget(QWidget):
         action = menu.exec_(QtGui.QCursor.pos())
 
         if action == _fit:
+            self.resetX = True
             fit = []
             if name[:3] == 'ff-':
                 fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
@@ -926,6 +927,7 @@ class sampleWidget(QWidget):
                 self.currentVal.append([val, [lower, upper]])
 
         elif action == _remove_fit:
+            self.resetX = True
             fit = []
             if name[:3] == 'ff-':
                 fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
@@ -936,7 +938,7 @@ class sampleWidget(QWidget):
                 idx = self.parameterFit.index(fit)
                 self.parameterFit.remove(fit)
                 self.currentVal.pop(idx)
-        print(self.currentVal)
+
         self.setTableEShift()
         self.setTable()
         self.setTableMag()
@@ -968,7 +970,7 @@ class sampleWidget(QWidget):
 
         action = menu.exec_(QtGui.QCursor.pos())
         if action == _fit:
-
+            self.resetX = True
             # determines if the element has already been selected
             alreadySelected = False
             for fit in copy_fit_list:
@@ -1004,6 +1006,7 @@ class sampleWidget(QWidget):
                         self.parameterFit.append([my_layer, 'MAGNETIC', element, name])
 
         if action == _remove_fit:
+            self.resetX = True
             for fit in copy_fit_list:
                 if column == 0:  # magnetic density
                     if len(fit) == 3 and fit[1] == 'MAGNETIC':  # not polymorphous case
@@ -1051,6 +1054,7 @@ class sampleWidget(QWidget):
 
         action = menu.exec_(QtGui.QCursor.pos())
         if action == _fit:
+            self.resetX = True
             alreadySelected = False
             for fit in copy_fit_list:
                 if column == 1:
@@ -1086,7 +1090,7 @@ class sampleWidget(QWidget):
                         self.currentVal.append([0, [-0.5,0.5]])
 
         elif action == _remove_fit:
-
+            self.resetX = True
             for fit in copy_fit_list:
                 if column == 1:
                     if len(fit) == 4 and fit[1] == 'POLYMORPHOUS':
@@ -1148,7 +1152,7 @@ class sampleWidget(QWidget):
 
         # Element Mode
         if action == _element_fit:
-
+            self.resetX = True
             value = self.structTable.currentItem().text()
             element = self.structTable.item(row, 0).text()
             alreadySelected = False
@@ -1236,7 +1240,7 @@ class sampleWidget(QWidget):
                         self.currentVal.append([0,[-0.5,0.5]])
 
         elif action == _compound_fit:
-
+            self.resetX = True
             # retrieve minimum value in the row
             my_vals = list()
             for i in range(self.structTable.rowCount()):
@@ -1320,6 +1324,7 @@ class sampleWidget(QWidget):
                     self.currentVal.append([float(value), [lower, upper]])
 
         elif action == _remove_fit:
+            self.resetX = True
             element = self.structTableInfo[my_layer][row][0]
             scattering_factor = self.structTableInfo[my_layer][row][5]
             for fit in copy_fit_list:
@@ -3259,6 +3264,10 @@ class GlobalOptimizationWidget(QWidget):
         self.fittingParamTable = QTableWidget()
         self.fittingParamTable.setColumnCount(5)
         self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary', 'New'])
+        delegate = ReadOnlyDelegate()
+        self.fittingParamTable.setItemDelegateForColumn(0, delegate)
+        self.fittingParamTable.setItemDelegateForColumn(1, delegate)
+        self.fittingParamTable.setItemDelegateForColumn(4, delegate)
         tableLayout = QVBoxLayout()
         tableLayout.addWidget(self.fittingParamTable)
         self.fittingParamTable.itemChanged.connect(self._changeFitVar)
@@ -3953,6 +3962,8 @@ class GlobalOptimizationWidget(QWidget):
     def optimizationFinished(self):
         global stop
         stop = True
+
+        self.sWidget.resetX = False  # do not reset x
         self.sample = copy.deepcopy(self.temp_sample)
 
         # purpose of this is to reset the structure from anything the user did before optimization finished
@@ -4184,16 +4195,25 @@ class GlobalOptimizationWidget(QWidget):
         for text in self.rWidget.fit:
             self.selectedScans.addItem(text)
 
+    def clearTableFit(self):
+        self.fittingParamTable.clear()
+
     def setTableFit(self):
 
+
         self.fittingParamTable.blockSignals(True)
+
         # initialize the boundaries
         rows = len(self.sWidget.parameterFit) + len(self.rWidget.sfBsFitParams)  # total number of rows required
         self.fittingParamTable.setRowCount(rows)
 
+        if self.sWidget.resetX:
+            self.x = []
+
         # create the names and set number of rows
         row = 0
         for idx,param in enumerate(self.sWidget.parameterFit):
+
             name = self.getName(param)
             value = str(self.sWidget.currentVal[idx][0])
             lower = str(self.sWidget.currentVal[idx][1][0])
@@ -4212,6 +4232,7 @@ class GlobalOptimizationWidget(QWidget):
             row = row + 1
 
         for idx, param in enumerate(self.rWidget.sfBsFitParams):
+
             name = self.getName(param)
             value = str(self.rWidget.currentVal[idx][0])
             lower = str(self.rWidget.currentVal[idx][1][0])
@@ -4235,6 +4256,8 @@ class GlobalOptimizationWidget(QWidget):
             self.fittingParamTable.setItem(idx, 4, item)
 
         self.fittingParamTable.blockSignals(False)
+
+
 
     def getName(self, p):
         name = ''
@@ -4846,17 +4869,18 @@ class ReflectometryApp(QMainWindow):
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
-
+        self._goWidget.clearTableFit()
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
         self.stackedlayout.setCurrentIndex(0)
+
     def activate_tab_2(self):
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = copy.deepcopy(self.sample)
         self._goWidget.sample = copy.deepcopy(self.sample)
-        print(self._sampleWidget.currentVal)
+        self._goWidget.clearTableFit()
         self._reflectivityWidget.myPlotting()
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
