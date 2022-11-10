@@ -5066,6 +5066,9 @@ class showFormFactors(QDialog):
         self.setWindowTitle('Form Factors')
         self.setGeometry(180,60,700,400)
 
+        self.selectedff = []
+        self.selectedffm = []
+
         # Loads all scattering factors when program imported
         with open('form_factor.pkl', 'rb') as f:
             self.ff = pickle.load(f)
@@ -5090,40 +5093,122 @@ class showFormFactors(QDialog):
 
         # structura ---------------------------------------------------------------------------------------------------
         # Show form factor Widget
-        self.structWidget = QWidget()
-        self.structLayout = QHBoxLayout()
-        self.structElements = QComboBox()
-        self.structElements.addItems(list(sample.eShift.keys()))
-
-        self.structElementsSelect = QComboBox()
 
         # Adding the plotting Widget
         self.structPlot = pg.PlotWidget()
         self.structPlot.setBackground('w')
         self.structPlot.addLegend()
 
-        self.structLayout.addWidget(self.structElements)
-        self.structLayout.addWidget(self.structElementsSelect)
+        self.structWidget = QWidget()
+        self.structLayout = QHBoxLayout()
+
+        self.realLayout = QHBoxLayout()
+        self.realLabel = QLabel('Real')
+        self.real = QCheckBox()
+        self.real.stateChanged.connect(self._plot_ff)
+        self.realLayout.addWidget(self.realLabel)
+        self.realLayout.addWidget(self.real)
+
+        self.imLayout = QHBoxLayout()
+        self.imLabel = QLabel('Imaginary')
+        self.im = QCheckBox()
+        self.im.stateChanged.connect(self._plot_ff)
+        self.im.setCheckState(2)
+        self.imLayout.addWidget(self.imLabel)
+        self.imLayout.addWidget(self.im)
+
+
+
+        self.selectFF = QPushButton('Select ff')
+        self.selectFF.clicked.connect(self._selectff)
+        self.removeFF = QPushButton('Remove ff')
+        self.removeFF.clicked.connect(self._removeff)
+
+        fLayout = QVBoxLayout()
+        fLabel = QLabel('Form Factor:')
+        self.structElements = QComboBox()
+        self.structElements.addItems(list(sample.eShift.keys()))
+        fLayout.addWidget(fLabel)
+        fLayout.addWidget(self.structElements)
+
+        fsLayout = QVBoxLayout()
+        fsLabel = QLabel('Selected Form Factor:')
+        self.structElementsSelect = QComboBox()
+        fsLayout.addWidget(fsLabel)
+        fsLayout.addWidget(self.structElementsSelect)
+
+        structLeftLayout = QVBoxLayout()
+
+        structLeftLayout.addLayout(fLayout)
+        structLeftLayout.addWidget(self.selectFF)
+        structLeftLayout.addStretch(1)
+        structLeftLayout.addLayout(self.realLayout)
+        structLeftLayout.addLayout(self.imLayout)
+        structLeftLayout.addStretch(1)
+        structLeftLayout.addLayout(fsLayout)
+        structLeftLayout.addWidget(self.removeFF)
+
+
+        self.structLayout.addLayout(structLeftLayout)
         self.structLayout.addWidget(self.structPlot)
 
         self.structWidget.setLayout(self.structLayout)
 
         # magnetic -----------------------------------------------------------------------------------------------------
         # Show magnetic form factor Widget
-        self.magWidget = QWidget()
-        self.magLayout = QHBoxLayout()
-        self.magElements = QComboBox()
-        self.magElements.addItems(list(sample.mag_eShift.keys()))
-
-        self.magElementsSelect = QComboBox()
-
         # Adding the plotting Widget
         self.magPlot = pg.PlotWidget()
         self.magPlot.setBackground('w')
         self.magPlot.addLegend()
 
-        self.magLayout.addWidget(self.magElements)
-        self.magLayout.addWidget(self.magElementsSelect)
+        magLeftLayout = QVBoxLayout()
+
+        self.realLayoutMag = QHBoxLayout()
+        self.realLabelMag = QLabel('Real')
+        self.realMag = QCheckBox()
+        self.realMag.stateChanged.connect(self._plot_ffm)
+        self.realLayoutMag.addWidget(self.realLabelMag)
+        self.realLayoutMag.addWidget(self.realMag)
+
+        self.imLayoutMag = QHBoxLayout()
+        self.imLabelMag = QLabel('Imaginary')
+        self.imMag = QCheckBox()
+        self.imMag.stateChanged.connect(self._plot_ffm)
+        self.imMag.setCheckState(2)
+        self.imLayoutMag.addWidget(self.imLabelMag)
+        self.imLayoutMag.addWidget(self.imMag)
+
+        self.selectFFM = QPushButton('Select ffm')
+        self.selectFFM.clicked.connect(self._selectffm)
+        self.removeFFM = QPushButton('Remove ffm')
+        self.removeFFM.clicked.connect(self._removeffm)
+
+        self.magWidget = QWidget()
+        self.magLayout = QHBoxLayout()
+        fmLayout = QVBoxLayout()
+        fmLabel = QLabel('Form Factors:')
+        self.magElements = QComboBox()
+        self.magElements.addItems(list(sample.mag_eShift.keys()))
+        fmLayout.addWidget(fmLabel)
+        fmLayout.addWidget(self.magElements)
+
+        fsmLayout = QVBoxLayout()
+        fsmLabel = QLabel('Selected Form Factors: ')
+        self.magElementsSelect = QComboBox()
+        fsmLayout.addWidget(fsmLabel)
+        fsmLayout.addWidget(self.magElementsSelect)
+
+        magLeftLayout.addLayout(fmLayout)
+        magLeftLayout.addWidget(self.selectFFM)
+        magLeftLayout.addStretch(1)
+        magLeftLayout.addLayout(self.realLayoutMag)
+        magLeftLayout.addLayout(self.imLayoutMag)
+        magLeftLayout.addStretch(1)
+        magLeftLayout.addLayout(fsmLayout)
+        magLeftLayout.addWidget(self.removeFFM)
+
+
+        self.magLayout.addLayout(magLeftLayout)
         self.magLayout.addWidget(self.magPlot)
 
         self.magWidget.setLayout(self.magLayout)
@@ -5139,6 +5224,83 @@ class showFormFactors(QDialog):
 
         self.setLayout(pageLayout)
 
+    def _plot_ff(self):
+        self.structPlot.clear()
+        n = 0
+        m = len(self.selectedff)
+        if self.real.checkState() != 0 and self.im.checkState() != 0:
+            n = m*2
+        if self.real.checkState() != 0 or self.im.checkState() != 0:
+            n = m
+
+        for idx,key in enumerate(self.selectedff):
+            re = self.ff[key][:,1]
+            E = self.ff[key][:,0]
+            im = self.ff[key][:,2]
+
+            if self.real.checkState() != 0:
+                my_name = 'r: ' + key
+                self.structPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
+            if self.im.checkState() != 0:
+                my_name = 'i: ' + key
+                self.structPlot.plot(E, im, pen=pg.mkPen((idx, n), width=2), name=my_name)
+
+        self.structPlot.setLabel('left', "Form Factor")
+        self.structPlot.setLabel('bottom', "Energy, (eV))")
+
+    def _plot_ffm(self):
+        self.magPlot.clear()
+        n = 0
+        m = len(self.selectedffm)
+        if self.realMag.checkState() != 0 and self.imMag.checkState() != 0:
+            n = m * 2
+        if self.realMag.checkState() != 0 or self.imMag.checkState() != 0:
+            n = m
+
+        for idx, key in enumerate(self.selectedffm):
+            re = self.ffm[key][:,1]
+            E = self.ffm[key][:,0]
+            im = self.ffm[key][:,2]
+            if self.real.checkState() != 0:
+                my_name = 'r: ' + key
+                self.magPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
+            if self.im.checkState() != 0:
+                my_name = 'i: ' + key
+                self.magPlot.plot(E, im, pen=pg.mkPen((idx, n), width=2), name=my_name)
+
+        self.magPlot.setLabel('left', "Form Factor")
+        self.magPlot.setLabel('bottom', "Energy, (eV))")
+    def _selectff(self):
+        item = self.structElements.currentText()
+        if item not in self.selectedff:
+            self.structElementsSelect.addItem(item)
+            self.selectedff.append(item)
+        self._plot_ff()
+
+    def _selectffm(self):
+        item = self.magElements.currentText()
+        if item not in self.selectedffm:
+            self.magElementsSelect.addItem(item)
+            self.selectedffm.append(item)
+        self._plot_ffm()
+
+    def _removeff(self):
+        item =self.structElementsSelect.currentText()
+        idx = self.structElementsSelect.currentIndex()
+        if item != '':
+            self.structElementsSelect.removeItem(idx)
+            self.selectedff.pop(idx)
+            print(self.selectedff)
+            self._plot_ff()
+
+    def _removeffm(self):
+        item = self.magElementsSelect.currentText()
+        idx = self.magElementsSelect.currentIndex()
+        if item != '':
+            self.magElementsSelect.removeItem(idx)
+            self.selectedff.pop(idx)
+            self._plot_ffm()
+
     def _structural(self):
         self.magButton.setStyleSheet('background: pink')
         self.structButton.setStyleSheet('background: magenta')
@@ -5148,6 +5310,7 @@ class showFormFactors(QDialog):
         self.magButton.setStyleSheet('background: magenta')
         self.structButton.setStyleSheet('background: pink')
         self.stackLayout.setCurrentIndex(1)
+
 
 
 class LoadingScreen(QDialog):
