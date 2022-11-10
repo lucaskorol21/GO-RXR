@@ -17,6 +17,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from scipy import signal
 import h5py
 import multiprocessing as mp
+import pickle
 
 global stop
 stop = False
@@ -5009,7 +5010,12 @@ class ReflectometryApp(QMainWindow):
         pass
 
     def _showFormFactor(self):
-        pass
+
+        formFactor = showFormFactors(self.sample)
+        formFactor.show()
+        formFactor.exec_()
+        formFactor.close()
+
 
     def _license(self):
         pass
@@ -5052,6 +5058,96 @@ class ReflectometryApp(QMainWindow):
         self._goWidget.updateScreen()
 
         self.stackedlayout.setCurrentIndex(2)
+
+class showFormFactors(QDialog):
+    def __init__(self, sample):
+        super().__init__()
+        pageLayout = QVBoxLayout()
+        self.setWindowTitle('Form Factors')
+        self.setGeometry(180,60,700,400)
+
+        # Loads all scattering factors when program imported
+        with open('form_factor.pkl', 'rb') as f:
+            self.ff = pickle.load(f)
+        f.close()
+
+        # Loads all scattering factors when program imported
+        with open('form_factor_magnetic.pkl', 'rb') as f:
+            self.ffm = pickle.load(f)
+        f.close()
+
+        buttonLayout = QHBoxLayout()
+        self.structButton = QPushButton('Structural')
+        self.structButton.setStyleSheet('background: magenta')
+        self.structButton.clicked.connect(self._structural)
+        self.magButton = QPushButton('Magnetic')
+        self.magButton.setStyleSheet('background: pink')
+        self.magButton.clicked.connect(self._magnetic)
+        buttonLayout.addWidget(self.structButton)
+        buttonLayout.addWidget(self.magButton)
+
+        self.stackLayout = QStackedLayout()
+
+        # structura ---------------------------------------------------------------------------------------------------
+        # Show form factor Widget
+        self.structWidget = QWidget()
+        self.structLayout = QHBoxLayout()
+        self.structElements = QComboBox()
+        self.structElements.addItems(list(sample.eShift.keys()))
+
+        self.structElementsSelect = QComboBox()
+
+        # Adding the plotting Widget
+        self.structPlot = pg.PlotWidget()
+        self.structPlot.setBackground('w')
+        self.structPlot.addLegend()
+
+        self.structLayout.addWidget(self.structElements)
+        self.structLayout.addWidget(self.structElementsSelect)
+        self.structLayout.addWidget(self.structPlot)
+
+        self.structWidget.setLayout(self.structLayout)
+
+        # magnetic -----------------------------------------------------------------------------------------------------
+        # Show magnetic form factor Widget
+        self.magWidget = QWidget()
+        self.magLayout = QHBoxLayout()
+        self.magElements = QComboBox()
+        self.magElements.addItems(list(sample.mag_eShift.keys()))
+
+        self.magElementsSelect = QComboBox()
+
+        # Adding the plotting Widget
+        self.magPlot = pg.PlotWidget()
+        self.magPlot.setBackground('w')
+        self.magPlot.addLegend()
+
+        self.magLayout.addWidget(self.magElements)
+        self.magLayout.addWidget(self.magElementsSelect)
+        self.magLayout.addWidget(self.magPlot)
+
+        self.magWidget.setLayout(self.magLayout)
+
+
+        self.stackLayout.addWidget(self.structWidget)
+        self.stackLayout.addWidget(self.magWidget)
+
+        pageLayout.addLayout(buttonLayout)
+        pageLayout.addLayout(self.stackLayout)
+
+        self._structural()
+
+        self.setLayout(pageLayout)
+
+    def _structural(self):
+        self.magButton.setStyleSheet('background: pink')
+        self.structButton.setStyleSheet('background: magenta')
+        self.stackLayout.setCurrentIndex(0)
+
+    def _magnetic(self):
+        self.magButton.setStyleSheet('background: magenta')
+        self.structButton.setStyleSheet('background: pink')
+        self.stackLayout.setCurrentIndex(1)
 
 
 class LoadingScreen(QDialog):
