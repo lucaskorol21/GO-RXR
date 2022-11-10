@@ -347,6 +347,41 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+
+    scans = []
+    for s, info in enumerate(data_info):
+        if info[2] in scan:
+            scans.append(info)
+
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]
+
+    diff = goParam[8]
+    _max = goParam[9]
+
+    if diff.upper() == 'NONE':
+        diff = None
+    else:
+        diff = float(diff)
+    if _max.upper() == 'NONE':
+        _max = None
+    else:
+        _max = float(_max)
+
+    result = optimize.least_squares(scanCompute, x0, args=params, bounds=bounds, jac=goParam[0], method=goParam[1],
+                           ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
+                           x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]), diff_step=diff,
+                                 max_nfev=_max)
+
+    x = result.x
+    fun = result.cost
+
+    print('Chi: ' + str(fun))
+    print('Fitting parameters: ', x)
+
+    f.close()
+    return x, fun
+
 class MinimizeStopper(object):
     def __init__(self, max_sec=0.3):
         self.max_sec = max_sec

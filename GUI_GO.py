@@ -4110,13 +4110,17 @@ class GlobalOptimizationWidget(QWidget):
         self.parameters = parameters  # needed for creating new sample
         lw = []
         up = []
+        x0 = []
 
         for b in self.sWidget.currentVal:
             lw.append(float(b[1][0]))
             up.append(float(b[1][1]))
+            x0.append(float(b[0]))
+
         for b in self.rWidget.currentVal:
             lw.append(float(b[1][0]))
             up.append(float(b[1][1]))
+            x0.append(float(b[0]))
 
         bounds = list(zip(lw, up))
 
@@ -4161,9 +4165,13 @@ class GlobalOptimizationWidget(QWidget):
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                            self.goParameters['dual annealing'], self.callback,
                                            self.objective, self.shape_weight)
+            elif idx == 3:
+                bounds = (lw, up)
+                x, fun = go.least_squares(x0,sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
+                                           self.goParameters['least squares'], self.callback,
+                                           self.objective, self.shape_weight)
         else:
             print('Try again')
-        print('Done')
 
         return x, fun
 
