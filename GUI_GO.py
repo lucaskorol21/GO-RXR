@@ -936,7 +936,7 @@ class sampleWidget(QWidget):
                 idx = self.parameterFit.index(fit)
                 self.parameterFit.remove(fit)
                 self.currentVal.pop(idx)
-
+        print(self.currentVal)
         self.setTableEShift()
         self.setTable()
         self.setTableMag()
@@ -3261,6 +3261,7 @@ class GlobalOptimizationWidget(QWidget):
         self.fittingParamTable.setHorizontalHeaderLabels(['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary', 'New'])
         tableLayout = QVBoxLayout()
         tableLayout.addWidget(self.fittingParamTable)
+        self.fittingParamTable.itemChanged.connect(self._changeFitVar)
 
         # Include the different input parameters for the global optimization and their algorithms
         self.goParamWidget = QWidget()
@@ -3551,11 +3552,32 @@ class GlobalOptimizationWidget(QWidget):
         self.setLayout(pagelayout)
         self.setTableFit()
 
+    def _changeFitVar(self):
+        row = self.fittingParamTable.currentRow()
+        col = self.fittingParamTable.currentColumn()
+
+        ns = len(self.sWidget.currentVal)
+        item = self.fittingParamTable.currentItem().text()
+
+        if row <= ns - 1:
+            if col == 2:
+                self.sWidget.currentVal[row][1][0] = float(item)
+            elif col == 3:
+                self.sWidget.currentVal[row][1][1] = float(item)
+        else:
+            if col == 2:
+                self.rWidget.currentVal[row][1][0] = float(item)
+            elif col == 3:
+                self.rWidget.currentVal[row][1][1] = float(item)
+        # first let's figure out which parameters we are referring too
+        print('hello')
+        pass
     def _changeObjectiveFunction(self):
         rbtn = self.sender()
 
         if rbtn.isChecked() == True:
             self.objective = rbtn.text()
+
     def _changeShapeWeight(self):
         value = self.totalVarWeight.text()
         if value != '':
@@ -4164,6 +4186,7 @@ class GlobalOptimizationWidget(QWidget):
 
     def setTableFit(self):
 
+        self.fittingParamTable.blockSignals(True)
         # initialize the boundaries
         rows = len(self.sWidget.parameterFit) + len(self.rWidget.sfBsFitParams)  # total number of rows required
         self.fittingParamTable.setRowCount(rows)
@@ -4211,6 +4234,7 @@ class GlobalOptimizationWidget(QWidget):
             item = QTableWidgetItem(str(self.x[idx]))
             self.fittingParamTable.setItem(idx, 4, item)
 
+        self.fittingParamTable.blockSignals(False)
 
     def getName(self, p):
         name = ''
@@ -4832,7 +4856,7 @@ class ReflectometryApp(QMainWindow):
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = copy.deepcopy(self.sample)
         self._goWidget.sample = copy.deepcopy(self.sample)
-
+        print(self._sampleWidget.currentVal)
         self._reflectivityWidget.myPlotting()
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
@@ -4848,6 +4872,7 @@ class ReflectometryApp(QMainWindow):
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
+        print(self._sampleWidget.currentVal)
         self._goWidget.setTableFit()
         self._goWidget.updateScreen()
 
