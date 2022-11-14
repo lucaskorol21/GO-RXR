@@ -3,9 +3,6 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
 import numpy as np
 import time
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.figure as Figure
 import sys
 import material_structure as ms
 import os
@@ -14,6 +11,7 @@ import data_structure as ds
 import copy
 import global_optimization as go
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
+import material_model as mm
 from scipy import signal
 import h5py
 import multiprocessing as mp
@@ -4556,6 +4554,7 @@ class ReflectometryApp(QMainWindow):
     def __init__(self):
         super().__init__()
         cwd = os.getcwd()
+
         self.fname = cwd + '\demo.h5'
         self.data = []
         self.data_dict = dict()
@@ -4788,6 +4787,8 @@ class ReflectometryApp(QMainWindow):
         # when loading files I need to be able to scan the entire
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
+                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))
+
                 self.sample = ds.ReadSampleHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
 
@@ -5736,6 +5737,7 @@ class showFormFactors(QDialog):
 
         self.magPlot.setLabel('left', "Form Factor")
         self.magPlot.setLabel('bottom', "Energy, (eV))")
+
     def _selectff(self):
         item = self.structElements.currentText()
         if item not in self.selectedff:

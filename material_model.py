@@ -2,6 +2,7 @@ from material_structure import *
 import pickle
 from numba import *
 from scipy import interpolate
+import os
 
 
 # Loads all scattering factors when program imported
@@ -18,6 +19,32 @@ with open('form_factor_magnetic.pkl','rb') as f:
 
 f.close()
 
+def _use_given_ff(directory):
+    global ff
+    global ffm
+
+    struct_names = []
+    mag_names = []
+    # loops through project directory for form factor files
+    for file in os.listdir(directory):
+        if file.endswith(".ff"):
+            name = directory +'/' + file
+            element = file.strip(".ff")
+            struct_names.append(element)
+            with open(name,'rb') as f:
+                ff[element] = np.loadtxt(name)
+
+            f.close()
+
+        elif file.endswith(".ffm"):
+            name = directory + '/' +file
+            element = file.strip(".ffm")
+            mag_names.append(element)
+            with open(name, 'rb') as f:
+                ffm[element] = np.loadtxt(name)
+            f.close()
+
+    return struct_names, mag_names
 
 def form_factor(f,E):
 
@@ -183,6 +210,7 @@ def index_of_refraction(rho, sf, E):
     :return: delta - dispersive component of the refractive index
              beta - absorptive component of the refractive index
     """
+
     mag = False  # statement for retrieval of non=magnetic form factors
     # Constants
     h = 4.135667696e-15  # Plank's Constant [eV s]
