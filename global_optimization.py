@@ -11,9 +11,10 @@ import multiprocessing as mp
 import sys
 import os
 from PIL import Image, ImageTk
-from GUI_GO import x_vars
-
 import functools
+
+global x_vars
+x_vars = []
 
 def changeSampleParams(x, parameters, sample, backS, scaleF):
     """
@@ -180,6 +181,7 @@ def scanCompute(x, *args):
     optimizeSave = args[10]
 
     # determines if saving will be done in callback function
+
     if optimizeSave:
         x_vars.append(x)
 
@@ -274,7 +276,8 @@ def scanCompute(x, *args):
 
 def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
     # performs the differential evolution global optimization
-
+    global x_vars
+    x_vars = []
 
     scans = []
     for s, info in enumerate(data_info):
@@ -304,7 +307,8 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
     return x, fun
 
 def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight):
-
+    global x_vars
+    x_vars = []
 
     scans = []
     for s, info in enumerate(data_info):
@@ -330,6 +334,8 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     return x, fun
 
 def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+    global x_vars
+    x_vars = []
 
     scans = []
     for s, info in enumerate(data_info):
@@ -358,6 +364,8 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     return x, fun
 
 def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+    global x_vars
+    x_vars = []
 
     scans = []
     for s, info in enumerate(data_info):
@@ -392,6 +400,9 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     f.close()
     return x, fun
 
+def return_x():
+    global x_vars
+    return x_vars
 class MinimizeStopper(object):
     def __init__(self, max_sec=0.3):
         self.max_sec = max_sec

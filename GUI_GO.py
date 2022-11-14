@@ -5336,6 +5336,8 @@ class progressWidget(QWidget):
 
         global x_vars
         x = copy.deepcopy(x_vars)
+        if len(x) == 0:
+            x = go.return_x()
         self.plotWidget.clear()
         self.computeScan(x)
 
