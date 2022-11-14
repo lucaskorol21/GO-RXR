@@ -5218,11 +5218,10 @@ class progressWidget(QWidget):
 
         self.setLayout(pagelayout)
 
-    def computeScan(self):
-        global x_vars
-        if len(x_vars) != 0:
+    def computeScan(self, x_array):
+
+        if len(x_array) != 0:
             # compute the scans for all the new x values
-            x_array = copy.deepcopy(x_vars)
             n = len(self.objFun['total'])
 
 
@@ -5336,10 +5335,12 @@ class progressWidget(QWidget):
                 self.objFun['total'].append(fun)
 
     def plotProgress(self):
+
         global x_vars
-        self.plotWidget.clear()
-        self.computeScan()
         x = copy.deepcopy(x_vars)
+        self.plotWidget.clear()
+        self.computeScan(x)
+
         idx = self.whichPlot.index(True)
         n = len(x)
         iterations = np.arange(1,n+1)
