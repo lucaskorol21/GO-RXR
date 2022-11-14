@@ -3033,8 +3033,6 @@ class reflectivityWidget(QWidget):
                     qz = dat[0]
 
                     R = dat[2]
-
-
                     E = self.data_dict[name]['Energy']
 
                     qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
@@ -4105,10 +4103,8 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append(float(w))
             sWeights.append(temp)
 
-        x = []
-        fun = 0
         data_dict = self.rWidget.data_dict
-        data = self.rWidget.data
+
         sample = copy.deepcopy(self.sample)
 
         backS = copy.deepcopy(self.rWidget.bs)
@@ -4128,7 +4124,6 @@ class GlobalOptimizationWidget(QWidget):
                 self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
                                          self.objective, self.shape_weight)
             elif idx == 3:
-                bounds = (lw, up)
                 self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
                                          self.objective, self.shape_weight)
 
@@ -5159,7 +5154,8 @@ class ReflectometryApp(QMainWindow):
 class progressWidget(QWidget):
     def __init__(self):
         super().__init__()
-
+        # which plot
+        self.whichPlot = [True, False, False, False]
         # parameters required for calculations
         self.sample = None
         self.scans = None
@@ -5171,6 +5167,11 @@ class progressWidget(QWidget):
         self.sWeights = None
         self.objective = None
         self.shape_weight = None
+
+        self.objFun = dict()
+        self.costFun = dict()
+        self.varFun = dict()
+        self.par = []  # keep track of the names
 
         pagelayout = QHBoxLayout()
 
@@ -5218,7 +5219,223 @@ class progressWidget(QWidget):
         self.setLayout(pagelayout)
 
     def computeScan(self):
-        pass
+        global x_vars
+        if len(x_vars) != 0:
+            # compute the scans for all the new x values
+            x_array = copy.deepcopy(x_vars)
+            n = len(self.objFun['total'])
+
+
+            for x in x_array[n:]:
+                print(x)
+                sample, backS, scaleF = go.changeSampleParams(x, self.parameters, self.sample,
+                                                              self.backS, self.scaleF)
+                gamma = 0
+                fun = 0
+
+                for i, scan in enumerate(self.scans):
+                    name = scan
+
+                    xbound = self.sBounds[i]
+                    weights = self.sWeights[i]
+
+                    background_shift = float(backS[name])
+                    scaling_factor = float(scaleF[name])
+
+                    if 'Angle' not in self.data.keys():
+                        myDataScan = self.data[name]
+                        myData = myDataScan['Data']
+                        E = myDataScan['Energy']
+                        pol = myDataScan['Polarization']
+                        Rdat = np.array(myData[2])
+
+                        window = 5
+                        R = go.rolling_average(Rdat, window)
+
+                        qz = np.array(myData[0])
+                        qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+                        Rsim = Rsim[pol]
+
+
+
+                        if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+                            Rsim = np.log10(Rsim)
+                            Rdat = np.log10(Rdat)
+
+                        # total variation
+                        val = go.total_variation(R[window*2:], Rsim[window*2:])
+                        self.varFun[name].append(val*self.shape_weight)
+                        gamma = gamma + val
+
+                        for b in range(len(xbound)):
+                            lw = xbound[b][0]
+                            up = xbound[b][1]
+                            w = weights[b]
+                            fun_val = 0
+
+                            idx = [x for x in range(len(qz)) if
+                                   qz[x] >= lw and qz[x] <= up]  # determines index boundaries
+
+                            if len(idx) != 0:
+                                if self.objective == 'Chi-Square':
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+
+                                elif self.objective == 'L1-Norm':
+                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                elif self.objective == 'L2-Norm':
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+                        self.costFun[name].append(fun_val)
+                        self.objFun[name].append(fun_val + val*self.shape_weight)
+                        fun = fun + fun_val
+
+                    else:
+                        myDataScan = self.data[name]
+                        myData = myDataScan['Data']
+                        Theta = myDataScan['Angle']
+                        Rdat = np.array(myData[2])
+                        E = np.array(myData[3])
+                        pol = myDataScan['Polarization']
+
+                        window = 5
+                        R = go.rolling_average(Rdat, window)
+
+                        E, Rsim = sample.energy_scan(Theta, E)
+                        Rsim = Rsim[pol]
+                        if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+                            Rsim = np.log10(Rsim)
+                            Rdat = np.log10(Rdat)
+
+                        # total variation
+                        val = go.total_variation(R[window * 2:], Rsim[window * 2:])
+                        self.varFun[name].append(val*self.shape_weight)
+                        gamma = gamma + val
+
+                        for b in range(len(xbound)):
+                            lw = xbound[b][0]
+                            up = xbound[b][1]
+                            w = weights[b]
+
+                            idx = [x for x in range(len(E)) if E[x] >= lw and E[x] <= up]  # determines index boundaries
+
+                            if len(idx) != 0:
+                                if self.objective == 'Chi-Square':
+                                    fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                                elif self.objective == 'L1-Norm':
+                                    fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                elif self.objective == 'L2-Norm':
+                                    fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+                        self.costFun[name].append(fun_val)
+                        self.objFun[name].append(fun_val + val * self.shape_weight)
+                        fun = fun + fun_val
+
+                self.costFun['total'].append(fun)
+                self.varFun['total'].append(gamma*self.shape_weight)
+                fun = fun + gamma*self.shape_weight
+                self.objFun['total'].append(fun)
+
+    def plotProgress(self):
+        global x_vars
+        self.plotWidget.clear()
+        self.computeScan()
+        x = copy.deepcopy(x_vars)
+        idx = self.whichPlot.index(True)
+        n = len(x)
+        iterations = np.arange(1,n+1)
+
+        if idx == 0:  # total objective function
+            for i,key in enumerate(list(self.objFun.keys())):
+                val = self.objFun[key]
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.setLabel('left', "Function")
+                self.plotWidget.setLabel('bottom', "Iteration")
+        elif idx == 1:  # cost function
+            for i, key in enumerate(list(self.costFun.keys())):
+                val = self.costFun[key]
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.setLabel('left', "Function")
+                self.plotWidget.setLabel('bottom', "Iteration")
+        elif idx == 2:  # shape function
+            for i, key in enumerate(list(self.varFun.keys())):
+                val = self.varFun[key]
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.setLabel('left', "Function")
+                self.plotWidget.setLabel('bottom', "Iteration")
+        elif idx == 3:  # varying parameters
+            for i in range(len(self.par)):
+                x_values = [x_val[i] for x_val in x]
+                self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i,n), width=2), name=self.par[i])
+
+    def getName(self, p):
+        name = ''
+        n = len(p)
+        shift = 0
+        if n != 0:
+            if type(p[0]) == int:  # sample parameters
+                layer = p[0]
+                param_type = p[1]
+
+                if param_type == 'STRUCTURAL':  # structural case
+                    mode = p[2]
+                    if mode == 'ELEMENT':
+                        element = p[3]
+                        char = p[4]
+                        if char == 'THICKNESS':
+                            name = element + '-' + 'th. ' + str(layer)
+                        elif char == 'DENSITY':
+                            name = element + '-' + 'dens. ' + str(layer)
+                        elif char == 'ROUGHNESS':
+                            name = element + '-' + 'rough. ' + str(layer)
+                        elif char == 'LINKED ROUGHNESS':
+                            name = element + '-' + 'Lrough. ' + str(layer)
+                    elif mode == 'COMPOUND':
+                        char = p[3]
+                        compound = ''
+
+                        # gets all the elements in the layer
+                        for e in self.sWidget.structTableInfo[layer]:
+                            compound = compound + e[0]
+
+                        if char == 'THICKNESS':
+                            name = compound + '-th. ' + str(layer)
+                        elif char == 'DENSITY':
+                            name = compound + '-dens. ' + str(layer)
+                        elif char == 'ROUGHNESS':
+                            name = compound + '-rough. ' + str(layer)
+                        elif char == 'LINKED ROUGHNESS':
+                            name = compound + '-Lrough. ' + str(layer)
+
+                elif param_type == 'POLYMORPHOUS':
+                    var = p[-1]
+                    name = var + ' -ratio ' + str(layer)
+
+                elif param_type == 'MAGNETIC':
+                    var = p[-1]
+                    name = var + ' -mdens. ' + str(layer)
+
+            elif p[0] == 'SCATTERING FACTOR':  # scattering factor case
+                name = name + 'ff'
+                scattering_factor = p[2]
+                param_type = p[1]
+
+                if param_type == 'MAGNETIC':
+                    name = name + 'm-' + scattering_factor
+                else:
+                    name = name + '-' + scattering_factor
+
+            elif p[0] == 'BACKGROUND SHIFT':  # background shift case
+                if p[1] == 'ALL SCANS':
+                    name = 'bShift-All'
+                else:
+                    name = 'bShift-' + p[1]
+            elif p[0] == 'SCALING FACTOR':  # scaling factor
+                if p[1] == 'ALL SCANS':
+                    name = 'sFactor-All'
+                else:
+                    name = 'sFactor-' + p[1]
+
+        return name
 
     def startSaving(self, sample, data_dict, scans, backS, scaleF, parameters,  sBounds, sWeights,
                      objective, shape_weight):
@@ -5233,12 +5450,34 @@ class progressWidget(QWidget):
         self.sWeights = sWeights
         self.objective = objective
         self.shape_weight = shape_weight
+
         # clear x and start saving as optimization started
         global x_vars
         x_vars = []
 
 
+        # make call to function that will plot the optimization progress
+        self.objFun = dict()
+        self.objFun['total'] = []
 
+        self.costFun = dict()
+        self.costFun['total'] = []
+
+        self.varFun = dict()
+        self.varFun['total'] = []
+
+        # initializing objective, cost, shape lists
+        for scan in scans:
+            name = scan
+            self.objFun[name] = []
+            self.costFun[name] = []
+            self.varFun[name] = []
+
+        self.par = []
+        #initialize the names still
+        for p in self.parameters:
+            p_name = self.getName(p)
+            self.par.append(p_name)
 
 
     def _setObj(self):
@@ -5247,6 +5486,9 @@ class progressWidget(QWidget):
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: lightGrey')
 
+        self.whichPlot = [True, False, False, False]
+
+        self.plotProgress()
         # change plot
 
     def _setCost(self):
@@ -5255,6 +5497,9 @@ class progressWidget(QWidget):
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: lightGrey')
 
+        self.whichPlot = [False, True, False, False]
+
+        self.plotProgress()
         # change plot
 
     def _setVar(self):
@@ -5263,6 +5508,9 @@ class progressWidget(QWidget):
         self.varButton.setStyleSheet('background: blue; color: white')
         self.parButton.setStyleSheet('background: lightGrey')
 
+        self.whichPlot = [False, False, True, False]
+
+        self.plotProgress()
         # change plot
 
     def _setPar(self):
@@ -5271,6 +5519,9 @@ class progressWidget(QWidget):
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: blue; color: white')
 
+        self.whichPlot = [False, False, False, True]
+
+        self.plotProgress()
         # change plot
 
 class showFormFactors(QDialog):

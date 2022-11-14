@@ -212,11 +212,12 @@ def scanCompute(x, *args):
             qz = np.array(myData[0])
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
-            gamma = gamma + total_variation(np.log10(R[2*window:]), np.log(Rsim[2*window:]))
 
             if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
+
+            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])
 
             for b in range(len(xbound)):
                 lw = xbound[b][0]
@@ -242,6 +243,8 @@ def scanCompute(x, *args):
             E = np.array(myData[3])
             pol = myDataScan['Polarization']
 
+            window = 5
+            R = rolling_average(Rdat, window)
 
             E, Rsim = sample.energy_scan(Theta, E)
             Rsim = Rsim[pol]
@@ -249,6 +252,7 @@ def scanCompute(x, *args):
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
 
+            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])
             for b in range(len(xbound)):
                 lw = xbound[b][0]
                 up = xbound[b][1]
