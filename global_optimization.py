@@ -403,6 +403,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
 def return_x():
     global x_vars
     return x_vars
+
 class MinimizeStopper(object):
     def __init__(self, max_sec=0.3):
         self.max_sec = max_sec
