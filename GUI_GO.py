@@ -408,6 +408,9 @@ class sampleWidget(QWidget):
         self.elementBox = QComboBox()
         self.variationElements = sample.poly_elements
 
+        self.struct_ff = []
+        self.mag_ff = []
+
         self.magData = {ele: [[[''], [''], ['']] for i in range(len(sample.structure))] for ele in
                         sample.myelements}
         self.magGo = True
@@ -588,6 +591,7 @@ class sampleWidget(QWidget):
         self.energyShiftTable.setColumnCount(len(keys))
         self.energyShiftTable.setRowCount(1)
         self.energyShiftTable.setHorizontalHeaderLabels(keys)
+
         for column,key in enumerate(keys):
             item = QTableWidgetItem(str(self.eShift[key]))
             self.energyShiftTable.setItem(0, column, item)
@@ -610,7 +614,20 @@ class sampleWidget(QWidget):
                             self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
 
         for col in my_fits:
-            self.energyShiftTable.item(0, col).setBackground(QtGui.QColor(150, 255, 150))
+            self.energyShiftTable.item(0, col).setBackground(QtGui.QColor(0, 255, 0))
+
+        # checks to see if user has any form factors in the current working directory
+        for col, key in enumerate(keys):
+            if key.startswith('ff-'):
+                name = key.strip('ff-')
+                if name in self.struct_ff:
+                    self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
+
+            elif key.startswith('ffm'):
+                name = key.strip('ffm')
+                if name in self.mag_ff:
+                    self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
+
 
         self.energyShiftTable.blockSignals(False)
 
@@ -4788,6 +4805,8 @@ class ReflectometryApp(QMainWindow):
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))
+                self._sampleWidget.struct_ff = struct_names
+                self._sampleWidget.mag_ff = mag_names
 
                 self.sample = ds.ReadSampleHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
