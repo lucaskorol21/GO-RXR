@@ -11,7 +11,7 @@ import multiprocessing as mp
 import sys
 import os
 from PIL import Image, ImageTk
-
+from GUI_GO import x_vars
 
 import functools
 
@@ -177,6 +177,12 @@ def scanCompute(x, *args):
     sWeights = args[7]
     objective = args[8]
     shape_weight = args[9]
+    optimizeSave = args[10]
+
+    # determines if saving will be done in callback function
+    if optimizeSave:
+        x_vars.append(x)
+
     gamma = 0
     sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF)
 
@@ -271,7 +277,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -301,7 +307,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -326,7 +332,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]
 
     p = True
     if goParam[6] == 'True':
@@ -354,7 +360,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True]
 
     diff = goParam[8]
     _max = goParam[9]

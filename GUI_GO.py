@@ -22,6 +22,11 @@ import pickle
 global stop
 stop = False
 
+# keep track of the current state of the global optimization
+global x_vars
+x_vars = []
+
+
 
 def stringcheck(string):
 
@@ -1820,6 +1825,7 @@ class sampleWidget(QWidget):
         self.polyButton.setStyleSheet('background: lightGrey')
         self.magButton.setStyleSheet('background: blue; color: white')
         self.shiftButton.setStyleSheet('background: lightGrey')
+
         self.sampleInfoLayout.setCurrentIndex(2)
 
     def _densityprofile(self):
@@ -3171,31 +3177,33 @@ class callback():
         self.Finish = False
 
     def stop_evolution(self, x, convergence):
-
+        x_vars.append(x)
         if stop:
             return True
         else:
             return False
 
     def stop_simplicial(self, x):
-
+        x_vars.append(x)
         if stop:
             return True
         else:
             return False
-    def stop_annealing(self, x, f, contect):
 
+    def stop_annealing(self, x, f, contect):
+        x_vars.append(x)
         if stop:
             return True
         else:
             return False
 
 class GlobalOptimizationWidget(QWidget):
-    def __init__(self, sWidget, rWidget, rApp):
+    def __init__(self, sWidget, rWidget, pWidget, rApp):
         super().__init__()
 
         self.sWidget = sWidget
         self.rWidget = rWidget
+        self.pWidget = pWidget
         self.rApp = rApp
 
         self.sample = copy.deepcopy(self.sWidget.sample)
@@ -4055,6 +4063,75 @@ class GlobalOptimizationWidget(QWidget):
     def run_first(self):
         global stop
         stop = False
+
+        # input the appropriate parameters into progressWidget
+
+        # putting the parameters and their boundaries in the proper format!
+        parameters = copy.deepcopy(self.sWidget.parameterFit)
+        for fit in self.rWidget.sfBsFitParams:
+            parameters.append(fit)
+
+        self.parameters = parameters  # needed for creating new sample
+        lw = []
+        up = []
+        x0 = []
+
+        for b in self.sWidget.currentVal:
+            lw.append(float(b[1][0]))
+            up.append(float(b[1][1]))
+            x0.append(float(b[0]))
+
+        for b in self.rWidget.currentVal:
+            lw.append(float(b[1][0]))
+            up.append(float(b[1][1]))
+            x0.append(float(b[0]))
+
+        bounds = list(zip(lw, up))
+
+        scans = copy.deepcopy(self.rWidget.fit)
+
+        # determines the boundaries of the scans
+        sBounds = []
+        for bound in self.rWidget.bounds:
+            temp = []
+            for b in bound:
+                temp.append((float(b[0]), float(b[1])))
+            sBounds.append(temp)
+
+        sWeights = []
+        for weight in self.rWidget.weights:
+            temp = []
+            for w in weight:
+                temp.append(float(w))
+            sWeights.append(temp)
+
+        x = []
+        fun = 0
+        data_dict = self.rWidget.data_dict
+        data = self.rWidget.data
+        sample = copy.deepcopy(self.sample)
+
+        backS = copy.deepcopy(self.rWidget.bs)
+        scaleF = copy.deepcopy(self.rWidget.sf)
+
+        idx = self.algorithmSelect.currentIndex()
+
+        if len(parameters) != 0 and len(scans) != 0:
+            if idx == 0:
+                # initialize the parameters for optimization saving
+                self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
+                                         self.objective, self.shape_weight)
+            elif idx == 1:
+                self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
+                                         self.objective, self.shape_weight)
+            elif idx == 2:
+                self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
+                                         self.objective, self.shape_weight)
+            elif idx == 3:
+                bounds = (lw, up)
+                self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
+                                         self.objective, self.shape_weight)
+
         self.sample = copy.deepcopy(self.sWidget._createSample())
         self.temp_sample = copy.deepcopy(self.sample)  # makes sure that
         self.worker = Worker(self)
@@ -4506,17 +4583,16 @@ class ReflectometryApp(QMainWindow):
         pagelayout.addLayout(buttonlayout)
         pagelayout.addLayout(self.stackedlayout)
 
-        label1 = QLabel('Label 1')
-        label2 = QLabel('Label 2')
-        label3 = QLabel('Label 3')
-
         self.sampleButton = QPushButton('Sample')
         self.reflButton = QPushButton('Reflectivity')
-        self.goButton = QPushButton('Global Optimization')
+        self.goButton = QPushButton('Optimization')
+        self.progressButton = QPushButton('Progress')
 
         self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
-        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self)
+        self._progressWidget = progressWidget()
+        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._progressWidget, self)
+
 
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.sampleButton.clicked.connect(self.activate_tab_1)
@@ -4532,6 +4608,13 @@ class ReflectometryApp(QMainWindow):
         self.goButton.clicked.connect(self.activate_tab_3)
         buttonlayout.addWidget(self.goButton)
         self.stackedlayout.addWidget(self._goWidget)
+
+        self.progressButton.setStyleSheet('background: pink')
+        self.progressButton.clicked.connect(self.activate_tab_4)
+        buttonlayout.addWidget(self.progressButton)
+        self.stackedlayout.addWidget(self._progressWidget)
+
+
 
         widget = QWidget()
         widget.setLayout(pagelayout)
@@ -5023,6 +5106,7 @@ class ReflectometryApp(QMainWindow):
     def _help(self):
         pass
     def activate_tab_1(self):
+        # sample setup
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
@@ -5031,9 +5115,11 @@ class ReflectometryApp(QMainWindow):
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
+        self.progressButton.setStyleSheet("background-color: pink")
         self.stackedlayout.setCurrentIndex(0)
 
     def activate_tab_2(self):
+        # reflectivity
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = copy.deepcopy(self.sample)
         self._goWidget.sample = copy.deepcopy(self.sample)
@@ -5043,9 +5129,11 @@ class ReflectometryApp(QMainWindow):
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : magenta")
         self.goButton.setStyleSheet("background-color : pink")
+        self.progressButton.setStyleSheet("background-color: pink")
         self.stackedlayout.setCurrentIndex(1)
 
     def activate_tab_3(self):
+        # optimization
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
@@ -5053,11 +5141,137 @@ class ReflectometryApp(QMainWindow):
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
-        print(self._sampleWidget.currentVal)
+        self.progressButton.setStyleSheet("background-color: pink")
         self._goWidget.setTableFit()
         self._goWidget.updateScreen()
 
         self.stackedlayout.setCurrentIndex(2)
+
+    def activate_tab_4(self):
+        # optimization progress
+        self.sampleButton.setStyleSheet("background-color : pink")
+        self.reflButton.setStyleSheet("background-color : pink")
+        self.goButton.setStyleSheet("background-color : pink")
+        self.progressButton.setStyleSheet("background-color: magenta")
+
+        self.stackedlayout.setCurrentIndex(3)
+
+class progressWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        # parameters required for calculations
+        self.sample = None
+        self.scans = None
+        self.data = None
+        self.backS = None
+        self.scaleF = None
+        self.parameters = None
+        self.sBounds = None
+        self.sWeights = None
+        self.objective = None
+        self.shape_weight = None
+
+        pagelayout = QHBoxLayout()
+
+        buttonLayout = QVBoxLayout()
+
+        # plot objective function
+        self.objButton = QPushButton('Objective Function')
+        self.objButton.clicked.connect(self._setObj)
+        self.objButton.setFixedWidth(200)
+        self.objButton.setStyleSheet('background: blue; color: white')
+        buttonLayout.addWidget(self.objButton)
+
+        # plot total cost function
+        self.costButton = QPushButton('Cost Function')
+        self.costButton.clicked.connect(self._setCost)
+        self.costButton.setFixedWidth(200)
+        self.costButton.setStyleSheet('background: lightGrey')
+        buttonLayout.addWidget(self.costButton)
+
+
+        # plot shape parameterization
+        self.varButton = QPushButton('Variation Function')
+        self.varButton.clicked.connect(self._setVar)
+        self.varButton.setFixedWidth(200)
+        self.varButton.setStyleSheet('background: lightGrey')
+        buttonLayout.addWidget(self.varButton)
+
+        # show variation in parameters
+        self.parButton = QPushButton('Parameters')
+        self.parButton.clicked.connect(self._setPar)
+        self.parButton.setFixedWidth(200)
+        self.parButton.setStyleSheet('background: lightGrey')
+        buttonLayout.addWidget(self.parButton)
+
+        buttonLayout.addStretch(1)
+
+        # plot that will show current progress
+        self.plotWidget = pg.PlotWidget()
+        self.plotWidget.setBackground('w')
+        self.plotWidget.addLegend()
+
+        pagelayout.addLayout(buttonLayout)
+        pagelayout.addWidget(self.plotWidget)
+
+        self.setLayout(pagelayout)
+
+    def computeScan(self):
+        pass
+
+    def startSaving(self, sample, data_dict, scans, backS, scaleF, parameters,  sBounds, sWeights,
+                     objective, shape_weight):
+
+        self.sample = sample
+        self.scans = scans
+        self.data = data_dict
+        self.backS = backS
+        self.scaleF = scaleF
+        self.parameters = parameters
+        self.sBounds = sBounds
+        self.sWeights = sWeights
+        self.objective = objective
+        self.shape_weight = shape_weight
+        # clear x and start saving as optimization started
+        global x_vars
+        x_vars = []
+
+
+
+
+
+    def _setObj(self):
+        self.objButton.setStyleSheet('background: blue; color: white')
+        self.costButton.setStyleSheet('background: lightGrey')
+        self.varButton.setStyleSheet('background: lightGrey')
+        self.parButton.setStyleSheet('background: lightGrey')
+
+        # change plot
+
+    def _setCost(self):
+        self.objButton.setStyleSheet('background: lightGrey')
+        self.costButton.setStyleSheet('background: blue; color: white')
+        self.varButton.setStyleSheet('background: lightGrey')
+        self.parButton.setStyleSheet('background: lightGrey')
+
+        # change plot
+
+    def _setVar(self):
+        self.objButton.setStyleSheet('background: lightGrey')
+        self.costButton.setStyleSheet('background: lightGrey')
+        self.varButton.setStyleSheet('background: blue; color: white')
+        self.parButton.setStyleSheet('background: lightGrey')
+
+        # change plot
+
+    def _setPar(self):
+        self.objButton.setStyleSheet('background: lightGrey')
+        self.costButton.setStyleSheet('background: lightGrey')
+        self.varButton.setStyleSheet('background: lightGrey')
+        self.parButton.setStyleSheet('background: blue; color: white')
+
+        # change plot
 
 class showFormFactors(QDialog):
     def __init__(self, sample):
