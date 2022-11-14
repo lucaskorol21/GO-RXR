@@ -3687,8 +3687,7 @@ class GlobalOptimizationWidget(QWidget):
             elif col == 3:
                 self.rWidget.currentVal[row][1][1] = float(item)
         # first let's figure out which parameters we are referring too
-        print('hello')
-        pass
+
     def _changeObjectiveFunction(self):
         rbtn = self.sender()
 
@@ -5226,7 +5225,6 @@ class progressWidget(QWidget):
 
 
             for x in x_array[n:]:
-                print(x)
                 sample, backS, scaleF = go.changeSampleParams(x, self.parameters, self.sample,
                                                               self.backS, self.scaleF)
                 gamma = 0
@@ -5756,7 +5754,6 @@ class showFormFactors(QDialog):
         if item != '':
             self.structElementsSelect.removeItem(idx)
             self.selectedff.pop(idx)
-            print(self.selectedff)
             self._plot_ff()
 
     def _removeffm(self):
