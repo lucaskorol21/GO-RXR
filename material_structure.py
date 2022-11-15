@@ -571,6 +571,9 @@ class slab:
             else: # Multiple entries
                 self.poly_elements[ele] = polymorph
 
+
+
+
         # Sets polymorph values to appropriate element in the correct layer
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = np.array(poly_ratio)

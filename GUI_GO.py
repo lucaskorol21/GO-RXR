@@ -753,7 +753,11 @@ class sampleWidget(QWidget):
             value = self.varTable.item(row, column).text()  # setting varData correctly depending on user input
             prev_value = self.varData[element][layer][column][row]
 
-            self.varData[element][layer][column][row] = value
+            if column == 1:
+                if type(self.varData[element][layer][column]) is np.ndarray:
+                    self.varData[element][layer][column] = list(self.varData[element][layer][column])
+                self.varData[element][layer][column][row] = value
+
             # everytime we need to check is all values in the table are nothing
             # else we need to initialize a new set of polymorphs
 
@@ -1880,6 +1884,7 @@ class sampleWidget(QWidget):
             self.densityWidget.plot(thickness, -mag_val[idx], pen=pg.mkPen((num-idx,num),width=2, style=Qt.DashLine), name=myname)
         self.densityWidget.setLabel('left', "Density (mol/cm^3)")
         self.densityWidget.setLabel('bottom', "Thickness (Å)")
+
     def _createSample(self):
         # This function takes the information from the tables and converts it into a usable form
 
@@ -1929,6 +1934,7 @@ class sampleWidget(QWidget):
                 poly = self.varData[ele_name][idx]  # retrieves the element variation data for particular layer
 
                 names = poly[0]
+
                 ratio = poly[1]
                 scattering_factor = poly[2]
 
@@ -3048,11 +3054,13 @@ class reflectivityWidget(QWidget):
                     qz = dat[0]
 
                     R = dat[2]
+
                     E = self.data_dict[name]['Energy']
 
                     qz, Rsim = self.sample.reflectivity(E,qz, s_min=step_size, bShift=background_shift, sFactor=scaling_factor)
                     Theta = np.arcsin(qz / (E * 0.001013546143))*180/np.pi
                     Rsim = Rsim[pol]
+                    n = len(qz)
                     if pol == 'S' or pol =='P' or pol =='LC' or pol == 'RC':
 
                         if self.axis_state:
@@ -4600,7 +4608,7 @@ class ReflectometryApp(QMainWindow):
 
         self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
-        self._progressWidget = progressWidget()
+        self._progressWidget = progressWidget(self._sampleWidget)
         self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._progressWidget, self)
 
 
@@ -5175,9 +5183,10 @@ class ReflectometryApp(QMainWindow):
         self.stackedlayout.setCurrentIndex(3)
 
 class progressWidget(QWidget):
-    def __init__(self):
+    def __init__(self, sWidget):
         super().__init__()
         # which plot
+        self.sWidget = sWidget
         self.whichPlot = [True, False, False, False]
         # parameters required for calculations
         self.sample = None
