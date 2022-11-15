@@ -5266,6 +5266,7 @@ class progressWidget(QWidget):
                 for i, scan in enumerate(self.scans):
                     name = scan
 
+                    fun_val = 0
                     xbound = self.sBounds[i]
                     weights = self.sWeights[i]
 
@@ -5278,6 +5279,7 @@ class progressWidget(QWidget):
                         E = myDataScan['Energy']
                         pol = myDataScan['Polarization']
                         Rdat = np.array(myData[2])
+
 
                         window = 5
                         R = go.rolling_average(Rdat, window)
@@ -5293,19 +5295,21 @@ class progressWidget(QWidget):
                             Rdat = np.log10(Rdat)
 
                         # total variation
-                        val = go.total_variation(R[window*2:], Rsim[window*2:])
+                        val = go.total_variation(R[window*2:], Rsim[window*2:])/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
+                        m = 0
                         for b in range(len(xbound)):
                             lw = xbound[b][0]
                             up = xbound[b][1]
                             w = weights[b]
-                            fun_val = 0
 
                             idx = [x for x in range(len(qz)) if
-                                   qz[x] >= lw and qz[x] <= up]  # determines index boundaries
+                                   qz[x] >= lw and qz[x] < up]  # determines index boundaries
 
+                            n = len(idx)
+                            m = m + n
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
@@ -5315,9 +5319,10 @@ class progressWidget(QWidget):
                                 elif self.objective == 'L2-Norm':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
 
-                        self.costFun[name].append(fun_val)
-                        self.objFun[name].append(fun_val + val*self.shape_weight)
-                        fun = fun + fun_val
+
+                        self.costFun[name].append(fun_val/m)
+                        self.objFun[name].append(fun_val/m + val*self.shape_weight)
+                        fun = fun + fun_val/m
 
                     else:
                         myDataScan = self.data[name]
@@ -5326,6 +5331,7 @@ class progressWidget(QWidget):
                         Rdat = np.array(myData[2])
                         E = np.array(myData[3])
                         pol = myDataScan['Polarization']
+
 
                         window = 5
                         R = go.rolling_average(Rdat, window)
@@ -5337,28 +5343,31 @@ class progressWidget(QWidget):
                             Rdat = np.log10(Rdat)
 
                         # total variation
-                        val = go.total_variation(R[window * 2:], Rsim[window * 2:])
+                        val = go.total_variation(R[window * 2:], Rsim[window * 2:])/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
+                        m = 0
                         for b in range(len(xbound)):
                             lw = xbound[b][0]
                             up = xbound[b][1]
                             w = weights[b]
 
-                            idx = [x for x in range(len(E)) if E[x] >= lw and E[x] <= up]  # determines index boundaries
+                            idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
 
+                            n= len(idx)
+                            m = m + n
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
-                                    fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                                 elif self.objective == 'L1-Norm':
-                                    fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                                 elif self.objective == 'L2-Norm':
-                                    fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
 
-                        self.costFun[name].append(fun_val)
-                        self.objFun[name].append(fun_val + val * self.shape_weight)
-                        fun = fun + fun_val
+                        self.costFun[name].append(fun_val/m)
+                        self.objFun[name].append(fun_val/m + val * self.shape_weight)
+                        fun = fun + fun_val/m
 
                 self.costFun['total'].append(fun)
                 self.varFun['total'].append(gamma*self.shape_weight)

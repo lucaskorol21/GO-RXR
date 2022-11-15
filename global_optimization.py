@@ -157,16 +157,18 @@ def rolling_average(R, window):
 def total_variation(R, Rsim):
     # calculates the total variation (arc-length) of the function
     # this will be a good judge of whether or not the shape of the function is right
+    Rnew = R-Rsim
+    #totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
+    #totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
 
-    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
-    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
-
-    return abs(totVar-totVarSim)
+    variation = sum([abs(Rnew[idx+1]-Rnew[idx]) for idx in range(len(Rnew)-1)])
+    return variation
 
 
 def scanCompute(x, *args):
 
     fun = 0  # used to minimize the global optimization
+    gamma = 0
 
     sample = args[0]  # slab class
     scans = args[1]  # data info
@@ -185,7 +187,7 @@ def scanCompute(x, *args):
     if optimizeSave:
         x_vars.append(x)
 
-    gamma = 0
+
     sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF)
 
 
@@ -206,6 +208,7 @@ def scanCompute(x, *args):
             E = myDataScan['Energy']
             pol = myDataScan['Polarization']
             Rdat = np.array(myData[2])
+            fun_val = 0
 
             window = 5
             R = rolling_average(Rdat, window)
@@ -219,23 +222,26 @@ def scanCompute(x, *args):
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
 
-            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])
 
+            m = 0
             for b in range(len(xbound)):
                 lw = xbound[b][0]
                 up = xbound[b][1]
                 w = weights[b]
 
-                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] <= up]  # determines index boundaries
-
-                if len(idx) != 0:
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]  # determines index boundaries
+                n = len(idx)
+                m = m + n
+                if n != 0:
                     if objective == 'Chi-Square':
-                        fun = fun + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
+                        fun_val = fun_val + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
                     elif objective == 'L1-Norm':
-                        fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
-                        fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
 
+            fun = fun + fun_val/m
+            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])/len(R[2*window:])
 
         elif scanType == 'Energy':
             myDataScan = data[name]
@@ -244,7 +250,9 @@ def scanCompute(x, *args):
             Rdat = np.array(myData[2])
             E = np.array(myData[3])
             pol = myDataScan['Polarization']
+            fun_val = 0
 
+            n = len(Rdat)
             window = 5
             R = rolling_average(Rdat, window)
 
@@ -254,21 +262,27 @@ def scanCompute(x, *args):
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
 
-            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])
+            m = 0
             for b in range(len(xbound)):
                 lw = xbound[b][0]
                 up = xbound[b][1]
                 w = weights[b]
 
-                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] <= up]  # determines index boundaries
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                n = len(idx)
+                m = m + n
 
                 if len(idx) != 0:
                     if objective == 'Chi-Square':
-                        fun = fun + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                     elif objective == 'L1-Norm':
-                        fun = fun + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
-                        fun = fun + sum((Rdat[idx] - Rsim[idx])**2) * w
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+
+            fun = fun + fun_val/m
+            gamma = gamma + total_variation(R[2 * window:], Rsim[2 * window:])/len(R[2*window:])
 
     fun = fun + gamma*shape_weight
 
