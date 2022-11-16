@@ -7,6 +7,123 @@ from time import *
 import ast
 import h5py
 
+
+def getTitleInfo(title):
+    """
+    Purpose: Retrieves important information in the scan title
+    :param title: title/label of the scan
+    :return:
+    """
+    title = title.split('_')  # split title into an array
+
+    angle = None
+    energy = ''
+    scan_number = title[0]
+    polarization = 'S'
+
+    # Determines the scan type
+    if title[1] == 'A':
+        energy = title[2]
+        scanType = 'Reflectivity'
+        if title[3] == 'S':
+            polarization = 'S'
+        elif title[3] == 'P':
+            polarization = 'P'
+        elif title[3] == 'L':
+            polarization = 'L'
+        elif title[3] == 'R':
+            polarization = 'R'
+        elif 'R' in title[3] and 'L' in title[3]:
+            polarization = 'AC'
+        elif 'S' in title[3] and 'P' in title[3]:
+            polarization = 'AL'
+    else:
+        energy = title[2]
+        scanType = 'Energy'
+        angle = title[2].replace('Th','')
+        if title[3] == 'S':
+            polarization = 'S'
+        elif title[3] == 'P':
+            polarization = 'P'
+        elif title[3] == 'L':
+            polarization = 'L'
+        elif title[3] == 'R':
+            polarization = 'R'
+        elif 'R' in title[3] and 'L' in title[3]:
+            polarization = 'AC'
+        elif 'S' in title[3] and 'P' in title[3]:
+            polarization = 'AL'
+
+    return scan_number, scanType, energy, polarization, angle
+
+def Read_ReMagX(fname):
+    if fname.endswith('.all'):
+        # good to go
+        is_sample = False
+        new_data = True
+
+        current_scan = 0  # keeps track of which scan we are on!
+
+        # keeps track of the data
+        qz = list()
+        angle = list()
+        R = list()
+        E = list()
+        scanType = 'Reflectivity'
+        title = ''
+        name = ''
+
+        data_dict = dict()
+
+        with open(fname, 'r') as f:
+            for line in f.readlines():
+                line = line.split()
+
+                # determines if we can start reading in the data
+                if '#' in line and 'measurement' in line and 'data' in line:
+                    is_data = True
+
+
+                if len(line) == 3 and is_data:
+                    if line[1] == '=':  # makes sure we are only evaluating what we want to be
+
+                        if line[0] == 'datasetnumber':
+                            current_scan = int(line[2])
+                            new_data = True
+
+                        # new data
+                        if new_data:
+                            if current_scan > 0:  # where we can set the data
+                                pass
+                            qz = list()
+                            angle = list()
+                            R = list()
+                            E = list()
+                            new_data = False
+
+
+                        elif line[0] == 'datasettitle':
+                            scan_number, scanType, energy, pol, angle = getTitleInfo(line[2])
+                            name = ''
+                            if scanType == 'Reflectivity':
+                                name = scan_number +'_' + energy + '_' + pol
+                                if pol == 'AL' or pol == 'AC':
+                                    name = name + '_Asymm'
+                                data_dict[name] = dict()
+
+                            elif scanType == 'Energy':
+                                name = scan_number + '_Th'+ angle +'_' + energy + '_' + pol
+                                if pol == 'AL' or pol == 'AC':
+                                    name = name + '_Asymm'
+                                data_dict[name] = dict()
+
+                        elif line[0] == 'datasetenergy':
+                            Energy = line[3]
+                        elif line[0] == '':
+                            pass
+                            # do something else
+                            pass
+
 def evaluate_list(string):
     # check to make sure it is a list
 
@@ -55,6 +172,8 @@ def find_parameter_bound(string):
             my_string = ''
 
     return my_list
+
+
 def find_each_bound(string):
     my_bounds = []
     my_string = ''
@@ -2205,8 +2324,7 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
-    grp1.attrs['ScalingFactor'] = float(sample.scaling_factor)
-    grp1.attrs['BackgroundShift'] = float(sample.background_shift)
+
 
 
     # general layer information
@@ -3035,11 +3153,11 @@ if __name__ == "__main__":
 
     fname = "Pim10uc.h5"
     fnew = 'test.h5'
-    info, data_dict, sim_dict=ReadDataHDF5(fname)
+    #info, data_dict, sim_dict=ReadDataHDF5(fname)
     #print(len(data_dict['59_E429.58_Th5.0_S']['Data'][3]))
 
     #WriteSampleHDF5(fname, sample)
 
-
+    Read_ReMagX("Pim10uc.all")
 
 
