@@ -7,6 +7,186 @@ from time import *
 import ast
 import h5py
 
+def evaluate_list(string):
+    # check to make sure it is a list
+
+    if string[0] != '[' and string[-1] != ']':
+        raise TypeError('String is not a list.')
+
+    final_array = []
+    if string != '[]':
+        string = string.strip('[')  # remove brackets
+        string = string.strip(']')  # remove brackets
+
+        array1 = string.split(',')  # get all the components of the list
+        array2 = string.split()
+
+        my_array = []
+        if len(array1) > len(array2):  # string has commas
+            my_array = array1
+        elif len(array1)< len(array2):  # string has spaces
+            my_array = array2
+        elif len(array1) == len(array2):  # string has spaces and commas
+            my_array = array1
+
+        final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
+
+    return final_array
+
+
+def find_parameter_bound(string):
+    my_list = []
+
+    my_string = ''
+    count_open = 0
+    count_closed = 0
+
+    for s in string:
+        if s != '\'':
+            my_string = my_string + s  # building string
+        if s == '[':
+            count_open = count_open + 1
+        if s == ']':
+            count_closed = count_closed + 1
+        if count_open == 2 and count_closed == 2:
+            my_list.append(my_string)
+            count_open = 0
+            count_closed = 0
+            my_string = ''
+
+    return my_list
+def find_each_bound(string):
+    my_bounds = []
+    my_string = ''
+    for s in string:
+        if s != '\'' and s != ',':
+            my_string = my_string + s
+        if s == ',' and my_string[-1] == ']':
+            my_bounds.append(my_string)
+            my_string = ''
+    my_bounds.append(my_string)
+    return my_bounds
+
+def find_the_bound(string):
+    bound_list = []
+
+    # gets string in expected form
+    removeFront = True
+    if string[0] != ' ':
+        removeFront = False
+    s_idx = 0
+    while removeFront:
+        if string[s_idx] == ' ':
+            removeFront = False
+        s_idx = s_idx + 1
+    string = string[s_idx+1:-1]
+
+    open_count = 0
+    closed_count = 0
+    my_string = ''
+    for s in string:
+        if s == '[':
+            open_count = open_count + 1
+        if s ==']':
+            closed_count = closed_count + 1
+
+        if s != '[' and s != ']':
+            my_string = my_string + s
+
+        if open_count == 1 and closed_count == 1:
+            open_count = 0
+            closed_count = 0
+            my_string = my_string.split()
+            if '' in my_string:
+                my_string.remove('')
+            bound_list.append(my_string)
+            my_string = ''
+
+    for i, bound in enumerate(bound_list):
+        bound_list[i] = [float(bound[0]), float(bound[1])]
+
+    return bound_list
+
+def evaluate_bounds(bounds):
+    # format = [[[],[]],[[],[],[]],[[],[],[],[],[],[],[]]]
+    # list of list of lists
+    if bounds[0] != '[' and bounds[-1] != ']':
+        raise TypeError('String is not a list.')
+
+    final_array = []
+    if bounds != '[]':
+        bounds = bounds[1:-1]
+        bounds = find_each_bound(bounds)
+
+        for bound in bounds:
+            my_bound = find_the_bound(bound)
+            final_array.append(my_bound)
+
+    return final_array
+
+def evaluate_weights(weights):
+    # format = [[],[],[]]
+    weight_list = []
+    final_array = []
+    if weights != '[]':
+        weights = weights[1:-1]
+        print(weights)
+
+        # finding the list of weights
+        string = ''
+        num_open = 0
+        num_closed = 0
+        for s in weights:
+            if s != '[' and s != ']' and s != '\'':
+                string = string + s
+
+            if s == '[':
+                num_open = num_open + 1
+            if s == ']':
+                num_closed = num_closed + 1
+
+            if num_open == 1 and num_closed == 1:
+                num_open = 0
+                num_closed = 0
+                string = string.split(',')
+                if '' in string:
+                    string.remove('')
+                weight_list.append(string)
+                string = ''
+
+        for weight in weight_list:
+            temp_array = [float(w) for w in weight]
+
+            final_array.append(temp_array)
+    return final_array
+
+
+def find_parameter_values(string):
+    my_string = ''
+    for s in string:
+        if s != '[' and s != ']' and s != ',':
+            my_string = my_string + s
+
+    my_array = my_string.split()
+
+    final_array = [float(my_array[0]), [float(my_array[1]), float(my_array[2])]]
+
+    return final_array
+
+def evaluate_parameters(parameters):
+    # format = [[val, [lower,upper]],[val, lower, upper]]
+    if parameters[0] != '[' and parameters[-1] != ']':
+        raise TypeError('String is not a list.')
+
+    final_array = []
+    if parameters != '[]':
+        parameters = parameters[1:-1]
+        parameters = find_parameter_bound(parameters)
+        for param in parameters:
+            temp_param = find_parameter_values(param)
+            final_array.append(temp_param)
+    return final_array
+
 def saveSimulationHDF5(fname, sim_dict):
     f = h5py.File(fname, 'a')  # create fname hdf5 file
 
@@ -180,7 +360,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     results = fitting_parameters.create_group('Results')
 
     sample_fit.attrs['sfbsFit'] = str(sfBsFitParams)
-    sample_fit.attrs['sfbsVal'] = str(sfBsVal)
+    sample_fit.attrs['sfbsVal'] = np.array(sfBsVal)
     sample_fit.attrs['Sample Fit'] = str(sampleParams)
     sample_fit.attrs['Sample Val'] = str(sampleVal)
     sample_fit.attrs['Selected Scans'] = str(scans)
@@ -189,7 +369,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     scan_fit.attrs['Bounds'] = str(bounds)
     scan_fit.attrs['Weights'] = str(weights)
 
-    results.attrs['Value'] = str(x)
+    results.attrs['Value'] = str(fit)
     results.attrs['Chi'] = fun
 
     experiment = f['Experimental_data']
@@ -647,25 +827,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['FormFactors'] = str(sample.eShift)
     grp1.attrs['MagFormFactors'] = str(sample.mag_eShift)
 
-    """
-    # setting the eShift parameters depending on the user input
-    if len(list(sample.eShift.keys())) == 0:
-        grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
-    else:
-        temp = []
-        for key in list(sample.eShift.keys()):
-            temp.append([key, sample.eShift[key]])
-        grp1.attrs['FormFactors'] = str(temp)
 
-    # setting the mag eShift depending on the user input
-    if len(list(sample.mag_eShift.keys())) == 0:
-        grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)  # magnetic scattering factors
-    else:
-        temp = []
-        for key in list(sample.mag_eShift.keys()):
-            temp.append([key, sample.mag_eShift[key]])
-        grp1.attrs['MagFormFactors'] = str(temp)
-    """
     # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
     c = 2.99792458e8  # speed of light m/s
@@ -955,15 +1117,18 @@ def ReadFitHDF5(fname):
     results = fitting_parameters['Results']
 
     sfbsFit = ast.literal_eval(sample_fit.attrs['sfbsFit'])
-    sfbsVal = ast.literal_eval(sample_fit.attrs['sfbsVal'])
+    sfbsVal = evaluate_parameters(sample_fit.attrs['sfbsVal'])
     sampleFit = ast.literal_eval(sample_fit.attrs['Sample Fit'])
-    sampleVal = ast.literal_eval(sample_fit.attrs['Sample Val'])
+    sampleVal = evaluate_parameters(sample_fit.attrs['Sample Val'])
     selected_scans = ast.literal_eval(sample_fit.attrs['Selected Scans'])
+    bounds = evaluate_bounds(scan_fit.attrs['Bounds'])
+    #bounds = ast.literal_eval(scan_fit.attrs['Bounds'])
+    #weights = ast.literal_eval(scan_fit.attrs['Weights'])
+    weights = evaluate_weights(scan_fit.attrs['Weights'])
 
-    bounds = ast.literal_eval(scan_fit.attrs['Bounds'])
-    weights = ast.literal_eval(scan_fit.attrs['Weights'])
 
-    x = ast.literal_eval(results.attrs['Value'])
+    x = evaluate_list(results.attrs['Value'])
+
     chi = results.attrs['Chi']
 
     f.close()
