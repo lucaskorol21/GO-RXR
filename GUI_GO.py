@@ -1356,7 +1356,7 @@ class sampleWidget(QWidget):
                 n = len(fit)
                 if column == 1:
                     mode = fit[2]
-                    if mode == "ELEMENT":
+                    if mode == "ELEMENT" and my_layer == fit[0]:
                         ele = fit[3]
                         if ele == element and fit[4] == 'THICKNESS':
                             idx = self.parameterFit.index(fit)
@@ -1364,46 +1364,46 @@ class sampleWidget(QWidget):
                             self.currentVal.pop(idx)
 
 
-                    elif mode == 'COMPOUND':
+                    elif mode == 'COMPOUND' and my_layer == fit[0]:
                         if fit[3] == 'THICKNESS':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
                 elif column == 2:
                     mode = fit[2]
-                    if mode == "ELEMENT":
+                    if mode == "ELEMENT" and my_layer == fit[0]:
                         ele = fit[3]
                         if ele == element and fit[4] == 'DENSITY':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND':
+                    elif mode == 'COMPOUND' and my_layer == fit[0]:
                         if fit[3] == 'DENSITY':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
                 elif column == 3:
                     mode = fit[2]
-                    if mode == "ELEMENT":
+                    if mode == "ELEMENT" and my_layer == fit[0]:
                         ele = fit[3]
                         if ele == element and fit[4] == 'ROUGHNESS':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND':
+                    elif mode == 'COMPOUND' and my_layer == fit[0]:
                         if fit[3] == 'ROUGHNESS':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
                 elif column == 4:
                     mode = fit[2]
-                    if mode == "ELEMENT":
+                    if mode == "ELEMENT" and my_layer == fit[0]:
                         ele = fit[3]
                         if ele == element and fit[4] == 'LINKED ROUGHNESS':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND':
+                    elif mode == 'COMPOUND' and my_layer == fit[0]:
                         if fit[3] == 'LINKED ROUGHNESS':
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
