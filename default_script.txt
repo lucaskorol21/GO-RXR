@@ -1,0 +1,20 @@
+# Comments are made using #
+
+# use this area to give your sample a thickness constraint
+Thickness:
+
+
+# use this area to give your sample a ratio constraint
+Element Variation Ratio:
+
+
+# use this area to give your sample a density constraint
+Density:
+
+# Written by Lucas Korol
+
+
+
+
+
+

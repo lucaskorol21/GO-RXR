@@ -4804,7 +4804,10 @@ class ReflectometryApp(QMainWindow):
             # reset all of the tables!!!
             # - otherwise we have everything for the load function
         else:
-            print('Unable to create the file')
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Invalid file")
+            messageBox.setText("Selected filename or path is not valid. Please select a valid file name.")
+            messageBox.exec()
 
     def _loadFile(self):
 
@@ -4910,7 +4913,10 @@ class ReflectometryApp(QMainWindow):
                 # reset all of the tables!!!
                 # - otherwise we have everything for the load function
             elif fname.endswith('.all'):
-                print('Currently no implementation')
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("ReMagX Implementation")
+                messageBox.setText("Currently there is no implementation!")
+                messageBox.exec()
 
     def _saveFile(self):
         # work on saving the current file
@@ -5851,25 +5857,66 @@ class scriptWidget(QDialog):
         # need to talk about how we will implement the script
         super().__init__()
 
-        self.file_path = None
+        cwd = os.getcwd()
+        self.fname = cwd + '/default_script.txt'
+        self.setWindowTitle('Script Window')
+        self.setGeometry(180, 60, 700, 400)
 
-        self.open_new_file_shortcut = QShortcut(QtGui.QKeySequence('Ctrl+O'), self)
-        self.open_new_file_shortcut.activated.connect(self.open_new_file)
+        pagelayout = QHBoxLayout()
+        openButton = QPushButton('Open Script')
+        openButton.setFixedWidth(80)
+        openButton.clicked.connect(self.open_new_file)
+        saveButton = QPushButton('Save Script')
+        saveButton.setFixedWidth(80)
+        saveButton.clicked.connect(self.save_file)
 
-        self.save_current_file_shortcut = QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
-        self.save_current_file_shortcut.activated.connect(self.save_current_file)
+        buttonLayout = QVBoxLayout()
+        buttonLayout.addStretch(1)
+        buttonLayout.addWidget(openButton)
+        buttonLayout.addWidget(saveButton)
+        buttonLayout.addStretch(1)
 
         vbox = QVBoxLayout()
-        text = "Untitled File"
+        text = 'default_script.txt'
         self.title = QLabel(text)
         self.title.setWordWrap(True)
         self.title.setAlignment(Qt.AlignCenter)
         vbox.addWidget(self.title)
-        self.setLayout(vbox)
 
         self.scrollable_text_area = QTextEdit()
+
+        with open(self.fname) as f:
+            file_contents = f.read()
+            self.scrollable_text_area.setText(file_contents)
+
+        f.close()
+
         vbox.addWidget(self.scrollable_text_area)
 
+        pagelayout.addLayout(vbox)
+        pagelayout.addLayout(buttonLayout)
+
+        self.setLayout(pagelayout)
+
+    def open_new_file(self):
+        self.fname, filter_type = QFileDialog.getOpenFileName(self, "Open new file", "", "All files (*)")
+        if self.fname.endswith('.txt'):
+            with open(self.fname, "r") as f:
+                file_contents = f.read()
+                self.title.setText(self.fname)
+                self.scrollable_text_area.setText(file_contents)
+        else:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Invalid file")
+            messageBox.setText("Selected filename or path is not valid. Please select a valid file.")
+            messageBox.exec()
+
+    def save_file(self):
+        text = self.scrollable_text_area.toPlainText()
+        with open(self.fname, 'w') as f:
+            f.write(text)
+        f.close()
+    """
     def open_new_file(self):
         self.file_path, filter_type = QFileDialog.getOpenFileName(self, "Open new file",
                                                                   "", "All files (*)")
@@ -5878,8 +5925,7 @@ class scriptWidget(QDialog):
                 file_contents = f.read()
                 self.title.setText(self.file_path)
                 self.scrollable_text_area.setText(file_contents)
-        else:
-            self.invalid_path_alert_message()
+        
 
     def save_current_file(self):
         if not self.file_path:
@@ -5897,7 +5943,7 @@ class scriptWidget(QDialog):
     def closeEvent(self, event):
         messageBox = QMessageBox()
         title = "Quit Application?"
-        message = "WARNING !!\n\nIf you quit without saving, any changes made to the file will be lost."
+        message = "WARNING !!If you quit without saving, any changes made to the file will be lost."
 
         reply = messageBox.question(self, title, message, messageBox.Yes | messageBox.No |
                                 messageBox.Cancel, messageBox.Cancel)
@@ -5911,11 +5957,13 @@ class scriptWidget(QDialog):
             event.ignore()
 
 
-def invalid_path_alert_message(self):
-    messageBox = QMessageBox()
-    messageBox.setWindowTitle("Invalid file")
-    messageBox.setText("Selected filename or path is not valid. Please select a valid file.")
-    messageBox.exec()
+    def invalid_path_alert_message(self):
+        messageBox = QMessageBox()
+        messageBox.setWindowTitle("Invalid file")
+        messageBox.setText("Selected filename or path is not valid. Please select a valid file.")
+        messageBox.exec()
+    
+    """
 
 
 class LoadingScreen(QDialog):
