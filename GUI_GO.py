@@ -4965,7 +4965,9 @@ class ReflectometryApp(QMainWindow):
             sim_dict = loadingApp.sim_dict
             loadingApp.close()
 
-            ds.saveSimulationHDF5(fname, sim_dict)
+            # takes into account user may exit screen
+            if type(sim_dict) is not list:
+                ds.saveSimulationHDF5(fname, sim_dict)
 
 
 
