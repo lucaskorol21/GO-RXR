@@ -4997,7 +4997,14 @@ class ReflectometryApp(QMainWindow):
         ds.WriteSampleHDF5(self.fname, self.sample)
 
     def _importDataSet(self):
-        print('import dataset')
+        #Import the data set
+        filename, _ = QFileDialog.getOpenFileName(self, 'Open File')
+        fname = filename.split('/')[-1]
+
+        # when loading files I need to be able to scan the entire
+        if fname.endswith('.h5') or fname.endswith('.all'):
+            if fname.endswith('.h5') and fname != 'demo.h5':
+                self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
 
     def _summary(self):
         sample = self._sampleWidget._createSample()

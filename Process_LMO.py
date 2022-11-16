@@ -138,7 +138,8 @@ for sam in [0, 1]:
     EsData,EsInfo = ProcessRXR("Data/" + samples[sam]+".spc", EScan,ECal,Geo,Corr,"E")
 
     start = time()
-    WriteDataHDF5(samples[sam] + ".h5",AsData,AsInfo,EsData,EsInfo, sample)
+    #WriteDataHDF5(samples[sam] + ".h5",AsData,AsInfo,EsData,EsInfo, sample)
+    createDataFileHDF5(samples[sam] + "_data.h5",AsData,AsInfo,EsData,EsInfo)
     #WriteDataASCII(samples[sam] + ".all",AsData,AsInfo,EsData,EsInfo, sample)
     end = time()
     print(end-start)
