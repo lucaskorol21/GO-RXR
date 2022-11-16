@@ -2854,12 +2854,12 @@ class reflectivityWidget(QWidget):
 
         self.isChangeTable = True
         idx = self.selectedScans.currentIndex()
+
         name = self.selectedScans.currentText()
         self.scalingFactor.setText(self.sf[name]) # setting the appropriate scaling factor
 
         self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
         scan = self.fit[idx]
-
         if scan != '':
 
             E = self.data_dict[scan]['Energy']
@@ -2868,6 +2868,7 @@ class reflectivityWidget(QWidget):
             bound = self.bounds[idx]
             weight = self.weights[idx]
             col = len(bound)
+
             row = 3
 
             self.boundWeightTable.setRowCount(row)
@@ -2882,6 +2883,7 @@ class reflectivityWidget(QWidget):
                         if 'Angle' not in mykeys:
                             if not self.axis_state:
                                 if len(bound[j][0]) != 0:
+
                                     myitem = str(np.arcsin(float(bound[j][0])/(E * 0.001013546143))* 180 / np.pi)[:7]
                             else:
                                 myitem = copy.copy(bound[j][0])
@@ -2889,7 +2891,7 @@ class reflectivityWidget(QWidget):
                             myitem = copy.copy(bound[j][0])
 
 
-                        item = QTableWidgetItem(myitem)
+                        item = QTableWidgetItem(str(myitem))
                         self.boundWeightTable.setItem(i,j,item)
 
                         #self.boundWeightTable.setItem(i, j, item)
@@ -2904,11 +2906,11 @@ class reflectivityWidget(QWidget):
                         else:
                             myitem = copy.copy(bound[j][1])
 
-                        item = QTableWidgetItem(myitem)
+                        item = QTableWidgetItem(str(myitem))
                         self.boundWeightTable.setItem(i, j, item)
                     elif i == 2:
 
-                        item = QTableWidgetItem(weight[j])
+                        item = QTableWidgetItem(str(weight[j]))
                         self.boundWeightTable.setItem(i, j, item)
         self.isChangeTable = False
 
@@ -4876,9 +4878,23 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.currentVal = fitParams[1]
                 self._reflectivityWidget.rom = [True, False, False]
                 self._reflectivityWidget.fit = fitParams[4]
+                # need to put selected scans
+                self._reflectivityWidget.selectedScans.blockSignals(True)
+                self._reflectivityWidget.selectedScans.addItems(fitParams[4])
+                self._reflectivityWidget.selectedScans.blockSignals(False)
+
+                # need to set sf and bs
+                self._reflectivityWidget.sf = dict()
+                self._reflectivityWidget.bs = dict()
+                for scan_name in fitParams[4]:
+                    self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
+                    self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
+
+
                 self._reflectivityWidget.bounds = fitParams[5]
                 self._reflectivityWidget.weights = fitParams[6]
 
+                #self._reflectivityWidget.setTable()
                 self._sampleWidget.parameterFit = fitParams[2]
                 self._sampleWidget.currentVal = fitParams[3]
 

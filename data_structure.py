@@ -130,7 +130,6 @@ def evaluate_weights(weights):
     final_array = []
     if weights != '[]':
         weights = weights[1:-1]
-        print(weights)
 
         # finding the list of weights
         string = ''
@@ -1122,10 +1121,8 @@ def ReadFitHDF5(fname):
     sampleVal = evaluate_parameters(sample_fit.attrs['Sample Val'])
     selected_scans = ast.literal_eval(sample_fit.attrs['Selected Scans'])
     bounds = evaluate_bounds(scan_fit.attrs['Bounds'])
-    #bounds = ast.literal_eval(scan_fit.attrs['Bounds'])
-    #weights = ast.literal_eval(scan_fit.attrs['Weights'])
     weights = evaluate_weights(scan_fit.attrs['Weights'])
-
+    print(selected_scans)
 
     x = evaluate_list(results.attrs['Value'])
 
@@ -2554,7 +2551,7 @@ def selectScan(fname):
         data = [scan['dataNumber'], scan['scanType'], scan['energy'], scan['angle'], scan['polarization']]
         dataNumber.append(str(scan['dataNumber']))
         tab.add_row(data)
-    print(tab)
+
     val = input('Select scan # you would like to use: ')
     while val in dataNumber:
         # Determines the scan to use based on #
