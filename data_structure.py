@@ -1475,7 +1475,6 @@ def ReadFitHDF5(fname):
     selected_scans = ast.literal_eval(sample_fit.attrs['Selected Scans'])
     bounds = evaluate_bounds(scan_fit.attrs['Bounds'])
     weights = evaluate_weights(scan_fit.attrs['Weights'])
-    print(selected_scans)
 
     x = evaluate_list(results.attrs['Value'])
 
