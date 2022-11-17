@@ -3090,6 +3090,7 @@ class reflectivityWidget(QWidget):
                         self.spectrumWidget.setLogMode(False, False)
                         self.spectrumWidget.setLabel('left', "Reflectivity, R")
                         self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+
                 elif scan_type == 'Energy':
                     E = dat[3]
                     R = dat[2]
@@ -4674,6 +4675,10 @@ class ReflectometryApp(QMainWindow):
         self.importDataset.triggered.connect(self._importDataSet)
         fileMenu.addAction(self.importDataset)
 
+        self.loadReMagX = QAction("&Load ReMagX", self)
+        self.loadReMagX.triggered.connect(self._loadReMagX)
+        fileMenu.addAction(self.loadReMagX)
+
         self.saveSummary = QAction("&Save Summary", self)
         self.saveSummary.triggered.connect(self._summary)
         fileMenu.addAction(self.saveSummary)
@@ -5012,15 +5017,37 @@ class ReflectometryApp(QMainWindow):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
 
+    def _loadReMagX(self):
+        filename, _ = QFileDialog.getOpenFileName(self, 'Open File')
+
+        if filename.endswith('.all'):
+            data, data_dict = ds.Read_ReMagX(filename)
+            self.data = copy.deepcopy(data)
+            self.data_dict = copy.deepcopy(data_dict)
+            self.sim_dict = copy.deepcopy(data_dict)
+
+            self._reflectivityWidget.data = self.data
+            self._reflectivityWidget.data_dict = self.data_dict
+
+            # make sure we are not plotting when we do not need to
+            self._reflectivityWidget.whichScan.blockSignals(True)
+            for scan in self.data:
+                self._reflectivityWidget.whichScan.addItem(scan[2])
+            self._reflectivityWidget.whichScan.blockSignals(False)
+
+        else:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("ReMagX File")
+            messageBox.setText("Please select a file with .all extension!")
+            messageBox.exec()
     def _summary(self):
         sample = self._sampleWidget._createSample()
         # create a new file with the inputted (save as a textfile!)
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
         cont = True
-        if fname.endswith('.txt'):
-            self.fname = filename  # change the file name that we will be using
-        elif fname == '':
+
+        if fname == '':
             cont = False
         elif '.' not in fname:
             filename = filename + '.txt'
@@ -5162,6 +5189,7 @@ class ReflectometryApp(QMainWindow):
 
     def _help(self):
         pass
+
     def activate_tab_1(self):
         # sample setup
         self.sample = copy.deepcopy(self._sampleWidget._createSample())

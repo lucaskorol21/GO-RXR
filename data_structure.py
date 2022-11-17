@@ -57,23 +57,23 @@ def getTitleInfo(title):
     return scan_number, scanType, energy, polarization, angle
 
 def Read_ReMagX(fname):
+    data_dict = dict()
+    data_info = []
     if fname.endswith('.all'):
         # good to go
-        is_sample = False
+        is_data = False
         new_data = True
 
         current_scan = 0  # keeps track of which scan we are on!
 
         # keeps track of the data
-        qz = list()
-        angle = list()
-        R = list()
-        E = list()
+        qz_list = list()
+        theta_list = list()
+        R_list = list()
+        E_list = list()
         scanType = 'Reflectivity'
         title = ''
         name = ''
-
-        data_dict = dict()
 
         with open(fname, 'r') as f:
             for line in f.readlines():
@@ -83,8 +83,10 @@ def Read_ReMagX(fname):
                 if '#' in line and 'measurement' in line and 'data' in line:
                     is_data = True
 
+                if '#' in line and 'dataset' in line and str(current_scan+1) in line:
+                    is_data = False
 
-                if len(line) == 3 and is_data:
+                if len(line) == 3:
                     if line[1] == '=':  # makes sure we are only evaluating what we want to be
 
                         if line[0] == 'datasetnumber':
@@ -93,16 +95,23 @@ def Read_ReMagX(fname):
 
                         # new data
                         if new_data:
-                            if current_scan > 0:  # where we can set the data
-                                pass
-                            qz = list()
-                            angle = list()
-                            R = list()
-                            E = list()
+                            if current_scan > 1:  # where we can set the data
+                                if len(E_list) != 0:
+                                    data = [qz_list, theta_list, R_list, E_list]
+                                    data_info.append([current_scan, 'Energy', name])
+                                else:
+                                    data = [qz_list, theta_list, R_list]
+                                    data_info.append([current_scan, 'Reflectivity', name])
+                                data_dict[name]['Data'] = np.array(data)
+
+                            qz_list = list()
+                            theta_list = list()
+                            R_list = list()
+                            E_list = list()
                             new_data = False
 
 
-                        elif line[0] == 'datasettitle':
+                        if line[0] == 'datasettitle':
                             scan_number, scanType, energy, pol, angle = getTitleInfo(line[2])
                             name = ''
                             if scanType == 'Reflectivity':
@@ -110,19 +119,55 @@ def Read_ReMagX(fname):
                                 if pol == 'AL' or pol == 'AC':
                                     name = name + '_Asymm'
                                 data_dict[name] = dict()
+                                data_dict[name]['Polarization'] = pol
+                                data_dict[name]['DatasetNumber'] = current_scan
+                                data_dict[name]['Background Shift'] = 0
+                                data_dict[name]['Scaling Factor'] = 1
+
 
                             elif scanType == 'Energy':
                                 name = scan_number + '_Th'+ angle +'_' + energy + '_' + pol
                                 if pol == 'AL' or pol == 'AC':
                                     name = name + '_Asymm'
+
                                 data_dict[name] = dict()
+                                data_dict[name]['Polarization'] = pol
+                                data_dict[name]['Angle'] = float(angle)
+                                data_dict[name]['DatasetNumber'] = current_scan
+                                data_dict[name]['Background Shift'] = 0
+                                data_dict[name]['Scaling Factor'] = 1
+
 
                         elif line[0] == 'datasetenergy':
-                            Energy = line[3]
-                        elif line[0] == '':
-                            pass
+                            data_dict[name]['Energy'] = float(line[2])
+                            E = float(line[2])
+                        elif line[0] == 'datasetpoints':
+                            data_dict[name]['DataPoints'] = int(line[2])
                             # do something else
-                            pass
+                        elif line[0] == 'dataset_qz':
+                            qz = float(line[2])
+                            theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi
+
+                            qz_list.append(qz)
+                            theta_list.append(theta)
+                        elif line[0] == 'dataset_A':
+                            R_list.append(float(line[2]))
+                        elif line[0] == 'dataset_R0':
+                            R_list.append(float(line[2]))
+                        elif line[0] == 'dataset_eng':
+                            E_list.append(float(line[2]))
+
+    if len(E_list) != 0:
+        data = [qz_list, theta_list, R_list, E_list]
+        data_info.append([current_scan, 'Energy', name])
+    else:
+        data = [qz_list, theta_list, R_list]
+        data_info.append([current_scan, 'Reflectivity', name])
+    data_dict[name]['Data'] = np.array(data)
+    f.close()
+
+
+    return data_info, data_dict
 
 def evaluate_list(string):
     # check to make sure it is a list
@@ -863,7 +908,6 @@ def createDataFileHDF5(fname, AScans, AInfo, EScans, EInfo):
     # Checking if fname already exists
     cwd = os.getcwd()
     path = cwd + '/' + fname
-    print(path)
     if os.path.exists(path):
         raise OSError("HDF5 file already exists. To write new file remove the old file from the current working directory.")
 
@@ -3158,6 +3202,6 @@ if __name__ == "__main__":
 
     #WriteSampleHDF5(fname, sample)
 
-    Read_ReMagX("Pim10uc.all")
+    #Read_ReMagX("Pim10uc.all")
 
 
