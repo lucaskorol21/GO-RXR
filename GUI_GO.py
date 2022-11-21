@@ -26,6 +26,7 @@ x_vars = []
 
 
 
+
 def stringcheck(string):
 
     # checks to make sure that the roughness and whatnot is in the correct format
@@ -5918,16 +5919,9 @@ class showFormFactors(QDialog):
         self.selectedff = []
         self.selectedffm = []
 
-        # Loads all scattering factors when program imported
-        with open('form_factor.pkl', 'rb') as f:
-            self.ff = pickle.load(f)
-        f.close()
 
-        # Loads all scattering factors when program imported
-        with open('form_factor_magnetic.pkl', 'rb') as f:
-            self.ffm = pickle.load(f)
-        f.close()
-
+        self.ff = mm.ff
+        self.ffm = mm.ffm
 
         buttonLayout = QHBoxLayout()
         self.structButton = QPushButton('Structural')
@@ -5977,7 +5971,7 @@ class showFormFactors(QDialog):
         fLayout = QVBoxLayout()
         fLabel = QLabel('Form Factor:')
         self.structElements = QComboBox()
-        self.structElements.addItems(list(sample.eShift.keys()))
+        self.structElements.addItems(list(sample.find_sf[0].values()))
         fLayout.addWidget(fLabel)
         fLayout.addWidget(self.structElements)
 
@@ -6038,7 +6032,7 @@ class showFormFactors(QDialog):
         fmLayout = QVBoxLayout()
         fmLabel = QLabel('Form Factors:')
         self.magElements = QComboBox()
-        self.magElements.addItems(list(sample.mag_eShift.keys()))
+        self.magElements.addItems(list(sample.find_sf[1].values()))
         fmLayout.addWidget(fmLabel)
         fmLayout.addWidget(self.magElements)
 
