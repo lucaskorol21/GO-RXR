@@ -1737,6 +1737,7 @@ class sampleWidget(QWidget):
 
     def _addLayer(self):
 
+        # start add layer application
         addLayerApp = compoundInput()
         addLayerApp.show()
         addLayerApp.exec_()
@@ -1759,6 +1760,7 @@ class sampleWidget(QWidget):
                 self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']] for j in range(num_layers)]
 
 
+        # initializing the element variation and magnetic data
         if len(userinput) != 0:
             num = self.layerBox.count()
             idx = self.layerBox.currentIndex()
@@ -4373,7 +4375,37 @@ class GlobalOptimizationWidget(QWidget):
         return x, fun
 
     def getGOParameters(self):
-
+        self.eStrategy.blockSignals(True)
+        self.eMaxiter.blockSignals(True)
+        self.ePopsize.blockSignals(True)
+        self.eTol.blockSignals(True)
+        self.eAtol.blockSignals(True)
+        self.eMinMutation.blockSignals(True)
+        self.eMaxMutation.blockSignals(True)
+        self.eRecomb.blockSignals(True)
+        self.ePolish.blockSignals(True)
+        self.eInit.blockSignals(True)
+        self.eUpdating.blockSignals(True)
+        self.shgoN.blockSignals(True)
+        self.shgoIter.blockSignals(True)
+        self.shgoSampling.blockSignals(True)
+        self.dualMaxiter.blockSignals(True)
+        self.dualInitTemp.blockSignals(True)
+        self.dualRestartTemp.blockSignals(True)
+        self.dualVisit.blockSignals(True)
+        self.dualAccept.blockSignals(True)
+        self.dualMaxfun.blockSignals(True)
+        self.dualLocal.blockSignals(True)
+        self.lsJac.blockSignals(True)
+        self.lsMethod.blockSignals(True)
+        self.lsFtol.blockSignals(True)
+        self.lsXtol.blockSignals(True)
+        self.lsGtol.blockSignals(True)
+        self.lsXscale.blockSignals(True)
+        self.lsLoss.blockSignals(True)
+        self.lsFscale.blockSignals(True)
+        self.lsDiff.blockSignals(True)
+        self.lsMax.blockSignals(True)
 
         idx = self.algorithmSelect.currentIndex()
         if idx == 0:
@@ -4418,6 +4450,39 @@ class GlobalOptimizationWidget(QWidget):
             self.goParameters['least squares'][7] = self.lsFscale.text()
             self.goParameters['least squares'][8] = self.lsDiff.text()
             self.goParameters['least squares'][9] = self.lsMax.text()
+
+        self.eStrategy.blockSignals(False)
+        self.eMaxiter.blockSignals(False)
+        self.ePopsize.blockSignals(False)
+        self.eTol.blockSignals(False)
+        self.eAtol.blockSignals(False)
+        self.eMinMutation.blockSignals(False)
+        self.eMaxMutation.blockSignals(False)
+        self.eRecomb.blockSignals(False)
+        self.ePolish.blockSignals(False)
+        self.eInit.blockSignals(False)
+        self.eUpdating.blockSignals(False)
+        self.shgoN.blockSignals(False)
+        self.shgoIter.blockSignals(False)
+        self.shgoSampling.blockSignals(False)
+        self.dualMaxiter.blockSignals(False)
+        self.dualInitTemp.blockSignals(False)
+        self.dualRestartTemp.blockSignals(False)
+        self.dualVisit.blockSignals(False)
+        self.dualAccept.blockSignals(False)
+        self.dualMaxfun.blockSignals(False)
+        self.dualLocal.blockSignals(False)
+        self.lsJac.blockSignals(False)
+        self.lsMethod.blockSignals(False)
+        self.lsFtol.blockSignals(False)
+        self.lsXtol.blockSignals(False)
+        self.lsGtol.blockSignals(False)
+        self.lsXscale.blockSignals(False)
+        self.lsLoss.blockSignals(False)
+        self.lsFscale.blockSignals(False)
+        self.lsDiff.blockSignals(False)
+        self.lsMax.blockSignals(False)
+
         self.setGOParameters()
 
     def setGOParameters(self):
@@ -4464,10 +4529,7 @@ class GlobalOptimizationWidget(QWidget):
         self.eMinMutation.setText(str(self.goParameters['differential evolution'][5]))
         self.eMaxMutation.setText(str(self.goParameters['differential evolution'][6]))
         self.eRecomb.setText(str(self.goParameters['differential evolution'][7]))
-        if str(self.goParameters['differential evolution'][8]) == 'True':
-            self.ePolish.setCheckState(2)
-        elif str(self.goParameters['differential evolution'][8]) == 'False':
-            self.ePolish.setCheckState(0)
+
         self.eInit.setCurrentText(str(self.goParameters['differential evolution'][9]))
         self.eUpdating.setCurrentText(str(self.goParameters['differential evolution'][10]))
 
@@ -4482,10 +4544,6 @@ class GlobalOptimizationWidget(QWidget):
         self.dualVisit.setText(str(self.goParameters['dual annealing'][3]))
         self.dualAccept.setText(str(self.goParameters['dual annealing'][4]))
         self.dualMaxfun.setText(str(self.goParameters['dual annealing'][5]))
-        if self.goParameters['dual annealing'][6] == 'False':
-            self.dualLocal.setChecked(2)
-        elif self.goParameters['dual annealing'][6] == 'True':
-            self.dualLocal.setChecked(0)
 
         # least squares
         self.lsJac.setCurrentText(str(self.goParameters['least squares'][0]))
@@ -4520,16 +4578,16 @@ class GlobalOptimizationWidget(QWidget):
         self.dualAccept.blockSignals(False)
         self.dualMaxfun.blockSignals(False)
         self.dualLocal.blockSignals(False)
-        self.lsJac.blockSignals(True)
-        self.lsMethod.blockSignals(True)
-        self.lsFtol.blockSignals(True)
-        self.lsXtol.blockSignals(True)
-        self.lsGtol.blockSignals(True)
-        self.lsXscale.blockSignals(True)
-        self.lsLoss.blockSignals(True)
-        self.lsFscale.blockSignals(True)
-        self.lsDiff.blockSignals(True)
-        self.lsMax.blockSignals(True)
+        self.lsJac.blockSignals(False)
+        self.lsMethod.blockSignals(False)
+        self.lsFtol.blockSignals(False)
+        self.lsXtol.blockSignals(False)
+        self.lsGtol.blockSignals(False)
+        self.lsXscale.blockSignals(False)
+        self.lsLoss.blockSignals(False)
+        self.lsFscale.blockSignals(False)
+        self.lsDiff.blockSignals(False)
+        self.lsMax.blockSignals(False)
 
     def change_algorithm(self):
         # set the proper algorithm widget
