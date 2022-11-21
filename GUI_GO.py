@@ -3251,14 +3251,27 @@ class GlobalOptimizationWidget(QWidget):
                              'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True],
                              'least squares': ['2-point','trf',1e-8,1e-8,1,'linear',1.0,'None','None',0]}
 
+
+        isLogLayout = QVBoxLayout()
+        isLogLabel = QLabel('Optimization Scale:')
+        isLogLabel.setFixedWidth(200)
+        self.isLogWidget = QComboBox()
+        self.isLogWidget.addItems(['log(x)', 'ln(x)', 'x', 'qz^4'])
+        isLogLayout.addWidget(isLogLabel)
+        isLogLayout.addWidget(self.isLogWidget)
+
         self.paramChange = True
         self.parameters = []
-        selectedScansLayout = QHBoxLayout()
+        selectedScansLayout = QVBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
         self.selectedScans.currentTextChanged.connect(self.plot_scan)
         selectedScansLabel = QLabel('Fit Scans:')
+        selectedScansLabel.setFixedWidth(200)
+
         selectedScansLayout.addWidget(selectedScansLabel)
         selectedScansLayout.addWidget(self.selectedScans)
+
+
 
         # Adding the plotting Widget
         self.plotWidget = pg.PlotWidget()
@@ -3281,7 +3294,8 @@ class GlobalOptimizationWidget(QWidget):
         self.optButton.clicked.connect(self._save_optimization)
         self.optButton.setStyleSheet('background: cyan')
 
-        buttonLayout.addWidget(self.selectedScans)
+        buttonLayout.addLayout(selectedScansLayout)
+        buttonLayout.addLayout(isLogLayout)
         buttonLayout.addStretch(1)
         buttonLayout.addWidget(self.runButton)
         buttonLayout.addWidget(self.stopButton)
@@ -4250,24 +4264,26 @@ class GlobalOptimizationWidget(QWidget):
 
         idx = self.algorithmSelect.currentIndex()
 
+        r_scale = self.isLogWidget.currentText()  # determines what scale to use in the global optimization
+
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 x, fun = go.differential_evolution(sample, data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                                    self.goParameters['differential evolution'],self.callback,
-                                                   self.objective, self.shape_weight)
+                                                   self.objective, self.shape_weight, r_scale)
             elif idx == 1:
                 x, fun = go.shgo(sample,data,data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
-                                 self.objective, self.shape_weight)
+                                 self.objective, self.shape_weight, r_scale)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                            self.goParameters['dual annealing'], self.callback,
-                                           self.objective, self.shape_weight)
+                                           self.objective, self.shape_weight, r_scale)
             elif idx == 3:
                 bounds = (lw, up)
                 x, fun = go.least_squares(x0,sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                            self.goParameters['least squares'], self.callback,
-                                           self.objective, self.shape_weight)
+                                           self.objective, self.shape_weight, r_scale)
         else:
             print('Try again')
 
@@ -4953,6 +4969,7 @@ class ReflectometryApp(QMainWindow):
     def _saveAsFile(self):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
+        print(filename)
         fname = filename.split('/')[-1]
 
         # checks to make sure filename is in the correct format
@@ -4980,7 +4997,7 @@ class ReflectometryApp(QMainWindow):
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(fname, self.sample,data_dict, sim_dict, fitParams, optParams)
+            ds.saveAsFileHDF5(self.fname, self.sample,data_dict, sim_dict, fitParams, optParams)
 
     def _saveSimulation(self):
         sim_dict = copy.deepcopy(self.data_dict)
@@ -4996,7 +5013,7 @@ class ReflectometryApp(QMainWindow):
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
-                ds.saveSimulationHDF5(fname, sim_dict)
+                ds.saveSimulationHDF5(self.fname, sim_dict)
 
 
 
@@ -5033,6 +5050,8 @@ class ReflectometryApp(QMainWindow):
 
             # make sure we are not plotting when we do not need to
             self._reflectivityWidget.whichScan.blockSignals(True)
+            self._reflectivityWidget.whichScan.clear()
+            self._reflectivityWidget.selectedScans.clear()
             for scan in self.data:
                 self._reflectivityWidget.whichScan.addItem(scan[2])
             self._reflectivityWidget.whichScan.blockSignals(False)

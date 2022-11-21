@@ -38,7 +38,7 @@ def getTitleInfo(title):
         elif 'S' in title[3] and 'P' in title[3]:
             polarization = 'AL'
     else:
-        energy = title[2]
+        energy = title[1]
         scanType = 'Energy'
         angle = title[2].replace('Th','')
         if title[3] == 'S':
@@ -53,7 +53,7 @@ def getTitleInfo(title):
             polarization = 'AC'
         elif 'S' in title[3] and 'P' in title[3]:
             polarization = 'AL'
-
+    print(energy, polarization, angle)
     return scan_number, scanType, energy, polarization, angle
 
 def Read_ReMagX(fname):
@@ -126,7 +126,7 @@ def Read_ReMagX(fname):
 
 
                             elif scanType == 'Energy':
-                                name = scan_number + '_Th'+ angle +'_' + energy + '_' + pol
+                                name = scan_number + '_' + energy + '_Th'+ angle  + '_' + pol
                                 if pol == 'AL' or pol == 'AC':
                                     name = name + '_Asymm'
 
@@ -170,28 +170,31 @@ def Read_ReMagX(fname):
     return data_info, data_dict
 
 def evaluate_list(string):
+    print(string)
     # check to make sure it is a list
+    if type(string) is not np.ndarray and type(string) is not list:
+        if string[0] != '[' and string[-1] != ']':
+            raise TypeError('String is not a list.')
 
-    if string[0] != '[' and string[-1] != ']':
-        raise TypeError('String is not a list.')
+        final_array = []
+        if string != '[]':
+            string = string.strip('[')  # remove brackets
+            string = string.strip(']')  # remove brackets
 
-    final_array = []
-    if string != '[]':
-        string = string.strip('[')  # remove brackets
-        string = string.strip(']')  # remove brackets
+            array1 = string.split(',')  # get all the components of the list
+            array2 = string.split()
 
-        array1 = string.split(',')  # get all the components of the list
-        array2 = string.split()
+            my_array = []
+            if len(array1) > len(array2):  # string has commas
+                my_array = array1
+            elif len(array1)< len(array2):  # string has spaces
+                my_array = array2
+            elif len(array1) == len(array2):  # string has spaces and commas
+                my_array = array1
 
-        my_array = []
-        if len(array1) > len(array2):  # string has commas
-            my_array = array1
-        elif len(array1)< len(array2):  # string has spaces
-            my_array = array2
-        elif len(array1) == len(array2):  # string has spaces and commas
-            my_array = array1
-
-        final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
+            final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
+    else:
+        final_array = string
 
     return final_array
 
@@ -274,17 +277,20 @@ def find_the_bound(string):
 def evaluate_bounds(bounds):
     # format = [[[],[]],[[],[],[]],[[],[],[],[],[],[],[]]]
     # list of list of lists
-    if bounds[0] != '[' and bounds[-1] != ']':
-        raise TypeError('String is not a list.')
+    if type(bounds) is not np.ndarray and type(bounds) is not list:
+        if bounds[0] != '[' and bounds[-1] != ']':
+            raise TypeError('String is not a list.')
 
-    final_array = []
-    if bounds != '[]':
-        bounds = bounds[1:-1]
-        bounds = find_each_bound(bounds)
+        final_array = []
+        if bounds != '[]':
+            bounds = bounds[1:-1]
+            bounds = find_each_bound(bounds)
 
-        for bound in bounds:
-            my_bound = find_the_bound(bound)
-            final_array.append(my_bound)
+            for bound in bounds:
+                my_bound = find_the_bound(bound)
+                final_array.append(my_bound)
+    else:
+        final_array = bounds
 
     return final_array
 
@@ -292,35 +298,38 @@ def evaluate_weights(weights):
     # format = [[],[],[]]
     weight_list = []
     final_array = []
-    if weights != '[]':
-        weights = weights[1:-1]
+    if type(weights) is not np.ndarray and type(weights) is not list:
+        if weights != '[]':
+            weights = weights[1:-1]
 
-        # finding the list of weights
-        string = ''
-        num_open = 0
-        num_closed = 0
-        for s in weights:
-            if s != '[' and s != ']' and s != '\'':
-                string = string + s
+            # finding the list of weights
+            string = ''
+            num_open = 0
+            num_closed = 0
+            for s in weights:
+                if s != '[' and s != ']' and s != '\'':
+                    string = string + s
 
-            if s == '[':
-                num_open = num_open + 1
-            if s == ']':
-                num_closed = num_closed + 1
+                if s == '[':
+                    num_open = num_open + 1
+                if s == ']':
+                    num_closed = num_closed + 1
 
-            if num_open == 1 and num_closed == 1:
-                num_open = 0
-                num_closed = 0
-                string = string.split(',')
-                if '' in string:
-                    string.remove('')
-                weight_list.append(string)
-                string = ''
+                if num_open == 1 and num_closed == 1:
+                    num_open = 0
+                    num_closed = 0
+                    string = string.split(',')
+                    if '' in string:
+                        string.remove('')
+                    weight_list.append(string)
+                    string = ''
 
-        for weight in weight_list:
-            temp_array = [float(w) for w in weight]
+            for weight in weight_list:
+                temp_array = [float(w) for w in weight]
 
-            final_array.append(temp_array)
+                final_array.append(temp_array)
+    else:
+        final_array = weights
     return final_array
 
 
@@ -338,16 +347,21 @@ def find_parameter_values(string):
 
 def evaluate_parameters(parameters):
     # format = [[val, [lower,upper]],[val, lower, upper]]
-    if parameters[0] != '[' and parameters[-1] != ']':
-        raise TypeError('String is not a list.')
+    print(type(parameters))
+    if type(parameters) is not np.ndarray and type(parameters) is not list:
+        if parameters[0] != '[' and parameters[-1] != ']':
+            raise TypeError('String is not a list.')
 
-    final_array = []
-    if parameters != '[]':
-        parameters = parameters[1:-1]
-        parameters = find_parameter_bound(parameters)
-        for param in parameters:
-            temp_param = find_parameter_values(param)
-            final_array.append(temp_param)
+        final_array = []
+        if parameters != '[]':
+            parameters = parameters[1:-1]
+            parameters = find_parameter_bound(parameters)
+            for param in parameters:
+                temp_param = find_parameter_values(param)
+                final_array.append(temp_param)
+    else:
+        final_array = parameters
+
     return final_array
 
 def saveSimulationHDF5(fname, sim_dict):
@@ -384,6 +398,7 @@ def saveSimulationHDF5(fname, sim_dict):
             dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
 
 def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
+
 
     f = h5py.File(fname, 'a')  # create fname hdf5 file
 
@@ -532,7 +547,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     scan_fit.attrs['Bounds'] = str(bounds)
     scan_fit.attrs['Weights'] = str(weights)
 
-    results.attrs['Value'] = str(fit)
+    results.attrs['Value'] = str(x)
     results.attrs['Chi'] = fun
 
     experiment = f['Experimental_data']
@@ -1468,6 +1483,7 @@ def ReadFitHDF5(fname):
     scan_fit = fitting_parameters['Scan Fit']
     results = fitting_parameters['Results']
 
+    print(type(sample_fit.attrs['sfbsVal']))
     sfbsFit = ast.literal_eval(sample_fit.attrs['sfbsFit'])
     sfbsVal = evaluate_parameters(sample_fit.attrs['sfbsVal'])
     sampleFit = ast.literal_eval(sample_fit.attrs['Sample Fit'])

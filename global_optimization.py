@@ -181,6 +181,7 @@ def scanCompute(x, *args):
     objective = args[8]
     shape_weight = args[9]
     optimizeSave = args[10]
+    r_scale = args[11]
 
     # determines if saving will be done in callback function
 
@@ -210,18 +211,27 @@ def scanCompute(x, *args):
             Rdat = np.array(myData[2])
             fun_val = 0
 
-            window = 5
-            R = rolling_average(Rdat, window)
-
 
             qz = np.array(myData[0])
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
 
-            if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+            if r_scale == 'log(x)':
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
+            elif r_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+            elif r_scale == 'qz^4':
+                Rsim = np.multiply(Rsim, np.power(qz,4))
+                Rdat = np.multiply(Rdat, np.power(qz,4))
+            elif r_scale == 'x':
+                pass
 
+
+
+            window = 5
+            R = rolling_average(Rdat, window)
 
             m = 0
             for b in range(len(xbound)):
@@ -253,14 +263,26 @@ def scanCompute(x, *args):
             fun_val = 0
 
             n = len(Rdat)
-            window = 5
-            R = rolling_average(Rdat, window)
+
 
             E, Rsim = sample.energy_scan(Theta, E)
             Rsim = Rsim[pol]
-            if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
+
+            if r_scale == 'log(x)':
                 Rsim = np.log10(Rsim)
                 Rdat = np.log10(Rdat)
+            elif r_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+            elif r_scale == 'qz^4':
+                qz = np.sin(Theta*np.pi/180)*(E * 0.001013546143)
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+            elif r_scale == 'x':
+                pass
+
+            window = 5
+            R = rolling_average(Rdat, window)
 
             m = 0
             for b in range(len(xbound)):
@@ -288,7 +310,7 @@ def scanCompute(x, *args):
 
     return fun
 
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -298,7 +320,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -320,7 +342,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale):
     global x_vars
     x_vars = []
 
@@ -329,7 +351,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -347,7 +369,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale):
     global x_vars
     x_vars = []
 
@@ -356,7 +378,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale]
 
     p = True
     if goParam[6] == 'True':
@@ -377,7 +399,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
-def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight):
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale):
     global x_vars
     x_vars = []
 
@@ -386,7 +408,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale]
 
     diff = goParam[8]
     _max = goParam[9]
