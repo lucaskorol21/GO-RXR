@@ -1810,17 +1810,23 @@ class sampleWidget(QWidget):
 
 
     def _removeLayer(self):
-        print(self.structTableInfo)
+
         num = self.layerBox.count()  # get the number of layers in the material
 
         idx = self.layerBox.currentIndex()  # determine which layer has been selected to remove
+        last_var = dict()
+        last_mag = dict()
+
         if num != 0:
             self.layerBox.removeItem(num-1)
 
+            last_struct = self.structTableInfo[idx]
             self.structTableInfo.pop(idx)  # removes the information about that layer
 
             # removes the element variation data
             for key in list(self.varData.keys()):
+                last_var[key] = self.varData[key][idx]
+                last_mag[key] = self.magData[key][idx]
                 self.varData[key].pop(idx)
                 self.magData[key].pop(idx)
 
@@ -1831,8 +1837,52 @@ class sampleWidget(QWidget):
                 self.clearVarTable()
                 self.clearMagTable()
 
-            # need to check energy shift elements
-            print()
+
+            ff_to_remove = []
+            ffm_to_remove = []
+
+            elements_removed = dict()
+            for layer_info in last_struct:
+                elements_removed[layer_info[0]] = False
+
+            # find out if the element still exists
+            for layer in self.structTableInfo:
+                for element_info in layer:
+                    my_element = element_info[0]
+                    if my_element in list(elements_removed.keys()):
+                        elements_removed[my_element] = True
+
+            # determine the scattering factors that we need to remove
+            for key in list(elements_removed.keys()):
+                n_ff = len(ff_to_remove)
+                if not(elements_removed[key]):  # element has been removed
+                    for sf in last_var[key][2]:  # element variation case
+                        if sf != '' and sf not in ff_to_remove:
+                            ff_to_remove.append(sf)
+                    if len(ff_to_remove) == n_ff:
+                        for ele_info in last_struct:
+                            if ele_info[0] == key:
+                                ff_to_remove.append(ele_info[5])
+
+                    for sfm in last_mag[key][2]:
+                        if sfm != '' and sfm not in ffm_to_remove:
+                            ffm_to_remove.append(sfm)
+
+            for key in list(self.eShift.keys()):
+                if key.startswith('ff-'):
+                    to_remove = key.strip('ff-')
+                    if to_remove in ff_to_remove:
+                        del self.eShift[key]
+                elif key.startswith('ffm-'):
+                    to_remove = key.strip('ffm-')
+                    if to_remove in ffm_to_remove:
+                        del self.eShift[key]
+
+
+
+
+
+
     def _copyLayer(self):
         num = self.layerBox.count()
         if num == 0:
