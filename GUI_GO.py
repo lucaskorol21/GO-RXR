@@ -779,6 +779,7 @@ class sampleWidget(QWidget):
 
             # changing the scattering factor
             if column == 2:
+                print(prev_value, value)
                 if prev_value != value:
 
                     # takes into account the scattering factor change
@@ -786,7 +787,14 @@ class sampleWidget(QWidget):
                     if prev_value != '':
                         del self.eShift[prev_dict_name]
                     dict_name = 'ff-' + value
+
                     self.eShift[dict_name] = 0
+
+                    for idx, my_layer in enumerate(self.varData[element]):
+
+                        if prev_value in my_layer[2]:
+                            ZQ = list(my_layer[2]).index(prev_value)
+                            self.varData[element][idx][2][ZQ] = value
 
 
             for fit in copy_of_list:
@@ -1506,208 +1514,225 @@ class sampleWidget(QWidget):
 
             self.structTableInfo.append(tempArray)
 
+    def clearTable(self):
+        self.structTable.setRowCount(0)
+        self.structTable.setColumnCount(6)
+
 
     def setTable(self):
-        self.structTable.blockSignals(True)
-        idx = self.layerBox.currentIndex()
-        tableInfo = self.structTableInfo[idx]
-        num_rows = len(tableInfo)
 
-        for col in range(6):
-            for row in range(num_rows):
-                item = QTableWidgetItem(str(tableInfo[row][col]))
-                self.structTable.setItem(row, col, item)
-                if col == 0:
-                    self.structTable.item(row,col).setBackground(QtGui.QColor('lightGray'))
-                if col == 1 and idx == 0:
-                    self.structTable.item(row, col).setBackground(QtGui.QColor('lightGray'))
+        if len(self.structTableInfo) !=0:
+            self.structTable.blockSignals(True)
+            idx = self.layerBox.currentIndex()
+            tableInfo = self.structTableInfo[idx]
+            num_rows = len(tableInfo)
 
-        for fit in self.parameterFit:
-            layer = fit[0]
-            n = len(fit)
-            if layer == idx:  # not scattering factor parameters
-                mode = fit[2]
-                if mode == 'COMPOUND': # compound mode
-                    param = fit[3]
-                    param_n = 0
-
-                    if param == 'THICKNESS':
-                        param_n = 1
-                    elif param == 'DENSITY':
-                        param_n = 2
-                    elif param == 'ROUGHNESS':
-                        param_n = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_n = 4
-
-                    for row in range(num_rows):
-                        if param_n != 0:
-                            self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 150, 255))
-                elif mode == 'ELEMENT':  # element mode
-                    ele = fit[3]
-                    param = fit[4]
-
-                    param_n = 0
-                    if param == 'THICKNESS':
-                        param_n = 1
-                    elif param == 'DENSITY':
-                        param_n = 2
-                    elif param == 'ROUGHNESS':
-                        param_n = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_n = 4
-
-                    for row in range(num_rows):
-                        my_ele = self.structTableInfo[idx][row][0]
-                        if my_ele == ele:
-                            if param_n != 0:
-                                self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 255, 150))
-            if layer == 'SCATTERING FACTOR':
+            for col in range(6):
                 for row in range(num_rows):
-                    if fit[2] == self.structTableInfo[idx][row][5] and fit[1] == 'STRUCTURAL':
-                        self.structTable.item(row,5).setBackground(QtGui.QColor(150, 255, 150))
+                    item = QTableWidgetItem(str(tableInfo[row][col]))
+                    self.structTable.setItem(row, col, item)
+                    if col == 0:
+                        self.structTable.item(row,col).setBackground(QtGui.QColor('lightGray'))
+                    if col == 1 and idx == 0:
+                        self.structTable.item(row, col).setBackground(QtGui.QColor('lightGray'))
 
-        self.structTable.blockSignals(False)
+            for fit in self.parameterFit:
+                layer = fit[0]
+                n = len(fit)
+                if layer == idx:  # not scattering factor parameters
+                    mode = fit[2]
+                    if mode == 'COMPOUND': # compound mode
+                        param = fit[3]
+                        param_n = 0
+
+                        if param == 'THICKNESS':
+                            param_n = 1
+                        elif param == 'DENSITY':
+                            param_n = 2
+                        elif param == 'ROUGHNESS':
+                            param_n = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_n = 4
+
+                        for row in range(num_rows):
+                            if param_n != 0:
+                                self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 150, 255))
+                    elif mode == 'ELEMENT':  # element mode
+                        ele = fit[3]
+                        param = fit[4]
+
+                        param_n = 0
+                        if param == 'THICKNESS':
+                            param_n = 1
+                        elif param == 'DENSITY':
+                            param_n = 2
+                        elif param == 'ROUGHNESS':
+                            param_n = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_n = 4
+
+                        for row in range(num_rows):
+                            my_ele = self.structTableInfo[idx][row][0]
+                            if my_ele == ele:
+                                if param_n != 0:
+                                    self.structTable.item(row, param_n).setBackground(QtGui.QColor(150, 255, 150))
+                if layer == 'SCATTERING FACTOR':
+                    for row in range(num_rows):
+                        if fit[2] == self.structTableInfo[idx][row][5] and fit[1] == 'STRUCTURAL':
+                            self.structTable.item(row,5).setBackground(QtGui.QColor(150, 255, 150))
+
+            self.structTable.blockSignals(False)
+
+    def clearVarTable(self):
+        self.varTable.setRowCount(0)
+        self.varTable.setColumnCount(3)
 
     def setTableVar(self):
-        self.varTable.blockSignals(True)
-        idx = self.sampleInfoLayout.currentIndex()
-        layer_idx = self.layerBox.currentIndex()
-        ele_idx = self.elementBox.currentIndex()
-        # makes sure that when we switch layers we show the same positional element
-        if not self.change_elements:
+        if len(self.structTableInfo) != 0:
+            self.varTable.blockSignals(True)
+            idx = self.sampleInfoLayout.currentIndex()
+            layer_idx = self.layerBox.currentIndex()
             ele_idx = self.elementBox.currentIndex()
-            self.element_index = copy.deepcopy(ele_idx)
+            # makes sure that when we switch layers we show the same positional element
+            if not self.change_elements:
+                ele_idx = self.elementBox.currentIndex()
+                self.element_index = copy.deepcopy(ele_idx)
 
-        if ele_idx != -1:
-            ele = self.structTableInfo[layer_idx][ele_idx][0]
+            if ele_idx != -1:
+                ele = self.structTableInfo[layer_idx][ele_idx][0]
 
-            info = self.varData[ele][layer_idx]
+                info = self.varData[ele][layer_idx]
 
-            # Might need to change this implementation
-            if len(info[0]) != 0:
-                self.varTable.setRowCount(len(info[0]))
+                # Might need to change this implementation
+                if len(info[0]) != 0:
+                    self.varTable.setRowCount(len(info[0]))
 
-                for row in range(len(info[0])):
+                    for row in range(len(info[0])):
 
-                    # Element Name
-                    item = QTableWidgetItem(info[0][row])
-                    self.varTable.setItem(row, 0, item)
+                        # Element Name
+                        item = QTableWidgetItem(info[0][row])
+                        self.varTable.setItem(row, 0, item)
 
-                    # Ratio
-                    item = QTableWidgetItem(str(info[1][row]))
-                    self.varTable.setItem(row, 1, item)
-                    # Scattering Factor
-                    item = QTableWidgetItem(info[2][row])
-                    self.varTable.setItem(row, 2, item)
+                        # Ratio
+                        item = QTableWidgetItem(str(info[1][row]))
+                        self.varTable.setItem(row, 1, item)
+                        # Scattering Factor
+                        item = QTableWidgetItem(info[2][row])
+                        self.varTable.setItem(row, 2, item)
 
-                    if idx == 1:
-                        for fit in self.parameterFit:
-                            if len(fit) == 3 and fit[2] == info[2][row] and fit[1] == 'STRUCTURAL':
-                                self.varTable.item(row,2).setBackground(QtGui.QColor(150, 255, 150))
-                            elif len(fit) == 4:
-                                if fit[0] == layer_idx and fit[1] == "POLYMORPHOUS" and fit[2] == ele and fit[3] == info[0][row]:
-                                    self.varTable.item(row,1).setBackground(QtGui.QColor(150, 255, 150))
-            else:
-                for row in range(self.varTable.rowCount()):
-                    item = QTableWidgetItem('')
-                    self.varTable.setItem(row, 0, item)
+                        if idx == 1:
+                            for fit in self.parameterFit:
+                                if len(fit) == 3 and fit[2] == info[2][row] and fit[1] == 'STRUCTURAL':
+                                    self.varTable.item(row,2).setBackground(QtGui.QColor(150, 255, 150))
+                                elif len(fit) == 4:
+                                    if fit[0] == layer_idx and fit[1] == "POLYMORPHOUS" and fit[2] == ele and fit[3] == info[0][row]:
+                                        self.varTable.item(row,1).setBackground(QtGui.QColor(150, 255, 150))
+                else:
+                    for row in range(self.varTable.rowCount()):
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 0, item)
 
-                    item = QTableWidgetItem('')
-                    self.varTable.setItem(row, 1, item)
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 1, item)
 
-                    item = QTableWidgetItem('')
-                    self.varTable.setItem(row, 2, item)
+                        item = QTableWidgetItem('')
+                        self.varTable.setItem(row, 2, item)
 
-        self.varTable.blockSignals(False)
+            self.varTable.blockSignals(False)
+
+    def clearMagTable(self):
+        self.magTable.setRowCount(0)
+        self.magTable.setColumnCount(2)
 
     def setTableMag(self):
-        self.magTable.blockSignals(True)
-        layer_idx = self.layerBox.currentIndex()
 
-        # set the magnetic direction combobox to the correct magnetization direction
-        mag_idx = 0
-        dir = self.magDirection[layer_idx]
-        if dir=='x':
+        if len(self.structTableInfo) != 0:
+            self.magTable.blockSignals(True)
+            layer_idx = self.layerBox.currentIndex()
+
+            # set the magnetic direction combobox to the correct magnetization direction
             mag_idx = 0
-        elif dir =='y':
-            mag_idx = 1
-        elif dir =='z':
-            mag_idx = 2
+            dir = self.magDirection[layer_idx]
+            if dir=='x':
+                mag_idx = 0
+            elif dir =='y':
+                mag_idx = 1
+            elif dir =='z':
+                mag_idx = 2
 
-        self.magDirBox.setCurrentIndex(mag_idx)
+            self.magDirBox.setCurrentIndex(mag_idx)
 
-        labels = []
-        density = []
-        sf = []
-        # Loops through all of the elements
-        for ele_idx in range(len(self.structTableInfo[layer_idx])):
-            element = self.structTableInfo[layer_idx][ele_idx][0]
+            labels = []
+            density = []
+            sf = []
+            # Loops through all of the elements
+            for ele_idx in range(len(self.structTableInfo[layer_idx])):
+                element = self.structTableInfo[layer_idx][ele_idx][0]
 
-            names = self.magData[element][layer_idx][0]
-            D = self.magData[element][layer_idx][1]
-            S = self.magData[element][layer_idx][2]
+                names = self.magData[element][layer_idx][0]
+                D = self.magData[element][layer_idx][1]
+                S = self.magData[element][layer_idx][2]
 
-            num = len(names)
-            if num != 0:
-                for i in range(num):
-                    labels.append(names[i])
+                num = len(names)
+                if num != 0:
+                    for i in range(num):
+                        labels.append(names[i])
+                        if len(D) != 0:
+                            density.append(D[i])
+                        else:
+                            density.append('')
+                        if len(S) != 0:
+                            sf.append(S[i])
+                        else:
+                            sf.append('')
+                else:
+                    labels.append(element)
                     if len(D) != 0:
-                        density.append(D[i])
+                        density.append(D[0])
                     else:
                         density.append('')
                     if len(S) != 0:
-                        sf.append(S[i])
+                        sf.append(S[0])
                     else:
                         sf.append('')
-            else:
-                labels.append(element)
-                if len(D) != 0:
-                    density.append(D[0])
+
+            row_num = len(labels)
+            self.magTable.setRowCount(row_num)
+            self.magTable.setVerticalHeaderLabels(
+                labels)
+            self.magTable.resizeColumnsToContents()  # resizes columns to fit
+
+            for row in range(row_num):
+                name = self.magTable.verticalHeaderItem(row).text()  # for color purposes
+                mydensity = density[row]
+                mysf = sf[row]
+                if mydensity == '':
+                    item = QTableWidgetItem('')
+                    self.magTable.setItem(row,0,item)
                 else:
-                    density.append('')
-                if len(S) != 0:
-                    sf.append(S[0])
+                    item = QTableWidgetItem(str(mydensity))
+                    self.magTable.setItem(row, 0, item)
+
+                    for fit in self.parameterFit:
+                        if len(fit) == 3 and fit[0] != 'SCATTERING FACTOR':
+                            if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[2] == name:
+                                self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
+                        elif len(fit) == 4 and fit[1] == 'MAGNETIC':
+                            if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[3] == name:
+                                self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
+                if mysf == '':
+                    item = QTableWidgetItem('')
+                    self.magTable.setItem(row, 1, item)
                 else:
-                    sf.append('')
+                    item = QTableWidgetItem(mysf)
+                    self.magTable.setItem(row, 1, item)
+                    for fit in self.parameterFit:
+                        if len(fit) == 3:
+                            scattering_factor = self.magTable.item(row,1).text()
+                            if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
+                                self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
 
-        row_num = len(labels)
-        self.magTable.setRowCount(row_num)
-        self.magTable.setVerticalHeaderLabels(
-            labels)
-        self.magTable.resizeColumnsToContents()  # resizes columns to fit
-
-        for row in range(row_num):
-            name = self.magTable.verticalHeaderItem(row).text()  # for color purposes
-            mydensity = density[row]
-            mysf = sf[row]
-            if mydensity == '':
-                item = QTableWidgetItem('')
-                self.magTable.setItem(row,0,item)
-            else:
-                item = QTableWidgetItem(str(mydensity))
-                self.magTable.setItem(row, 0, item)
-
-                for fit in self.parameterFit:
-                    if len(fit) == 3 and fit[0] != 'SCATTERING FACTOR':
-                        if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[2] == name:
-                            self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
-                    elif len(fit) == 4 and fit[1] == 'MAGNETIC':
-                        if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[3] == name:
-                            self.magTable.item(row,0).setBackground(QtGui.QColor(150, 255, 150))
-            if mysf == '':
-                item = QTableWidgetItem('')
-                self.magTable.setItem(row, 1, item)
-            else:
-                item = QTableWidgetItem(mysf)
-                self.magTable.setItem(row, 1, item)
-                for fit in self.parameterFit:
-                    if len(fit) == 3:
-                        scattering_factor = self.magTable.item(row,1).text()
-                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
-                            self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
-
-        self.magTable.blockSignals(False)
+            self.magTable.blockSignals(False)
 
 
     def _addLayer(self):
@@ -1785,21 +1810,29 @@ class sampleWidget(QWidget):
 
 
     def _removeLayer(self):
+        print(self.structTableInfo)
         num = self.layerBox.count()  # get the number of layers in the material
 
         idx = self.layerBox.currentIndex()  # determine which layer has been selected to remove
         if num != 0:
             self.layerBox.removeItem(num-1)
 
-        self.structTableInfo.pop(idx)  # removes the information about that layer
+            self.structTableInfo.pop(idx)  # removes the information about that layer
 
-        # removes the element variation data
-        for key in list(self.varData.keys()):
-            self.varData[key].pop(idx)
-            self.magData[key].pop(idx)
+            # removes the element variation data
+            for key in list(self.varData.keys()):
+                self.varData[key].pop(idx)
+                self.magData[key].pop(idx)
 
-        self.setTable()  # sets the table for layer that replaces the removed layer
+            if num != 1:
+                self.setTable()  # sets the table for layer that replaces the removed layer
+            else:
+                self.clearTable()
+                self.clearVarTable()
+                self.clearMagTable()
 
+            # need to check energy shift elements
+            print()
     def _copyLayer(self):
         num = self.layerBox.count()
         if num == 0:
@@ -4933,8 +4966,8 @@ class ReflectometryApp(QMainWindow):
                 for param in self._reflectivityWidget.sfBsFitParams:
                     self._goWidget.parameters.append(param)
 
-                # reset all of the tables!!!
-                # - otherwise we have everything for the load function
+                self._sampleWidget.setTableEShift()  # reset the energy shift table
+
             elif fname.endswith('.all'):
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("ReMagX Implementation")
@@ -4969,7 +5002,6 @@ class ReflectometryApp(QMainWindow):
     def _saveAsFile(self):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
-        print(filename)
         fname = filename.split('/')[-1]
 
         # checks to make sure filename is in the correct format
