@@ -1608,6 +1608,8 @@ def ReadSampleHDF5(fname):
     sample.layer_magnetized = S.attrs['LayerMagnetized']
     sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
     sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
+    sample.find_sf = ast.literal_eval(S.attrs['findFF'])
+    print(sample.find_sf)
 
 
     # Retrieves the general layer information
@@ -1756,6 +1758,7 @@ def WriteSampleHDF5(fname, sample):
         sample.mag_elements[key] = list(sample.mag_elements)
 
     m = len(sample.structure)
+    grp1.attrs['findFF'] = str(sample.find_sf)
     grp1.attrs['NumberLayers'] = int(m)
     grp1.attrs['PolyElements'] = str(sample.poly_elements)
     grp1.attrs['MagElements'] = str(sample.mag_elements)

@@ -47,6 +47,7 @@ def _use_given_ff(directory):
     return struct_names, mag_names
 
 def form_factor(f,E):
+    global ff
 
     """
     Purpose: Determines form factors with energy E using linear interpolation

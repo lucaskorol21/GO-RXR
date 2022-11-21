@@ -269,6 +269,7 @@ class variationWidget(QDialog):
         idx = self.mainWidget.layerBox.currentIndex()
         self.mainWidget.elementBox.clear()
 
+
         for j in range(len(self.mainWidget.structTableInfo[idx])):
             ele = self.mainWidget.structTableInfo[idx][j][0]
             self.mainWidget.elementBox.addItem(ele)
@@ -779,7 +780,6 @@ class sampleWidget(QWidget):
 
             # changing the scattering factor
             if column == 2:
-                print(prev_value, value)
                 if prev_value != value:
 
                     # takes into account the scattering factor change
@@ -1467,6 +1467,7 @@ class sampleWidget(QWidget):
 
     def _setStructFromSample(self, sample):
         self.sample = sample
+        find_sf = self.sample.find_sf
         self.structTableInfo = []
         for idx in range(len(sample.structure)):
             # this function will take the upon initialization and load in all parameters
@@ -1496,7 +1497,10 @@ class sampleWidget(QWidget):
                         tempArray[row, col] = str(linked_roughness)
                     elif col == 5:
                         element = list(structInfo[idx].keys())[row]
-                        scattering_factor = structInfo[idx][element].scattering_factor
+                        if element in list(find_sf[0].keys()):
+                            scattering_factor = find_sf[0][element]
+                        else:
+                            scattering_factor = structInfo[idx][element].scattering_factor
 
                         # keeps track of the scattering factors - implementation will change when loading data
                         if type(scattering_factor) is not list and type(scattering_factor) is not np.ndarray:
@@ -5397,6 +5401,7 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
 
+
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
@@ -5506,7 +5511,6 @@ class progressWidget(QWidget):
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
                                                       self.backS, self.scaleF)
-
         background_shift = float(backS[name])
         scaling_factor = float(scaleF[name])
 
@@ -5923,6 +5927,7 @@ class showFormFactors(QDialog):
         with open('form_factor_magnetic.pkl', 'rb') as f:
             self.ffm = pickle.load(f)
         f.close()
+
 
         buttonLayout = QHBoxLayout()
         self.structButton = QPushButton('Structural')

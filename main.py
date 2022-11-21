@@ -1,33 +1,18 @@
-from data_structure import *
-from material_structure import *
-from GlobalOptimization import *
-import matplotlib.pyplot as plt
 import numpy as np
-from numba import *
-from scipy import interpolate
-from scipy.fft import fft, fftfreq,fftshift, rfft, irfft
-from scipy.interpolate import UnivariateSpline
-from scipy import signal
-import time
 
-class Logger():
-    stdout = sys.stdout
-    messages = []
 
-    def start(self):
-        sys.stdout = self
-    def stop(self):
-        sys.stdout = self.stdout
-    def write(self, text):
-        self.messages.append(text)
 
 
 if __name__ == '__main__':
-    log = Logger()
-    log.start()
-    print("sys")
-    print("bye")
-    log.stop()
+    fname = 'Te_R.ff'
 
-    print(log.messages)
-    print('hello')
+    data = np.loadtxt(fname)
+
+    new_data = data[:,0:3]
+    E = data[:,0]
+    alpha = data[:,1]
+    beta = data[:,2]
+    new_data = data[:, 0:3]
+    new_data[:,2] = data[:,3]
+    np.savetxt(fname,new_data)
+

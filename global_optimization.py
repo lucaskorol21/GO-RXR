@@ -24,7 +24,6 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
     :param sample: A slab object class
     :return: The new sample
     """
-
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
