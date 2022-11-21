@@ -763,7 +763,6 @@ class slab:
         # Initializing thickness array
         #transition = [0]
         transition = [[0],[0],[0]]  # array that contains thickness that slab transition occurs
-        #thick = 0  # contains the total film thickness
         thick1 = 0
         thick2 = 0
         thick3 = 0
@@ -1077,6 +1076,12 @@ class slab:
 
         self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
+
+    def _set_form_factors(self, element, ff, mag=False):
+        if not mag:
+            self.find_sf[0][element] = ff
+        else:
+            self.find_sf[1] = ff
 
     def plot_density_profile(self, fig=1, save=False, dir='Plot_Scans'):
         thickness, density, density_magnetic = self.density_profile()

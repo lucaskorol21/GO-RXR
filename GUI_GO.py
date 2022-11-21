@@ -838,8 +838,6 @@ class sampleWidget(QWidget):
                     del self.eShift[prev_dict_name]
                     dict_name = 'ff-'+ value
                     self.eShift[dict_name] = 0
-
-                    self.eShift[dict_name] = value
                     for i in range(len(self.structTableInfo)):
                         for j in range(len(self.structTableInfo[i])):
                             if self.structTableInfo[i][j][0] == name:
@@ -2026,7 +2024,8 @@ class sampleWidget(QWidget):
                 if len(names) > 1:
                     if names[0] != '':
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
-                        sample.polymorphous(idx,ele_name,names,ratio,sf=scattering_factor)
+
+
 
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
@@ -2044,6 +2043,20 @@ class sampleWidget(QWidget):
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx,names,ratio,scattering_factor)
 
+        sample.density_profile()
+
+        # changing the form factors
+        for idx in range(m):
+            layer = self.structTableInfo[idx]  # gets the layer information
+            for ele in range(len(layer)):
+                ele_name = layer[ele][0]
+
+                poly = self.varData[ele_name][idx]  # retrieves the element variation data for particular layer
+                names = poly[0]
+
+                if len(names) > 1:
+                    if names[0] == '':
+                        sample._set_form_factors(layer[ele][0], layer[ele][5])
 
         return sample
 
@@ -5476,6 +5489,7 @@ class progressWidget(QWidget):
         pagelayout.addWidget(self.plotWidget)
 
         self.setLayout(pagelayout)
+
     def plot_scan(self):
 
         global x_vars
