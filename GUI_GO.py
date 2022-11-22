@@ -1,3 +1,5 @@
+import ast
+
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
@@ -1878,6 +1880,7 @@ class sampleWidget(QWidget):
                     to_remove = key.strip('ff-')
                     if to_remove in ff_to_remove:
                         del self.eShift[key]
+
                 elif key.startswith('ffm-'):
                     to_remove = key.strip('ffm-')
                     if to_remove in ffm_to_remove:
@@ -1986,6 +1989,7 @@ class sampleWidget(QWidget):
             density = []  # density of the layer
             roughness = []  # roughness of the layer
             linked_roughness = []  # linked roughness of the layer
+            scat_fact = []
 
             layer = self.structTableInfo[idx]  # gets the layer information
 
@@ -2005,8 +2009,13 @@ class sampleWidget(QWidget):
                 else:
                     linked_roughness.append(False)
 
+                if element[5][-1] != '[':
+                    scat_fact.append(element[5])
+
+                #scat_fact.append(element[5])
                 # still need to take into account sf that are different than element
-            sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness)
+
+            sample.addlayer(idx,formula,thickness,density=density, roughness=roughness, linked_roughness=linked_roughness, sf=scat_fact)
 
         for key, value in self.eShift.items():
             if str(key).startswith('ff-'):

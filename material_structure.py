@@ -384,7 +384,7 @@ class slab:
 
 
 
-    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None):
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None, sf = None):
         """
         Purpose: Add layer to sample material
         :param num_layer: Layer number (0 indicates substrate layer)
@@ -504,9 +504,13 @@ class slab:
             elements[key].linked_roughness = linked_roughness[position]  # sets the linked roughness for each element
             elements[key].molar_mass = molar_mass  # Molar mass of perovskite material
             elements[key].position = position
+
+            # sets scattering factors for scattering factors that are different than their element symbol
+            if sf is not None:
+                my_sf = sf[position]
+                if my_sf is not None:
+                    elements[key].scattering_factor = my_sf
             position = position + 1
-
-
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
 
