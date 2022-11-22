@@ -819,7 +819,6 @@ class slab:
                 for layer in range(n):
                     offset = offset_list[layer]
                     #offset = transition[layer]
-                    print(self.find_sf)
 
                     # Element is found in the current layer (ignore linked roughness)
                     if ele in list(self.structure[layer].keys()):
