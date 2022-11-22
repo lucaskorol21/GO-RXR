@@ -1814,7 +1814,7 @@ def WriteSampleHDF5(fname, sample):
                 element.attrs['MagDensity'] = my_layer[ele].mag_density
                 element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
 
-            element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
+            element.attrs['ScatteringFactor'] = str(my_layer[ele].scattering_factor)
             element.attrs['Position'] = my_layer[ele].position
 
         dsLayer = dsLayer + 1

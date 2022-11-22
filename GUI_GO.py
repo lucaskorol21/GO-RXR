@@ -1433,10 +1433,13 @@ class sampleWidget(QWidget):
         # setting up the varData and magData dictionaries
         num_layers = len(sample.structure)
         self.magDirection = ['z' for i in range(num_layers)]
+        self.varData = dict()
+        self.magData = dict()
+        # need to add sample.myelements in the data file
         for ele in sample.myelements:
             self.varData[ele] = [[['',''],['',''],['','']] for i in range(num_layers)]
             self.magData[ele] = [[[ele], [''], ['']] for i in range(num_layers)]
-
+        print(self.varData)
         for idx, layer in enumerate(sample.structure):
 
             for ele in list(layer.keys()):
@@ -1907,6 +1910,7 @@ class sampleWidget(QWidget):
         # goes through all the keys
         for key in list(self.varData.keys()):
 
+            print(self.varData[key])
             info = copy.deepcopy(self.varData[key][idx])
             info_mag = copy.deepcopy(self.magData[key][idx])
 
@@ -5365,7 +5369,7 @@ class ReflectometryApp(QMainWindow):
 
 
     def _showFormFactor(self):
-
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
         formFactor = showFormFactors(self.sample)
         formFactor.show()
         formFactor.exec_()
