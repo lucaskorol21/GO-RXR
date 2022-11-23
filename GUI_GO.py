@@ -1439,7 +1439,7 @@ class sampleWidget(QWidget):
         for ele in sample.myelements:
             self.varData[ele] = [[['',''],['',''],['','']] for i in range(num_layers)]
             self.magData[ele] = [[[ele], [''], ['']] for i in range(num_layers)]
-        print(self.varData)
+            
         for idx, layer in enumerate(sample.structure):
 
             for ele in list(layer.keys()):
@@ -5043,6 +5043,7 @@ class ReflectometryApp(QMainWindow):
                     self._reflectivityWidget.whichScan.addItem(scan[2])
                 self._reflectivityWidget.whichScan.blockSignals(False)
 
+                self._sampleWidget.eShift = dict()  # make sure we clear the eshift
                 for key in list(self.sample.eShift.keys()):
                     name = 'ff-'+key
                     self._sampleWidget.eShift[name] = self.sample.eShift[key]

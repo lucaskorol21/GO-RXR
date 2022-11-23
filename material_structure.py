@@ -14,7 +14,7 @@ import copy
 
 
 @njit()
-def ALS(epsilon, epsilon_mag, precision=1e-6):
+def ALS(alpha, beta, precision=1e-6):
     """
     Purpose: Perform the adaptive layer segmentation
     :param epsilon: numpy array of real values
@@ -22,26 +22,26 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
     :param precision: precision for slicing
     :return: my_slabs - contains indices for slicing
     """
-    epsilon = epsilon/np.linalg.norm(epsilon)  # normalizes epsilon
-    epsilon_mag = epsilon_mag/np.linalg.norm(epsilon)  # normalizes epsilon_mag
+    alpha = alpha #/np.linalg.norm(alpha)  # normalizes epsilon
+    beta = beta #/np.linalg.norm(beta)  # normalizes epsilon_mag
     idx_a = 0  # keeps track of surface of previous slab
-    n = epsilon.size
+    n = alpha.size
     my_slabs = np.zeros(n) # pre-initialize the slab array
 
     dsSlab = 1
     for idx_b in range(1,n):
 
         # retrieves permittivity values
-        f1 = epsilon[idx_a]
-        f2 = epsilon[idx_b]
-        f1m = epsilon_mag[idx_a]
-        f2m = epsilon_mag[idx_b]
+        f1 = alpha[idx_a]
+        f2 = alpha[idx_b]
+        f1b = beta[idx_a]
+        f2b = beta[idx_b]
 
-        delta = np.absolute(f2-f1)  # varitation of epsilon
-        delta_m = np.absolute(f2m-f1m)  # variation of epsilon_mag
+        delta_a = np.absolute(f2-f1)  # varitation of epsilon
+        delta_b = np.absolute(f2b-f1b)  # variation of epsilon_mag
 
         # checks if variation is of minimum variation set by 'precision'
-        if delta>precision or delta_m>precision:
+        if delta_a>precision or delta_b>precision:
             #my_slabs = np.append(my_slabs, idx_b)  # append slice
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
@@ -52,6 +52,7 @@ def ALS(epsilon, epsilon_mag, precision=1e-6):
 
 
     my_slabs = my_slabs[:dsSlab]
+
     return my_slabs
 
 def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
@@ -1176,7 +1177,7 @@ class slab:
         #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
 
-        my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = ALS(epsilon.real, epsilon_mag.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
 
@@ -1339,7 +1340,7 @@ class slab:
         Q = beta_m + 1j*delta_m  # magneto-optical constant
         epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
-        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
 
         # initializes the object for reflectivity computation using list comprehension
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
