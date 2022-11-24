@@ -491,9 +491,9 @@ class sampleWidget(QWidget):
         self.structTable = QTableWidget()
 
         self.structTable.setRowCount(3)
-        self.structTable.setColumnCount(6)
+        self.structTable.setColumnCount(7)
         self.structTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor'])
+            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor', 'Stoichiometry'])
 
         self._setStructFromSample(sample)
 
@@ -1177,6 +1177,11 @@ class sampleWidget(QWidget):
 
             if not compound:
                 _compound_fit.setDisabled(True)
+        elif column == 6:
+            _element_fit.setDisabled(True)
+            _compound_fit.setDisabled(True)
+            _remove_fit.setDisabled(True)
+
 
 
 
@@ -1534,8 +1539,8 @@ class sampleWidget(QWidget):
             tableInfo = self.structTableInfo[idx]
             num_rows = len(tableInfo)
             self.structTable.setRowCount(num_rows)
-            self.structTable.setColumnCount(6)
-            for col in range(6):
+            self.structTable.setColumnCount(7)
+            for col in range(7):
                 for row in range(num_rows):
                     print(str(tableInfo[row][col]))
                     item = QTableWidgetItem(str(tableInfo[row][col]))
