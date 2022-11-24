@@ -237,7 +237,6 @@ class variationWidget(QDialog):
         self.radiobutton = QRadioButton()
         idx = self.mainWidget.layerBox.currentIndex()
 
-
         # Setting up the element variation check boxes
         for j in range(len(list(self.sample.structure[idx].keys()))):
             ele = list(self.sample.structure[idx].keys())[j]
@@ -507,8 +506,8 @@ class sampleWidget(QWidget):
 
 
         # Element Variation Stuff
-        self.elementVariation = variationWidget(self,sample)
-        self.elementMagnetic = magneticWidget(self,sample)
+        self.elementVariation = variationWidget(self,self.sample)
+        self.elementMagnetic = magneticWidget(self,self.sample)
 
         self.sampleInfoLayout.addWidget(self.structTable)
         self.sampleInfoLayout.addWidget(self.elementVariation)
@@ -1439,7 +1438,7 @@ class sampleWidget(QWidget):
         for ele in sample.myelements:
             self.varData[ele] = [[['',''],['',''],['','']] for i in range(num_layers)]
             self.magData[ele] = [[[ele], [''], ['']] for i in range(num_layers)]
-            
+
         for idx, layer in enumerate(sample.structure):
 
             for ele in list(layer.keys()):
@@ -1534,9 +1533,11 @@ class sampleWidget(QWidget):
             idx = self.layerBox.currentIndex()
             tableInfo = self.structTableInfo[idx]
             num_rows = len(tableInfo)
-
+            self.structTable.setRowCount(num_rows)
+            self.structTable.setColumnCount(6)
             for col in range(6):
                 for row in range(num_rows):
+                    print(str(tableInfo[row][col]))
                     item = QTableWidgetItem(str(tableInfo[row][col]))
                     self.structTable.setItem(row, col, item)
                     if col == 0:
@@ -1753,6 +1754,7 @@ class sampleWidget(QWidget):
         addLayerApp.close()
 
         # check to see if we have a new element
+
         num_layers = len(self.structTableInfo)
         my_elements = []
         # checks to see if we have a new element and adds it to the element variation list
@@ -1774,14 +1776,20 @@ class sampleWidget(QWidget):
             idx = self.layerBox.currentIndex()
             if num == 0:
                 self.varData = dict()
-                self.layerBox.addItem('Substrate')
-                self.structTableInfo.insert(0, userinput)
-                for i in range(len(userinput)):
-                    self.varData[userinput[i][0]] = [['',''],['',''],['','']]
-                    self.magData[userinput[i][0]] = [[userinput[i][0]],[''],['']]
 
+                self.structTableInfo.insert(0, userinput)
+                self.layerBox.blockSignals(True)
+                self.layerBox.addItem('Substrate')
+                self.layerBox.blockSignals(False)
+                for i in range(len(userinput)):
+                    self.varData[userinput[i][0]] = [[['',''],['',''],['','']]]
+                    self.magData[userinput[i][0]] = [[[userinput[i][0]],[''],['']]]
+                self.setTable()
+                self.elementVariation.changeElements()
             else:
+                self.layerBox.blockSignals(True)
                 self.layerBox.addItem('Layer ' + str(num))
+                self.layerBox.blockSignals(False)
                 self.structTableInfo.insert(idx+1, userinput)
 
                 for key in list(self.varData.keys()):
@@ -1817,7 +1825,7 @@ class sampleWidget(QWidget):
                     self.varData[key].insert(idx+1, data)
                     self.magData[key].insert(idx+1,data_mag)
                     self.magDirection.insert(idx+1,'z')
-
+                self.layerBox.setCurrentIndex(idx+1)
 
     def _removeLayer(self):
 
@@ -1831,6 +1839,7 @@ class sampleWidget(QWidget):
             self.layerBox.removeItem(num-1)
 
             last_struct = self.structTableInfo[idx]
+
             self.structTableInfo.pop(idx)  # removes the information about that layer
 
             # removes the element variation data
@@ -1866,6 +1875,7 @@ class sampleWidget(QWidget):
             for key in list(elements_removed.keys()):
                 n_ff = len(ff_to_remove)
                 if not(elements_removed[key]):  # element has been removed
+                    del self.magData[key]
                     for sf in last_var[key][2]:  # element variation case
                         if sf != '' and sf not in ff_to_remove:
                             ff_to_remove.append(sf)
@@ -1884,13 +1894,11 @@ class sampleWidget(QWidget):
                     if to_remove in ff_to_remove:
                         del self.eShift[key]
 
+
                 elif key.startswith('ffm-'):
                     to_remove = key.strip('ffm-')
                     if to_remove in ffm_to_remove:
                         del self.eShift[key]
-
-
-
 
 
 
@@ -1910,7 +1918,6 @@ class sampleWidget(QWidget):
         # goes through all the keys
         for key in list(self.varData.keys()):
 
-            print(self.varData[key])
             info = copy.deepcopy(self.varData[key][idx])
             info_mag = copy.deepcopy(self.magData[key][idx])
 
@@ -3221,7 +3228,7 @@ class reflectivityWidget(QWidget):
 
     def plot_selected_scans(self):
         step_size = float(self.sWidget._step_size)
-        self.sample = self.sWidget.sample
+        self.sample = self.sWidget._createSample()
         self.spectrumWidget.clear()
         name = self.selectedScans.currentText()
         b_idx = self.selectedScans.currentIndex()
@@ -3233,6 +3240,8 @@ class reflectivityWidget(QWidget):
             upper = float(bound[-1][-1])
             background_shift = self.data_dict[name]['Background Shift']
             scaling_factor = self.data_dict[name]['Scaling Factor']
+
+            print(background_shift)
             idx=0
             notDone = True
             while notDone and idx==len(self.data)-1:
@@ -3365,7 +3374,7 @@ class GlobalOptimizationWidget(QWidget):
         self.goParameters = {'differential evolution': ['currenttobest1bin',2,15, 1e-6, 0,0.5,1, 0.7, True,'latinhypercube','immediate'],
                              'simplicial homology': ['None', 1, 'simplicial'],
                              'dual annealing': [150, 5230.0,2e-5,2.62,5.0,10000000.0,True],
-                             'least squares': ['2-point','trf',1e-8,1e-8,1,'linear',1.0,'None','None',0]}
+                             'least squares': ['2-point','trf',1e-8,1e-8,1e-8, 1.0,'linear' ,1.0,'None','None']}
 
 
         isLogLayout = QVBoxLayout()
@@ -5638,20 +5647,15 @@ class progressWidget(QWidget):
 
 
                         window = 5
-                        R = go.rolling_average(Rdat, window)
+                        R = go.rolling_average(np.log10(Rdat), window)
 
                         qz = np.array(myData[0])
                         qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
                         Rsim = Rsim[pol]
 
 
-
-                        if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
-                            Rsim = np.log10(Rsim)
-                            Rdat = np.log10(Rdat)
-
                         # total variation
-                        val = go.total_variation(R[window*2:], Rsim[window*2:])/len(R[window*2:])
+                        val = go.total_variation(np.log10(R[window*2:]), np.log10(Rsim[window*2:]))/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
@@ -5690,16 +5694,13 @@ class progressWidget(QWidget):
 
 
                         window = 5
-                        R = go.rolling_average(Rdat, window)
+                        R = go.rolling_average(np.log10(Rdat), window)
 
                         E, Rsim = sample.energy_scan(Theta, E)
                         Rsim = Rsim[pol]
-                        if pol == 'S' or pol == 'P' or pol == 'RC' or pol == 'LC':
-                            Rsim = np.log10(Rsim)
-                            Rdat = np.log10(Rdat)
 
                         # total variation
-                        val = go.total_variation(R[window * 2:], Rsim[window * 2:])/len(R[window*2:])
+                        val = go.total_variation(np.log10(R[window * 2:]), np.log10(Rsim[window * 2:]))/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
@@ -5737,6 +5738,7 @@ class progressWidget(QWidget):
         if len(x) == 0:
             x = go.return_x()
         self.plotWidget.clear()
+
         self.computeScan(x)
 
         idx = self.whichPlot.index(True)
@@ -6235,54 +6237,6 @@ class scriptWidget(QDialog):
         with open(self.fname, 'w') as f:
             f.write(text)
         f.close()
-    """
-    def open_new_file(self):
-        self.file_path, filter_type = QFileDialog.getOpenFileName(self, "Open new file",
-                                                                  "", "All files (*)")
-        if self.file_path:
-            with open(self.file_path, "r") as f:
-                file_contents = f.read()
-                self.title.setText(self.file_path)
-                self.scrollable_text_area.setText(file_contents)
-        
-
-    def save_current_file(self):
-        if not self.file_path:
-            new_file_path, filter_type = QFileDialog.getSaveFileName(self, "Save this file as ... ", "", " All files(*) ")
-            if new_file_path:
-                self.file_path = new_file_path
-            else:
-                self.invalid_path_alert_message()
-            return False
-        file_contents = self.scrollable_text_area.toPlainText()
-        with open(self.file_path, "w") as f:
-            f.write(file_contents)
-        self.title.setText(self.file_path)
-
-    def closeEvent(self, event):
-        messageBox = QMessageBox()
-        title = "Quit Application?"
-        message = "WARNING !!If you quit without saving, any changes made to the file will be lost."
-
-        reply = messageBox.question(self, title, message, messageBox.Yes | messageBox.No |
-                                messageBox.Cancel, messageBox.Cancel)
-        if reply == messageBox.Yes:
-            return_value = self.save_current_file()
-            if return_value == False:
-                event.ignore()
-        elif reply == messageBox.No:
-            event.accept()
-        else:
-            event.ignore()
-
-
-    def invalid_path_alert_message(self):
-        messageBox = QMessageBox()
-        messageBox.setWindowTitle("Invalid file")
-        messageBox.setText("Selected filename or path is not valid. Please select a valid file.")
-        messageBox.exec()
-    
-    """
 
 
 class LoadingScreen(QDialog):

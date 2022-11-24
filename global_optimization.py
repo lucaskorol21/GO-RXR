@@ -409,6 +409,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
 
     params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale]
 
+    print(goParam)
     diff = goParam[8]
     _max = goParam[9]
 
@@ -420,6 +421,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         _max = None
     else:
         _max = float(_max)
+
 
     result = optimize.least_squares(scanCompute, x0, args=params, bounds=bounds, jac=goParam[0], method=goParam[1],
                            ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),

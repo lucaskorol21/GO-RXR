@@ -53,7 +53,6 @@ def getTitleInfo(title):
             polarization = 'AC'
         elif 'S' in title[3] and 'P' in title[3]:
             polarization = 'AL'
-    print(energy, polarization, angle)
     return scan_number, scanType, energy, polarization, angle
 
 def Read_ReMagX(fname):
@@ -170,7 +169,6 @@ def Read_ReMagX(fname):
     return data_info, data_dict
 
 def evaluate_list(string):
-    print(string)
     # check to make sure it is a list
     if type(string) is not np.ndarray and type(string) is not list:
         if string[0] != '[' and string[-1] != ']':
@@ -347,7 +345,6 @@ def find_parameter_values(string):
 
 def evaluate_parameters(parameters):
     # format = [[val, [lower,upper]],[val, lower, upper]]
-    print(type(parameters))
     if type(parameters) is not np.ndarray and type(parameters) is not list:
         if parameters[0] != '[' and parameters[-1] != ']':
             raise TypeError('String is not a list.')
@@ -1483,7 +1480,6 @@ def ReadFitHDF5(fname):
     scan_fit = fitting_parameters['Scan Fit']
     results = fitting_parameters['Results']
 
-    print(type(sample_fit.attrs['sfbsVal']))
     sfbsFit = ast.literal_eval(sample_fit.attrs['sfbsFit'])
     sfbsVal = evaluate_parameters(sample_fit.attrs['sfbsVal'])
     sampleFit = ast.literal_eval(sample_fit.attrs['Sample Fit'])
@@ -1609,7 +1605,6 @@ def ReadSampleHDF5(fname):
     sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
     sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
     sample.find_sf = ast.literal_eval(S.attrs['findFF'])
-    print(sample.find_sf)
 
 
     # Retrieves the general layer information

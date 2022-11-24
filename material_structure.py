@@ -22,8 +22,8 @@ def ALS(alpha, beta, precision=1e-6):
     :param precision: precision for slicing
     :return: my_slabs - contains indices for slicing
     """
-    alpha = alpha #/np.linalg.norm(alpha)  # normalizes epsilon
-    beta = beta #/np.linalg.norm(beta)  # normalizes epsilon_mag
+    alpha = alpha /np.linalg.norm(alpha)  # normalizes epsilon
+    beta = beta /np.linalg.norm(beta)  # normalizes epsilon_mag
     idx_a = 0  # keeps track of surface of previous slab
     n = alpha.size
     my_slabs = np.zeros(n) # pre-initialize the slab array
@@ -52,7 +52,6 @@ def ALS(alpha, beta, precision=1e-6):
 
 
     my_slabs = my_slabs[:dsSlab]
-
     return my_slabs
 
 def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, layer_magnetized, transition):
@@ -1156,6 +1155,7 @@ class slab:
         sfm = dict()  # form factors of magnetic components
 
         # Non-Magnetic Scattering Factor
+        one = time.time_ns()
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
             sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
@@ -1163,9 +1163,11 @@ class slab:
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
+
+        two = time.time_ns()
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
-
+        three = time.time_ns()
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
@@ -1176,11 +1178,11 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m)
         #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
-
+        four = time.time_ns()
         my_slabs = ALS(epsilon.real, epsilon_mag.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
-
+        five = time.time_ns()
         #plt.figure()
         #plt.plot(thickness[my_slabs], epsilon.real[my_slabs], '.')
         #plt.legend([len(my_slabs)-1])
@@ -1192,6 +1194,7 @@ class slab:
         m = len(my_slabs)  # number of slabs
         #m = len(epsilon)
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
+        six = time.time_ns()
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
         layer = 0
@@ -1278,9 +1281,11 @@ class slab:
             R['AC'] = sFactor*(Rtemp[2]-Rtemp[3])/(sFactor*(Rtemp[2]+Rtemp[3])+2*bShift)
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
-
+        seven = time.time_ns()
+        total = seven-one
         return qz, R
-    def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1, bShift=0, sFactor=1):
+
+    def energy_scan(self, Theta, energy, precision=1e-7,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1324,8 +1329,10 @@ class slab:
             dE = float(self.mag_eShift[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)
 
+
         d_len = len(thickness)
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+
         delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
 
 
@@ -1340,13 +1347,16 @@ class slab:
         Q = beta_m + 1j*delta_m  # magneto-optical constant
         epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
-        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
 
         # initializes the object for reflectivity computation using list comprehension
+
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
         wavelength = h * c / (energy * 1e-10)
         # reflectivity computation using list comprehension
+
         R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E), backS=bShift, scaleF=sFactor) for E in range(len(all_slabs))]
+
 
         R = R[0]
 
