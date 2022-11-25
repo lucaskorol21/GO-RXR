@@ -1528,7 +1528,7 @@ class sampleWidget(QWidget):
 
     def clearTable(self):
         self.structTable.setRowCount(0)
-        self.structTable.setColumnCount(6)
+        self.structTable.setColumnCount(7)
 
 
     def setTable(self):
@@ -1542,7 +1542,6 @@ class sampleWidget(QWidget):
             self.structTable.setColumnCount(7)
             for col in range(7):
                 for row in range(num_rows):
-                    print(str(tableInfo[row][col]))
                     item = QTableWidgetItem(str(tableInfo[row][col]))
                     self.structTable.setItem(row, col, item)
                     if col == 0:
@@ -2380,7 +2379,8 @@ class reflectivityWidget(QWidget):
         bsLabel.setFixedWidth(90)
         self.backgroundShift = QLineEdit()
         self.scalingFactor = QLineEdit()
-        self.backgroundShift.textChanged.connect(self.changeSFandBS)
+        self.backgroundShift.editingFinished.connect(self.changeSFandBS)
+        #self.backgroundShift.textChanged.connect(self.changeSFandBS)
         self.backgroundShift.setFixedWidth(100)
         self.backgroundShift.setFixedHeight(25)
         bsLayout.addWidget(bsLabel)
@@ -2389,7 +2389,8 @@ class reflectivityWidget(QWidget):
         sfLayout = QHBoxLayout()
         sfLabel = QLabel('Scaling Factor:')
         sfLabel.setFixedWidth(90)
-        self.scalingFactor.textChanged.connect(self.changeSFandBS)
+        #self.scalingFactor.textChanged.connect(self.changeSFandBS)
+        self.scalingFactor.editingFinished.connect(self.changeSFandBS)
         self.scalingFactor.setFixedWidth(100)
         self.scalingFactor.setFixedHeight(25)
         sfLayout.addWidget(sfLabel)
@@ -2657,10 +2658,12 @@ class reflectivityWidget(QWidget):
             if self.allScan.checkState() == 0:
                 old_var = self.bs[name]
                 self.bs[name] = var
+                self.data_dict[name]['Background Shift'] = float(var)
             else:
                 old_var = self.bs[name]
                 for key in list(self.bs.keys()):
                     self.bs[key] = var
+                    self.data_dict[name]['Background Shift'] = float(var)
 
             for fit in copy_of_fit:
                 if fit[0] == 'BACKGROUND SHIFT':
@@ -2673,6 +2676,7 @@ class reflectivityWidget(QWidget):
                         idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', name])
                         self.currentVal[idx] = [var, [lower, upper]]
 
+        print(var)
 
     def sfChange(self):
         name = self.selectedScans.currentText()
@@ -2680,13 +2684,17 @@ class reflectivityWidget(QWidget):
         var = self.scalingFactor.text()
         copy_of_fit = copy.deepcopy(self.sfBsFitParams)
 
+
         if name != '':
             # first change the value
             if self.allScan.checkState() == 0:
                 self.sf[name] = var
+                self.data_dict[name]['Scaling Factor'] = float(var)
             else:
                 for key in list(self.sf.keys()):
                     self.sf[key] = var
+                    self.data_dict[name]['Scaling Factor'] = float(var)
+
 
             for fit in copy_of_fit:
                 if fit[0] == 'SCALING FACTOR':
@@ -2813,11 +2821,12 @@ class reflectivityWidget(QWidget):
             if self.allScan.checkState() == 0:  # case where all scans have different bs and sf
                 self.bs[name] = bs
                 self.sf[name] = sf
+                self.data_dict[name]['Background Shift'] = float(bs)
+                self.data_dict[name]['Scaling Factor'] = float(sf)
             else: # case where all scans have same bs and sf
                 for key in list(self.bs.keys()):
-                    self.bs[key] = bs
-                    self.sf[key] = sf
-
+                    self.data_dict[key]['Background Shift'] = float(bs)
+                    self.data_dict[key]['Scaling Factor'] = float(sf)
 
     def changeStepSize(self):
         self.sWidget._step_size = self.stepWidget.text()
@@ -3175,6 +3184,7 @@ class reflectivityWidget(QWidget):
             if name != '':
                 background_shift = self.data_dict[name]['Background Shift']
                 scaling_factor = self.data_dict[name]['Scaling Factor']
+
                 dat = self.data_dict[name]['Data']
                 pol = self.data_dict[name]['Polarization']
                 scan_type = self.data[idx][1]
@@ -3246,7 +3256,6 @@ class reflectivityWidget(QWidget):
             background_shift = self.data_dict[name]['Background Shift']
             scaling_factor = self.data_dict[name]['Scaling Factor']
 
-            print(background_shift)
             idx=0
             notDone = True
             while notDone and idx==len(self.data)-1:
@@ -4916,7 +4925,7 @@ class ReflectometryApp(QMainWindow):
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
-
+        self.fname = filename
         # checks to make sure filename is in the correct format
         cont = True
         if filename == '' or fname == '':
@@ -5031,13 +5040,19 @@ class ReflectometryApp(QMainWindow):
                 self._sampleWidget.mag_ff = mag_names
 
                 self.sample = ds.ReadSampleHDF5(self.fname)
+                fitParams = ds.ReadFitHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
+                self._reflectivityWidget.sample = self.sample
+                self._goWidget.sample = self.sample
 
                 self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(self.fname)
 
                 # loading in the background shift and scaling factor
                 self._reflectivityWidget.bs = dict()
                 self._reflectivityWidget.sf = dict()
+                for scan_name in fitParams[4]:
+                    self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
+                    self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
 
 
                 self._sampleWidget._setStructFromSample(self.sample)
@@ -5084,25 +5099,15 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.setGOParameters()
                 self._goWidget.setTableFit()
 
-                fitParams = ds.ReadFitHDF5(self.fname)
-
                 # for now let's clear all the fitting parameters
                 self._reflectivityWidget.sfBsFitParams = fitParams[0]
-                self._reflectivityWidget.currentVal = fitParams[1]
+                self._reflectivityWidget.currentVal = list(fitParams[1])
                 self._reflectivityWidget.rom = [True, False, False]
                 self._reflectivityWidget.fit = fitParams[4]
                 # need to put selected scans
                 self._reflectivityWidget.selectedScans.blockSignals(True)
                 self._reflectivityWidget.selectedScans.addItems(fitParams[4])
                 self._reflectivityWidget.selectedScans.blockSignals(False)
-
-                # need to set sf and bs
-                self._reflectivityWidget.sf = dict()
-                self._reflectivityWidget.bs = dict()
-                for scan_name in fitParams[4]:
-                    self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
-                    self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
-
 
                 self._reflectivityWidget.bounds = fitParams[5]
                 self._reflectivityWidget.weights = fitParams[6]
@@ -5151,7 +5156,7 @@ class ReflectometryApp(QMainWindow):
 
             optParams = self._goWidget.goParameters
 
-            ds.saveFileHDF5(fname, self.sample, data_dict,  fitParams, optParams)
+            ds.saveFileHDF5(filename, self.sample, data_dict,  fitParams, optParams)
 
     def _saveAsFile(self):
         # create a new file with the inputted
@@ -5660,10 +5665,13 @@ class progressWidget(QWidget):
 
 
                         # total variation
-                        val = go.total_variation(np.log10(R[window*2:]), np.log10(Rsim[window*2:]))/len(R[window*2:])
+                        val = go.total_variation(R[window*2:], np.log10(Rsim[window*2:]))/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
+                        if pol == 'S' or pol =='P' or pol == 'LC' or pol == 'RC':
+                            Rdat = np.log10(Rdat)
+                            Rsim = np.log10(Rsim)
                         m = 0
                         for b in range(len(xbound)):
                             lw = xbound[b][0]
@@ -5705,7 +5713,7 @@ class progressWidget(QWidget):
                         Rsim = Rsim[pol]
 
                         # total variation
-                        val = go.total_variation(np.log10(R[window * 2:]), np.log10(Rsim[window * 2:]))/len(R[window*2:])
+                        val = go.total_variation(R[window * 2:], np.log10(Rsim[window * 2:]))/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 

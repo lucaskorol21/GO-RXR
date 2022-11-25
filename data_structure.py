@@ -30,8 +30,8 @@ def getTitleInfo(title):
         elif title[3] == 'P':
             polarization = 'P'
         elif title[3] == 'L':
-            polarization = 'L'
-        elif title[3] == 'R':
+            polarization = 'LC'
+        elif title[3] == 'RC':
             polarization = 'R'
         elif 'R' in title[3] and 'L' in title[3]:
             polarization = 'AC'
@@ -46,9 +46,9 @@ def getTitleInfo(title):
         elif title[3] == 'P':
             polarization = 'P'
         elif title[3] == 'L':
-            polarization = 'L'
+            polarization = 'LC'
         elif title[3] == 'R':
-            polarization = 'R'
+            polarization = 'RC'
         elif 'R' in title[3] and 'L' in title[3]:
             polarization = 'AC'
         elif 'S' in title[3] and 'P' in title[3]:
@@ -477,7 +477,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     x = fit[7]
     fun = fit[8]
 
-    # initializes the optimization information
+
     opt = f.create_group("Optimization")
 
     diff_ev = opt.create_group("Differential Evolution")
@@ -606,6 +606,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     x = fit[7]
     fun = fit[8]
 
+    print(fname)
     f = h5py.File(fname, "a")
     # initializes the optimization information
     opt = f["Optimization"]

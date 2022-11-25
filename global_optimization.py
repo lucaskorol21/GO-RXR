@@ -156,11 +156,11 @@ def rolling_average(R, window):
 def total_variation(R, Rsim):
     # calculates the total variation (arc-length) of the function
     # this will be a good judge of whether or not the shape of the function is right
-    Rnew = R-Rsim
-    #totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
-    #totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
+    #Rnew = R-Rsim
+    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
+    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
 
-    variation = sum([abs(Rnew[idx+1]-Rnew[idx]) for idx in range(len(Rnew)-1)])
+    variation = abs(totVar-totVarSim)
     return variation
 
 
