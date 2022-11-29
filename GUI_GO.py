@@ -12,7 +12,7 @@ import pyqtgraph as pg
 import data_structure as ds
 import copy
 import global_optimization as go
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QThreadPool
 import material_model as mm
 from scipy import signal
 import h5py
@@ -732,6 +732,7 @@ class sampleWidget(QWidget):
 
 
 
+
         if self.varTable.item(row, column) is not None and not(self.change_elements):
 
             copy_of_list = copy.deepcopy(self.parameterFit)
@@ -767,7 +768,8 @@ class sampleWidget(QWidget):
 
             if column == 0:
                 self.magData[element][layer][column][row] = value
-                if prev_value != value and prev_value!='':
+                print(prev_value, value)
+                if prev_value != value and prev_value =='':
                     for i in range(len(self.varData[element])):
                         inLayer = False
 
@@ -852,64 +854,72 @@ class sampleWidget(QWidget):
                 if fit[0] == layer and fit[1] == 'STRUCTURAL':
                     if column == 1:  # thickness
                         if fit[2] == 'COMPOUND' and fit[3] == 'THICKNESS':
-                            idx = self.parameterFit.index([layer,'STRUCTURAL','COMPOUND', 'THICKNESS'])
-                            lower = float(value) - 5
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 5)
-                            self.currentVal[idx] = [value,[str(lower), upper]]
+                            if [layer,'STRUCTURAL','COMPOUND', 'THICKNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer,'STRUCTURAL','COMPOUND', 'THICKNESS'])
+                                lower = float(value) - 5
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 5)
+                                self.currentVal[idx] = [value,[str(lower), upper]]
                         elif fit[2] == 'ELEMENT' and fit[3] == element and fit[4] == 'THICKNESS':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
-                            lower = float(value) - 5
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 5)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
+                                lower = float(value) - 5
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 5)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 2: # density
                         if fit[2] == 'COMPOUND' and fit[3] == 'DENSITY':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY'])
-                            lower = float(value) - 0.01
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 0.01)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY'])
+                                lower = float(value) - 0.01
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 0.01)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                         elif fit[2] == 'ELEMENT' and fit[3] == element and fit[4] == 'DENSITY':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
-                            lower = float(value) - 0.01
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 0.01)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
+                                lower = float(value) - 0.01
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 0.01)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 3: # roughness
                         if fit[2] == 'COMPOUND' and fit[3] == 'ROUGHNESS':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'])
-                            lower = float(value) - 1
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 1)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS'])
+                                lower = float(value) - 1
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 1)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                         elif fit[2] == 'ELEMENT' and fit[3] == element and fit[3] == 'ROUGHNESS':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
-                            lower = float(value) - 1
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 1)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
+                                lower = float(value) - 1
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 1)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                     elif column == 4: # linked roughness
                         if fit[2] == 'COMPOUND' and fit[3] == 'LINKED ROUGHNESS':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS'])
-                            lower = float(value) - 1
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 1)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS'])
+                                lower = float(value) - 1
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 1)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                         elif fit[2] == 'ELEMENT' and fit[3] == 'LINKED ROUGHNESS':
-                            idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
-                            lower = float(value) - 1
-                            if lower < 0:
-                                lower = 0
-                            upper = str(float(value) + 1)
-                            self.currentVal[idx] = [value, [str(lower), upper]]
+                            if [layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'] in self.parameterFit:
+                                idx = self.parameterFit.index([layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                                lower = float(value) - 1
+                                if lower < 0:
+                                    lower = 0
+                                upper = str(float(value) + 1)
+                                self.currentVal[idx] = [value, [str(lower), upper]]
                 elif fit[0] == 'SCATTERING FACTOR' and fit[2] == element and fit[1] == 'STRUCTURAL':
                     if value != prev_value and prev_value == fit[2]:
                         self.parameterFit.remove(fit)
@@ -3332,7 +3342,21 @@ class Worker(QObject):
         self.function.fun = fun
         self.finished.emit()
 
+class update_worker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
 
+
+    def __init__(self, function):
+        super().__init__()
+        self.function = function
+
+    def run(self):
+        x, fun = self.function.update_optimization()
+        self.finished.emit()
+
+    def done(self):
+        self.function._isFinished
 
 
 class callback():
@@ -4237,6 +4261,7 @@ class GlobalOptimizationWidget(QWidget):
 
 
     def run_first(self):
+
         global stop
         stop = False
 
@@ -4307,7 +4332,10 @@ class GlobalOptimizationWidget(QWidget):
 
         self.sample = copy.deepcopy(self.sWidget._createSample())
         self.temp_sample = copy.deepcopy(self.sample)  # makes sure that
-        self.worker = Worker(self)
+
+        self.update_worker = update_worker(self.pWidget)
+        self.worker = Worker(self)  # used to perform optimization
+
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
 
@@ -4329,6 +4357,8 @@ class GlobalOptimizationWidget(QWidget):
         # make sure that I all the other parameters are returned back to original value after the global optimization
 
         self.worker = Worker(self)
+        self.update_worker = update_worker(self.pWidget)
+
         self.plot_scan()
         self.setTableFit()
         self.runButton.setStyleSheet('background: green')
@@ -4338,17 +4368,30 @@ class GlobalOptimizationWidget(QWidget):
 
         # runs the optimizer method to perform the global optimization
         self.thread = QThread()  # initialize the thread
+        #self.update_thread = QThread()
+
         self.worker = Worker(self)
+        #self.update_worker = update_worker(self.pWidget)
         self.worker.moveToThread(self.thread)
+        #self.update_worker.moveToThread(self.update_thread)
 
         self.thread.started.connect(self.run_first)
+
         self.thread.started.connect(self.worker.run)
+        #self.update_thread.started.connect(self.update_worker.run)
+        #self.thread.started.connect(self.worker.run)
+
+        #self.worker.finished.connect(self.update_worker.done)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.optimizationFinished)
         self.worker.finished.connect(self.worker.deleteLater)
+        #self.update_worker.finished.connect(self.update_worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        #self.update_thread.finished.connect(self.update_thread.deleteLater)
+
 
         self.thread.start()
+        #self.update_thread.start()
 
 
     def _optimizer(self):
@@ -5472,6 +5515,7 @@ class progressWidget(QWidget):
         self.sWeights = None
         self.objective = None
         self.shape_weight = None
+        self.keep_going = True
 
         self.objFun = dict()
         self.costFun = dict()
@@ -5524,10 +5568,12 @@ class progressWidget(QWidget):
         self.plotWidget.setBackground('w')
         self.plotWidget.addLegend()
 
+
         pagelayout.addLayout(buttonLayout)
         pagelayout.addWidget(self.plotWidget)
 
         self.setLayout(pagelayout)
+
 
     def plot_scan(self):
 
@@ -5758,28 +5804,34 @@ class progressWidget(QWidget):
         n = len(x)
         iterations = np.arange(1,n+1)
 
+        self.plotWidget.setLogMode(False, False)
+
         if idx == 0:  # total objective function
+            m = len(list(self.objFun.keys()))
             for i,key in enumerate(list(self.objFun.keys())):
                 val = self.objFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
                 self.plotWidget.setLabel('left', "Function")
                 self.plotWidget.setLabel('bottom', "Iteration")
         elif idx == 1:  # cost function
+            m = len(list(self.costFun.keys()))
             for i, key in enumerate(list(self.costFun.keys())):
                 val = self.costFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
                 self.plotWidget.setLabel('left', "Function")
                 self.plotWidget.setLabel('bottom', "Iteration")
         elif idx == 2:  # shape function
+            m = len(list(self.varFun.keys()))
             for i, key in enumerate(list(self.varFun.keys())):
                 val = self.varFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, n), width=2), name=key)
+                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
                 self.plotWidget.setLabel('left', "Function")
                 self.plotWidget.setLabel('bottom', "Iteration")
         elif idx == 3:  # varying parameters
+            m = len(self.par)
             for i in range(len(self.par)):
                 x_values = [x_val[i] for x_val in x]
-                self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i,n), width=2), name=self.par[i])
+                self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i,m), width=2), name=self.par[i])
 
     def getName(self, p):
         name = ''
@@ -5925,7 +5977,19 @@ class progressWidget(QWidget):
         self.whichPlot = [False, False, True, False]
 
         self.plotProgress()
-        # change plot
+
+
+    def update_optimization(self):
+        keep_going = True
+        while keep_going:
+            time.sleep(0.1)
+            global x_vars
+            x = copy.deepcopy(x_vars)
+            if len(x) == 0:
+                x = go.return_x()
+
+            self.computeScan(x)
+        return
 
     def _setPar(self):
         self.objButton.setStyleSheet('background: lightGrey')

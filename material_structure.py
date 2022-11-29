@@ -1285,7 +1285,7 @@ class slab:
         total = seven-one
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=1e-7,s_min = 0.1, bShift=0, sFactor=1):
+    def energy_scan(self, Theta, energy, precision=1e-8,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees

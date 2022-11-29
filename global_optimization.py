@@ -409,7 +409,6 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
 
     params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale]
 
-    print(goParam)
     diff = goParam[8]
     _max = goParam[9]
 
@@ -422,11 +421,20 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     else:
         _max = float(_max)
 
+    if goParam[1] == 'lm':
+        result = optimize.least_squares(scanCompute, x0, args=params, jac=goParam[0], method=goParam[1],
+                                        ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
+                                        x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]),
+                                        diff_step=diff,
+                                        max_nfev=_max)
+    else:
+        result = optimize.least_squares(scanCompute, x0,bounds=bounds, args=params, jac=goParam[0], method=goParam[1],
+                                        ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
+                                        x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]),
+                                        diff_step=diff,
+                                        max_nfev=_max)
 
-    result = optimize.least_squares(scanCompute, x0, args=params, bounds=bounds, jac=goParam[0], method=goParam[1],
-                           ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
-                           x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]), diff_step=diff,
-                                 max_nfev=_max)
+
 
     x = result.x
     fun = result.cost
