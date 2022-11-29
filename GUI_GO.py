@@ -1830,6 +1830,7 @@ class sampleWidget(QWidget):
                                     n = len(info_mag[0])
                                     data_mag = [info_mag[0],[0 for i in range(n)], info_mag[2] ]
                                     isMag = True
+
                                 else:
                                     data_mag = [[key],[''],['']]
                     else:
