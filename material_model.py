@@ -249,7 +249,7 @@ def index_of_refraction(rho, sf, E):
 
 if __name__ == "__main__":
 
-    """
+
     E = 800 # Xray Energy
     h = 4.135667696e-15  # Plank's Constant [eV s]
     c = 2.99792450e18  # Speed of light in vacuum [A/s]
@@ -260,32 +260,14 @@ if __name__ == "__main__":
 
     sample = slab(2)
 
-    sample.addlayer(0, 'Fe', 50, density=1.56366)
-    sample.addlayer(1, 'Fe', 38, density=1.56366)
 
-    thickness, density, mag_density = sample.density_profile()
-    eps = dielectric_constant(density, E, mag)
-
-    A = pr.Generate_structure(2)  # initializes slab structure
-    A[0].seteps(eps[0])  # creates the substrate layer
-    A[1].seteps(eps[0])  # creates film layer
-    A[1].setd(38)  # sets thickness
+    sample.addlayer(0, 'SrTiO3', 50, density=1.56366)
+    sample.addlayer(1, 'LaMnO3', 38, density=1.56366)
+    sample.energy_shift()
 
 
-    R1 = pr.Reflectivity(A, Theta, wavelength, MultipleScattering=True)  # Computes the reflectivity
+    qz = (0.001013546247)*E*np.sin(Theta*np.pi/180)
 
-    plt.figure()
-    qz = (0.001013546247)*E*sin(Theta*pi/180)
-    Sigma, = plt.plot(qz, R1[0], 'k-',label='Python')
-    plt.yscale("log")
-    plt.xlabel('qz')
-    plt.ylabel('Reflectivity')
-    plt.title('ReMagX vs. Python Script (800 eV)')
-    plt.show()
-    """
-    #my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
-    #file = my_dir + "\\" + "Ni.txt"
-    #print(file)
-    #np.loadtxt(file)
+    sample.reflectivity(E,qz)
 
 

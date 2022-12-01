@@ -730,9 +730,6 @@ class sampleWidget(QWidget):
         column = self.varTable.currentColumn()
         row = self.varTable.currentRow()
 
-
-
-
         if self.varTable.item(row, column) is not None and not(self.change_elements):
 
             copy_of_list = copy.deepcopy(self.parameterFit)
@@ -767,9 +764,11 @@ class sampleWidget(QWidget):
 
 
             if column == 0:
-                self.magData[element][layer][column][row] = value
-                print(prev_value, value)
-                if prev_value != value and prev_value =='':
+
+
+                #self.magData[element][layer][column][row] = value
+
+                if prev_value != value or prev_value =='':
                     for i in range(len(self.varData[element])):
                         inLayer = False
 

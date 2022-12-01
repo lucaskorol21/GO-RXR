@@ -1157,7 +1157,6 @@ class slab:
         sfm = dict()  # form factors of magnetic components
 
         # Non-Magnetic Scattering Factor
-        one = time.time_ns()
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
             sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
@@ -1166,10 +1165,8 @@ class slab:
             dE = float(self.mag_eShift[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
 
-        two = time.time_ns()
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
-        three = time.time_ns()
 
         # definition as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)
@@ -1180,15 +1177,10 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m)
         #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
-        four = time.time_ns()
+
         my_slabs = ALS(epsilon.real, epsilon_mag.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
-        five = time.time_ns()
-        #plt.figure()
-        #plt.plot(thickness[my_slabs], epsilon.real[my_slabs], '.')
-        #plt.legend([len(my_slabs)-1])
-        #plt.show()
 
         my_slabs = my_slabs[1:]  # removes first element
 
@@ -1196,7 +1188,7 @@ class slab:
         m = len(my_slabs)  # number of slabs
         #m = len(epsilon)
         A =pr.Generate_structure(m)  # creates object for reflectivity computation
-        six = time.time_ns()
+
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
         layer = 0
@@ -1261,6 +1253,7 @@ class slab:
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
 
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+
         R = dict()
         """
         # Used to demonstrate how sample is being segmented
@@ -1284,7 +1277,7 @@ class slab:
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
         seven = time.time_ns()
-        total = seven-one
+
         return qz, R
 
     def energy_scan(self, Theta, energy, precision=1e-8,s_min = 0.1, bShift=0, sFactor=1):
