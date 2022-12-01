@@ -2065,6 +2065,11 @@ class sampleWidget(QWidget):
                     if names[0] != '':
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
 
+                        if type(scattering_factor) is str:
+                            sample.polymorphous(idx, ele_name,names, ratio, ast.literal_eval(scattering_factor))
+                        else:
+                            sample.polymorphous(idx, ele_name, names, ratio, scattering_factor)
+
 
 
         for idx in range(m):
@@ -2083,8 +2088,6 @@ class sampleWidget(QWidget):
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx,names,ratio,scattering_factor)
 
-        sample.density_profile()
-
         # changing the form factors
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
@@ -2098,6 +2101,7 @@ class sampleWidget(QWidget):
                     if names[0] == '':
                         sample._set_form_factors(layer[ele][0], layer[ele][5])
 
+        sample.density_profile()
         return sample
 
 
@@ -4382,11 +4386,13 @@ class GlobalOptimizationWidget(QWidget):
         #self.update_thread.started.connect(self.update_worker.run)
         #self.thread.started.connect(self.worker.run)
 
-        #self.worker.finished.connect(self.update_worker.done)
+
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.optimizationFinished)
         self.worker.finished.connect(self.worker.deleteLater)
         #self.update_worker.finished.connect(self.update_worker.deleteLater)
+        #self.worker.finished.connect(self.update_thread.quit)
+        #self.worker.finished.connect(self.update_thread.terminate)
         self.thread.finished.connect(self.thread.deleteLater)
         #self.update_thread.finished.connect(self.update_thread.deleteLater)
 
