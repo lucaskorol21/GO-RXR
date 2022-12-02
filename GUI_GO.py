@@ -5521,7 +5521,7 @@ class progressWidget(QWidget):
         self.sWidget = sWidget
         self.rWidget = rWidget
         self.y_scale = 'log(x)'
-        self.whichPlot = [True, False, False, False]
+        self.whichPlot = [True, False, False, False, False]
         # parameters required for calculations
         self.sample = None
         self.scans = None
@@ -5545,14 +5545,14 @@ class progressWidget(QWidget):
         buttonLayout = QVBoxLayout()
 
         # plot objective function
-        self.objButton = QPushButton('Objective Function')
+        self.objButton = QPushButton('Total Cost')
         self.objButton.clicked.connect(self._setObj)
         self.objButton.setFixedWidth(200)
         self.objButton.setStyleSheet('background: blue; color: white')
         buttonLayout.addWidget(self.objButton)
 
         # plot total cost function
-        self.costButton = QPushButton('Cost Function')
+        self.costButton = QPushButton('Norm')
         self.costButton.clicked.connect(self._setCost)
         self.costButton.setFixedWidth(200)
         self.costButton.setStyleSheet('background: lightGrey')
@@ -5560,7 +5560,7 @@ class progressWidget(QWidget):
 
 
         # plot shape parameterization
-        self.varButton = QPushButton('Variation Function')
+        self.varButton = QPushButton('Variation')
         self.varButton.clicked.connect(self._setVar)
         self.varButton.setFixedWidth(200)
         self.varButton.setStyleSheet('background: lightGrey')
@@ -5573,13 +5573,22 @@ class progressWidget(QWidget):
         self.parButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.parButton)
 
+        # show density profile
+        self.denseButton = QPushButton('Density Profile')
+        self.denseButton.clicked.connect(self._setDensityProfile)
+        self.denseButton.setFixedWidth(200)
+        self.denseButton.setStyleSheet('background: lightGrey')
+        buttonLayout.addWidget(self.denseButton)
+
         # plot current scan progress
         self.scanBox = QComboBox()
         self.scanBox.addItems(self.rWidget.fit)
-        self.scanBox.currentIndexChanged.connect(self.plot_scan)
+        self.scanBox.activated.connect(self.plot_scan)
         self.scanBox.setFixedWidth(200)
         buttonLayout.addWidget(self.scanBox)
         buttonLayout.addStretch(1)
+
+
 
         # plot that will show current progress
         self.plotWidget = pg.PlotWidget()
@@ -5848,33 +5857,70 @@ class progressWidget(QWidget):
         iterations = np.arange(1,n+1)
 
         self.plotWidget.setLogMode(False, False)
+        if len(x) != 0:
+            if idx == 0:  # total objective function
+                m = len(list(self.objFun.keys()))
+                for i,key in enumerate(list(self.objFun.keys())):
+                    val = self.objFun[key]
+                    self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
+                    self.plotWidget.setLabel('left', "Function")
+                    self.plotWidget.setLabel('bottom', "Iteration")
 
-        if idx == 0:  # total objective function
-            m = len(list(self.objFun.keys()))
-            for i,key in enumerate(list(self.objFun.keys())):
-                val = self.objFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
-                self.plotWidget.setLabel('left', "Function")
-                self.plotWidget.setLabel('bottom', "Iteration")
-        elif idx == 1:  # cost function
-            m = len(list(self.costFun.keys()))
-            for i, key in enumerate(list(self.costFun.keys())):
-                val = self.costFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
-                self.plotWidget.setLabel('left', "Function")
-                self.plotWidget.setLabel('bottom', "Iteration")
-        elif idx == 2:  # shape function
-            m = len(list(self.varFun.keys()))
-            for i, key in enumerate(list(self.varFun.keys())):
-                val = self.varFun[key]
-                self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
-                self.plotWidget.setLabel('left', "Function")
-                self.plotWidget.setLabel('bottom', "Iteration")
-        elif idx == 3:  # varying parameters
-            m = len(self.par)
-            for i in range(len(self.par)):
-                x_values = [x_val[i] for x_val in x]
-                self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i,m), width=2), name=self.par[i])
+            elif idx == 1:  # cost function
+                m = len(list(self.costFun.keys()))
+                for i, key in enumerate(list(self.costFun.keys())):
+                    val = self.costFun[key]
+                    self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
+                    self.plotWidget.setLabel('left', "Function")
+                    self.plotWidget.setLabel('bottom', "Iteration")
+
+            elif idx == 2:  # shape function
+                m = len(list(self.varFun.keys()))
+                for i, key in enumerate(list(self.varFun.keys())):
+                    val = self.varFun[key]
+                    self.plotWidget.plot(iterations, val, pen=pg.mkPen((i, m), width=2), name=key)
+                    self.plotWidget.setLabel('left', "Function")
+                    self.plotWidget.setLabel('bottom', "Iteration")
+
+            elif idx == 3:  # varying parameters
+                m = len(self.par)
+                for i in range(len(self.par)):
+                    x_values = [x_val[i] for x_val in x]
+                    self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i,m), width=2), name=self.par[i])
+            elif idx == 4:  # plot the density profile
+                sample = copy.deepcopy(self.sample)
+                sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, sample,
+                                                              self.backS, self.scaleF)
+
+                thickness, density, density_magnetic = sample.density_profile()
+
+                num = len(density)
+                num = num + len(density_magnetic)
+
+                val = list(density.values())
+                mag_val = list(density_magnetic.values())
+                check = []
+                for key in list(density.keys()):
+                    if key[-1].isdigit():
+                        check.append(True)
+                    else:
+                        check.append(False)
+
+                for idx in range(len(val)):
+                    if check[idx]:
+                        self.plotWidget.plot(thickness, val[idx], pen=pg.mkPen((idx, num), width=2),
+                                                name=list(density.keys())[idx])
+                    else:
+                        self.plotWidget.plot(thickness, val[idx], pen=pg.mkPen((idx, num), width=2),
+                                                name=list(density.keys())[idx])
+
+                for idx in range(len(mag_val)):
+                    myname = 'Mag: ' + list(density_magnetic.keys())[idx]
+                    self.plotWidget.plot(thickness, -mag_val[idx],
+                                            pen=pg.mkPen((num - idx, num), width=2, style=Qt.DashLine), name=myname)
+                self.plotWidget.setLabel('left', "Density (mol/cm^3)")
+                self.plotWidget.setLabel('bottom', "Thickness (Å)")
+
 
     def getName(self, p):
         name = ''
@@ -5994,8 +6040,9 @@ class progressWidget(QWidget):
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: lightGrey')
+        self.denseButton.setStyleSheet('background: lightGrey')
 
-        self.whichPlot = [True, False, False, False]
+        self.whichPlot = [True, False, False, False, False]
 
         self.plotProgress()
         # change plot
@@ -6005,8 +6052,9 @@ class progressWidget(QWidget):
         self.costButton.setStyleSheet('background: blue; color: white')
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: lightGrey')
+        self.denseButton.setStyleSheet('background: lightGrey')
 
-        self.whichPlot = [False, True, False, False]
+        self.whichPlot = [False, True, False, False, False]
 
         self.plotProgress()
         # change plot
@@ -6017,7 +6065,18 @@ class progressWidget(QWidget):
         self.varButton.setStyleSheet('background: blue; color: white')
         self.parButton.setStyleSheet('background: lightGrey')
 
-        self.whichPlot = [False, False, True, False]
+        self.whichPlot = [False, False, True, False, False]
+
+        self.plotProgress()
+
+    def _setDensityProfile(self):
+        self.objButton.setStyleSheet('background: lightGrey')
+        self.costButton.setStyleSheet('background: lightGrey')
+        self.varButton.setStyleSheet('background: lightGrey')
+        self.parButton.setStyleSheet('background: lightGrey')
+        self.denseButton.setStyleSheet('background: blue; color: white')
+
+        self.whichPlot = [False, False, False, False, True]
 
         self.plotProgress()
 
@@ -6028,17 +6087,20 @@ class progressWidget(QWidget):
 
     def update_optimization(self):
         self.keep_going = True
+        idx = 0
         while self.keep_going:
-            time.sleep(0.2)
-            global x_vars
-            x = copy.deepcopy(x_vars)
-            if len(x) == 0:
-                x = go.return_x()
+            idx = idx + 1
+            time.sleep(0.001)
 
-            self.computeScan(x)
+            if 51/idx == 1:
+                global x_vars
+                print(idx)
+                x = copy.deepcopy(x_vars)
+                if len(x) == 0:
+                    x = go.return_x()
 
-
-
+                self.computeScan(x)
+                idx = 0
         return
 
     def _setPar(self):
@@ -6046,8 +6108,9 @@ class progressWidget(QWidget):
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: lightGrey')
         self.parButton.setStyleSheet('background: blue; color: white')
+        self.denseButton.setStyleSheet('background: lightGrey')
 
-        self.whichPlot = [False, False, False, True]
+        self.whichPlot = [False, False, False, True, False]
 
         self.plotProgress()
         # change plot
