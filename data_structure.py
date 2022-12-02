@@ -1631,7 +1631,11 @@ def ReadSampleHDF5(fname):
                 sample.structure[lay_num][ele_key].mag_density = element.attrs['MagDensity']
                 sample.structure[lay_num][ele_key].mag_scattering_factor = element.attrs['MagScatteringFactor']
 
-            sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
+
+            if element.attrs['ScatteringFactor'][0] == '[':
+                sample.structure[lay_num][ele_key].scattering_factor = ast.literal_eval(element.attrs['ScatteringFactor'])
+            else:
+                sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
             sample.structure[lay_num][ele_key].position = element.attrs['Position']
 
     f.close()

@@ -1461,6 +1461,7 @@ class sampleWidget(QWidget):
                 element = layer[ele]
 
                 if len(element.polymorph) != 0:
+
                     self.varData[ele][idx][0] = element.polymorph
                     self.magData[ele][idx][0] = element.polymorph
 
@@ -6094,7 +6095,6 @@ class progressWidget(QWidget):
 
             if 51/idx == 1:
                 global x_vars
-                print(idx)
                 x = copy.deepcopy(x_vars)
                 if len(x) == 0:
                     x = go.return_x()
