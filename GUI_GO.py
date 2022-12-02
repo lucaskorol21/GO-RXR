@@ -2,7 +2,9 @@ import ast
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+import traceback
 import numpy as np
 import time
 import sys
@@ -12,7 +14,7 @@ import pyqtgraph as pg
 import data_structure as ds
 import copy
 import global_optimization as go
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QThreadPool
+
 import material_model as mm
 from scipy import signal
 import h5py
@@ -3331,10 +3333,14 @@ class reflectivityWidget(QWidget):
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
                 self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
+
+
+
+
+
 class Worker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
-
 
     def __init__(self, function):
         super().__init__()
@@ -3345,8 +3351,8 @@ class Worker(QObject):
         self.function.x = x
         self.function.fun = fun
         self.finished.emit()
-
-class update_worker(QObject):
+        
+class UpdateWorker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int)
 
@@ -3356,11 +3362,12 @@ class update_worker(QObject):
         self.function = function
 
     def run(self):
-        x, fun = self.function.update_optimization()
+        self.function.update_optimization()
         self.finished.emit()
 
-    def done(self):
-        self.function._isFinished
+    def stop(self):
+        self.function.stop()
+
 
 
 class callback():
@@ -3424,6 +3431,7 @@ class GlobalOptimizationWidget(QWidget):
         isLogLabel.setFixedWidth(200)
         self.isLogWidget = QComboBox()
         self.isLogWidget.addItems(['log(x)', 'ln(x)', 'x', 'qz^4'])
+        self.isLogWidget.currentIndexChanged.connect(self._set_y_scale)
         isLogLayout.addWidget(isLogLabel)
         isLogLayout.addWidget(self.isLogWidget)
 
@@ -3431,13 +3439,12 @@ class GlobalOptimizationWidget(QWidget):
         self.parameters = []
         selectedScansLayout = QVBoxLayout()
         self.selectedScans = QComboBox()  # shows the scans selected for the data fitting process
-        self.selectedScans.currentTextChanged.connect(self.plot_scan)
+        self.selectedScans.activated.connect(self.plot_scan)
         selectedScansLabel = QLabel('Fit Scans:')
         selectedScansLabel.setFixedWidth(200)
 
         selectedScansLayout.addWidget(selectedScansLabel)
         selectedScansLayout.addWidget(self.selectedScans)
-
 
 
         # Adding the plotting Widget
@@ -3875,6 +3882,10 @@ class GlobalOptimizationWidget(QWidget):
         self.setGOParameters()
         self.setLayout(pagelayout)
         self.setTableFit()
+
+    def _set_y_scale(self):
+        # this will be used when computing the progress info!
+        self.pWidget.y_scale = self.isLogWidget.currentText()
 
     def _changeFitVar(self):
         row = self.fittingParamTable.currentRow()
@@ -4337,8 +4348,6 @@ class GlobalOptimizationWidget(QWidget):
         self.sample = copy.deepcopy(self.sWidget._createSample())
         self.temp_sample = copy.deepcopy(self.sample)  # makes sure that
 
-        self.update_worker = update_worker(self.pWidget)
-        self.worker = Worker(self)  # used to perform optimization
 
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
@@ -4346,6 +4355,11 @@ class GlobalOptimizationWidget(QWidget):
     def optimizationFinished(self):
         global stop
         stop = True
+
+        self.update_worker.stop()
+        self.update_thread.quit()
+        self.update_thread.deleteLater()
+        self.update_worker.deleteLater()
 
         self.sWidget.resetX = False  # do not reset x
         self.sample = copy.deepcopy(self.temp_sample)
@@ -4361,7 +4375,7 @@ class GlobalOptimizationWidget(QWidget):
         # make sure that I all the other parameters are returned back to original value after the global optimization
 
         self.worker = Worker(self)
-        self.update_worker = update_worker(self.pWidget)
+        self.update_worker = UpdateWorker(self.pWidget)
 
         self.plot_scan()
         self.setTableFit()
@@ -4372,35 +4386,32 @@ class GlobalOptimizationWidget(QWidget):
 
         # runs the optimizer method to perform the global optimization
         self.thread = QThread()  # initialize the thread
-        #self.update_thread = QThread()
+        self.update_thread = QThread()
 
         self.worker = Worker(self)
-        #self.update_worker = update_worker(self.pWidget)
+        self.update_worker = UpdateWorker(self.pWidget)
+
         self.worker.moveToThread(self.thread)
-        #self.update_worker.moveToThread(self.update_thread)
+        self.update_worker.moveToThread(self.update_thread)
 
         self.thread.started.connect(self.run_first)
 
         self.thread.started.connect(self.worker.run)
-        #self.update_thread.started.connect(self.update_worker.run)
-        #self.thread.started.connect(self.worker.run)
+        self.update_thread.started.connect(self.pWidget.start)
+        self.update_thread.started.connect(self.update_worker.run)
 
 
         self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.optimizationFinished)
+        self.worker.finished.connect(self.thread.deleteLater)
         self.worker.finished.connect(self.worker.deleteLater)
-        #self.update_worker.finished.connect(self.update_worker.deleteLater)
-        #self.worker.finished.connect(self.update_thread.quit)
-        #self.worker.finished.connect(self.update_thread.terminate)
-        self.thread.finished.connect(self.thread.deleteLater)
-        #self.update_thread.finished.connect(self.update_thread.deleteLater)
-
+        self.worker.finished.connect(self.optimizationFinished)
 
         self.thread.start()
-        #self.update_thread.start()
+        self.update_thread.start()
 
 
     def _optimizer(self):
+
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
@@ -5509,6 +5520,7 @@ class progressWidget(QWidget):
         # which plot
         self.sWidget = sWidget
         self.rWidget = rWidget
+        self.y_scale = 'log(x)'
         self.whichPlot = [True, False, False, False]
         # parameters required for calculations
         self.sample = None
@@ -5708,22 +5720,32 @@ class progressWidget(QWidget):
                         Rdat = np.array(myData[2])
 
 
-                        window = 5
-                        R = go.rolling_average(np.log10(Rdat), window)
+
 
                         qz = np.array(myData[0])
                         qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
                         Rsim = Rsim[pol]
 
 
+                        if self.y_scale == 'log(x)':
+                            Rsim = np.log10(Rsim)
+                            Rdat = np.log10(Rdat)
+                        elif self.y_scale == 'ln(x)':
+                            Rsim = np.log(Rsim)
+                            Rdat = np.log(Rdat)
+                        elif self.y_scale == 'qz^4':
+                            Rsim = np.multiply(Rsim, np.power(qz, 4))
+                            Rdat = np.multiply(Rdat, np.power(qz, 4))
+                        elif self.y_scale == 'x':
+                            pass
+
+                        window = 5
+                        R = go.rolling_average(Rdat, window)
                         # total variation
-                        val = go.total_variation(R[window*2:], np.log10(Rsim[window*2:]))/len(R[window*2:])
-                        self.varFun[name].append(val*self.shape_weight)
+                        val = go.total_variation(R[window * 2:], Rsim[window * 2:]) / len(R[window * 2:])
+                        self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
-                        if pol == 'S' or pol =='P' or pol == 'LC' or pol == 'RC':
-                            Rdat = np.log10(Rdat)
-                            Rsim = np.log10(Rsim)
                         m = 0
                         for b in range(len(xbound)):
                             lw = xbound[b][0]
@@ -5758,14 +5780,29 @@ class progressWidget(QWidget):
                         pol = myDataScan['Polarization']
 
 
-                        window = 5
-                        R = go.rolling_average(np.log10(Rdat), window)
+
 
                         E, Rsim = sample.energy_scan(Theta, E)
                         Rsim = Rsim[pol]
 
+                        if self.y_scale == 'log(x)':
+                            Rsim = np.log10(Rsim)
+                            Rdat = np.log10(Rdat)
+                        elif self.y_scale == 'ln(x)':
+                            Rsim = np.log(Rsim)
+                            Rdat = np.log(Rdat)
+                        elif self.y_scale == 'qz^4':
+                            qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                            Rsim = np.multiply(Rsim, np.power(qz, 4))
+                            Rdat = np.multiply(Rdat, np.power(qz, 4))
+                        elif self.y_scale == 'x':
+                            pass
+
+                        window = 5
+                        R = go.rolling_average(Rdat, window)
+
                         # total variation
-                        val = go.total_variation(R[window * 2:], np.log10(Rsim[window * 2:]))/len(R[window*2:])
+                        val = go.total_variation(R[window * 2:], Rsim[window * 2:])/len(R[window*2:])
                         self.varFun[name].append(val*self.shape_weight)
                         gamma = gamma + val
 
@@ -5984,17 +6021,24 @@ class progressWidget(QWidget):
 
         self.plotProgress()
 
+    def stop(self):
+        self.keep_going = False
+    def start(self):
+        self.keep_going = True
 
     def update_optimization(self):
-        keep_going = True
-        while keep_going:
-            time.sleep(0.1)
+        self.keep_going = True
+        while self.keep_going:
+            time.sleep(0.2)
             global x_vars
             x = copy.deepcopy(x_vars)
             if len(x) == 0:
                 x = go.return_x()
 
             self.computeScan(x)
+
+
+
         return
 
     def _setPar(self):
