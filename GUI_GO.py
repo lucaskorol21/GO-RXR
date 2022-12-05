@@ -4592,6 +4592,12 @@ class GlobalOptimizationWidget(QWidget):
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
                                           self.objective, self.shape_weight, r_scale)
+            elif idx == 4:
+                bounds = (lw,up)
+                x,fun = go.direct(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
+                                                   sBounds, sWeights,
+                                                   self.goParameters['direct'], self.callback,
+                                                   self.objective, self.shape_weight, r_scale)
         else:
             print('Try again')
 

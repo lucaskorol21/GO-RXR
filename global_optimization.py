@@ -445,6 +445,35 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     f.close()
     return x, fun
 
+def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale):
+    # performs the differential evolution global optimization
+    global x_vars
+    x_vars = []
+
+    scans = []
+    for s, info in enumerate(data_info):
+        if info[2] in scan:
+            scans.append(info)
+
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale]  # required format for function scanCompute
+
+    # checking if locally biased
+    p=True
+    if goParam[3] == 'True':
+        p = True
+    else:
+        p = False
+    # This line will be used to select and use different global optimization algorithms
+    ret = optimize.direct(scanCompute, bounds, )
+    x = ret.x
+    fun = ret.fun
+
+
+    print('Chi: ' + str(fun))
+    print('Fitting parameters: ', x)
+
+    return x, fun
+
 def return_x():
     global x_vars
     return x_vars
