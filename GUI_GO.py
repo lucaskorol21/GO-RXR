@@ -3443,8 +3443,16 @@ class GlobalOptimizationWidget(QWidget):
                                        'immediate'],
             'simplicial homology': ['None', 1, 'simplicial'],
             'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
+            'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None']}
+        """
+        self.goParameters = {
+            'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
+                                       'immediate'],
+            'simplicial homology': ['None', 1, 'simplicial'],
+            'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
             'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None'],
             'direct': [0.0001, 'None', 1000, False, 0.0001,1e-16,1e-6]}
+        """
 
         isLogLayout = QVBoxLayout()
         isLogLabel = QLabel('Optimization Scale:')
@@ -3877,6 +3885,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsWidget.setLayout(lsLayout)
 
         # direct algorithm
+        """
         dLayout = QVBoxLayout()
         self.dWidget = QWidget()
 
@@ -3943,13 +3952,13 @@ class GlobalOptimizationWidget(QWidget):
         dLtolLayout.addWidget(self.dLtol)
         dLayout.addLayout(dLtolLayout)
         self.dWidget.setLayout(dLayout)
-
+        """
         # adding the algorithm widgets to stacked layout
         self.goStackLayout.addWidget(self.evolutionWidget)
         self.goStackLayout.addWidget(self.shgoWidget)
         self.goStackLayout.addWidget(self.dualWidget)
         self.goStackLayout.addWidget(self.lsWidget)
-        self.goStackLayout.addWidget(self.dWidget)
+        #self.goStackLayout.addWidget(self.dWidget)
 
         goLayout = QHBoxLayout()
         goLayout.addWidget(algorithmWidget)
@@ -4592,12 +4601,14 @@ class GlobalOptimizationWidget(QWidget):
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
                                           self.objective, self.shape_weight, r_scale)
+            """
             elif idx == 4:
                 bounds = (lw,up)
                 x,fun = go.direct(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['direct'], self.callback,
-                                                   self.objective, self.shape_weight, r_scale)
+                                                 self.objective, self.shape_weight, r_scale)
+            """
         else:
             print('Try again')
 
@@ -4635,6 +4646,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(True)
         self.lsDiff.blockSignals(True)
         self.lsMax.blockSignals(True)
+        """
         self.dEps.blockSignals(True)
         self.dMaxFun.blockSignals(True)
         self.dMaxiter.blockSignals(True)
@@ -4642,7 +4654,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dFmin.blockSignals(True)
         self.dVtol.blockSignals(True)
         self.dLtol.blockSignals(True)
-
+        """
         idx = self.algorithmSelect.currentIndex()
         if idx == 0:
             self.goParameters['differential evolution'][0] = self.eStrategy.currentText()
@@ -4686,6 +4698,7 @@ class GlobalOptimizationWidget(QWidget):
             self.goParameters['least squares'][7] = self.lsFscale.text()
             self.goParameters['least squares'][8] = self.lsDiff.text()
             self.goParameters['least squares'][9] = self.lsMax.text()
+        """
         elif idx == 4: # direct algorithm
             self.goParameters['direct'][0] = self.dEps.text()
             self.goParameters['direct'][1] = self.dMaxFun.text()
@@ -4697,7 +4710,7 @@ class GlobalOptimizationWidget(QWidget):
             self.goParameters['direct'][4] = self.dFmin.text()
             self.goParameters['direct'][5] = self.dVtol.text()
             self.goParameters['direct'][6] = self.dLtol.text()
-
+        """
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
         self.ePopsize.blockSignals(False)
@@ -4729,6 +4742,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(False)
         self.lsDiff.blockSignals(False)
         self.lsMax.blockSignals(False)
+        """
         self.dEps.blockSignals(False)
         self.dMaxFun.blockSignals(False)
         self.dMaxiter.blockSignals(False)
@@ -4736,7 +4750,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dFmin.blockSignals(False)
         self.dVtol.blockSignals(False)
         self.dLtol.blockSignals(False)
-
+        """
         self.setGOParameters()
 
     def setGOParameters(self):
@@ -4771,6 +4785,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(True)
         self.lsDiff.blockSignals(True)
         self.lsMax.blockSignals(True)
+        """
         self.dEps.blockSignals(True)
         self.dMaxFun.blockSignals(True)
         self.dMaxiter.blockSignals(True)
@@ -4778,7 +4793,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dFmin.blockSignals(True)
         self.dVtol.blockSignals(True)
         self.dLtol.blockSignals(True)
-
+        """
         idx = self.algorithmSelect.currentIndex()
 
         self.eStrategy.setCurrentText(self.goParameters['differential evolution'][0])
@@ -4815,6 +4830,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsDiff.setText(str(self.goParameters['least squares'][8]))
         self.lsMax.setText(str(self.goParameters['least squares'][9]))
 
+        """
         # direct
         self.dEps.setText(str(self.goParameters['direct'][0]))
         self.dMaxFun.setText(str(self.goParameters['direct'][1]))
@@ -4822,7 +4838,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dFmin.setText(str(self.goParameters['direct'][4]))
         self.dVtol.setText(str(self.goParameters['direct'][5]))
         self.dLtol.setText(str(self.goParameters['direct'][6]))
-
+        """
 
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
@@ -4855,6 +4871,7 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(False)
         self.lsDiff.blockSignals(False)
         self.lsMax.blockSignals(False)
+        """
         self.dEps.blockSignals(False)
         self.dMaxFun.blockSignals(False)
         self.dMaxiter.blockSignals(False)
@@ -4862,7 +4879,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dFmin.blockSignals(False)
         self.dVtol.blockSignals(False)
         self.dLtol.blockSignals(False)
-
+        """
     def change_algorithm(self):
         # set the proper algorithm widget
         idx = self.algorithmSelect.currentIndex()
