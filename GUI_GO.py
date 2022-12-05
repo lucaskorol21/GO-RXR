@@ -212,6 +212,7 @@ class variationWidget(QDialog):
     def __init__(self, mainWidget, sample):
         super().__init__()
 
+
         pagelayout = QHBoxLayout()
 
         self.elelayout = QVBoxLayout()
@@ -272,6 +273,10 @@ class variationWidget(QDialog):
         self.mainWidget.elementBox.setCurrentIndex(self.mainWidget.element_index)
 
     def addVarEle(self):
+
+        self.mainWidget.parameterFit = []
+        self.mainWidget.currentVal = []
+
         current_layer = self.mainWidget.layerBox.currentIndex()
         current_element = self.mainWidget.elementBox.currentIndex()
 
@@ -300,6 +305,9 @@ class variationWidget(QDialog):
         self.mainWidget.varTable.setRowCount(row + 1)
 
     def deleteVarEle(self):
+
+        self.mainWidget.parameterFit = []
+        self.mainWidget.currentVal = []
 
         current_layer = self.mainWidget.layerBox.currentIndex()
         current_element = self.mainWidget.elementBox.currentIndex()
@@ -1804,6 +1812,9 @@ class sampleWidget(QWidget):
 
         # initializing the element variation and magnetic data
         if len(userinput) != 0:
+            self.parameterFit = []
+            self.currentVal = []
+
             num = self.layerBox.count()
             idx = self.layerBox.currentIndex()
             if num == 0:
@@ -1867,6 +1878,9 @@ class sampleWidget(QWidget):
         idx = self.layerBox.currentIndex()  # determine which layer has been selected to remove
         last_var = dict()
         last_mag = dict()
+
+        self.parameterFit = []
+        self.currentVal = []
 
         if num != 0:
             self.layerBox.removeItem(num - 1)
@@ -1933,6 +1947,10 @@ class sampleWidget(QWidget):
                         del self.eShift[key]
 
     def _copyLayer(self):
+
+        self.parameterFit = []
+        self.currentVal = []
+
         num = self.layerBox.count()
         if num == 0:
             self.layerBox.addItem('Substrate')
@@ -3425,7 +3443,8 @@ class GlobalOptimizationWidget(QWidget):
                                        'immediate'],
             'simplicial homology': ['None', 1, 'simplicial'],
             'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
-            'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None']}
+            'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None'],
+            'direct': [0.0001, 'None', 1000, False, 0.0001,1e-16,1e-6]}
 
         isLogLayout = QVBoxLayout()
         isLogLabel = QLabel('Optimization Scale:')
@@ -3462,9 +3481,13 @@ class GlobalOptimizationWidget(QWidget):
 
         self.stopButton = QPushButton('Stop Optimization')
         self.stopButton.clicked.connect(self._stop_optimization)
+
         self.optButton = QPushButton('Update Sample')
         self.optButton.clicked.connect(self._save_optimization)
         self.optButton.setStyleSheet('background: cyan')
+
+        self.clearFitButton = QPushButton('Clear Fit')
+        self.clearFitButton.clicked.connect(self._clear_fit)
 
         buttonLayout.addLayout(selectedScansLayout)
         buttonLayout.addLayout(isLogLayout)
@@ -3473,8 +3496,9 @@ class GlobalOptimizationWidget(QWidget):
         buttonLayout.addWidget(self.stopButton)
         buttonLayout.addStretch(1)
         buttonLayout.addWidget(self.optButton)
+        buttonLayout.addWidget(self.clearFitButton)
 
-        # Addinng Widgets to plotting layout
+        # Adding Widgets to plotting layout
         plotLayout.addWidget(self.plotWidget)
         plotLayout.addLayout(buttonLayout)
 
@@ -3500,7 +3524,7 @@ class GlobalOptimizationWidget(QWidget):
         algorithmLabel = QLabel('Algorithm Selection')
         self.algorithmSelect = QComboBox()
         self.algorithmSelect.addItems(
-            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares'])
+            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares', 'direct'])
         self.algorithmSelect.currentIndexChanged.connect(self.change_algorithm)
         algorithmLayout.addWidget(algorithmLabel)
         algorithmLayout.addWidget(self.algorithmSelect)
@@ -3852,11 +3876,80 @@ class GlobalOptimizationWidget(QWidget):
         lsLayout.addLayout(lsMaxLayout)
         self.lsWidget.setLayout(lsLayout)
 
+        # direct algorithm
+        dLayout = QVBoxLayout()
+        self.dWidget = QWidget()
+
+        dEpsLayout = QHBoxLayout()
+        dEpsLabel = QLabel('eps')
+        dEpsLabel.setFixedWidth(70)
+        self.dEps = QLineEdit()
+        self.dEps.textChanged.connect(self.getGOParameters)
+        dEpsLayout.addWidget(dEpsLabel)
+        dEpsLayout.addWidget(self.dEps)
+        dLayout.addLayout(dEpsLayout)
+
+        dMaxFunLayout = QHBoxLayout()
+        dMaxFunLabel = QLabel('maxFun')
+        dMaxFunLabel.setFixedWidth(70)
+        self.dMaxFun = QLineEdit()
+        self.dMaxFun.textChanged.connect(self.getGOParameters)
+        dMaxFunLayout.addWidget(dMaxFunLabel)
+        dMaxFunLayout.addWidget(self.dMaxFun)
+        dLayout.addLayout(dMaxFunLayout)
+
+        dMaxiterLayout = QHBoxLayout()
+        dMaxiterLabel = QLabel('maxiter')
+        dMaxiterLabel.setFixedWidth(70)
+        self.dMaxiter = QLineEdit()
+        self.dMaxiter.textChanged.connect(self.getGOParameters)
+        dMaxiterLayout.addWidget(dMaxiterLabel)
+        dMaxiterLayout.addWidget(self.dMaxiter)
+        dLayout.addLayout(dMaxiterLayout)
+
+        dLocalLayout = QHBoxLayout()
+        dLocalLabel = QLabel('locally biased')
+        dLocalLabel.setFixedWidth(70)
+        self.dLocal = QCheckBox()
+        self.dLocal.stateChanged.connect(self.getGOParameters)
+        dLocalLayout.addWidget(dLocalLabel)
+        dLocalLayout.addWidget(self.dLocal)
+        dLayout.addLayout(dLocalLayout)
+
+        dFminLayout = QHBoxLayout()
+        dFminLabel = QLabel('fmin_rtol')
+        dFminLabel.setFixedWidth(70)
+        self.dFmin = QLineEdit()
+        self.dFmin.textChanged.connect(self.getGOParameters)
+        dFminLayout.addWidget(dFminLabel)
+        dFminLayout.addWidget(self.dFmin)
+        dLayout.addLayout(dFminLayout)
+
+        dVtolLayout = QHBoxLayout()
+        dVtolLabel = QLabel('volume tol.')
+        dVtolLabel.setFixedWidth(70)
+        self.dVtol = QLineEdit()
+        self.dVtol.textChanged.connect(self.getGOParameters)
+        dVtolLayout.addWidget(dVtolLabel)
+        dVtolLayout.addWidget(self.dVtol)
+        dLayout.addLayout(dVtolLayout)
+
+        dLtolLayout = QHBoxLayout()
+        dLtolLabel = QLabel('length tol.')
+        dLtolLabel.setFixedWidth(70)
+        self.dLtol = QLineEdit()
+        self.dLtol.textChanged.connect(self.getGOParameters)
+        dLtolLayout.addWidget(dLtolLabel)
+        dLtolLayout.addWidget(self.dLtol)
+        dLayout.addLayout(dLtolLayout)
+        self.dWidget.setLayout(dLayout)
+
         # adding the algorithm widgets to stacked layout
         self.goStackLayout.addWidget(self.evolutionWidget)
         self.goStackLayout.addWidget(self.shgoWidget)
         self.goStackLayout.addWidget(self.dualWidget)
         self.goStackLayout.addWidget(self.lsWidget)
+        self.goStackLayout.addWidget(self.dWidget)
 
         goLayout = QHBoxLayout()
         goLayout.addWidget(algorithmWidget)
@@ -3873,6 +3966,14 @@ class GlobalOptimizationWidget(QWidget):
         pagelayout.addLayout(bottomLayout)
         self.setGOParameters()
         self.setLayout(pagelayout)
+        self.setTableFit()
+
+    def _clear_fit(self):
+        # Allows the user to clear the fitting parameters
+        self.sWidget.parameterFit = []
+        self.rWidget.sfBsFitParams = []
+        self.sWidget.currentVal = []
+        self.rWidget.currentVal = []
         self.setTableFit()
 
     def _set_y_scale(self):
@@ -4141,6 +4242,10 @@ class GlobalOptimizationWidget(QWidget):
                                                                                       self.sWidget.sample,
                                                                                       self.rWidget.bs, self.rWidget.sf)
 
+        # updates all the sample information across all the different Widgets
+        self.rWidget.sample = copy.deepcopy(self.sWidget.sample)
+        self.sample = copy.deepcopy(self.sWidget.sample)
+
         # update the background shift and scaling factors
         name = self.rWidget.selectedScans.currentText()
         self.rWidget.backgroundShift.blockSignals(True)
@@ -4358,6 +4463,7 @@ class GlobalOptimizationWidget(QWidget):
         global stop
         stop = True
 
+        # take a look at this
         self.update_worker.stop()
         self.update_thread.quit()
         self.update_thread.deleteLater()
@@ -4523,6 +4629,13 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(True)
         self.lsDiff.blockSignals(True)
         self.lsMax.blockSignals(True)
+        self.dEps.blockSignals(True)
+        self.dMaxFun.blockSignals(True)
+        self.dMaxiter.blockSignals(True)
+        self.dLocal.blockSignals(True)
+        self.dFmin.blockSignals(True)
+        self.dVtol.blockSignals(True)
+        self.dLtol.blockSignals(True)
 
         idx = self.algorithmSelect.currentIndex()
         if idx == 0:
@@ -4567,6 +4680,17 @@ class GlobalOptimizationWidget(QWidget):
             self.goParameters['least squares'][7] = self.lsFscale.text()
             self.goParameters['least squares'][8] = self.lsDiff.text()
             self.goParameters['least squares'][9] = self.lsMax.text()
+        elif idx == 4: # direct algorithm
+            self.goParameters['direct'][0] = self.dEps.text()
+            self.goParameters['direct'][1] = self.dMaxFun.text()
+            self.goParameters['direct'][2] = self.dMaxiter.text()
+            if self.dLocal.checkState() == 0:
+                self.goParameters['direct'][3] = 'False'
+            else:
+                self.goParameters['direct'][3] = 'True'
+            self.goParameters['direct'][4] = self.dFmin.text()
+            self.goParameters['direct'][5] = self.dVtol.text()
+            self.goParameters['direct'][6] = self.dLtol.text()
 
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
@@ -4599,6 +4723,13 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(False)
         self.lsDiff.blockSignals(False)
         self.lsMax.blockSignals(False)
+        self.dEps.blockSignals(False)
+        self.dMaxFun.blockSignals(False)
+        self.dMaxiter.blockSignals(False)
+        self.dLocal.blockSignals(False)
+        self.dFmin.blockSignals(False)
+        self.dVtol.blockSignals(False)
+        self.dLtol.blockSignals(False)
 
         self.setGOParameters()
 
@@ -4634,6 +4765,13 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(True)
         self.lsDiff.blockSignals(True)
         self.lsMax.blockSignals(True)
+        self.dEps.blockSignals(True)
+        self.dMaxFun.blockSignals(True)
+        self.dMaxiter.blockSignals(True)
+        self.dLocal.blockSignals(True)
+        self.dFmin.blockSignals(True)
+        self.dVtol.blockSignals(True)
+        self.dLtol.blockSignals(True)
 
         idx = self.algorithmSelect.currentIndex()
 
@@ -4645,7 +4783,6 @@ class GlobalOptimizationWidget(QWidget):
         self.eMinMutation.setText(str(self.goParameters['differential evolution'][5]))
         self.eMaxMutation.setText(str(self.goParameters['differential evolution'][6]))
         self.eRecomb.setText(str(self.goParameters['differential evolution'][7]))
-
         self.eInit.setCurrentText(str(self.goParameters['differential evolution'][9]))
         self.eUpdating.setCurrentText(str(self.goParameters['differential evolution'][10]))
 
@@ -4671,6 +4808,15 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.setText(str(self.goParameters['least squares'][7]))
         self.lsDiff.setText(str(self.goParameters['least squares'][8]))
         self.lsMax.setText(str(self.goParameters['least squares'][9]))
+
+        # direct
+        self.dEps.setText(str(self.goParameters['direct'][0]))
+        self.dMaxFun.setText(str(self.goParameters['direct'][1]))
+        self.dMaxiter.setText(str(self.goParameters['direct'][2]))
+        self.dFmin.setText(str(self.goParameters['direct'][4]))
+        self.dVtol.setText(str(self.goParameters['direct'][5]))
+        self.dLtol.setText(str(self.goParameters['direct'][6]))
+
 
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
@@ -4703,6 +4849,13 @@ class GlobalOptimizationWidget(QWidget):
         self.lsFscale.blockSignals(False)
         self.lsDiff.blockSignals(False)
         self.lsMax.blockSignals(False)
+        self.dEps.blockSignals(False)
+        self.dMaxFun.blockSignals(False)
+        self.dMaxiter.blockSignals(False)
+        self.dLocal.blockSignals(False)
+        self.dFmin.blockSignals(False)
+        self.dVtol.blockSignals(False)
+        self.dLtol.blockSignals(False)
 
     def change_algorithm(self):
         # set the proper algorithm widget
@@ -4722,6 +4875,8 @@ class GlobalOptimizationWidget(QWidget):
     def setTableFit(self):
 
         self.fittingParamTable.blockSignals(True)
+        self.fittingParamTable.setHorizontalHeaderLabels(
+            ['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary', 'New'])
 
         # initialize the boundaries
         rows = len(self.sWidget.parameterFit) + len(self.rWidget.sfBsFitParams)  # total number of rows required
