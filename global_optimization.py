@@ -464,13 +464,15 @@ def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBound
     else:
         p = False
     # This line will be used to select and use different global optimization algorithms
-    ret = optimize.direct(scanCompute, bounds, )
-    x = ret.x
-    fun = ret.fun
+    #ret = optimize.direct(scanCompute, bounds, )
+    #x = ret.x
+    #fun = ret.fun
 
+    x =[]
+    fun = []
 
-    print('Chi: ' + str(fun))
-    print('Fitting parameters: ', x)
+    #print('Chi: ' + str(fun))
+    #print('Fitting parameters: ', x)
 
     return x, fun
 
