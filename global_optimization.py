@@ -147,18 +147,24 @@ def smooth_function(R):
 
     return signal.savgol_filter(R, window_length=11, polyorder=5, mode="nearest")
 
-def rolling_average(R, window):
+def rolling_average(R, window, iter=1):
 
-    kernel = np.ones(window) / window
-    data_convolved = np.convolve(R, kernel, mode='same')
-    return data_convolved
+    for i in range(iter):
+        if i == 0:
+            kernel = np.ones(9) / 9
+            R = np.convolve(R, kernel, mode='same')
+        else:
+            kernel = np.ones(5) / 5
+            R = np.convolve(R, kernel, mode='same')
+
+    return R
 
 def total_variation(R, Rsim):
     # calculates the total variation (arc-length) of the function
     # this will be a good judge of whether or not the shape of the function is right
     #Rnew = R-Rsim
-    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])  # total variation in fitted data
-    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])  # total variation in simulation
+    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data
+    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])/len(Rsim)  # total variation in simulation
 
     variation = abs(totVar-totVarSim)
     return variation

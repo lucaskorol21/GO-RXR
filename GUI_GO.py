@@ -3983,6 +3983,9 @@ class GlobalOptimizationWidget(QWidget):
         self.rWidget.sfBsFitParams = []
         self.sWidget.currentVal = []
         self.rWidget.currentVal = []
+        self.sWidget.setTable()
+        self.sWidget.setTableMag()
+        self.sWidget.setTableVar()
         self.setTableFit()
 
     def _set_y_scale(self):
@@ -4490,7 +4493,6 @@ class GlobalOptimizationWidget(QWidget):
         self.sWidget.setTableVar()
 
         # make sure that I all the other parameters are returned back to original value after the global optimization
-
         self.worker = Worker(self)
         self.update_worker = UpdateWorker(self.pWidget)
 
@@ -4946,6 +4948,7 @@ class GlobalOptimizationWidget(QWidget):
             self.fittingParamTable.setItem(row, 3, item4)
 
             row = row + 1
+
 
         for idx in range(len(self.x)):
             item = QTableWidgetItem(str(self.x[idx]))
@@ -6239,7 +6242,7 @@ class progressWidget(QWidget):
         idx = 0
         while self.keep_going:
             idx = idx + 1
-            time.sleep(0.001)
+            time.sleep(0.0001)
 
             if 51 / idx == 1:
                 global x_vars
