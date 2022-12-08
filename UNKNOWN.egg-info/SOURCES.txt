@@ -1,4 +1,14 @@
+Full_Matrix.cpp
+Kramers_Kronig.cpp
+MOKE_longitudinal.cpp
+MOKE_polar.cpp
+MOKE_transversal.cpp
+Mathematical_Functions_Reflectivity.cpp
+Multilayer_Functions_Reflectivity.cpp
 Pythonreflectivity.cpp
+Reflectivity_Pi.cpp
+Reflectivity_Sigma.cpp
+Structural.cpp
 setup.py
 UNKNOWN.egg-info/PKG-INFO
 UNKNOWN.egg-info/SOURCES.txt

@@ -1,10 +1,12 @@
 import ast
 
 import matplotlib.pyplot as plt
+import sys
 
 from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
+
 from numba import *
 import tkinter as tk
 from tkinter import ttk
@@ -1173,6 +1175,7 @@ class slab:
         #n = 1 - delta + 1j*beta
         #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
         epsilon = n**2
+        chi_array = n**2-1  # used in new version of pythonreflectivity
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(beta_m, delta_m)
         #Q = beta_m + 1j*delta_m
@@ -1199,6 +1202,7 @@ class slab:
 
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
+            chi = (chi_array[m_i]+ chi_array[m_j])/2
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
 
@@ -1236,9 +1240,11 @@ class slab:
                 else:
                     raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
 
-                A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
+                #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
+                A[idx].setchi([chi,chi,chi,eps_mag])
             else:
-                A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+                #A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+                A[idx].setchi(chi)
 
 
             if idx != 0:
@@ -1251,9 +1257,9 @@ class slab:
 
 
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
-
+        print('hello')
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-
+        print('bye')
         R = dict()
         """
         # Used to demonstrate how sample is being segmented
