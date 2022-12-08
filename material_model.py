@@ -40,6 +40,7 @@ def _use_given_ff(directory):
             name = directory + '/' +file
             element = file.strip(".ffm")
             mag_names.append(element)
+
             with open(name, 'rb') as f:
                 ffm[element] = np.loadtxt(name)
             f.close()

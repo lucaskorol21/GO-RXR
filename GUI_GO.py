@@ -2131,7 +2131,7 @@ class sampleWidget(QWidget):
                     if names[0] == '':
                         sample._set_form_factors(layer[ele][0], layer[ele][5])
 
-        sample.density_profile()
+        sample.energy_shift()
         return sample
 
     def getData(self):

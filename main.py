@@ -8,12 +8,12 @@ from scipy.signal import *
 
 if __name__ == '__main__':
     fname = "//cabinet/work$/lsk601/My Documents/Masters_Project/SrTiO3-LaMnO3/Pim10uc.all"
-    f = "//cabinet/work$/lsk601/My Documents/Masters_Project/SrTiO3-LaMnO3/test.txt"
+    f = "//cabinet/work$/lsk601/My Documents/Masters_Project/SrTiO3-LaMnO3/test_2.txt"
     data_info, data_dict = ds.Read_ReMagX(fname)
 
     idx = 2
     name = '51_640.2_S'
-    name = data_info[idx][2]
+    #name = data_info[idx][2]
     scan_type = data_info[idx][1]
 
     data = data_dict[name]['Data']
