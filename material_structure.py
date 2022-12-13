@@ -634,7 +634,8 @@ class slab:
 
         # Checks that all identifiers are strings
         if type(identifier) == list:
-            if type(identifier[0]) != str:
+
+            if type(identifier[0]) is not str and type(identifier[0]) is not np.str_:
                 raise TypeError('All list elements must be strings')
             if len(set([type(x) for x in identifier])) > 1:
                 raise TypeError('All list elements must be strings')
@@ -1175,13 +1176,13 @@ class slab:
         #n = 1 - delta + 1j*beta
         #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
         epsilon = n**2
-        chi_array = n**2-1  # used in new version of pythonreflectivity
+
         #Q = np.vectorize(complex)(delta, beta)
         Q = np.vectorize(complex)(beta_m, delta_m)
         #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
 
-        my_slabs = ALS(epsilon.real, epsilon_mag.imag, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
 
@@ -1202,7 +1203,7 @@ class slab:
 
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
-            chi = (chi_array[m_i]+ chi_array[m_j])/2
+            #chi = (chi_array[m_i]+ chi_array[m_j])/2
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
 
 
@@ -1241,10 +1242,11 @@ class slab:
                     raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
 
                 #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
-                A[idx].setchi([chi,chi,chi,eps_mag])
+                A[idx].seteps([eps,eps,eps,eps_mag])
             else:
+
                 #A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
-                A[idx].setchi(chi)
+                A[idx].seteps([eps,eps,eps,0])
 
 
             if idx != 0:
@@ -1257,9 +1259,7 @@ class slab:
 
 
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
-        print('hello')
-        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
-        print('bye')
+        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-20)  # Computes the reflectivity
         R = dict()
         """
         # Used to demonstrate how sample is being segmented
@@ -1280,9 +1280,9 @@ class slab:
             R['LC'] = Rtemp[2]*sFactor + bShift
             R['RC'] = Rtemp[3]*sFactor + bShift
             R['AC'] = sFactor*(Rtemp[2]-Rtemp[3])/(sFactor*(Rtemp[2]+Rtemp[3])+2*bShift)
+
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
-        seven = time.time_ns()
 
         return qz, R
 

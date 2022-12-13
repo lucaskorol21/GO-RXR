@@ -622,7 +622,7 @@ class sampleWidget(QWidget):
                     self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
 
             elif key.startswith('ffm'):
-                name = key.strip('ffm')
+                name = key.strip('ffm-')
                 if name in self.mag_ff:
                     self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
 
@@ -2110,13 +2110,27 @@ class sampleWidget(QWidget):
 
                 mag = self.magData[ele_name][idx]
 
+                magDir = self.magDirection[idx]
+
+                gamma = 0
+                phi = 0
+                if magDir == 'y':
+                    gamma = 90
+                    phi = 90
+                elif magDir == 'x':
+                    gamma = 0
+                    phi = 90
+                elif magDir == 'z':
+                    gamma = 0
+                    phi = 0
+
                 names = mag[0]
                 ratio = mag[1]
                 scattering_factor = mag[2]
 
                 if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
-                    sample.magnetization(idx, names, ratio, scattering_factor)
+                    sample.magnetization(idx, names, ratio, scattering_factor, gamma=gamma,phi=phi)
 
         # changing the form factors
         for idx in range(m):
@@ -2132,6 +2146,15 @@ class sampleWidget(QWidget):
                         sample._set_form_factors(layer[ele][0], layer[ele][5])
 
         sample.energy_shift()
+
+        for e in self.eShift.keys():
+            if e.startswith('ff-'):
+                key = e.strip('ff-')
+                sample.eShift[key] = self.eShift[e]
+            elif e.startswith('ffm-'):
+                key = e.strip('ffm-')
+                sample.mag_eShift[key] = self.eShift[e]
+
         return sample
 
     def getData(self):
@@ -2176,6 +2199,7 @@ class sampleWidget(QWidget):
             # gets the magnetic direction for that particular layer
             gamma = layer[ele].gamma
             phi = layer[ele].phi
+
             if gamma == 90 and phi == 90:
                 self.magDirection[j] = 'y'
             elif gamma == 0 and phi == 90:
@@ -2715,7 +2739,6 @@ class reflectivityWidget(QWidget):
                         idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', name])
                         self.currentVal[idx] = [var, [lower, upper]]
 
-        print(var)
 
     def sfChange(self):
         name = self.selectedScans.currentText()
@@ -5271,6 +5294,7 @@ class ReflectometryApp(QMainWindow):
         if fname.endswith('.h5') or fname.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))
+
                 self._sampleWidget.struct_ff = struct_names
                 self._sampleWidget.mag_ff = mag_names
 
