@@ -88,7 +88,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
         if layer == 0:
             if layer_magnetized[0]:
                 for ele in structure[layer].keys():
-                    if structure[0][ele].mag_scattering_factor != None:
+                    if len(structure[0][ele].mag_scattering_factor) != 0:
                         gamma = structure[0][ele].gamma
                         phi = structure[0][ele].phi
 
@@ -357,6 +357,7 @@ class element:
         self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
         self.mag_scattering_factor = []
+        self.mag_scale = []
         self.position = None
 
 class slab:
@@ -692,6 +693,7 @@ class slab:
                                     self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
                             self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
                             self.structure[lay][key].mag_density[poly_idx] = density[idx]
+                            self.structure[lay][key].mag_scale = np.ones(len(layer[key].polymorph))
 
                             self.mag_elements[key][poly_idx] = identifier[idx]
                             if type(gamma) == list and type(phi) == list:
