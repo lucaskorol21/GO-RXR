@@ -3259,12 +3259,12 @@ class reflectivityWidget(QWidget):
                     if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
 
                         if self.axis_state:
-                            self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                            self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                            self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                            self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
 
                         else:
-                            self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                            self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                            self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                            self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
 
                         self.spectrumWidget.setLabel('left', "Reflectivity, R")
                         self.spectrumWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
@@ -3274,13 +3274,13 @@ class reflectivityWidget(QWidget):
                         rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                         if self.axis_state:
 
-                            self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
-                            self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                            self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2), name='Data')
+                            self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                      name='Simulation')
                         else:
-                            self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2),
+                            self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2),
                                                      name='Data')
-                            self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                            self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                      name='Simulation')
 
                         self.spectrumWidget.setLogMode(False, False)
@@ -3295,8 +3295,8 @@ class reflectivityWidget(QWidget):
                                                       sFactor=scaling_factor)
                     Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
-                    self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                    self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                    self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
                     self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
@@ -3338,8 +3338,8 @@ class reflectivityWidget(QWidget):
                 if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
 
                     if self.axis_state:
-                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                        self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.spectrumWidget.plot(qz, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
                     else:
                         self.spectrumWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                         self.spectrumWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
@@ -3353,12 +3353,12 @@ class reflectivityWidget(QWidget):
                 elif pol == 'AL' or pol == 'AC':
                     rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
                     if self.axis_state:
-                        self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                        self.spectrumWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.spectrumWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Simulation')
                     else:
-                        self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
-                        self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                        self.spectrumWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 3), width=2), name='Data')
+                        self.spectrumWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Simulation')
 
                     self.spectrumWidget.setLogMode(False, False)
@@ -3373,8 +3373,8 @@ class reflectivityWidget(QWidget):
                                                   sFactor=scaling_factor)
                 Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
-                self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
-                self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
+                self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
                 self.spectrumWidget.setLabel('left', "Reflectivity, R")
                 self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
