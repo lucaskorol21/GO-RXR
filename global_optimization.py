@@ -116,7 +116,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
                 ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
 
-                poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
+                poly = np.where(sample.structure[layer][element].polymorph == polymorph)[0][0]  # determines location of polymorph
 
                 # sets poly_ratio value making sure sum equals to 1
                 if poly == 0:

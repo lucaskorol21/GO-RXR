@@ -1949,7 +1949,6 @@ class sampleWidget(QWidget):
                     if to_remove in ffm_to_remove:
                         del self.eShift[key]
 
-        print(self.varData)
     def _copyLayer(self):
 
         self.parameterFit = []
@@ -4242,6 +4241,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
 
             elif fit[1] == 'POLYMORPHOUS':
+
                 lower = self.x[row] - 0.2
                 upper = self.x[row] + 0.2
                 if lower < 0:
@@ -4327,7 +4327,8 @@ class GlobalOptimizationWidget(QWidget):
             backS = copy.deepcopy(self.rWidget.bs)
             scaleF = copy.deepcopy(self.rWidget.sf)
             if len(self.x) != 0:
-                sample2, backS, scaleS = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample1), backS,
+
+                sample2, backS, scaleS = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample2), backS,
                                                                scaleF)
                 isGO = True
 
@@ -4344,9 +4345,7 @@ class GlobalOptimizationWidget(QWidget):
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor_old,
                                                 bShift=background_shift_old)
-                if isGO:
-                    qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                   bShift=background_shift)
+
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
                 Rsim = Rsim[pol]
 
@@ -5182,14 +5181,7 @@ class ReflectometryApp(QMainWindow):
         self.about.triggered.connect(self._help)
         helpMenu.addAction(self.about)
 
-    def _clear(self):
-        # clear all the necessary info when loading in a file
 
-        #
-        pass
-
-    def reset(self):
-        pass
 
     def _newFile(self):
 
