@@ -5178,6 +5178,15 @@ class ReflectometryApp(QMainWindow):
         self.about.triggered.connect(self._help)
         helpMenu.addAction(self.about)
 
+    def _clear(self):
+        # clear all the necessary info when loading in a file
+
+        #
+        pass
+
+    def reset(self):
+        pass
+
     def _newFile(self):
 
         # create a new file with the inputted
@@ -5361,9 +5370,12 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.currentVal = list(fitParams[1])
                 self._reflectivityWidget.rom = [True, False, False]
                 self._reflectivityWidget.fit = fitParams[4]
-                # need to put selected scans
+
+                # checks to make sure that saved scans are still in the dataset
+                selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
+
                 self._reflectivityWidget.selectedScans.blockSignals(True)
-                self._reflectivityWidget.selectedScans.addItems(fitParams[4])
+                self._reflectivityWidget.selectedScans.addItems(selectedScans)
                 self._reflectivityWidget.selectedScans.blockSignals(False)
 
                 self._reflectivityWidget.bounds = fitParams[5]
