@@ -1914,6 +1914,7 @@ class sampleWidget(QWidget):
             for layer in self.structTableInfo:
                 for element_info in layer:
                     my_element = element_info[0]
+
                     if my_element in list(elements_removed.keys()):
                         elements_removed[my_element] = True
 
@@ -1922,6 +1923,8 @@ class sampleWidget(QWidget):
                 n_ff = len(ff_to_remove)
                 if not (elements_removed[key]):  # element has been removed
                     del self.magData[key]
+                    del self.varData[key]
+
                     for sf in last_var[key][2]:  # element variation case
                         if sf != '' and sf not in ff_to_remove:
                             ff_to_remove.append(sf)
@@ -1946,6 +1949,7 @@ class sampleWidget(QWidget):
                     if to_remove in ffm_to_remove:
                         del self.eShift[key]
 
+        print(self.varData)
     def _copyLayer(self):
 
         self.parameterFit = []
