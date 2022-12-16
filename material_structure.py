@@ -1167,9 +1167,8 @@ class slab:
             sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            scale = float(self.mag_scale[self.find_sf[1][em]])
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
@@ -1330,9 +1329,8 @@ class slab:
             sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            scale = float(self.mag_scale[self.find_sf[1][em]])
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)
 
 
         d_len = len(thickness)
@@ -1374,7 +1372,7 @@ class slab:
 
         for em in self.find_sf[1].keys():
             self.mag_eShift[self.find_sf[1][em]] = 0
-            self.mag_scale[self.find_sf[1][em]] = 1  # utilizes the form factor as the key
+
 
     def showSampleParameters(self):
 

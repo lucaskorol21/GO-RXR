@@ -25,6 +25,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
     :return: The new sample
     """
     # Loop through each sample parameter
+
     for p in range(len(parameters)):
         params = parameters[p]
 
@@ -51,9 +52,9 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
             dE = x[p]
 
             if mode == 'STRUCTURAL':
-                pass
+                sample.eShift[element] = dE
             elif mode == 'MAGNETIC':
-                pass
+                sample.mag_eShift[element] = dE
 
         else:
             layer = params[0]  # Determine which layer to change
@@ -116,7 +117,9 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
 
                 ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
 
-                poly = np.where(sample.structure[layer][element].polymorph == polymorph)[0][0]  # determines location of polymorph
+                #poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
+                my_poly = list(sample.structure[layer][element].polymorph)
+                poly = my_poly.index(polymorph)
 
                 # sets poly_ratio value making sure sum equals to 1
                 if poly == 0:

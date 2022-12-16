@@ -31,8 +31,8 @@ def getTitleInfo(title):
             polarization = 'P'
         elif title[3] == 'L':
             polarization = 'LC'
-        elif title[3] == 'RC':
-            polarization = 'R'
+        elif title[3] == 'R':
+            polarization = 'RC'
         elif 'R' in title[3] and 'L' in title[3]:
             polarization = 'AC'
         elif 'S' in title[3] and 'P' in title[3]:

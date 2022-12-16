@@ -373,9 +373,9 @@ class magneticWidget(QDialog):
         self.mainWidget.magDirBox.currentIndexChanged.connect(self.magDirectionChange)
 
         self.mainWidget.magTable.setRowCount(3)
-        self.mainWidget.magTable.setColumnCount(3)
+        self.mainWidget.magTable.setColumnCount(2)
         self.mainWidget.magTable.setHorizontalHeaderLabels(
-            ['Magnetic Density (mol/cm^3)', 'Scattering Factor', 'Scale'])
+            ['Magnetic Density (mol/cm^3)', 'Scattering Factor'])
 
         self.mainWidget.setTableMag()
         # self.mainWidget.magButton.clicked.connect(self.setTable)
@@ -414,7 +414,7 @@ class sampleWidget(QWidget):
         self.struct_ff = []
         self.mag_ff = []
 
-        self.magData = {ele: [[[''], [''], [''],['']] for i in range(len(sample.structure))] for ele in
+        self.magData = {ele: [[[''], [''], ['']] for i in range(len(sample.structure))] for ele in
                         sample.myelements}
         self.magGo = True
         self.magDirection = ['z' for i in range(len(sample.structure))]
@@ -754,9 +754,9 @@ class sampleWidget(QWidget):
                     for lay in range(len(self.varData[element])):
                         c = len(self.varData[element][lay][0])
                         if empty:
-                            self.magData[element][lay] = [[element], [''], [''], ['']]
+                            self.magData[element][lay] = [[element], [''], ['']]
                         else:
-                            self.magData[element][lay] = [['' for i in range(c)],['' for i in range(c)],['' for i in range(c)], ['' for i in range(c)]]
+                            self.magData[element][lay] = [['' for i in range(c)],['' for i in range(c)],['' for i in range(c)]]
 
 
                 # self.magData[element][layer][column][row] = value
@@ -791,7 +791,7 @@ class sampleWidget(QWidget):
                         self.varData[element][lay][2] = ['' for i in range(c)]
 
                         # reset all magnetic data related to the element variation
-                        self.magData[element][lay] = [[element], [''], [''], ['']]
+                        self.magData[element][lay] = [[element], [''], ['']]
 
 
                     # delete the form factor in eShift
@@ -1486,7 +1486,7 @@ class sampleWidget(QWidget):
         # need to add sample.myelements in the data file
         for ele in sample.myelements:
             self.varData[ele] = [[['', ''], ['', ''], ['', '']] for i in range(num_layers)]
-            self.magData[ele] = [[[ele], [''], [''], ['']] for i in range(num_layers)]
+            self.magData[ele] = [[[ele], [''], ['']] for i in range(num_layers)]
 
         for idx, layer in enumerate(sample.structure):
 
@@ -1503,7 +1503,6 @@ class sampleWidget(QWidget):
                     self.varData[ele][idx][2] = element.scattering_factor
                     self.magData[ele][idx][2] = ['' for i in range(len(element.polymorph))]
 
-                    self.magData[ele][idx][3] = ['' for i in range(len(element.polymorph))]
 
                 # element writing
                 if len(element.mag_density) != 0:
@@ -1700,7 +1699,7 @@ class sampleWidget(QWidget):
 
     def clearMagTable(self):
         self.magTable.setRowCount(0)
-        self.magTable.setColumnCount(3)
+        self.magTable.setColumnCount(2)
 
     def setTableMag(self):
 
@@ -1723,7 +1722,7 @@ class sampleWidget(QWidget):
             labels = []
             density = []
             sf = []
-            scale = []
+
             # Loops through all of the elements
             for ele_idx in range(len(self.structTableInfo[layer_idx])):
                 element = self.structTableInfo[layer_idx][ele_idx][0]
@@ -1731,7 +1730,7 @@ class sampleWidget(QWidget):
                 names = self.magData[element][layer_idx][0]
                 D = self.magData[element][layer_idx][1]
                 S = self.magData[element][layer_idx][2]
-                K = self.magData[element][layer_idx][3]
+
 
                 num = len(names)
                 if num != 0:
@@ -1745,10 +1744,7 @@ class sampleWidget(QWidget):
                             sf.append(S[i])
                         else:
                             sf.append('')
-                        if len(K) != 0:
-                            scale.append(K[i])
-                        else:
-                            scale.append('')
+
                 else:
                     labels.append(element)
                     if len(D) != 0:
@@ -1760,10 +1756,6 @@ class sampleWidget(QWidget):
                     else:
                         sf.append('')
 
-                    if len(K) != 0:
-                        scale.append(K[0])
-                    else:
-                        scale.append('')
 
             row_num = len(labels)
             self.magTable.setRowCount(row_num)
@@ -1775,7 +1767,7 @@ class sampleWidget(QWidget):
                 name = self.magTable.verticalHeaderItem(row).text()  # for color purposes
                 mydensity = density[row]
                 mysf = sf[row]
-                myscale = scale[row]
+
                 if mydensity == '':
                     item = QTableWidgetItem('')
                     self.magTable.setItem(row, 0, item)
@@ -1802,12 +1794,7 @@ class sampleWidget(QWidget):
                             if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
                                 self.magTable.item(row, 1).setBackground(QtGui.QColor(150, 255, 150))
 
-                if myscale == '':
-                    item = QTableWidgetItem('')
-                    self.magTable.setItem(row,2,item)
-                else:
-                    item = QTableWidgetItem(myscale)
-                    self.magTable.setItem(row, 2, item)
+
             self.magTable.blockSignals(False)
 
     def _addLayer(self):
@@ -1833,7 +1820,7 @@ class sampleWidget(QWidget):
             my_elements.append(userinput[i][0])
             if userinput[i][0] not in list(self.varData.keys()):
                 self.varData[userinput[i][0]] = [[['', ''], ['', ''], ['', '']] for j in range(num_layers)]
-                self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], [''], ['']] for j in range(num_layers)]
+                self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], ['']] for j in range(num_layers)]
 
         # initializing the element variation and magnetic data
         if len(userinput) != 0:
@@ -1851,7 +1838,7 @@ class sampleWidget(QWidget):
                 self.layerBox.blockSignals(False)
                 for i in range(len(userinput)):
                     self.varData[userinput[i][0]] = [[['', ''], ['', ''], ['', '']]]
-                    self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], [''], ['']]]
+                    self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], ['']]]
                 self.setTable()
                 self.elementVariation.changeElements()
             else:
@@ -1882,14 +1869,14 @@ class sampleWidget(QWidget):
                             if not isMag:
                                 if info_mag[1][0] != '' or info_mag[2][0] != '':
                                     n = len(info_mag[0])
-                                    data_mag = [info_mag[0], [0 for i in range(n)], info_mag[2], info_mag[3]]
+                                    data_mag = [info_mag[0], [0 for i in range(n)], info_mag[2]]
                                     isMag = True
 
                                 else:
                                     data_mag = [[key], [''], ['']]
                     else:
                         data = [['', ''], ['', ''], ['', '']]
-                        data_mag = [key, [''], [''], ['']]
+                        data_mag = [key, [''], [''],]
 
                     self.varData[key].insert(idx + 1, data)
                     self.magData[key].insert(idx + 1, data_mag)
@@ -2160,6 +2147,11 @@ class sampleWidget(QWidget):
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx, names, ratio, scattering_factor, gamma=gamma,phi=phi)
 
+                # setting phi and gamma for all elements in the layer
+                # required for the construction of the density profile!
+
+                sample.structure[idx][ele_name].gamma = gamma
+                sample.structure[idx][ele_name].phi = phi
         # changing the form factors
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
@@ -2205,7 +2197,7 @@ class sampleWidget(QWidget):
                     if len(layer[ele].mag_scattering_factor) != 0:
                         mag_sf = layer[ele].mag_scattering_factor
 
-                    self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf, ['' for i in len(layer[ele].polymorph)]]
+                    self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf]
 
 
                 else:
@@ -2222,7 +2214,7 @@ class sampleWidget(QWidget):
                             if name not in list(self.eShift.keys()):
                                 self.eShift[name] = 0
 
-                    self.magData[ele][j] = [[ele], mag_density, mag_sf,['']]
+                    self.magData[ele][j] = [[ele], mag_density, mag_sf]
 
             # gets the magnetic direction for that particular layer
             gamma = layer[ele].gamma
@@ -4355,7 +4347,6 @@ class GlobalOptimizationWidget(QWidget):
             backS = copy.deepcopy(self.rWidget.bs)
             scaleF = copy.deepcopy(self.rWidget.sf)
             if len(self.x) != 0:
-
                 sample2, backS, scaleS = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample2), backS,
                                                                scaleF)
                 isGO = True
@@ -5982,8 +5973,8 @@ class progressWidget(QWidget):
                             idx = [x for x in range(len(qz)) if
                                    qz[x] >= lw and qz[x] < up]  # determines index boundaries
 
-                            n = len(idx)
-                            m = m + n
+                            k = len(idx)
+                            m = m + k
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
@@ -5993,9 +5984,10 @@ class progressWidget(QWidget):
                                 elif self.objective == 'L2-Norm':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
 
-                        self.costFun[name].append(fun_val / m)
-                        self.objFun[name].append(fun_val / m + val * self.shape_weight)
-                        fun = fun + fun_val / m
+                        if m != 0:
+                            self.costFun[name].append(fun_val / m)
+                            self.objFun[name].append(fun_val / m + val * self.shape_weight)
+                            fun = fun + fun_val / m
 
                     else:
                         myDataScan = self.data[name]
@@ -6037,8 +6029,8 @@ class progressWidget(QWidget):
 
                             idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
 
-                            n = len(idx)
-                            m = m + n
+                            k = len(idx)
+                            m = m + k
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
@@ -6047,9 +6039,10 @@ class progressWidget(QWidget):
                                 elif self.objective == 'L2-Norm':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
 
-                        self.costFun[name].append(fun_val / m)
-                        self.objFun[name].append(fun_val / m + val * self.shape_weight)
-                        fun = fun + fun_val / m
+                        if m != 0:
+                            self.costFun[name].append(fun_val / m)
+                            self.objFun[name].append(fun_val / m + val * self.shape_weight)
+                            fun = fun + fun_val / m
 
                 self.costFun['total'].append(fun)
                 self.varFun['total'].append(gamma * self.shape_weight)
