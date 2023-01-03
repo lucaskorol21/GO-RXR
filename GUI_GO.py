@@ -388,55 +388,64 @@ class variationWidget(QDialog):
 
 
 class ReadOnlyDelegate(QStyledItemDelegate):
-
+    # This class is used to set an item delegate to read only
     def createEditor(self, parent, option, index):
         return
 
 
 class magneticWidget(QDialog):
+    # Used to set magnetic info (relies on info set from variationWidget)
     def __init__(self, mainWidget, sample):
         super().__init__()
 
-        pagelayout = QHBoxLayout()
+        pagelayout = QHBoxLayout()  # page layout
 
-        self.mainWidget = mainWidget
+        self.mainWidget = mainWidget  # sampleWidget
 
-        # buttons for adding and removing
+        self.sample = sample  # resets sample
 
-        self.sample = sample
+        idx = self.mainWidget.layerBox.currentIndex()  # retrieves current index
+        self.mainWidget.layerBox.currentIndexChanged.connect(self.mainWidget.setTableMag)  # set table signal
 
-        idx = self.mainWidget.layerBox.currentIndex()
-        self.mainWidget.layerBox.currentIndexChanged.connect(self.mainWidget.setTableMag)
         # Magnetization direction Widget format
         magLabel = QLabel('Magnetization Direction')
         magLayout = QVBoxLayout()
 
+        # magnetization direction (use phi and theta in future versions)
         self.mainWidget.magDirBox.addItem('x-direction')
         self.mainWidget.magDirBox.addItem('y-direction')
         self.mainWidget.magDirBox.addItem('z-direction')
 
+        # magnetic layout
         magLayout.addWidget(magLabel)
         magLayout.addWidget(self.mainWidget.magDirBox)
         magLayout.addStretch(1)
 
+        # magnetic direction signal setup
         self.mainWidget.magDirBox.currentIndexChanged.connect(self.magDirectionChange)
 
+        # pre-sets the magTable and its headers
         self.mainWidget.magTable.setRowCount(3)
         self.mainWidget.magTable.setColumnCount(2)
         self.mainWidget.magTable.setHorizontalHeaderLabels(
             ['Magnetic Density (mol/cm^3)', 'Scattering Factor'])
 
-        self.mainWidget.setTableMag()
-        # self.mainWidget.magButton.clicked.connect(self.setTable)
+        self.mainWidget.setTableMag()  # set magTable
+
+        # set the page layout
         pagelayout.addWidget(self.mainWidget.magTable)
         pagelayout.addLayout(magLayout)
-
         self.setLayout(pagelayout)
 
     def magDirectionChange(self):
-        lay = self.mainWidget.layerBox.currentIndex()
-        mag = self.mainWidget.magDirBox.currentIndex()
+        """
+        Purpose: change the magnetization direction for sampleWidget
+        :return:
+        """
+        lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
+        mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
 
+        # sets the magnetization direction
         if mag == 0:
             self.mainWidget.magDirection[lay] = 'x'
         elif mag == 1:
