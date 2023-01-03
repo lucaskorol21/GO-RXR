@@ -3722,41 +3722,51 @@ class reflectivityWidget(QWidget):
 
 
 class Worker(QObject):
-    finished = pyqtSignal()
-    progress = pyqtSignal(int)
+    """
+    Purpose: Worker used to allow for GUI not to freeze while data fitting running
+    """
+    finished = pyqtSignal()  # signal that process finished
+    progress = pyqtSignal(int)  # signal used for progress
 
     def __init__(self, function):
         super().__init__()
-        self.function = function
+        self.function = function  # globalOptimizationWidget
 
     def run(self):
-        x, fun = self.function._optimizer()
-        self.function.x = x
-        self.function.fun = fun
-        self.finished.emit()
+        x, fun = self.function._optimizer()  # run the data fitting function
+        self.function.x = x  # parameters
+        self.function.fun = fun  # cost function
+        self.finished.emit()  # let process know that data fitting has terminated
 
 
 class UpdateWorker(QObject):
-    finished = pyqtSignal()
-    progress = pyqtSignal(int)
+    """
+    Purpose: Worker used to update cost function after each data fitting callback
+    """
+    finished = pyqtSignal()  # program finished
+    progress = pyqtSignal(int)  # update
 
     def __init__(self, function):
         super().__init__()
-        self.function = function
+        self.function = function  # globalOptimizationWidget
 
     def run(self):
-        self.function.update_optimization()
-        self.finished.emit()
+        self.function.update_optimization()  # run update cost function
+        self.finished.emit()  # process finished
 
     def stop(self):
-        self.function.stop()
+        self.function.stop()  # stop process when signaled
 
 
 class callback():
+    """
+    Purpose: terminate data fitting when user chooses
+    """
     def __init__(self):
         self.Finish = False
 
     def stop_evolution(self, x, convergence):
+        # end differential evolution properly
         x_vars.append(x)
         if stop:
             return True
@@ -3764,13 +3774,15 @@ class callback():
             return False
 
     def stop_simplicial(self, x):
+        # end simplicial homology properly
         x_vars.append(x)
         if stop:
             return True
         else:
             return False
 
-    def stop_annealing(self, x, f, contect):
+    def stop_annealing(self, x, f, connect):
+        # end simulated annealing properly
         x_vars.append(x)
         if stop:
             return True
@@ -3779,30 +3791,33 @@ class callback():
 
 
 class GlobalOptimizationWidget(QWidget):
+    """
+    Purpose: Widget used to setup a data fitting
+    """
     def __init__(self, sWidget, rWidget, nWidget, pWidget, rApp):
         super().__init__()
 
-        self.sWidget = sWidget
-        self.rWidget = rWidget
-        self.nWidget = nWidget
-        self.pWidget = pWidget
-        self.rApp = rApp
+        self.sWidget = sWidget  # sampleWidget
+        self.rWidget = rWidget  # reflectivityWidget
+        self.nWidget = nWidget  # smoothingWidget
+        self.pWidget = pWidget  # progressWidget
+        self.rApp = rApp  # Application widget
 
-        self.sample = copy.deepcopy(self.sWidget.sample)
-        self.temp_sample = copy.deepcopy(self.sample)
-        self.sampleBounds = []
-        self.sfBounds = []
-        self.otherBounds = []
+        self.sample = copy.deepcopy(self.sWidget.sample)  # update slab class
+        self.temp_sample = copy.deepcopy(self.sample)  # temporary slab class
+        self.sampleBounds = []  # sample boundaries
+        self.sfBounds = []  # scattering factor boundaries
+        self.otherBounds = []  # other boundaries
 
-        self.x = []
-        self.fun = 0
-        self.callback = callback()
-        self.progressFinished = True
-        self.objective = 'Chi-Square'
-        self.shape_weight = 0
+        self.x = []  # parameters fitting values
+        self.fun = 0  # cost function
+        self.callback = callback()  # callback function
+        self.progressFinished = True  # has progress finished
+        self.objective = 'Chi-Square'  # initialized objective function
+        self.shape_weight = 0  # initialized total variation weight
 
         # plotting layout ---------------------------------------------------------------------------------------------
-        plotLayout = QHBoxLayout()
+        plotLayout = QHBoxLayout()  # plotting layout
 
         self.goParameters = {
             'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
@@ -3820,6 +3835,7 @@ class GlobalOptimizationWidget(QWidget):
             'direct': [0.0001, 'None', 1000, False, 0.0001,1e-16,1e-6]}
         """
 
+        # determine R transformation
         isLogLayout = QVBoxLayout()
         isLogLabel = QLabel('Optimization Scale:')
         isLogLabel.setFixedWidth(200)
@@ -4152,7 +4168,6 @@ class GlobalOptimizationWidget(QWidget):
         self.dualWidget.setLayout(dualLayout)
 
         # least squares
-        # shgo algorithm
         lsLayout = QVBoxLayout()
         self.lsWidget = QWidget()
 
@@ -4250,7 +4265,7 @@ class GlobalOptimizationWidget(QWidget):
         lsLayout.addLayout(lsMaxLayout)
         self.lsWidget.setLayout(lsLayout)
 
-        # direct algorithm
+        # direct algorithm (required python 3.8)
         """
         dLayout = QVBoxLayout()
         self.dWidget = QWidget()
@@ -4344,7 +4359,11 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
 
     def _clear_fit(self):
-        # Allows the user to clear the fitting parameters
+        """
+        Purpose: Allows the user to clear the fitting parameters
+        """
+
+        # clears fitting parameters across multiple widgets
         self.sWidget.parameterFit = []
         self.rWidget.sfBsFitParams = []
         self.sWidget.currentVal = []
@@ -4355,44 +4374,57 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
 
     def _set_y_scale(self):
-        # this will be used when computing the progress info!
+        """
+        Purpose: set R transformation for progress info!
+        """
+
         self.pWidget.y_scale = self.isLogWidget.currentText()
 
     def _changeFitVar(self):
-        row = self.fittingParamTable.currentRow()
-        col = self.fittingParamTable.currentColumn()
+        """
+        Purpose: change the fitting parameter value boundaries
+        :return:
+        """
+        row = self.fittingParamTable.currentRow()  # current row
+        col = self.fittingParamTable.currentColumn()  # current column
 
-        ns = len(self.sWidget.currentVal)
-        item = self.fittingParamTable.currentItem().text()
+        ns = len(self.sWidget.currentVal)  # number of sampleWidget fitting parameters
+        item = self.fittingParamTable.currentItem().text()  # current item
 
-        if row <= ns - 1:
+        if row <= ns - 1:  # checks if current row is from sampleWidget
             if col == 2:
                 self.sWidget.currentVal[row][1][0] = float(item)
             elif col == 3:
                 self.sWidget.currentVal[row][1][1] = float(item)
-        else:
+        else:  # fitting parameter not from sampleWidget but reflectivityWidget
             if col == 2:
                 self.rWidget.currentVal[row][1][0] = float(item)
             elif col == 3:
                 self.rWidget.currentVal[row][1][1] = float(item)
-        # first let's figure out which parameters we are referring too
+
 
     def _changeObjectiveFunction(self):
+        # determine which objective function to use
         rbtn = self.sender()
 
         if rbtn.isChecked() == True:
             self.objective = rbtn.text()
 
     def _changeShapeWeight(self):
+        # change the weight of the total variation parameter
         value = self.totalVarWeight.text()
         if value != '':
             self.shape_weight = float(self.totalVarWeight.text())
 
     def _stop_optimization(self):
+        # stops the optimization or data fitting algorithm from running
         global stop
         stop = True
 
     def changeFitParameters(self):
+        """
+        Purpose: Takes all the fitting parameters and save them to the new fi
+        """
         # This function simply takes all the fitting parameters and saves the new fit
         for idx, fit in enumerate(self.parameters):
             if type(fit[0]) != str:  # structural, polymorphous, magnetic
@@ -4514,6 +4546,9 @@ class GlobalOptimizationWidget(QWidget):
                         self.rWidget.sf[scan] = str(self.x[idx])
 
     def _save_optimization(self):
+        """
+        Purpose: update optimization to sampleWidget and update boundaries in globalOptimizationWidget
+        """
 
         row = 0
         # first we need to change the boundaries
@@ -4640,9 +4675,12 @@ class GlobalOptimizationWidget(QWidget):
         self.sWidget.setTableMag()
 
     def plot_scan(self):
+        """
+        Purpose: plot and compare the data, previous simulation, and new fit all in one graph
+        """
 
-        self.plotWidget.clear()
-        name = self.selectedScans.currentText()
+        self.plotWidget.clear()  # clear current graph
+        name = self.selectedScans.currentText()  # name of selected scan
 
         if name != '':
             dat = self.rWidget.data_dict[name]['Data']
@@ -4761,11 +4799,15 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
     def run_first(self):
+        """
+        Purpose: Run this first before a data fitting process begins. Performs the appropriate initialization
+        """
 
+        # reset stop parameter
         global stop
         stop = False
 
-        # input the appropriate parameters into progressWidget
+
 
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
@@ -4777,6 +4819,7 @@ class GlobalOptimizationWidget(QWidget):
         up = []
         x0 = []
 
+        # sorting lower boundary, upper boundary, and current value
         for b in self.sWidget.currentVal:
             lw.append(float(b[1][0]))
             up.append(float(b[1][1]))
@@ -4787,9 +4830,9 @@ class GlobalOptimizationWidget(QWidget):
             up.append(float(b[1][1]))
             x0.append(float(b[0]))
 
-        bounds = list(zip(lw, up))
+        bounds = list(zip(lw, up))  # create boundary list
 
-        scans = copy.deepcopy(self.rWidget.fit)
+        scans = copy.deepcopy(self.rWidget.fit)  # retrieve scans to fit
 
         # determines the boundaries of the scans
         sBounds = []
@@ -4799,6 +4842,7 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append((float(b[0]), float(b[1])))
             sBounds.append(temp)
 
+        # retrieve boundary weights
         sWeights = []
         for weight in self.rWidget.weights:
             temp = []
@@ -4830,21 +4874,25 @@ class GlobalOptimizationWidget(QWidget):
                 self.pWidget.startSaving(sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
                                          self.objective, self.shape_weight)
 
+        # update sample slab class
         self.sample = copy.deepcopy(self.sWidget._createSample())
-        self.temp_sample = copy.deepcopy(self.sample)  # makes sure that
+        self.temp_sample = copy.deepcopy(self.sample)
 
         self.runButton.setStyleSheet('background: red')
         self.runButton.blockSignals(True)
 
     def optimizationFinished(self):
+        """
+        Purpose: Peform this after optimization has finished
+        """
+        # send signal to callback function to stop data fitting
         global stop
         stop = True
 
-        # take a look at this
-        self.update_worker.stop()
-        self.update_thread.quit()
-        self.update_thread.deleteLater()
-        self.update_worker.deleteLater()
+        self.update_worker.stop()  # stop update worker
+        self.update_thread.quit()  # quit update worker thread
+        self.update_thread.deleteLater()  # delete update thread
+        self.update_worker.deleteLater() # delete update worker
 
         self.sWidget.resetX = False  # do not reset x
         self.sample = copy.deepcopy(self.temp_sample)
@@ -4867,14 +4915,18 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.blockSignals(False)
 
     def _run_global_optimization(self):
+        """
+        Purpose: Set up threads to run data fitting and update function in parallel
+        """
 
         # runs the optimizer method to perform the global optimization
         self.thread = QThread()  # initialize the thread
         self.update_thread = QThread()
 
-        self.worker = Worker(self)
-        self.update_worker = UpdateWorker(self.pWidget)
+        self.worker = Worker(self)  # data fitting worker
+        self.update_worker = UpdateWorker(self.pWidget)  # progress report worker
 
+        # move worker to thread
         self.worker.moveToThread(self.thread)
         self.update_worker.moveToThread(self.update_thread)
 
@@ -4893,6 +4945,9 @@ class GlobalOptimizationWidget(QWidget):
         self.update_thread.start()
 
     def _optimizer(self):
+        """
+        Purpose: Run data fitting algorithms
+        """
 
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
@@ -4905,6 +4960,7 @@ class GlobalOptimizationWidget(QWidget):
         up = []
         x0 = []
 
+        # organizing boundaries and values
         for b in self.sWidget.currentVal:
             lw.append(float(b[1][0]))
             up.append(float(b[1][1]))
@@ -4915,9 +4971,9 @@ class GlobalOptimizationWidget(QWidget):
             up.append(float(b[1][1]))
             x0.append(float(b[0]))
 
-        bounds = list(zip(lw, up))
+        bounds = list(zip(lw, up))  # boundary list
 
-        scans = copy.deepcopy(self.rWidget.fit)
+        scans = copy.deepcopy(self.rWidget.fit)  # scans for data fitting
 
         # determines the boundaries of the scans
         sBounds = []
@@ -4927,6 +4983,7 @@ class GlobalOptimizationWidget(QWidget):
                 temp.append((float(b[0]), float(b[1])))
             sBounds.append(temp)
 
+        # determine the weights of the scans
         sWeights = []
         for weight in self.rWidget.weights:
             temp = []
@@ -4948,6 +5005,7 @@ class GlobalOptimizationWidget(QWidget):
 
         r_scale = self.isLogWidget.currentText()  # determines what scale to use in the global optimization
 
+        # run the selected data fitting algorithm
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 x, fun = go.differential_evolution(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
@@ -4983,6 +5041,11 @@ class GlobalOptimizationWidget(QWidget):
         return x, fun
 
     def getGOParameters(self):
+        """
+        Purpose: Retrieve the data fitting algorithm parameters from globalOptimizationWidget
+        """
+
+        # block all signals
         self.eStrategy.blockSignals(True)
         self.eMaxiter.blockSignals(True)
         self.ePopsize.blockSignals(True)
@@ -5023,6 +5086,8 @@ class GlobalOptimizationWidget(QWidget):
         self.dVtol.blockSignals(True)
         self.dLtol.blockSignals(True)
         """
+
+        # retrieve the data fitting parameters depending on fitting algorithm selected by user
         idx = self.algorithmSelect.currentIndex()
         if idx == 0:
             self.goParameters['differential evolution'][0] = self.eStrategy.currentText()
@@ -5079,6 +5144,8 @@ class GlobalOptimizationWidget(QWidget):
             self.goParameters['direct'][5] = self.dVtol.text()
             self.goParameters['direct'][6] = self.dLtol.text()
         """
+
+        # unblock all signals
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
         self.ePopsize.blockSignals(False)
@@ -5122,6 +5189,11 @@ class GlobalOptimizationWidget(QWidget):
         self.setGOParameters()
 
     def setGOParameters(self):
+        """
+        Purpose: set the algorithm fitting parameters
+        """
+
+        # block all signals
         self.eStrategy.blockSignals(True)
         self.eMaxiter.blockSignals(True)
         self.ePopsize.blockSignals(True)
@@ -5164,6 +5236,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         idx = self.algorithmSelect.currentIndex()
 
+        # differential evolution
         self.eStrategy.setCurrentText(self.goParameters['differential evolution'][0])
         self.eMaxiter.setText(str(self.goParameters['differential evolution'][1]))
         self.ePopsize.setText(str(self.goParameters['differential evolution'][2]))
@@ -5175,10 +5248,12 @@ class GlobalOptimizationWidget(QWidget):
         self.eInit.setCurrentText(str(self.goParameters['differential evolution'][9]))
         self.eUpdating.setCurrentText(str(self.goParameters['differential evolution'][10]))
 
+        # simplicial homology
         self.shgoN.setText(str(self.goParameters['simplicial homology'][0]))
         self.shgoIter.setText(str(self.goParameters['simplicial homology'][1]))
         self.shgoSampling.setCurrentText(str(self.goParameters['simplicial homology'][2]))
 
+        # dual annealing
         self.dualMaxiter.setText(str(self.goParameters['dual annealing'][0]))
         self.dualInitTemp.setText(str(self.goParameters['dual annealing'][1]))
         self.dualRestartTemp.setText(str(self.goParameters['dual annealing'][2]))
@@ -5208,6 +5283,7 @@ class GlobalOptimizationWidget(QWidget):
         self.dLtol.setText(str(self.goParameters['direct'][6]))
         """
 
+        # unblock all signals
         self.eStrategy.blockSignals(False)
         self.eMaxiter.blockSignals(False)
         self.ePopsize.blockSignals(False)
@@ -5261,10 +5337,15 @@ class GlobalOptimizationWidget(QWidget):
             self.selectedScans.addItem(text)
 
     def clearTableFit(self):
+        # clear the fitting table
         self.fittingParamTable.clear()
 
     def setTableFit(self):
+        """
+        Purpose: Set the fitting table
+        """
 
+        # set the headers
         self.fittingParamTable.blockSignals(True)
         self.fittingParamTable.setHorizontalHeaderLabels(
             ['Name', 'Current Value', 'Lower Boundary', 'Upper Boundary', 'New'])
@@ -5296,6 +5377,7 @@ class GlobalOptimizationWidget(QWidget):
 
             row = row + 1
 
+        # create name and set row numbers
         for idx, param in enumerate(self.rWidget.sfBsFitParams):
             name = self.getName(param)
             value = str(self.rWidget.currentVal[idx][0])
@@ -5315,7 +5397,7 @@ class GlobalOptimizationWidget(QWidget):
 
             row = row + 1
 
-
+        # set the table
         for idx in range(len(self.x)):
             item = QTableWidgetItem(str(self.x[idx]))
             self.fittingParamTable.setItem(idx, 4, item)
@@ -5323,6 +5405,11 @@ class GlobalOptimizationWidget(QWidget):
         self.fittingParamTable.blockSignals(False)
 
     def getName(self, p):
+        """
+        Purpose: create the name to display on data fitting table
+        :param p: the parameter
+        :return: a sting that demonstrates the parameter in an efficient way
+        """
         name = ''
         n = len(p)
         shift = 0
