@@ -2435,8 +2435,8 @@ class reflectivityWidget(QWidget):
     def __init__(self, sWidget, data, data_dict, sim_dict):
         super().__init__()
 
-        self.rom = [True, False, False]
-        self.romSim = [True, False, False]
+        self.rom = [True, False, False]  # [reflectivity, optics magneto-optics]
+        self.romSim = [True, False, False]  # same thing but for simulation
 
         self.scanType = True  # if true do reflectivity scan
 
@@ -2444,12 +2444,12 @@ class reflectivityWidget(QWidget):
         self.sf = dict()  # scaling factor
 
         self.sfBsFitParams = []  # variable used to keep track of the fitting parameters
-        self.currentVal = []
+        self.currentVal = []  # value of current fitting parameter
 
-        self.sWidget = sWidget
-        self.sample = sWidget.sample
-        self.data = data
-        self.data_dict = data_dict
+        self.sWidget = sWidget  # allows for reflectivityWidget to have access to sampleWidget information
+        self.sample = sWidget.sample  # retrieves slab class form sampleWidget
+        self.data = data  # information on the data
+        self.data_dict = data_dict  # data info dictionary
 
         self.fit = []  # scans to be fit
         self.bounds = []  # bounds
@@ -2463,8 +2463,8 @@ class reflectivityWidget(QWidget):
         # Adding the plotting Widget
         self.spectrumWidget = pg.PlotWidget()
         self.spectrumWidget.setBackground('w')
-
         self.spectrumWidget.addLegend()
+
         # This will be used to determine which scan to view
         whichScanLabel = QLabel('Scans:')
         whichScanLabel.setFixedWidth(30)
@@ -2473,9 +2473,11 @@ class reflectivityWidget(QWidget):
         for scan in data:
             self.whichScan.addItem(scan[2])
 
-        self.whichScan.currentIndexChanged.connect(self.myPlotting)
-
         self.whichScan.setCurrentIndex(0)
+        self.whichScan.activated.connect(self.myPlotting)
+        #self.whichScan.currentIndexChanged.connect(self.myPlotting)  # changed
+
+
         whichScanLayout = QHBoxLayout()
 
         whichScanLayout.addWidget(whichScanLabel)
@@ -2483,6 +2485,7 @@ class reflectivityWidget(QWidget):
 
         self.plot_scans()
 
+        # button used to select with scans to fit
         self.fitButton = QPushButton('Fit Scan')
         self.fitButton.clicked.connect(self._scanSelection)
 
@@ -2555,6 +2558,7 @@ class reflectivityWidget(QWidget):
         # continue on with stuff
         self.boundWeightTable = QTableWidget()
 
+        # layout and widgets for selected scans
         self.selectedScans = QComboBox()
 
         self.selectedScans.activated.connect(self.changeColorFit)
@@ -2564,6 +2568,7 @@ class reflectivityWidget(QWidget):
         self.selectedScans.activated.connect(self.setTable)
         self.selectedScans.activated.connect(self.changeFitColor)
 
+        # adding and removing boundaries
         self.addBoundaryButton = QPushButton('Add Boundary')
         self.addBoundaryButton.setFixedWidth(250)
         self.removeBoundaryButton = QPushButton('Remove Boundary')
@@ -2573,6 +2578,7 @@ class reflectivityWidget(QWidget):
         self.removeScan.clicked.connect(self._removeScanSelection)
         self.removeScan.setStyleSheet("background-color : cyan")
 
+        # radio button to use qz or angle
         self.qz = QRadioButton('qz (A)', self)
         self.qz.setChecked(True)
         self.qz.toggled.connect(self.updateAxis)
@@ -2591,6 +2597,7 @@ class reflectivityWidget(QWidget):
         self.opmButton.setStyleSheet('background: grey')
         self.opmButton.clicked.connect(self.opmPlot)
 
+        # step size widget
         self.stepWidget = QLineEdit()
         self.stepWidget.textChanged.connect(self.changeStepSize)
         self.stepWidget.setText(self.sWidget._step_size)
@@ -2659,6 +2666,7 @@ class reflectivityWidget(QWidget):
         allScansLayout.addWidget(allScanLabel)
         allScansLayout.addWidget(self.allScan)
 
+        # setting up scaling factor and background shift layout and widgets
         sfbsLayout = QVBoxLayout()
 
         bsLayout = QHBoxLayout()
@@ -2667,7 +2675,6 @@ class reflectivityWidget(QWidget):
         self.backgroundShift = QLineEdit()
         self.scalingFactor = QLineEdit()
         self.backgroundShift.editingFinished.connect(self.changeSFandBS)
-        # self.backgroundShift.textChanged.connect(self.changeSFandBS)
         self.backgroundShift.setFixedWidth(100)
         self.backgroundShift.setFixedHeight(25)
         bsLayout.addWidget(bsLabel)
@@ -2723,18 +2730,27 @@ class reflectivityWidget(QWidget):
         self.setLayout(pagelayout)
 
     def changeToReflScan(self):
+        """
+        Purpose: Plot reflectivity scan simulation
+        """
         self.energyButton.setStyleSheet('background: grey')
         self.reflectButton.setStyleSheet('background: cyan')
         self.scanType = True
         self.mySimPlotting()
 
     def changeToEnergyScan(self):
+        """
+        Purpose: Plot energy scan simulation
+        """
         self.energyButton.setStyleSheet('background: cyan')
         self.reflectButton.setStyleSheet('background: grey')
         self.scanType = False
         self.mySimPlotting()
 
     def rPlotSim(self):
+        """
+        Purpose: Plot the simulation scan
+        """
         self.romSim = [True, False, False]
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: grey')
@@ -2796,6 +2812,9 @@ class reflectivityWidget(QWidget):
             self.spectrumWidget.setLogMode(False, False)
 
     def opPlotSim(self):
+        """
+        Purpose: plot the optical profile
+        """
         self.spectrumWidget.clear()
         self.romSim = [False, True, False]
         self.rButton.setStyleSheet('background: grey')
@@ -2834,7 +2853,9 @@ class reflectivityWidget(QWidget):
         self.spectrumWidget.setLogMode(False, False)
 
     def opmPlotSim(self):
-
+        """
+        Purpose: plot the magnetic optical profile
+        """
         self.spectrumWidget.clear()
         self.romSim = [False, False, True]
         self.rButton.setStyleSheet('background: grey')
@@ -2878,6 +2899,9 @@ class reflectivityWidget(QWidget):
         self.spectrumWidget.setLogMode(False, False)
 
     def setAngle(self):
+        """
+        Purpose: Makes sure angle is within the appropriate range
+        """
         angle = self.simAngleEdit.text()
 
         if angle != '' and angle != '-':
@@ -2892,6 +2916,9 @@ class reflectivityWidget(QWidget):
                 self.mySimPlotting()
 
     def setEnergy(self):
+        """
+        Purpose: Makes sure the energy is set within the appropriate range
+        """
         energy = self.simEnergyEdit.text()
 
         if energy != '':
@@ -2903,6 +2930,9 @@ class reflectivityWidget(QWidget):
             self.mySimPlotting()
 
     def setLowerEnergy(self):
+        """
+        Purpose: set the lower energy for the simulation plot
+        """
         energy = float(self.simEnergyEdit.text())
         lower = float(self.simLowEnergy.text())
 
@@ -2913,6 +2943,9 @@ class reflectivityWidget(QWidget):
         self.mySimPlotting()
 
     def setUpperEnergy(self):
+        """
+        Purpose: set the upper energy for the simulation plot
+        """
         energy = float(self.simEnergyEdit.text())
         upper = float(self.simUpEnergy.text())
 
@@ -2934,23 +2967,27 @@ class reflectivityWidget(QWidget):
                 self.weights[idx][column] = item
 
     def bsChange(self):
-        name = self.selectedScans.currentText()
-        idx = self.selectedScans.currentIndex()
-        var = self.backgroundShift.text()
+        """
+        Purpose: change the background shift when signaled
+        """
+        name = self.selectedScans.currentText()  # scan name
+        idx = self.selectedScans.currentIndex()  # scan index
+        var = self.backgroundShift.text()  # value
         copy_of_fit = copy.deepcopy(self.sfBsFitParams)
         old_var = ''
         if name != '':
             # first change the value
-            if self.allScan.checkState() == 0:
+            if self.allScan.checkState() == 0:  # not for all scans
                 old_var = self.bs[name]
                 self.bs[name] = var
                 self.data_dict[name]['Background Shift'] = float(var)
-            else:
+            else:  # for all scans
                 old_var = self.bs[name]
                 for key in list(self.bs.keys()):
                     self.bs[key] = var
                     self.data_dict[name]['Background Shift'] = float(var)
 
+            # update fitting parameters
             for fit in copy_of_fit:
                 if fit[0] == 'BACKGROUND SHIFT':
                     upper = str(float(var) + 5e-8)
@@ -2964,21 +3001,25 @@ class reflectivityWidget(QWidget):
 
 
     def sfChange(self):
-        name = self.selectedScans.currentText()
-        idx = self.selectedScans.currentIndex()
-        var = self.scalingFactor.text()
+        """
+        Purpose: Change the scaling factor when signaled
+        """
+        name = self.selectedScans.currentText()  # scan name
+        idx = self.selectedScans.currentIndex()  # scan index
+        var = self.scalingFactor.text()  # value
         copy_of_fit = copy.deepcopy(self.sfBsFitParams)
 
         if name != '':
             # first change the value
-            if self.allScan.checkState() == 0:
+            if self.allScan.checkState() == 0:  # not all scans
                 self.sf[name] = var
                 self.data_dict[name]['Scaling Factor'] = float(var)
-            else:
+            else:  # all scans
                 for key in list(self.sf.keys()):
                     self.sf[key] = var
                     self.data_dict[name]['Scaling Factor'] = float(var)
 
+            # update fitting parameters
             for fit in copy_of_fit:
                 if fit[0] == 'SCALING FACTOR':
                     upper = str(float(var) + 0.2)
@@ -2991,6 +3032,10 @@ class reflectivityWidget(QWidget):
                         self.currentVal[idx] = [var, [lower, upper]]
 
     def changeFitColor(self):
+        """
+        Purpose: change the color of working space if parameter is to be fit
+        """
+
         name = self.selectedScans.currentText()
         self.backgroundShift.setStyleSheet('background: white')
         self.scalingFactor.setStyleSheet('background: white')
@@ -3007,23 +3052,28 @@ class reflectivityWidget(QWidget):
                 self.scalingFactor.setStyleSheet('background: red')
 
     def allScanStateChanged(self):
-        # erase the fitting parameters previously input by the user
+        """
+        Purpose: erase the fitting parameters previously input by the user
+        """
         self.sfBsFitParams = []
         self.changeFitColor()
 
     def fitBackgroundShift(self):
-        state = self.allScan.checkState()
-        name = self.selectedScans.currentText()
-        value = self.backgroundShift.text()
+        """
+        Purpose: Add background shift to fitting parameters
+        """
+        state = self.allScan.checkState()  # fit all scans or current scan
+        name = self.selectedScans.currentText()  # name of current scan
+        value = self.backgroundShift.text()  # current value of background shift
         if name != '':
-            if state == 2:
+            if state == 2:  # all scans
                 fit = ['BACKGROUND SHIFT', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
                     lower = float(value) - 5e-8
                     upper = float(value) + 5e-8
                     self.currentVal.append([float(value), [lower, upper]])
-            else:
+            else:  # current scan
                 fit = ['BACKGROUND SHIFT', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
@@ -3034,11 +3084,14 @@ class reflectivityWidget(QWidget):
         self.changeFitColor()
 
     def fitScalingFactor(self):
-        state = self.allScan.checkState()
-        name = self.selectedScans.currentText()
-        value = self.scalingFactor.text()
+        """
+        Purpose: Add scaling factor to fitting parameters
+        """
+        state = self.allScan.checkState()  # all scans (2) or current scans (0)
+        name = self.selectedScans.currentText()  # name of current scan
+        value = self.scalingFactor.text()  # name of current value
         if name != '':
-            if state == 2:
+            if state == 2:  # all scans
                 fit = ['SCALING FACTOR', 'ALL SCANS']
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
@@ -3047,7 +3100,7 @@ class reflectivityWidget(QWidget):
                         lower = 0
                     upper = float(value) + 0.2
                     self.currentVal.append([float(value), [lower, upper]])
-            else:
+            else:  # current scan
                 fit = ['SCALING FACTOR', name]
                 if fit not in self.sfBsFitParams:
                     self.sfBsFitParams.append(fit)
@@ -3060,15 +3113,18 @@ class reflectivityWidget(QWidget):
         self.changeFitColor()
 
     def unfitBackgroundShift(self):
-        state = self.allScan.checkState()
-        name = self.selectedScans.currentText()
+        """
+        Purpose: Remove background shift from fitting parameters
+        """
+        state = self.allScan.checkState()  # all scans or current scan
+        name = self.selectedScans.currentText()  # current scan name
         if name != '':
-            if state == 2:
+            if state == 2:  # remove fit for all scans
                 if ['BACKGROUND SHIFT', 'ALL SCANS'] in self.sfBsFitParams:
                     idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', 'ALL SCANS'])
                     self.sfBsFitParams.remove(['BACKGROUND SHIFT', 'ALL SCANS'])
                     self.currentVal.pop(idx)
-            else:
+            else:  # remove fit for current scan
                 if ['BACKGROUND SHIFT', name] in self.sfBsFitParams:
                     idx = self.sfBsFitParams.index(['BACKGROUND SHIFT', name])
                     self.sfBsFitParams.remove(['BACKGROUND SHIFT', name])
@@ -3076,15 +3132,18 @@ class reflectivityWidget(QWidget):
         self.changeFitColor()
 
     def unfitScalingFactor(self):
-        state = self.allScan.checkState()
-        name = self.selectedScans.currentText()
+        """
+        Purpose: Remove scaling factor from fitting parameters
+        """
+        state = self.allScan.checkState()  # all scans or current scan
+        name = self.selectedScans.currentText()  # name of scan
         if name != '':
-            if state == 2:
+            if state == 2:  # remove all scans from fit
                 if ['SCALING FACTOR', 'ALL SCANS'] in self.sfBsFitParams:
                     idx = self.sfBsFitParams.index(['SCALING FACTOR', 'ALL SCANS'])
                     self.sfBsFitParams.remove(['SCALING FACTOR', 'ALL SCANS'])
                     self.currentVal.pop(idx)
-            else:
+            else:  # remove current scan from fit
                 if ['SCALING FACTOR', name] in self.sfBsFitParams:
                     idx = self.sfBsFitParams.index(['SCALING FACTOR', name])
                     self.sfBsFitParams.remove(['SCALING FACTOR', name])
@@ -3093,15 +3152,18 @@ class reflectivityWidget(QWidget):
         self.changeFitColor()
 
     def changeSFandBS(self):
-        idx = self.selectedScans.currentIndex()
-        name = self.selectedScans.currentText()
-        bs = self.backgroundShift.text()
-        sf = self.scalingFactor.text()
-        if bs != '' and sf != '':
+        """
+        Purpose: change scaling factor and background shift when signaled
+        """
+        idx = self.selectedScans.currentIndex()  # current index
+        name = self.selectedScans.currentText()  # current scan name
+        bs = self.backgroundShift.text()  # current background shift
+        sf = self.scalingFactor.text()  # current scaling factor
+        if bs != '' and sf != '':  # checks to make sure values are not empty
             if self.allScan.checkState() == 0:  # case where all scans have different bs and sf
-                self.bs[name] = bs
-                self.sf[name] = sf
-                self.data_dict[name]['Background Shift'] = float(bs)
+                self.bs[name] = bs  # set background shift
+                self.sf[name] = sf  # set scaling factor
+                self.data_dict[name]['Background Shift'] = float(bs)  # update data_dict
                 self.data_dict[name]['Scaling Factor'] = float(sf)
             else:  # case where all scans have same bs and sf
                 for key in list(self.bs.keys()):
@@ -3109,23 +3171,34 @@ class reflectivityWidget(QWidget):
                     self.data_dict[key]['Scaling Factor'] = float(sf)
 
     def changeStepSize(self):
+        """
+        Purpose: Change the step size
+        """
         self.sWidget._step_size = self.stepWidget.text()
 
     def mySimPlotting(self):
+        """
+        Purpose: determine to plot reflectometry, optical profile, or magnetic optical profile for simulation
+        :return:
+        """
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: grey')
         self.opmButton.setStyleSheet('background: grey')
 
         # self.sample = self.sWidget.sample
         idx = self.romSim.index(True)
-        if idx == 0:
+        if idx == 0:  # reflectometry
             self.rPlotSim()
-        elif idx == 1:
+        elif idx == 1: # optical profile
             self.opPlotSim()
-        elif idx == 2:
+        elif idx == 2:  # magneto-optical profile
             self.opmPlotSim()
 
     def myPlotting(self):
+        """
+        Purpose: determine to plot relfectometry, optical profile, magneto-optical profile
+        :return:
+        """
 
         self.rButtonSim.setStyleSheet('background: grey')
         self.opButtonSim.setStyleSheet('background: grey')
@@ -3133,14 +3206,17 @@ class reflectivityWidget(QWidget):
 
         # self.sample = self.sWidget.sample
         idx = self.rom.index(True)
-        if idx == 0:
+        if idx == 0:  # relfectometry
             self.rPlot()
-        elif idx == 1:
+        elif idx == 1:  # optical profile
             self.opPlot()
-        elif idx == 2:
+        elif idx == 2:  # magneto-optical profile
             self.opmPlot()
 
     def rPlot(self):
+        """
+        Purpose: plot reflectometry
+        """
         self.rom = [True, False, False]
 
         self.rButton.setStyleSheet('background: cyan')
@@ -3151,13 +3227,16 @@ class reflectivityWidget(QWidget):
         self.opButtonSim.setStyleSheet('background: grey')
         self.opmButtonSim.setStyleSheet('background: grey')
 
-        if self.scan_state:
+        if self.scan_state:  # plot from all scans
             self.plot_scans()
-        else:
+        else:  # plot from selected scans
             self.plot_selected_scans()
             self.setTable()
 
     def opPlot(self):
+        """
+        Purpose: plot optical profile
+        """
         self.rom = [False, True, False]
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: cyan')
@@ -3170,14 +3249,14 @@ class reflectivityWidget(QWidget):
         name = ''
         self.spectrumWidget.clear()
 
-        if self.scan_state:
+        if self.scan_state:  # from all scans
             name = self.whichScan.currentText()
-        else:
+        else:  # from selected scans
             name = self.selectedScans.currentText()
         if name != '':
-            E = self.data_dict[name]['Energy']
+            E = self.data_dict[name]['Energy']  # scan energy
 
-            step_size = float(self.sWidget._step_size)
+            step_size = float(self.sWidget._step_size)  # get step size
             thickness, density, density_magnetic = self.sample.density_profile(
                 step=step_size)  # Computes the density profile
 
@@ -3206,6 +3285,9 @@ class reflectivityWidget(QWidget):
             # delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
 
     def opmPlot(self):
+        """
+        Purpose: plot magneto-optical profile
+        """
         self.rom = [False, False, True]
 
         self.rButton.setStyleSheet('background: grey')
@@ -3219,13 +3301,13 @@ class reflectivityWidget(QWidget):
         name = ''
         self.spectrumWidget.clear()
 
-        if self.scan_state:
+        if self.scan_state:  # from all scans
             name = self.whichScan.currentText()
-        else:
+        else:  # from selected scans
             name = self.selectedScans.currentText()
 
         if name != '':
-            E = self.data_dict[name]['Energy']
+            E = self.data_dict[name]['Energy']  # energy of scan
 
             step_size = float(self.sWidget._step_size)
             thickness, density, density_magnetic = self.sample.density_profile(
@@ -3248,15 +3330,19 @@ class reflectivityWidget(QWidget):
             self.spectrumWidget.setLogMode(False, False)
 
     def updateAxis(self):
+        """
+        Purpose: Update x-axis for qz and angle
+        """
         self.readTable()
         rbtn = self.sender()
 
         if rbtn.isChecked() == True:
-            if rbtn.text() == 'qz (A)':
+            if rbtn.text() == 'qz (A)':  # axis qz
                 self.axis_state = True
-            else:
+            else:  # axis theta
                 self.axis_state = False
 
+        # plot reflectometry
         self.myPlotting()
         self.mySimPlotting()
 
@@ -3266,23 +3352,29 @@ class reflectivityWidget(QWidget):
         self.scan_state = True
 
     def changeColorFit(self):
+        """
+        Purpose: Change color of comboBox depending on which scan is being shown
+        """
         self.selectedScans.setStyleSheet('background: red; selection-background-color: red')
         self.whichScan.setStyleSheet('background: white; selection-background-color: grey')
         self.scan_state = False
 
     def setTable(self):
+        """
+        Purpose: set background shift and scaling factor table
+        """
 
         self.isChangeTable = True
-        idx = self.selectedScans.currentIndex()
+        idx = self.selectedScans.currentIndex()  # index of scan
 
-        name = self.selectedScans.currentText()
+        name = self.selectedScans.currentText()  # name of scan
         self.scalingFactor.setText(self.sf[name])  # setting the appropriate scaling factor
 
         self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
         scan = self.fit[idx]
         if scan != '':
 
-            E = self.data_dict[scan]['Energy']
+            E = self.data_dict[scan]['Energy']  # energy of scan
             mykeys = list(self.data_dict[scan].keys())
 
             bound = self.bounds[idx]
@@ -3296,13 +3388,14 @@ class reflectivityWidget(QWidget):
 
             self.boundWeightTable.setVerticalHeaderLabels(['Lower Bound', 'Upper Bound', 'Weight'])
 
+            # loop through all columns and rows
             for i in range(row):
                 for j in range(col):
                     if i == 0:
                         myitem = ''
                         if 'Angle' not in mykeys:
                             if not self.axis_state:
-                                if len(bound[j][0]) != 0:
+                                if len(bound[j][0]) != 0:  # show boundary as an angle
                                     myitem = str(np.arcsin(float(bound[j][0]) / (E * 0.001013546143)) * 180 / np.pi)[:7]
                             else:
                                 myitem = copy.copy(bound[j][0])
@@ -3317,7 +3410,7 @@ class reflectivityWidget(QWidget):
                         myitem = ''
                         if 'Angle' not in mykeys:
                             if not self.axis_state:
-                                if len(bound[j][1]) != 0:
+                                if len(bound[j][1]) != 0:  # show boundary as an angle
                                     myitem = str(np.arcsin(float(bound[j][1]) / (E * 0.001013546143)) * 180 / np.pi)[:7]
                             else:
                                 myitem = copy.copy(bound[j][1])
@@ -3333,10 +3426,14 @@ class reflectivityWidget(QWidget):
         self.isChangeTable = False
 
     def _scanSelection(self):
-        idx = self.whichScan.currentIndex()
-        name = self.whichScan.currentText()
+        """
+        Purpose: add scan to sscan selection list when signaled
+        """
+        idx = self.whichScan.currentIndex()  # index of current scan
+        name = self.whichScan.currentText()  # name of current scan
 
-        if name not in self.fit:
+        if name not in self.fit:  # checks if scan already selected
+            # pre-initialize boundary
             if 'Angle' in list(self.data_dict[name].keys()):
                 lower = str(self.data_dict[name]['Data'][3][0])[0:7]
                 upper = str(self.data_dict[name]['Data'][3][-1])[0:7]
@@ -3344,9 +3441,9 @@ class reflectivityWidget(QWidget):
                 lower = str(self.data_dict[name]['Data'][0][0])[0:7]
                 upper = str(self.data_dict[name]['Data'][0][-1])[0:7]
 
-            self.fit.append(name)
-            self.bounds.append([[lower, upper]])
-            self.weights.append(['1'])
+            self.fit.append(name)  # add to fitting list
+            self.bounds.append([[lower, upper]])  # initialize boundary
+            self.weights.append(['1'])  # add pre-set weight
             self.selectedScans.addItem(name)
 
             # sets the bs and sf values
@@ -3363,8 +3460,11 @@ class reflectivityWidget(QWidget):
                 self.sf[name] = str(self.data_dict[name]['Scaling Factor'])
 
     def _removeScanSelection(self):
-        idx = self.selectedScans.currentIndex()
-        name = self.selectedScans.currentText()
+        """
+        Purpose: Remove scan from selection
+        """
+        idx = self.selectedScans.currentIndex()  # current scan index
+        name = self.selectedScans.currentText()  # scan name
 
         if name != '':
             # takes care of proper indexing
@@ -3376,6 +3476,7 @@ class reflectivityWidget(QWidget):
             self.bounds.pop(idx)
             self.weights.pop(idx)
 
+            # remove background shift and scaling factor
             del self.bs[name]
             del self.sf[name]
 
@@ -3384,6 +3485,9 @@ class reflectivityWidget(QWidget):
                 self.myPlotting()
 
     def addBoundWeight(self):
+        """
+        Purpose: Add boundary weight
+        """
         col = self.boundWeightTable.columnCount()
         idx = self.selectedScans.currentIndex()
         n = len(self.bounds[idx])
@@ -3396,7 +3500,10 @@ class reflectivityWidget(QWidget):
         self.setTable()
 
     def removeBoundWeight(self):
-        col = self.boundWeightTable.columnCount()
+        """
+        Purpose: Remove boundary weight
+        """
+        col = self.boundWeightTable.columnCount()  # current column
         idx = self.selectedScans.currentIndex()  # gets the selected scan
 
         if col != 1:
@@ -3410,11 +3517,14 @@ class reflectivityWidget(QWidget):
         self.setTable()
 
     def readTable(self):
-        idx = self.selectedScans.currentIndex()
-        name = self.selectedScans.currentText()
+        """
+        Purpose: read the table for scan boundaries
+        """
+        idx = self.selectedScans.currentIndex()  # current scan index
+        name = self.selectedScans.currentText()  # current scan name
 
-        row = self.boundWeightTable.rowCount()
-        column = self.boundWeightTable.columnCount()
+        row = self.boundWeightTable.rowCount()  # current row
+        column = self.boundWeightTable.columnCount()  # current column
         if name != '':
             E = self.data_dict[name]['Energy']
             for i in range(row):
@@ -3454,6 +3564,9 @@ class reflectivityWidget(QWidget):
             self.previousIdx = idx
 
     def plot_scans(self):
+        """
+        Purpose: plot scans from whichScan
+        """
 
         if len(self.data) != 0:
             # self.sample = self.sWidget.sample
@@ -3527,6 +3640,9 @@ class reflectivityWidget(QWidget):
                     self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
 
     def plot_selected_scans(self):
+        """
+        Purpose: Plot scan from selectedScans
+        """
         step_size = float(self.sWidget._step_size)
         self.sample = self.sWidget._createSample()
         self.spectrumWidget.clear()
