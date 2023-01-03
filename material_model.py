@@ -20,11 +20,17 @@ with open('form_factor_magnetic.pkl','rb') as f:
 f.close()
 
 def _use_given_ff(directory):
+    """
+    Purpose: Scan cwd for form factors files and return their names (with .ff and .ffm stripped)
+    :param directory: Current working directory (cwd)
+    :return: names of form factors (magnetic and structural) found in directory
+    """
     global ff
     global ffm
 
-    struct_names = []
-    mag_names = []
+    struct_names = []  # stores list of structural form factors
+    mag_names = []  # stores list of magnetic form factors
+
     # loops through project directory for form factor files
     for file in os.listdir(directory):
         if file.endswith(".ff"):
@@ -60,9 +66,9 @@ def form_factor(f,E):
     fr = interpolate.interp1d(f[:,0],f[:,1])
     fi = interpolate.interp1d(f[:,0],f[:,2])
 
-    if isinstance(E, list) or isinstance(E, np.ndarray):  # handle multiple energy case
+    if isinstance(E, list) or isinstance(E, np.ndarray):  # handle multiple energy case (energy scan)
         F = np.array([np.array([fr(x), fi(x)]) if x > f[0, 0] and x < f[-1, 0] else np.array([0, 0]) for x in E])
-    else:  # handle single energy case
+    else:  # handle single energy case (reflectivity scan)
         F = np.array([fr(E), fi(E)]) if E>f[0,0] and E<f[-1,0] else np.array([0,0])
 
     return F
@@ -91,22 +97,6 @@ def find_form_factor(element, E, mag):
 
     return F
 
-"""
-def find_form_factors(element, E, mag):
-    
-    F = 0  # pre-initialized form factor
-
-    if mag:  # looking for magnetic form factors
-        my_dir = os.getcwd() + r'\Magnetic_Scattering_Factor'
-    else:  # looking for non-magnetic form factors
-        my_dir = os.getcwd() + r'\Scattering_Factor'
-
-    for ifile in os.listdir(my_dir):
-
-        if ifile.endswith(element + '.txt'):
-            F = form_factor(np.loadtxt(my_dir +  "\\" + ifile),E)
-    return F
-"""
 def MOC(rho, sfm, E, n):
     """
     Purpose: computes the magneto-optical constant for the energy scan

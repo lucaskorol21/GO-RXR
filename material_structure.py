@@ -21,9 +21,9 @@ import copy
 def ALS(alpha, beta, precision=1e-6):
     """
     Purpose: Perform the adaptive layer segmentation
-    :param epsilon: numpy array of real values
-    :param epsilon_mag: numpy array of real values
-    :param precision: precision for slicing
+    :param alpha: numpy array of real values
+    :param beta: numpy array of imaginary values
+    :param precision: precision value for slicing
     :return: my_slabs - contains indices for slicing
     """
     alpha = alpha /np.linalg.norm(alpha)  # normalizes epsilon
@@ -32,7 +32,7 @@ def ALS(alpha, beta, precision=1e-6):
     n = alpha.size
     my_slabs = np.zeros(n) # pre-initialize the slab array
 
-    dsSlab = 1
+    dsSlab = 1  # counts the number of slices
     for idx_b in range(1,n):
 
         # retrieves permittivity values
@@ -50,10 +50,9 @@ def ALS(alpha, beta, precision=1e-6):
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
-        elif idx_b == n-1:
+        elif idx_b == n-1:  # reached the end of the array
             my_slabs[dsSlab] = idx_b
             dsSlab = dsSlab + 1
-
 
     my_slabs = my_slabs[:dsSlab]
     return my_slabs
@@ -107,7 +106,6 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
 
         # sets the magnetization direction based on the input angles
         if layer_magnetized[layer]:
-
             if gamma == 90 and phi == 90:
                 A[idx].setmag('y')
             elif gamma == 0 and phi == 90:
@@ -143,6 +141,7 @@ def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
 
     Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
+    # sets the polarization reflectivity array
     if len(Rtemp) == 2:
         R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
         R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
@@ -197,7 +196,7 @@ def checkstring(formula):
 
     :return: Returns a list that contains the chemical formula and it's stoichiometry [symbol, stoich]
     """
-
+    # including dummy variables A and X
     # Used in error check
     symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',
                'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se' , 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
@@ -331,6 +330,7 @@ def atomic_mass(atom):
     return float(mass)
 
 def error_function(t, sigma1, sigma2, offset1, offset2):
+
     result1 = (erf((t-offset1)/sigma1/sqrt(2))+1)/2
     result2 = (erf((offset2-t)/sigma2/sqrt(2))+1)/2
     result = result1*result2
@@ -1088,10 +1088,16 @@ class slab:
         return thickness, density, density_magnetic
 
     def _set_form_factors(self, element, ff, mag=False):
+        """
+        Purpose: Set the form factor
+        :param element: Symbol or identifier of the form factor to be set
+        :param ff: form factor value
+        :param mag: Boolean to determine if magnetic form factor or not
+        """
         if not mag:
             self.find_sf[0][element] = ff
         else:
-            self.find_sf[1] = ff
+            self.find_sf[1][element] = ff
 
     def plot_density_profile(self, fig=1, save=False, dir='Plot_Scans'):
         thickness, density, density_magnetic = self.density_profile()
