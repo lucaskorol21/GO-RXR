@@ -1,5 +1,6 @@
 import ast
 
+from scipy import interpolate
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import *
@@ -30,22 +31,26 @@ x_vars = []
 
 
 def stringcheck(string):
-    # checks to make sure that the roughness and whatnot is in the correct format
-    num = 0
-    correctFormat = True
-    if len(string) == 0:
+    """
+    Purpose: Checks to make sure sample properties are in the correct format
+    :param string: Parameters value
+    :return: Boolean determining if value is in the correct format
+    """
+    num = 0  # used to check how many '.' are found in the string
+    correctFormat = True  # is value in the correct format?
+    if len(string) == 0:  # string is empty
         correctFormat = False
     else:
-        first = True
+        first = True  # checks the first character in the string
         for char in string:
-            if first:
+            if first:  # makes sure first character is a digit
                 if char == '.':
                     correctFormat = False
                 elif not char.isdigit():
                     correctFormat = False
                 first = False
 
-            elif not char.isdigit():
+            elif not char.isdigit():  # checks if all other characters are digits
                 if char == '.':
                     num = num + 1
                     if num > 1:
@@ -57,32 +62,39 @@ def stringcheck(string):
 
 
 class compoundInput(QDialog):
+    # Class used to add a new layer in compound mode
     def __init__(self):
         super().__init__()
-        self.val = []
-        pagelayout = QVBoxLayout()
-        infolayout = QGridLayout()
+        self.val = []  # class value used to store layer properties
+        pagelayout = QVBoxLayout()  # page layout
+        infolayout = QGridLayout()  # compound information layout
+
+        # Chemical formula of added layer
         formula = QLabel('Formula: ')
         self.formula = QLineEdit()
         self.formula.editingFinished.connect(self.formulaDone)
 
+        # thickness of layer
         thickness = QLabel('Thickness (A): ')
         self.thickness = QLineEdit()
         self.thickness.setText('10')
 
+        # Density (g/cm^3)
         density = QLabel('Density (g/cm^3): ')
         self.density = QLineEdit()
 
+        # roughness of layer
         roughness = QLabel('Roughness (A): ')
         self.roughness = QLineEdit()
         self.roughness.setText('2')
 
-        linkedroughnesslayout = QHBoxLayout()
-        # consider including a tab to select linked roughness
+        # include linked roughness if applicable to layer
+        linkedroughnesslayout = QHBoxLayout()  # layout for linked roughness
         linkedroughness = QLabel('Linked Roughness (A): ')
         self.linkedroughness = QLineEdit()
         self.linkedroughness.setHidden(True)
 
+        # checkbox to determine if user wants to add a linked roughness to layer
         self.checkbox = QCheckBox()
         self.checkbox.stateChanged.connect(self.linkedroughnessbox)
         self.checkboxstate = 0
@@ -90,52 +102,68 @@ class compoundInput(QDialog):
         linkedroughnesslayout.addWidget(self.checkbox)
         linkedroughnesslayout.addWidget(linkedroughness)
 
+        # add labels to the info layout
         infolayout.addWidget(formula, 0, 0)
         infolayout.addWidget(thickness, 1, 0)
         infolayout.addWidget(density, 2, 0)
         infolayout.addWidget(roughness, 3, 0)
         infolayout.addLayout(linkedroughnesslayout, 4, 0)
 
+        # add the text edit widgets to the info layout
         infolayout.addWidget(self.formula, 0, 1)
         infolayout.addWidget(self.thickness, 1, 1)
         infolayout.addWidget(self.density, 2, 1)
         infolayout.addWidget(self.roughness, 3, 1)
         infolayout.addWidget(self.linkedroughness, 4, 1)
 
+        # add layer properties to the current sample model
         enterButton = QPushButton('Enter')
         enterButton.clicked.connect(self.inputComplete)
 
-        self.errorMessage = QLabel('')
+        self.errorMessage = QLabel('')  # let user know if they have made a mistake in their input
 
+        # add all layouts to the page layout
         pagelayout.addLayout(infolayout)
         pagelayout.addWidget(enterButton)
         pagelayout.addWidget(self.errorMessage)
         self.setLayout(pagelayout)
 
     def formulaDone(self):
+        """
+        Purpose: searches database for material density
+        :return: density (g/cm^3)
+        """
         cwd = os.getcwd()
         filename = 'Perovskite_Density.txt'
 
-        found = False
+        found = False  # boolean user that determines if material found in database
         with open(filename) as file:
             for line in file:
-                myformula = line.split()[0]
-                mydensity = line.split()[1]
+                myformula = line.split()[0]  # retrieves the chemical formula
+                mydensity = line.split()[1]  # retrieves the density
                 if not found:
-                    if self.formula.text() == myformula:
-                        self.density.setText(mydensity)
+                    if self.formula.text() == myformula:  # material in database
+                        self.density.setText(mydensity)  # set the density in the widget
                         found = True
-                    else:
-                        self.density.clear()
+                    else:  # material not found in the database
+                        self.density.clear()  # reset the density in the widget
 
     def linkedroughnessbox(self):
-        self.checkboxstate = self.checkbox.checkState()
+        """
+        Purpose: Hide or make visible the linked roughness lineEdit widget
+        """
+        self.checkboxstate = self.checkbox.checkState()  # retrieve the checkbox state
         if self.checkboxstate > 0:
             self.linkedroughness.setHidden(False)
         else:
             self.linkedroughness.setHidden(True)
 
     def inputComplete(self):
+        """
+        Purpose: Checks to make sure parameters are in correct format before sending back
+                 to main widget to add to current sample
+        :return: List of the layer parameters
+        """
 
         finished = True
         # gets the elements and their stoichiometry
@@ -143,16 +171,19 @@ class compoundInput(QDialog):
 
         # gets the density
         myThickness = self.thickness.text()
-        thicknessCorrect = stringcheck(myThickness)
+        thicknessCorrect = stringcheck(myThickness)  # checks thickness format
 
         myDensity = self.density.text()
-        densityCorrect = stringcheck(myDensity)
+        densityCorrect = stringcheck(myDensity)  # checks density format
 
+        # gets the density
         myRoughness = self.roughness.text()
-        roughnessCorrect = stringcheck(myRoughness)
+        roughnessCorrect = stringcheck(myRoughness)  # checks roughness format
 
+        # gets the linked roughness
         myLinkedroughness = self.linkedroughness.text()
 
+        # sends error message to user if formate is incorrect
         linkedroughnessCorrect = True
         if myLinkedroughness != '':
             linkedroughnessCorrect = stringcheck(myLinkedroughness)
@@ -166,9 +197,9 @@ class compoundInput(QDialog):
                 self.errorMessage.setText('Please check roughness!')
             elif not (linkedroughnessCorrect):
                 self.errorMessage.setText('Please check linked roughness!')
-        else:
-            molar_mass = 0
-            elements = list(myElements[0].keys())
+        else:  # transform sample parameters into correct format
+            molar_mass = 0  # molar mass
+            elements = list(myElements[0].keys())  # list of elements in layer
             # gets the molar mass of the compound
             for ele in elements:
                 stoich = myElements[0][ele].stoichiometry
@@ -179,7 +210,10 @@ class compoundInput(QDialog):
                 molar_mass = molar_mass + ms.atomic_mass(ele) * stoich
 
             tempArray = []
-            if myLinkedroughness == '':
+
+            # put layer info in correct format depending for both linked roughness cases
+            if myLinkedroughness == '':  # no linked roughness case
+                # pre-set form factor to element name
                 for ele in elements:
                     stoich = myElements[0][ele].stoichiometry
                     density = float(myDensity)
@@ -191,10 +225,11 @@ class compoundInput(QDialog):
                     tempArray.append(
                         [ele, myThickness, str(density * float(stoich) / molar_mass), myRoughness, False, ff_ele,
                          stoich])
-            else:
+            else:  # linked roughness case
                 for ele in elements:
                     stoich = myElements[0][ele].stoichiometry
                     density = float(myDensity)
+                    # pre-set form factor to element symbol
                     if ele[-1].isdigit():
                         ff_ele = ele.rstrip(ele[-1])
                     else:
@@ -204,8 +239,8 @@ class compoundInput(QDialog):
                         [ele, myThickness, str(density * float(stoich) / molar_mass), myRoughness, myLinkedroughness,
                          ff_ele, stoich])
 
-            self.val = np.array(tempArray)
-            self.accept()
+            self.val = np.array(tempArray)  # reset layer values
+            self.accept()  # close the widget
 
 
 class variationWidget(QDialog):
@@ -3460,11 +3495,12 @@ class callback():
 
 
 class GlobalOptimizationWidget(QWidget):
-    def __init__(self, sWidget, rWidget, pWidget, rApp):
+    def __init__(self, sWidget, rWidget, nWidget, pWidget, rApp):
         super().__init__()
 
         self.sWidget = sWidget
         self.rWidget = rWidget
+        self.nWidget = nWidget
         self.pWidget = pWidget
         self.rApp = rApp
 
@@ -4617,6 +4653,7 @@ class GlobalOptimizationWidget(QWidget):
         x = []
         fun = 0
         data_dict = self.rWidget.data_dict
+        smooth_dict = copy.deepcopy(self.nWidget.smoothScans)
         data = self.rWidget.data
         sample = copy.deepcopy(self.sample)
 
@@ -4632,29 +4669,29 @@ class GlobalOptimizationWidget(QWidget):
                 x, fun = go.differential_evolution(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['differential evolution'], self.callback,
-                                                   self.objective, self.shape_weight, r_scale)
+                                                   self.objective, self.shape_weight, r_scale, smooth_dict)
             elif idx == 1:
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
-                                 self.objective, self.shape_weight, r_scale)
+                                 self.objective, self.shape_weight, r_scale, smooth_dict)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds,
                                            sWeights,
                                            self.goParameters['dual annealing'], self.callback,
-                                           self.objective, self.shape_weight, r_scale)
+                                           self.objective, self.shape_weight, r_scale, smooth_dict)
             elif idx == 3:
                 bounds = (lw, up)
                 x, fun = go.least_squares(x0, sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
-                                          self.objective, self.shape_weight, r_scale)
+                                          self.objective, self.shape_weight, r_scale, smooth_dict)
             """
             elif idx == 4:
                 bounds = (lw,up)
                 x,fun = go.direct(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['direct'], self.callback,
-                                                 self.objective, self.shape_weight, r_scale)
+                                                 self.objective, self.shape_weight, r_scale, smoothe_dict)
             """
         else:
             print('Try again')
@@ -5071,6 +5108,365 @@ class GlobalOptimizationWidget(QWidget):
 
         return name
 
+class dataSmoothingWidget(QWidget):
+    def __init__(self):
+        super(dataSmoothingWidget, self).__init__()
+
+        self.selectedScans = []  # scans to be used in the data fitting
+        self.data_dict = dict()  # used to retrieve the data
+
+        # will contain the parameters and the smoothed data
+        self.smoothScans = dict()  # used to store the smoothed out scans
+
+        pagelayout = QHBoxLayout()
+
+        optionLayout = QVBoxLayout()
+
+        self.parameterLayout = QStackedLayout()
+
+        # button to change the smoothing parameters
+        self.setSmooth = QPushButton('Set Noise Reduction')
+        self.setSmooth.setFixedWidth(200)
+        self.setSmooth.clicked.connect(self._selectNoiseReduction)
+
+        self.scanBoxLayout = QVBoxLayout()
+        scanBoxLabel = QLabel('Selected Scans: ')
+        scanBoxLabel.setFixedWidth(200)
+        self.scanBox = QComboBox()
+        self.scanBox.setFixedWidth(200)
+        self.scanBox.activated.connect(self._setSmoothingVariables)
+        self.scanBoxLayout.addWidget(scanBoxLabel)
+        self.scanBoxLayout.addWidget(self.scanBox)
+
+        self.smoothScaleLayout = QVBoxLayout()
+        smoothScaleLabel = QLabel('Smoothing Scale: ')
+        smoothScaleLabel.setFixedWidth(200)
+        self.smoothScale = QComboBox()
+        self.smoothScale.addItems(['log(x)','ln(x)','x','qz^4'])
+        self.smoothScale.setFixedWidth(200)
+        self.smoothScaleLayout.addWidget(smoothScaleLabel)
+        self.smoothScaleLayout.addWidget(self.smoothScale)
+
+        # create a versatile workspace where other data smoothing options can be chosen
+        self.optionBoxLayout = QVBoxLayout()
+        optionBoxLabel = QLabel('Methodology: ')
+        optionBoxLabel.setFixedWidth(200)
+        self.optionBox = QComboBox()
+        self.optionBox.addItems(['Spline'])
+        self.optionBox.setFixedWidth(200)
+        self.optionBox.currentIndexChanged.connect(self._changeSmooth)
+        self.optionBoxLayout.addWidget(optionBoxLabel)
+        self.optionBoxLayout.addWidget(self.optionBox)
+
+        # spline options
+        self.splineLayout = QVBoxLayout()
+        self.splineWidget = QWidget()
+
+        splineSmoothLayout = QVBoxLayout()
+        splineSmoothLabel = QLabel('Smoothing: ')
+        splineSmoothLabel.setFixedWidth(200)
+        splineSmoothLayout.addWidget(splineSmoothLabel)
+        self.splineSmooth = QLineEdit()  # quantifies the amount of smoothing to do
+        self.splineSmooth.setFixedWidth(200)
+        self.splineSmooth.setText('1')
+        self.splineSmooth.editingFinished.connect(self._plotGraph)
+        splineSmoothLayout.addWidget(self.splineSmooth)
+
+        splineKLayout = QVBoxLayout()
+        splineKLabel = QLabel('Order, k (0-5): ')
+        splineKLabel.setFixedWidth(200)
+        splineKLayout.addWidget(splineKLabel)
+        self.splineK = QLineEdit()  # quantifies the polynomial to use in the fitting
+        self.splineK.setFixedWidth(200)
+        self.splineK.setText('3')
+        self.splineK.editingFinished.connect(self._plotGraph)
+        splineKLayout.addWidget(self.splineK)
+
+        self.splineLayout.addLayout(splineSmoothLayout)
+        self.splineLayout.addLayout(splineKLayout)
+        self.splineWidget.setLayout(self.splineLayout)
+
+        self.parameterLayout.addWidget(self.splineWidget)
+
+        optionLayout.addLayout(self.scanBoxLayout)
+        optionLayout.addLayout(self.smoothScaleLayout)
+        optionLayout.addStretch(1)
+        optionLayout.addWidget(self.setSmooth)
+        optionLayout.addLayout(self.optionBoxLayout)
+        optionLayout.addStretch(1)
+        optionLayout.addLayout(self.parameterLayout)
+
+        # smoothing dict = {'Name': {'Data':[...],'Smoothing',[...]}}
+        # create the plotting area
+        self.graph = pg.PlotWidget()
+        self.graph.setBackground('w')
+        self.graph.addLegend()
+
+        pagelayout.addWidget(self.graph)
+        pagelayout.addLayout(optionLayout)
+
+
+
+        self.setLayout(pagelayout)
+
+    def _plotGraph(self):
+        self.graph.clear()
+
+        scan = self.scanBox.currentText()  # scan to plot
+        smooth = self.optionBox.currentText()  # which methodology to use
+        type = self.smoothScans[scan]['Type']
+        my_scale = self.smoothScale.currentText()
+
+        if type == 'Energy':
+            # get data
+            E = self.data_dict[scan]['Data'][3]
+            Theta = self.data_dict[scan]['Angle']
+            Rdata = self.data_dict[scan]['Data'][2]  # data
+            Rprev = self.smoothScans[scan]['Data'][2]  # previous smooth
+            if my_scale == 'log(x)':
+                Rdata = np.log10(Rdata)
+                Rprev = np.log10(Rprev)
+            elif my_scale == 'ln(x)':
+                Rdata = np.log(Rdata)
+                Rprev = np.log(Rprev)
+            elif my_scale == 'x':
+                pass
+            elif my_scale == 'qz^4':
+                qz = np.sin(Theta*np.pi/180)*(E * 0.001013546143)
+                Rdata = np.multiply(Rdata,np.power(qz,4))
+                Rprev = np.multilpy(Rprev, np.power(qz, 4))
+
+            Rsmooth = copy.copy(Rdata)
+            # calculate current smooth
+            if smooth == 'Spline':
+                s = float(self.splineSmooth.text())
+                k = self.splineK.text()
+                if '.' in k:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as polynomial order must be an integer.")
+                    messageBox.exec()
+                k = int(k)
+
+                if k < 0 or k>5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved. Assumed k = 3.")
+                    messageBox.exec()
+                    k = 3
+
+
+                Rsmooth = self._noiseRemoval(E, Rdata, s=s,k=k)
+
+
+            self.graph.plot(E, Rdata, pen=pg.mkPen((0,4), width=2), name='Data')
+            self.graph.plot(E, Rprev, pen=pg.mkPen((3, 4), width=2), name='Previous')
+            self.graph.plot(E, Rsmooth, pen=pg.mkPen((1, 4), width=2), name='Current')
+
+
+
+        elif type == 'Reflectivity':
+            # get data
+            qz = self.data_dict[scan]['Data'][0]
+            Rdata = self.data_dict[scan]['Data'][2]  # data
+            Rprev = self.smoothScans[scan]['Data'][2]  # previous smooth
+            if my_scale == 'log(x)':
+                Rdata = np.log10(Rdata)
+                Rprev = np.log10(Rprev)
+            elif my_scale == 'ln(x)':
+                Rdata = np.log(Rdata)
+                Rprev = np.log(Rprev)
+            elif my_scale == 'x':
+                pass
+            elif my_scale == 'qz^4':
+                Rdata = Rdata*np.power(qz, 4)
+                Rprev = Rprev*np.power(qz, 4)
+
+            Rsmooth = copy.copy(Rdata)
+            # calculate current smooth
+            if smooth == 'Spline':
+                s = float(self.splineSmooth.text())
+                k = self.splineK.text()
+                if '.' in k:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as polynomial order must be an integer.")
+                    messageBox.exec()
+                k = int(k)
+
+                if k < 0 or k > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText(
+                        "The polynomial order must be found between 0 and 5. Values not saved. Assumed k = 3.")
+                    messageBox.exec()
+                    k = 3
+
+                Rsmooth = self._noiseRemoval(qz, Rdata, s=s, k=k)
+
+            self.graph.plot(qz, Rdata, pen=pg.mkPen((0, 4), width=2), name='Data')
+            self.graph.plot(qz, Rprev, pen=pg.mkPen((3, 4), width=2), name='Previous')
+            self.graph.plot(qz, Rsmooth, pen=pg.mkPen((1, 4), width=2), name='Current')
+
+
+    def _setSmoothingVariables(self):
+        smooth = self.optionBox.currentText()  # get the smoothing implementation to use
+        scan = self.scanBox.currentText()
+
+        if smooth != '' and scan != '':
+            if smooth == 'Spline':  # spline case
+
+                s = self.smoothScans[scan][smooth][0]
+                k = self.smoothScans[scan][smooth][1]
+
+                self.splineSmooth.blockSignals(True)
+                self.splineK.blockSignals(True)
+
+                self.splineSmooth.setText(str(s))
+                self.splineK.setText(str(k))
+
+                self.splineSmooth.blockSignals(False)
+                self.splineK.blockSignals(False)
+
+                self._plotGraph()
+
+    def _selectNoiseReduction(self):
+        # sets the current variables being used for the selected scan
+        smooth = self.optionBox.currentText()  # get the smoothing implementation to use
+        scan = self.scanBox.currentText()
+
+        if smooth != '' and scan != '':
+            if smooth == 'Spline':  # spline case
+                s = float(self.splineSmooth.text())
+                k = self.splineK.text()
+
+                if '.' in k:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as polynomial order must be an integer.")
+                    messageBox.exec()
+                k = int(k)
+
+                if k < 0 or k>5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved.")
+                    messageBox.exec()
+                else:
+                    self.smoothScans[scan][smooth][0] = s
+                    self.smoothScans[scan][smooth][1] = k
+
+                # still need to compute the value  #################
+                type = self.smoothScans[scan]['Type']
+                if type == 'Energy':
+                    E = self.data_dict[scan]['Data'][3]
+                    R = copy.copy(self.data_dict[scan]['Data'][2])
+                    Theta = self.data_dict[scan]['Angle']
+
+                    my_scale = self.smoothScale.currentText()
+                    if my_scale == 'log(x)':
+                        R = np.log10(R)
+                    elif my_scale == 'ln(x)':
+                        R = np.log(R)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                        R = np.multiply(R, np.power(qz,4))
+
+
+                    Rsmooth = self._noiseRemoval(E,R, s=s,k=k)
+
+                    # transform back to original R-scale
+                    if my_scale == 'log(x)':
+                        Rsmooth = np.power(10, Rsmooth)
+                    elif my_scale == 'ln(x)':
+                        Rsmooth = np.exp(Rsmooth)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                        Rsmooth = np.divide(Rsmooth, np.power(qz,4))
+
+
+                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)
+
+                elif type == 'Reflectivity':
+                    qz = self.data_dict[scan]['Data'][0]
+                    R = copy.copy(self.data_dict[scan]['Data'][2])
+
+                    my_scale  = self.smoothScale.currentText()
+                    if my_scale == 'log(x)':
+                        R = np.log10(R)
+                    elif my_scale == 'ln(x)':
+                        R = np.log(R)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        R = np.multiply(R, np.power(qz,4))
+
+                    Rsmooth = self._noiseRemoval(qz, R,s=s,k=k)
+
+                    #transform back to orginal R-scale
+                    if my_scale == 'log(x)':
+                        Rsmooth = np.power(10, Rsmooth)
+                    elif my_scale == 'ln(x)':
+                        Rsmooth = np.exp(Rsmooth)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        Rsmooth = np.divide(Rsmooth, np.power(qz,4))
+
+                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)
+
+        self._plotGraph()
+
+
+
+    def _changeSmooth(self):
+        # changes the smoothing algorithm that we will use
+        idx = self.optionBox.currentIndex()
+        self.parameterLayout.setCurrentIndex(idx)
+        self._plotGraph()  # now we are using a completely different smoothing methodology
+
+
+
+    def _resetVariables(self,data_dict, fit):
+        # This will be used in the loading in of data as well as when this tab is activated
+        self.data_dict = data_dict
+
+        # double checking to make sure that the saved fit is found in the dataset provided
+        self.selectedScans = [scan for scan in fit if scan in list(self.data_dict.keys())]
+
+        for name in list(self.data_dict.keys()):
+            self.smoothScans[name] = dict()
+            self.smoothScans[name]['Data'] = copy.copy(self.data_dict[name]['Data'])
+            if 'Angle' in list(self.data_dict[name].keys()):
+                self.smoothScans[name]['Type'] = 'Energy'
+            else:
+                self.smoothScans[name]['Type'] = 'Reflectivity'
+            self.smoothScans[name]['Spline'] = [1, 3]  # [s, k]
+
+        self.splineK.blockSignals(True)
+        self.splineSmooth.blockSignals(True)
+        self.setSmooth.blockSignals(True)
+        self.optionBox.blockSignals(True)
+        self.scanBox.blockSignals(True)
+        self.scanBox.clear()
+        self.scanBox.addItems(self.selectedScans)
+        self.splineK.blockSignals(False)
+        self.splineSmooth.blockSignals(False)
+        self.setSmooth.blockSignals(False)
+        self.optionBox.blockSignals(False)
+        self.scanBox.blockSignals(False)
+
+        if len(self.selectedScans) != 0:
+            if len(self.selectedScans) != 1 and self.selectedScans[0] != '':
+                self.scanBox.setCurrentIndex(0)
+
+    def _noiseRemoval(self,x, R, s=1, k=3):
+        tck = interpolate.splrep(x, R, s=s, k=k)
+        return interpolate.splev(x, tck, der=0)
 
 class ReflectometryApp(QMainWindow):
     def __init__(self):
@@ -5100,15 +5496,18 @@ class ReflectometryApp(QMainWindow):
 
         self.sampleButton = QPushButton('Sample')
         self.reflButton = QPushButton('Reflectivity')
+        self.smoothButton = QPushButton('Noise Reduction')
         self.goButton = QPushButton('Optimization')
         self.progressButton = QPushButton('Progress')
         self.scanProgress = QComboBox()
 
         self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
-        self._progressWidget = progressWidget(self._sampleWidget, self._reflectivityWidget)
-        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._progressWidget,
+        self._noiseWidget = dataSmoothingWidget()
+        self._progressWidget = progressWidget(self._sampleWidget, self._reflectivityWidget, self._noiseWidget)
+        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._noiseWidget, self._progressWidget,
                                                   self)
+
 
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.sampleButton.clicked.connect(self.activate_tab_1)
@@ -5120,13 +5519,18 @@ class ReflectometryApp(QMainWindow):
         buttonlayout.addWidget(self.reflButton)
         self.stackedlayout.addWidget(self._reflectivityWidget)
 
+        self.smoothButton.setStyleSheet("background-color : pink")
+        self.smoothButton.clicked.connect(self.activate_tab_3)
+        buttonlayout.addWidget(self.smoothButton)
+        self.stackedlayout.addWidget(self._noiseWidget)
+
         self.goButton.setStyleSheet("background-color : pink")
-        self.goButton.clicked.connect(self.activate_tab_3)
+        self.goButton.clicked.connect(self.activate_tab_4)
         buttonlayout.addWidget(self.goButton)
         self.stackedlayout.addWidget(self._goWidget)
 
         self.progressButton.setStyleSheet('background: pink')
-        self.progressButton.clicked.connect(self.activate_tab_4)
+        self.progressButton.clicked.connect(self.activate_tab_5)
         buttonlayout.addWidget(self.progressButton)
         self.stackedlayout.addWidget(self._progressWidget)
 
@@ -5384,10 +5788,10 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.sfBsFitParams = fitParams[0]
                 self._reflectivityWidget.currentVal = list(fitParams[1])
                 self._reflectivityWidget.rom = [True, False, False]
-                self._reflectivityWidget.fit = fitParams[4]
 
                 # checks to make sure that saved scans are still in the dataset
                 selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
+                self._reflectivityWidget.fit = selectedScans
 
                 self._reflectivityWidget.selectedScans.blockSignals(True)
                 self._reflectivityWidget.selectedScans.addItems(selectedScans)
@@ -5410,7 +5814,7 @@ class ReflectometryApp(QMainWindow):
                     self._goWidget.parameters.append(param)
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
-
+                self._noiseWidget._resetVariables(self.data_dict, selectedScans)
             elif fname.endswith('.all'):
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("ReMagX Implementation")
@@ -5528,6 +5932,7 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.whichScan.addItem(scan[2])
             self._reflectivityWidget.whichScan.blockSignals(False)
 
+            self._noiseWidget._resetVariables(self.data_dict, [''])
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("ReMagX File")
@@ -5691,6 +6096,7 @@ class ReflectometryApp(QMainWindow):
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.reflButton.setStyleSheet("background-color : pink")
+        self.smoothButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
         self.progressButton.setStyleSheet("background-color: pink")
         self.stackedlayout.setCurrentIndex(0)
@@ -5705,41 +6111,69 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : magenta")
+        self.smoothButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
         self.progressButton.setStyleSheet("background-color: pink")
         self.stackedlayout.setCurrentIndex(1)
 
     def activate_tab_3(self):
-        # optimization
+        # Best fit curve
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
 
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
+        self.smoothButton.setStyleSheet("background-color : magenta")
+        self.goButton.setStyleSheet("background-color : pink")
+        self.progressButton.setStyleSheet("background-color: pink")
+
+        #self._noiseWidget.selectedScans = self._reflectivityWidget.fit
+        self._noiseWidget._resetVariables(self.data_dict, self._reflectivityWidget.fit)
+
+        self.stackedlayout.setCurrentIndex(2)
+
+    def activate_tab_4(self):
+        # global optimization
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
+        self._reflectivityWidget.sample = self.sample
+        self._goWidget.sample = self.sample
+
+        self.sampleButton.setStyleSheet("background-color : pink")
+        self.reflButton.setStyleSheet("background-color : pink")
+        self.smoothButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : magenta")
         self.progressButton.setStyleSheet("background-color: pink")
         self._goWidget.setTableFit()
         self._goWidget.updateScreen()
 
-        self.stackedlayout.setCurrentIndex(2)
+        self.stackedlayout.setCurrentIndex(3)
 
-    def activate_tab_4(self):
-        # optimization progress
+    def activate_tab_5(self):
+        # optimization
+        self.sample = copy.deepcopy(self._sampleWidget._createSample())
+        self._reflectivityWidget.sample = self.sample
+        self._goWidget.sample = self.sample
+        self._progressWidget.reset_fit_scans()  # resets the scans in the fit
+
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
+        self.smoothButton.setStyleSheet("background-color : pink")
         self.goButton.setStyleSheet("background-color : pink")
         self.progressButton.setStyleSheet("background-color: magenta")
-        self._progressWidget.reset_fit_scans()
-        self.stackedlayout.setCurrentIndex(3)
+
+        self.stackedlayout.setCurrentIndex(4)
+
+
 
 
 class progressWidget(QWidget):
-    def __init__(self, sWidget, rWidget):
+    def __init__(self, sWidget, rWidget, nWidget):
         super().__init__()
         # which plot
         self.sWidget = sWidget
         self.rWidget = rWidget
+        self.nWidget = nWidget
         self.y_scale = 'log(x)'
         self.whichPlot = [True, False, False, False, False]
         # parameters required for calculations
@@ -5913,6 +6347,7 @@ class progressWidget(QWidget):
         self.scanBox.blockSignals(False)
 
     def computeScan(self, x_array):
+        smooth_dict = self.nWidget.smoothScans
 
         if len(x_array) != 0:
             # compute the scans for all the new x values
@@ -5926,7 +6361,7 @@ class progressWidget(QWidget):
 
                 for i, scan in enumerate(self.scans):
                     name = scan
-
+                    Rsmooth = smooth_dict[name]['Data'][2]
                     fun_val = 0
                     xbound = self.sBounds[i]
                     weights = self.sWeights[i]
@@ -5948,19 +6383,23 @@ class progressWidget(QWidget):
                         if self.y_scale == 'log(x)':
                             Rsim = np.log10(Rsim)
                             Rdat = np.log10(Rdat)
+                            Rsmooth = np.log10(Rsmooth)
                         elif self.y_scale == 'ln(x)':
                             Rsim = np.log(Rsim)
                             Rdat = np.log(Rdat)
+                            Rsmooth = np.log(Rsmooth)
                         elif self.y_scale == 'qz^4':
                             Rsim = np.multiply(Rsim, np.power(qz, 4))
                             Rdat = np.multiply(Rdat, np.power(qz, 4))
+                            Rsmooth = np.multiply(Rsmooth, np.power(qz,4))
                         elif self.y_scale == 'x':
                             pass
 
-                        window = 5
-                        R = go.rolling_average(Rdat, window)
+                        #window = 5
+                        #R = go.rolling_average(Rdat, window)
                         # total variation
-                        val = go.total_variation(R[window * 2:], Rsim[window * 2:]) / len(R[window * 2:])
+                        var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
+                        val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
                         self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
@@ -6003,21 +6442,25 @@ class progressWidget(QWidget):
                         if self.y_scale == 'log(x)':
                             Rsim = np.log10(Rsim)
                             Rdat = np.log10(Rdat)
+                            Rsmooth = np.log10(Rsmooth)
                         elif self.y_scale == 'ln(x)':
                             Rsim = np.log(Rsim)
                             Rdat = np.log(Rdat)
+                            Rsmooth = np.log(Rsmooth)
                         elif self.y_scale == 'qz^4':
                             qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
                             Rsim = np.multiply(Rsim, np.power(qz, 4))
                             Rdat = np.multiply(Rdat, np.power(qz, 4))
+                            Rsmooth = np.multiply(Rsmooth, np.power(qz, 4))
                         elif self.y_scale == 'x':
                             pass
 
-                        window = 5
-                        R = go.rolling_average(Rdat, window)
+                        #window = 5
+                        #R = go.rolling_average(Rdat, window)
 
+                        var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
                         # total variation
-                        val = go.total_variation(R[window * 2:], Rsim[window * 2:]) / len(R[window * 2:])
+                        val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
                         self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
