@@ -244,82 +244,91 @@ class compoundInput(QDialog):
 
 
 class variationWidget(QDialog):
+    # class used in setting element variation properties
+    # - can be used for different oxidation states or tied elements (e.g. La_{0.3}Sr_{0.7}MnO3 where Mn->{Mn2+, Mn3+})
     def __init__(self, mainWidget, sample):
         super().__init__()
 
-
-        pagelayout = QHBoxLayout()
+        pagelayout = QHBoxLayout()  # page layout
 
         self.elelayout = QVBoxLayout()
-        self.mainWidget = mainWidget
-        self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)
+        self.mainWidget = mainWidget  # referring to the structuralWidget
+        self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)  # change elements when layer changed
 
+        # add element variation
         addButton = QPushButton('Add')
         addButton.clicked.connect(self.addVarEle)
-        # Create the connect function
+        # remove element variation
         deleteButton = QPushButton('Delete')
         deleteButton.clicked.connect(self.deleteVarEle)
-        # create the connect function
 
-        # buttons for adding and removing
+        self.sample = sample  # reset sample information
 
-        self.sample = sample
+        #self.radiobutton = QRadioButton()
+        idx = self.mainWidget.layerBox.currentIndex()  # retrieves the current layer index
 
-        self.radiobutton = QRadioButton()
-        idx = self.mainWidget.layerBox.currentIndex()
-
-        # Setting up the element variation check boxes
+        # adding elements in the current layer to the combobox
         for j in range(len(list(self.sample.structure[idx].keys()))):
             ele = list(self.sample.structure[idx].keys())[j]
             self.mainWidget.elementBox.addItem(ele)
 
-        self.mainWidget.elementBox.currentIndexChanged.connect(self.mainWidget.setTableVar)
-        self.elelayout.addWidget(self.mainWidget.elementBox)
+        self.mainWidget.elementBox.currentIndexChanged.connect(self.mainWidget.setTableVar)  # element slection changed
+        self.elelayout.addWidget(self.mainWidget.elementBox)  # add combobox to layout
 
-        self.mainWidget.setTableVar()
+        self.mainWidget.setTableVar()  # set the element variation table
 
+        # add the buttons to the element layout
         self.elelayout.addWidget(addButton)
         self.elelayout.addWidget(deleteButton)
 
+        # setting the headers for the element variation table
         self.mainWidget.varTable.setRowCount(2)
         self.mainWidget.varTable.setColumnCount(3)
         self.mainWidget.varTable.setHorizontalHeaderLabels(
             ['Name', 'Ratio', 'Scattering Factor'])
 
-        pagelayout.addLayout(self.elelayout)
-        pagelayout.addWidget(self.mainWidget.varTable)
+        pagelayout.addLayout(self.elelayout)  # add element layout to the page layout
+        pagelayout.addWidget(self.mainWidget.varTable)  # add element variation table to page layout
 
         self.setLayout(pagelayout)
 
     def changeElements(self):
+        """
+        Purpose: changes the elements based on current layer
+        """
 
-        # this function simply changes the elements based on current layer
-        # needs to be changed when adding and removing layers
+        # prevents adding elements to combobox from triggering other signals
+        self.mainWidget.change_elements = True  # are we currently changing the elements
 
-        self.mainWidget.change_elements = True
-        idx = self.mainWidget.layerBox.currentIndex()
-        self.mainWidget.elementBox.clear()
+        idx = self.mainWidget.layerBox.currentIndex()  # retrieves the current layer
+        self.mainWidget.elementBox.clear()  # clears the element comboBox
 
+        # adds the elements found in the current layer
         for j in range(len(self.mainWidget.structTableInfo[idx])):
             ele = self.mainWidget.structTableInfo[idx][j][0]
             self.mainWidget.elementBox.addItem(ele)
 
-        self.mainWidget.change_elements = False
-        self.mainWidget.elementBox.setCurrentIndex(self.mainWidget.element_index)
+        self.mainWidget.change_elements = False  # no longer changing the elements
+        self.mainWidget.elementBox.setCurrentIndex(self.mainWidget.element_index) # sets current index to previous index
 
     def addVarEle(self):
+        """
+        Purpose: Make appropriate changes to adding new element variation
+        :return:
+        """
 
-        self.mainWidget.parameterFit = []
-        self.mainWidget.currentVal = []
+        self.mainWidget.parameterFit = []  # resets fitting parameters
+        self.mainWidget.currentVal = []  # resets current fitting parameter values
 
-        current_layer = self.mainWidget.layerBox.currentIndex()
-        current_element = self.mainWidget.elementBox.currentIndex()
+        current_layer = self.mainWidget.layerBox.currentIndex()  # retrieves the current layer
+        current_element = self.mainWidget.elementBox.currentIndex()  # retrieves the current element
 
-        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]  # retrieves the element symbol
 
+        # adds an empty spot in the variation data and magnetic data
         row = len(self.mainWidget.varData[element][current_layer][0])
         for lay in range(len(self.mainWidget.varData[element])):
-            if type(self.mainWidget.varData[element][lay][0]) == np.ndarray:
+            if type(self.mainWidget.varData[element][lay][0]) == np.ndarray:  # element already initialized for element variation
                 self.mainWidget.varData[element][lay][0] = np.append(self.mainWidget.varData[element][lay][0], '')
                 self.mainWidget.varData[element][lay][1] = np.append(self.mainWidget.varData[element][lay][1], '')
                 self.mainWidget.varData[element][lay][2] = np.append(self.mainWidget.varData[element][lay][2], '')
@@ -327,7 +336,7 @@ class variationWidget(QDialog):
                 self.mainWidget.magData[element][lay][0] = np.append(self.mainWidget.magData[element][lay][0], '')
                 self.mainWidget.magData[element][lay][1] = np.append(self.mainWidget.magData[element][lay][1], '')
                 self.mainWidget.magData[element][lay][2] = np.append(self.mainWidget.magData[element][lay][2], '')
-            else:
+            else:  # newly added element variation
                 self.mainWidget.varData[element][lay][0].append('')  # add another element to name list
                 self.mainWidget.varData[element][lay][1].append('')  # add another element to name list
                 self.mainWidget.varData[element][lay][2].append('')  # add another element to name list
@@ -337,23 +346,27 @@ class variationWidget(QDialog):
                 self.mainWidget.magData[element][lay][2].append('')
 
         # row = self.mainWidget.varTable.rowCount()
-        self.mainWidget.varTable.setRowCount(row + 1)
+        self.mainWidget.varTable.setRowCount(row + 1)  # reset the number of rows in the element variation table
 
     def deleteVarEle(self):
+        """
+        Purpose: Remove the last element variation
+        """
 
+        # resets the fitting parameters
         self.mainWidget.parameterFit = []
         self.mainWidget.currentVal = []
 
-        current_layer = self.mainWidget.layerBox.currentIndex()
-        current_element = self.mainWidget.elementBox.currentIndex()
+        current_layer = self.mainWidget.layerBox.currentIndex()  # retrieves the current layer
+        current_element = self.mainWidget.elementBox.currentIndex()  # retrieves the current element
 
-        element = self.mainWidget.structTableInfo[current_layer][current_element][0]
+        element = self.mainWidget.structTableInfo[current_layer][current_element][0]  # retrieves element symbol
 
-        row = len(self.mainWidget.varData[element][current_layer][0])
+        row = len(self.mainWidget.varData[element][current_layer][0])  # retrieves the current number of rows
 
-        if row != 2:
+        # removes the element variation from the variation data and magnetic data
+        if row != 2:  # no longer a polymorphous element
             for lay in range(len(self.mainWidget.varData[element])):
-
                 if type(self.mainWidget.varData[element][lay][0]) == np.ndarray:
                     self.mainWidget.varData[element][lay][0] = self.mainWidget.varData[element][lay][0][:-1]
                     self.mainWidget.varData[element][lay][1] = self.mainWidget.varData[element][lay][1][:-1]
@@ -362,7 +375,7 @@ class variationWidget(QDialog):
                     self.mainWidget.magData[element][lay][0] = self.mainWidget.magData[element][lay][0][:-1]
                     self.mainWidget.magData[element][lay][1] = self.mainWidget.magData[element][lay][1][:-1]
                     self.mainWidget.magData[element][lay][2] = self.mainWidget.magData[element][lay][2][:-1]
-                else:
+                else: # still a polymorphous element
                     self.mainWidget.varData[element][lay][0].pop()  # add another element to name list
                     self.mainWidget.varData[element][lay][1].pop()  # add another element to name list
                     self.mainWidget.varData[element][lay][2].pop()  # add another element to name list
@@ -371,10 +384,11 @@ class variationWidget(QDialog):
                     self.mainWidget.magData[element][lay][1].pop()
                     self.mainWidget.magData[element][lay][2].pop()
 
-            self.mainWidget.varTable.setRowCount(row - 1)
+            self.mainWidget.varTable.setRowCount(row - 1)  # set the variation table with the correct number of rows
 
 
 class ReadOnlyDelegate(QStyledItemDelegate):
+
     def createEditor(self, parent, option, index):
         return
 
