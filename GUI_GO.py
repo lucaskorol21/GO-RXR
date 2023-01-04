@@ -7636,6 +7636,9 @@ class scriptWidget(QDialog):
 
 
 class LoadingScreen(QDialog):
+    """
+    Purpose: Provides progress of saving simulation
+    """
     def __init__(self, sample, sim_dict):
         super().__init__()
         self.setWindowTitle('Saving Simulation')
@@ -7654,6 +7657,9 @@ class LoadingScreen(QDialog):
         self.setLayout(layout)
 
     def run(self):
+        """
+        Purpose: calculate the simulations from current sample model
+        """
 
         my_keys = list(self.temp_sim.keys())
         n = self.n
