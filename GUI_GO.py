@@ -5480,6 +5480,9 @@ class GlobalOptimizationWidget(QWidget):
         return name
 
 class dataSmoothingWidget(QWidget):
+    """
+    Purpose: Widget used to smooth data for total variation penalty
+    """
     def __init__(self):
         super(dataSmoothingWidget, self).__init__()
 
@@ -5581,6 +5584,9 @@ class dataSmoothingWidget(QWidget):
         self.setLayout(pagelayout)
 
     def _plotGraph(self):
+        """
+        Purpose: plot the data, previous smoothing iteration, and current smoothing iteration
+        """
         self.graph.clear()
 
         scan = self.scanBox.currentText()  # scan to plot
@@ -5681,44 +5687,53 @@ class dataSmoothingWidget(QWidget):
 
 
     def _setSmoothingVariables(self):
+        """
+        Purpose: set the smoothing variables depending on the data smoothing methodology used
+        """
         smooth = self.optionBox.currentText()  # get the smoothing implementation to use
         scan = self.scanBox.currentText()
 
         if smooth != '' and scan != '':
             if smooth == 'Spline':  # spline case
 
-                s = self.smoothScans[scan][smooth][0]
-                k = self.smoothScans[scan][smooth][1]
+                s = self.smoothScans[scan][smooth][0]  # smoothing variable
+                k = self.smoothScans[scan][smooth][1]  # kth-order
 
+                # block spline signals
                 self.splineSmooth.blockSignals(True)
                 self.splineK.blockSignals(True)
 
+                # setting saved smoothing and order variables
                 self.splineSmooth.setText(str(s))
                 self.splineK.setText(str(k))
 
+                # unblock signals
                 self.splineSmooth.blockSignals(False)
                 self.splineK.blockSignals(False)
 
                 self._plotGraph()
 
     def _selectNoiseReduction(self):
+        """
+        Purpose: Changes work space to smoothing methodology and checks user input
+        """
         # sets the current variables being used for the selected scan
         smooth = self.optionBox.currentText()  # get the smoothing implementation to use
         scan = self.scanBox.currentText()
 
-        if smooth != '' and scan != '':
+        if smooth != '' and scan != '':  # makes sure a methodology is chosen
             if smooth == 'Spline':  # spline case
                 s = float(self.splineSmooth.text())
                 k = self.splineK.text()
 
-                if '.' in k:
+                if '.' in k:  # incorrect input
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Assumption Made")
                     messageBox.setText("Program assumed integer value as polynomial order must be an integer.")
                     messageBox.exec()
                 k = int(k)
 
-                if k < 0 or k>5:
+                if k < 0 or k>5:  # incoreect input
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Invalid Entry")
                     messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved.")
@@ -5727,13 +5742,14 @@ class dataSmoothingWidget(QWidget):
                     self.smoothScans[scan][smooth][0] = s
                     self.smoothScans[scan][smooth][1] = k
 
-                # still need to compute the value  #################
+                # performs the data smoothing
                 type = self.smoothScans[scan]['Type']
                 if type == 'Energy':
                     E = self.data_dict[scan]['Data'][3]
                     R = copy.copy(self.data_dict[scan]['Data'][2])
                     Theta = self.data_dict[scan]['Angle']
 
+                    # performs transformation of reflectivity for data smoothing
                     my_scale = self.smoothScale.currentText()
                     if my_scale == 'log(x)':
                         R = np.log10(R)
@@ -5760,12 +5776,13 @@ class dataSmoothingWidget(QWidget):
                         Rsmooth = np.divide(Rsmooth, np.power(qz,4))
 
 
-                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)
+                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)  # save the smoothed data
 
                 elif type == 'Reflectivity':
                     qz = self.data_dict[scan]['Data'][0]
                     R = copy.copy(self.data_dict[scan]['Data'][2])
 
+                    # transform reflectivity data for smoothing
                     my_scale  = self.smoothScale.currentText()
                     if my_scale == 'log(x)':
                         R = np.log10(R)
@@ -5818,13 +5835,18 @@ class dataSmoothingWidget(QWidget):
                 self.smoothScans[name]['Type'] = 'Reflectivity'
             self.smoothScans[name]['Spline'] = [1, 3]  # [s, k]
 
+        # blocks all signals
         self.splineK.blockSignals(True)
         self.splineSmooth.blockSignals(True)
         self.setSmooth.blockSignals(True)
         self.optionBox.blockSignals(True)
         self.scanBox.blockSignals(True)
+
+        # resets selected scans
         self.scanBox.clear()
         self.scanBox.addItems(self.selectedScans)
+
+        # unblocks all signals
         self.splineK.blockSignals(False)
         self.splineSmooth.blockSignals(False)
         self.setSmooth.blockSignals(False)
@@ -5836,6 +5858,14 @@ class dataSmoothingWidget(QWidget):
                 self.scanBox.setCurrentIndex(0)
 
     def _noiseRemoval(self,x, R, s=1, k=3):
+        """
+        Purpose: smoothes data using spline interpolation
+        :param x: qz or E numpy array
+        :param R: reflectivity numpy array
+        :param s: smoothing variable
+        :param k: order (0-5)
+        :return:
+        """
         tck = interpolate.splrep(x, R, s=s, k=k)
         return interpolate.splev(x, tck, der=0)
 
