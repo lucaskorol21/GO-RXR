@@ -5870,14 +5870,17 @@ class dataSmoothingWidget(QWidget):
         return interpolate.splev(x, tck, der=0)
 
 class ReflectometryApp(QMainWindow):
+    """
+    Purpose: Main Window
+    """
     def __init__(self):
         super().__init__()
         cwd = os.getcwd()
 
-        self.fname = cwd + '\demo.h5'
-        self.data = []
-        self.data_dict = dict()
-        self.sim_dict = dict()
+        self.fname = cwd + '\demo.h5'  # initial sample
+        self.data = []  # data info
+        self.data_dict = dict()  # dictionary that contains data
+        self.sim_dict = dict()  # dictionary that contains simulation
 
         self.sample = ms.slab(1)  # app is initialized and no project is selected
         self.sample.addlayer(0, 'SrTiO3', 50)
@@ -5888,13 +5891,14 @@ class ReflectometryApp(QMainWindow):
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
 
-        pagelayout = QVBoxLayout()
+        pagelayout = QVBoxLayout()  # page layout
         buttonlayout = QHBoxLayout()
         self.stackedlayout = QStackedLayout()
 
         pagelayout.addLayout(buttonlayout)
         pagelayout.addLayout(self.stackedlayout)
 
+        # initializing workspace buttons
         self.sampleButton = QPushButton('Sample')
         self.reflButton = QPushButton('Reflectivity')
         self.smoothButton = QPushButton('Noise Reduction')
@@ -5902,6 +5906,7 @@ class ReflectometryApp(QMainWindow):
         self.progressButton = QPushButton('Progress')
         self.scanProgress = QComboBox()
 
+        # initializing workspace widgets
         self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
         self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
         self._noiseWidget = dataSmoothingWidget()
@@ -5909,7 +5914,7 @@ class ReflectometryApp(QMainWindow):
         self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._noiseWidget, self._progressWidget,
                                                   self)
 
-
+        # initializing workspace button signals and layout
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.sampleButton.clicked.connect(self.activate_tab_1)
         buttonlayout.addWidget(self.sampleButton)
@@ -5945,26 +5950,32 @@ class ReflectometryApp(QMainWindow):
         # saving and loading area
         fileMenu = QMenu("&File", self)
 
+        # create a new file
         self.newFile = QAction("&New", self)
         self.newFile.triggered.connect(self._newFile)
         fileMenu.addAction(self.newFile)
 
+        # load a file
         self.loadFile = QAction("&Load", self)
         self.loadFile.triggered.connect(self._loadFile)
         fileMenu.addAction(self.loadFile)
 
+        # save current working file
         self.saveFile = QAction("&Save", self)
         self.saveFile.triggered.connect(self._saveFile)
         fileMenu.addAction(self.saveFile)
 
+        # save file as a new project
         self.saveAsFile = QAction("&Save As", self)
         self.saveAsFile.triggered.connect(self._saveAsFile)
         fileMenu.addAction(self.saveAsFile)
         fileMenu.addSeparator()
+        # save only the sample information
         self.saveSampleFile = QAction("&Save Sample", self)
         self.saveSampleFile.triggered.connect(self._saveSample)
         fileMenu.addAction(self.saveSampleFile)
 
+        # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
         self.saveSimulationFile.triggered.connect(self._saveSimulation)
         fileMenu.addAction(self.saveSimulationFile)
@@ -5973,14 +5984,18 @@ class ReflectometryApp(QMainWindow):
         self.importDataset.triggered.connect(self._importDataSet)
         fileMenu.addAction(self.importDataset)
 
+        # load a ReMagX file (only the data)
         self.loadReMagX = QAction("&Load ReMagX", self)
         self.loadReMagX.triggered.connect(self._loadReMagX)
         fileMenu.addAction(self.loadReMagX)
+
+        # save summary of work as a textfile
 
         self.saveSummary = QAction("&Save Summary", self)
         self.saveSummary.triggered.connect(self._summary)
         fileMenu.addAction(self.saveSummary)
         fileMenu.addSeparator()
+        # exit the application
         self.exitFile = QAction("&Exit", self)
         self.exitFile.triggered.connect(self._exitApplication)
         fileMenu.addAction(self.exitFile)
@@ -6008,8 +6023,11 @@ class ReflectometryApp(QMainWindow):
 
 
     def _newFile(self):
+        """
+        Purpose: Create a new file
+        """
 
-        # create a new file with the inputted
+        # create a new file or project workspace
         filename, _ = QFileDialog.getSaveFileName()
         fname = filename.split('/')[-1]
         self.fname = filename
@@ -6027,12 +6045,14 @@ class ReflectometryApp(QMainWindow):
         if cont:  # create the new file
             ds.newFileHDF5(self.fname)
 
+            # random sample input
             sample = ms.slab(2)
             sample.addlayer(0, 'SrTiO3', 50)
             sample.addlayer(1, 'LaMnO3', 10)
             self.sample = sample
             self._sampleWidget.sample = sample
 
+            # reset data and simulation
             self.data = list()
             self.data_dict = dict()
             self.sim_dict = dict()
@@ -6041,6 +6061,7 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.bs = dict()
             self._reflectivityWidget.sf = dict()
 
+            # save sample information to application
             self._sampleWidget._setStructFromSample(sample)
             self._sampleWidget._setVarMagFromSample(sample)
 
@@ -6115,25 +6136,29 @@ class ReflectometryApp(QMainWindow):
             messageBox.exec()
 
     def _loadFile(self):
+        """
+        Purpose: Load a new file or project workspace
+        """
 
-        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')
-        fname = self.fname.split('/')[-1]
+        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+        fname = self.fname.split('/')[-1]  # used to check file type
 
-        # when loading files I need to be able to scan the entire
-        if fname.endswith('.h5') or fname.endswith('.all'):
+        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
             if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))
+                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))  # look for form factors in directory
 
+                # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
                 self._sampleWidget.mag_ff = mag_names
 
+                # read in project information
                 self.sample = ds.ReadSampleHDF5(self.fname)
                 fitParams = ds.ReadFitHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
                 self._reflectivityWidget.sample = self.sample
                 self._goWidget.sample = self.sample
 
-                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(self.fname)
+                self.data, self.data_dict, self.sim_dict = ds.ReadDataHDF5(self.fname)  # reset data and sim info
 
                 # loading in the background shift and scaling factor
                 self._reflectivityWidget.bs = dict()
@@ -6223,13 +6248,15 @@ class ReflectometryApp(QMainWindow):
                 messageBox.exec()
 
     def _saveFile(self):
-        # work on saving the current file
-        # saving function is used to save entire workspace
-        filename = self.fname
+        """
+        Purpose: Save the current project space
+        """
+
+        filename = self.fname  # retrieve the current file name
         fname = filename.split('/')[-1]
 
-        if fname != 'demo.h5':
-            self.sample = self._sampleWidget._createSample()
+        if fname != 'demo.h5':  # makes sure the current workspace is not the demo
+            self.sample = self._sampleWidget._createSample()  # retrieve sample info
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
@@ -6238,18 +6265,22 @@ class ReflectometryApp(QMainWindow):
 
             data_dict = self.data_dict
 
+            # retrieve fitting parameters
             fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
                          self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
                          self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
                          self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
 
-            optParams = self._goWidget.goParameters
+            optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
-            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams)
+            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams)  # save the information
 
     def _saveAsFile(self):
+        """
+        Purpose: Save project worspace to a specified name
+        """
         # create a new file with the inputted
-        filename, _ = QFileDialog.getSaveFileName()
+        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
         fname = filename.split('/')[-1]
 
         # checks to make sure filename is in the correct format
@@ -6266,25 +6297,30 @@ class ReflectometryApp(QMainWindow):
         if cont and fname != 'demo.h5':  # create the new file
             data_dict = self.data_dict
             sim_dict = self.sim_dict
+            # fitting parameter information
             fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
                          self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
                          self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
                          self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
 
-            optParams = self._goWidget.goParameters
+            optParams = self._goWidget.goParameters  # data fitting algorithm information
 
             self.sample = self._sampleWidget._createSample()
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams)
+            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams)  # saving
 
     def _saveSimulation(self):
-        sim_dict = copy.deepcopy(self.data_dict)
+        """
+        Purpose: Calculate and save the simulation to the current file
+        """
+        sim_dict = copy.deepcopy(self.data_dict)  # get simulation dictionary
 
-        fname = self.fname
+        fname = self.fname  # retrieve file name
 
         if len(sim_dict) != 0:
+            # initializing the loading screen
             loadingApp = LoadingScreen(self.sample, sim_dict)
             loadingApp.show()
             loadingApp.exec_()
@@ -6296,6 +6332,9 @@ class ReflectometryApp(QMainWindow):
                 ds.saveSimulationHDF5(self.fname, sim_dict)
 
     def _saveSample(self):
+        """
+        Purpose: Save the sample information from the current project space
+        """
         self.sample = self._sampleWidget._createSample()
         self._sampleWidget.sample = self.sample
         self._reflectivityWidget.sample = self.sample
@@ -6304,6 +6343,10 @@ class ReflectometryApp(QMainWindow):
         ds.WriteSampleHDF5(self.fname, self.sample)
 
     def _importDataSet(self):
+        """
+        Purpose: import data from h5 filetype
+        :return:
+        """
         # Import the data set
         filename, _ = QFileDialog.getOpenFileName(self, 'Open File')
         fname = filename.split('/')[-1]
@@ -6314,10 +6357,13 @@ class ReflectometryApp(QMainWindow):
                 self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
 
     def _loadReMagX(self):
-        filename, _ = QFileDialog.getOpenFileName(self, 'Open File')
+        """
+        Purpose: import data from a ReMagX file type
+        """
+        filename, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieves file
 
-        if filename.endswith('.all'):
-            data, data_dict = ds.Read_ReMagX(filename)
+        if filename.endswith('.all'):  # checks to make sure it is a ReMagX file type
+            data, data_dict = ds.Read_ReMagX(filename)  # read the file
             self.data = copy.deepcopy(data)
             self.data_dict = copy.deepcopy(data_dict)
             self.sim_dict = copy.deepcopy(data_dict)
@@ -6341,9 +6387,12 @@ class ReflectometryApp(QMainWindow):
             messageBox.exec()
 
     def _summary(self):
+        """
+        Purpose: save summary of project worspace as a textfile
+        """
         sample = self._sampleWidget._createSample()
-        # create a new file with the inputted (save as a textfile!)
-        filename, _ = QFileDialog.getSaveFileName()
+
+        filename, _ = QFileDialog.getSaveFileName()  # retrieve file name from user
         fname = filename.split('/')[-1]
         cont = True
 
@@ -6470,12 +6519,18 @@ class ReflectometryApp(QMainWindow):
         sys.exit()
 
     def _script(self):
+        """
+        Purpose: initialize the script widget
+        """
         script = scriptWidget()
         script.show()
         script.exec_()
         script.close()
 
     def _showFormFactor(self):
+        """
+        Purpose: initialize the form factor widget
+        """
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         formFactor = showFormFactors(self.sample)
         formFactor.show()
@@ -6483,9 +6538,19 @@ class ReflectometryApp(QMainWindow):
         formFactor.close()
 
     def _license(self):
+        """
+        Purpose: demonstrate license if ever obtained
+        """
+
+        # no current implementation
         pass
 
     def _help(self):
+        """
+        Purpose: provide user document of how to use application
+        """
+
+        # not currently implemented
         pass
 
     def activate_tab_1(self):
