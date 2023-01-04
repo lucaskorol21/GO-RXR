@@ -6634,6 +6634,9 @@ class ReflectometryApp(QMainWindow):
 
 
 class progressWidget(QWidget):
+    """
+    Purpose: Used to update the user of the data fitting progress
+    """
     def __init__(self, sWidget, rWidget, nWidget):
         super().__init__()
         # which plot
@@ -6718,7 +6721,11 @@ class progressWidget(QWidget):
         self.setLayout(pagelayout)
 
     def plot_scan(self):
+        """
+        Purpose: plot the data and current iteration of the data fitting
+        """
 
+        # retrieve current iteration of the data fitting
         global x_vars
         x = copy.deepcopy(x_vars)
         if len(x) == 0:
@@ -6806,6 +6813,9 @@ class progressWidget(QWidget):
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
     def reset_fit_scans(self):
+        """
+        Purpose: reset the scans in scanBox
+        """
         self.scanBox.blockSignals(True)
         self.scanBox.clear()
         self.scanBox.setFixedWidth(200)
@@ -6813,7 +6823,11 @@ class progressWidget(QWidget):
         self.scanBox.blockSignals(False)
 
     def computeScan(self, x_array):
-        smooth_dict = self.nWidget.smoothScans
+        """
+        Purpose: calculate the cost function of the current data fitting iteration
+        :param x_array: current iteration parameters
+        """
+        smooth_dict = self.nWidget.smoothScans  # retrieve the smoothed data
 
         if len(x_array) != 0:
             # compute the scans for all the new x values
@@ -6959,7 +6973,11 @@ class progressWidget(QWidget):
                 self.objFun['total'].append(fun)
 
     def plotProgress(self):
+        """
+        Purpose: plot the progress of the scans
+        """
 
+        # retrieve the parameters of the current data fitting iteration
         global x_vars
         x = copy.deepcopy(x_vars)
         if len(x) == 0:
@@ -7038,6 +7056,11 @@ class progressWidget(QWidget):
                 self.plotWidget.setLabel('bottom', "Thickness (Å)")
 
     def getName(self, p):
+        """
+        Purpose: creates efficient names for parameters
+        :param p: list containing parameter info
+        :return: string
+        """
         name = ''
         n = len(p)
         shift = 0
@@ -7109,7 +7132,19 @@ class progressWidget(QWidget):
 
     def startSaving(self, sample, data_dict, scans, backS, scaleF, parameters, sBounds, sWeights,
                     objective, shape_weight):
-
+        """
+        Purpose: Used to intialize data fitting updating
+        :param sample: slab class
+        :param data_dict: data dictionary
+        :param scans: scans to fit
+        :param backS: background shift
+        :param scaleF: scaling factor
+        :param parameters: parameters
+        :param sBounds: scan boundaries
+        :param sWeights: scan weights
+        :param objective: objective function to use
+        :param shape_weight: total variation weight
+        """
         self.sample = sample
         self.scans = scans
         self.data = data_dict
@@ -7149,6 +7184,9 @@ class progressWidget(QWidget):
             self.par.append(p_name)
 
     def _setObj(self):
+        """
+        Purpose: plot the total cost function
+        """
         self.objButton.setStyleSheet('background: blue; color: white')
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: lightGrey')
@@ -7161,6 +7199,9 @@ class progressWidget(QWidget):
         # change plot
 
     def _setCost(self):
+        """
+        Purpose: plot the norm
+        """
         self.objButton.setStyleSheet('background: lightGrey')
         self.costButton.setStyleSheet('background: blue; color: white')
         self.varButton.setStyleSheet('background: lightGrey')
@@ -7173,6 +7214,9 @@ class progressWidget(QWidget):
         # change plot
 
     def _setVar(self):
+        """
+        Purpose: plot the total variation penalty
+        """
         self.objButton.setStyleSheet('background: lightGrey')
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: blue; color: white')
@@ -7183,6 +7227,9 @@ class progressWidget(QWidget):
         self.plotProgress()
 
     def _setDensityProfile(self):
+        """
+        Purpose: plot the density profile of the current data fitting iteration
+        """
         self.objButton.setStyleSheet('background: lightGrey')
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: lightGrey')
@@ -7194,12 +7241,21 @@ class progressWidget(QWidget):
         self.plotProgress()
 
     def stop(self):
+        """
+        Purpose: Stop the data fitting update process
+        """
         self.keep_going = False
 
     def start(self):
+        """
+        Purpose: start the data fitting update process
+        """
         self.keep_going = True
 
     def update_optimization(self):
+        """
+        Purpose: Data fitting update process
+        """
         self.keep_going = True
         idx = 0
         while self.keep_going:
@@ -7217,6 +7273,9 @@ class progressWidget(QWidget):
         return
 
     def _setPar(self):
+        """
+        Purpose: plot the parameter evolution as a function of iteration
+        """
         self.objButton.setStyleSheet('background: lightGrey')
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: lightGrey')
@@ -7226,7 +7285,7 @@ class progressWidget(QWidget):
         self.whichPlot = [False, False, False, True, False]
 
         self.plotProgress()
-        # change plot
+
 
 
 class showFormFactors(QDialog):
