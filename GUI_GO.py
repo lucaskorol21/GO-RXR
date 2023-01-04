@@ -7560,16 +7560,18 @@ class showFormFactors(QDialog):
 
 
 class scriptWidget(QDialog):
+    """
+    Purpose: Initialize script window to allow user to perform special operations
+    """
     def __init__(self):
-        # need to make serious changes to the script work space
-        # need to talk about how we will implement the script
         super().__init__()
 
         cwd = os.getcwd()
-        self.fname = cwd + '/default_script.txt'
+        self.fname = cwd + '/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
 
+        # open and save the script buttons
         pagelayout = QHBoxLayout()
         openButton = QPushButton('Open Script')
         openButton.setFixedWidth(80)
@@ -7584,6 +7586,7 @@ class scriptWidget(QDialog):
         buttonLayout.addWidget(saveButton)
         buttonLayout.addStretch(1)
 
+        # creating the script workspace
         vbox = QVBoxLayout()
         text = 'default_script.txt'
         self.title = QLabel(text)
@@ -7591,7 +7594,7 @@ class scriptWidget(QDialog):
         self.title.setAlignment(Qt.AlignCenter)
         vbox.addWidget(self.title)
 
-        self.scrollable_text_area = QTextEdit()
+        self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
 
         with open(self.fname) as f:
             file_contents = f.read()
@@ -7607,6 +7610,9 @@ class scriptWidget(QDialog):
         self.setLayout(pagelayout)
 
     def open_new_file(self):
+        """
+        Purpose: Open a new script file
+        """
         self.fname, filter_type = QFileDialog.getOpenFileName(self, "Open new file", "", "All files (*)")
         if self.fname.endswith('.txt'):
             with open(self.fname, "r") as f:
@@ -7620,6 +7626,9 @@ class scriptWidget(QDialog):
             messageBox.exec()
 
     def save_file(self):
+        """
+        Purpose: save current script
+        """
         text = self.scrollable_text_area.toPlainText()
         with open(self.fname, 'w') as f:
             f.write(text)
