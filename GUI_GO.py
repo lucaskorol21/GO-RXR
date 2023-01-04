@@ -7289,11 +7289,14 @@ class progressWidget(QWidget):
 
 
 class showFormFactors(QDialog):
+    """
+    Purpose: plot selected form factors
+    """
     def __init__(self, sample):
         super().__init__()
-        pageLayout = QVBoxLayout()
+        pageLayout = QVBoxLayout()  # page layout
         self.setWindowTitle('Form Factors')
-        self.setGeometry(180, 60, 700, 400)
+        self.setGeometry(180, 60, 700, 400)  # window geometry
 
         self.selectedff = []
         self.selectedffm = []
@@ -7301,6 +7304,7 @@ class showFormFactors(QDialog):
         self.ff = mm.ff
         self.ffm = mm.ffm
 
+        # buttons to choose structural or magnetic form factors
         buttonLayout = QHBoxLayout()
         self.structButton = QPushButton('Structural')
         self.structButton.setStyleSheet('background: magenta')
@@ -7313,7 +7317,7 @@ class showFormFactors(QDialog):
 
         self.stackLayout = QStackedLayout()
 
-        # structura ---------------------------------------------------------------------------------------------------
+        # structural ---------------------------------------------------------------------------------------------------
         # Show form factor Widget
 
         # Adding the plotting Widget
@@ -7442,14 +7446,18 @@ class showFormFactors(QDialog):
         self.setLayout(pageLayout)
 
     def _plot_ff(self):
-        self.structPlot.clear()
-        n = 0
-        m = len(self.selectedff)
+        """
+        Purpose: plot the structural form factors
+        """
+        self.structPlot.clear()  # clear the plot
+        n = 0  # number of data to plot
+        m = len(self.selectedff)  # number of form factors
         if self.real.checkState() != 0 and self.im.checkState() != 0:
-            n = m * 2
+            n = m * 2  # plot imaginary and real component
         if self.real.checkState() != 0 or self.im.checkState() != 0:
-            n = m
+            n = m  # plot just one of real or imaginary component
 
+        # plot the form factors
         for idx, key in enumerate(self.selectedff):
             re = self.ff[key][:, 1]
             E = self.ff[key][:, 0]
@@ -7466,14 +7474,18 @@ class showFormFactors(QDialog):
         self.structPlot.setLabel('bottom', "Energy, (eV))")
 
     def _plot_ffm(self):
+        """
+        Purpose: plot the magnetic form factors
+        """
         self.magPlot.clear()
-        n = 0
+        n = 0  # number of data to plot
         m = len(self.selectedffm)
         if self.realMag.checkState() != 0 and self.imMag.checkState() != 0:
-            n = m * 2
+            n = m * 2  # plot real and imaginary component
         if self.realMag.checkState() != 0 or self.imMag.checkState() != 0:
-            n = m
+            n = m  # plot either real or imaginary component
 
+        # plot the form factors
         for idx, key in enumerate(self.selectedffm):
             re = self.ffm[key][:, 1]
             E = self.ffm[key][:, 0]
@@ -7489,6 +7501,9 @@ class showFormFactors(QDialog):
         self.magPlot.setLabel('bottom', "Energy, (eV))")
 
     def _selectff(self):
+        """
+        Purpose: user has selected a form factor to plot
+        """
         item = self.structElements.currentText()
         if item not in self.selectedff:
             self.structElementsSelect.addItem(item)
@@ -7496,6 +7511,9 @@ class showFormFactors(QDialog):
         self._plot_ff()
 
     def _selectffm(self):
+        """
+        Purpose: user has selected a magnetic form factor to plot
+        """
         item = self.magElements.currentText()
         if item not in self.selectedffm:
             self.magElementsSelect.addItem(item)
@@ -7503,6 +7521,9 @@ class showFormFactors(QDialog):
         self._plot_ffm()
 
     def _removeff(self):
+        """
+        Purpose: remove structural form fator from being plotted
+        """
         item = self.structElementsSelect.currentText()
         idx = self.structElementsSelect.currentIndex()
         if item != '':
@@ -7511,6 +7532,9 @@ class showFormFactors(QDialog):
             self._plot_ff()
 
     def _removeffm(self):
+        """
+        Purpose: remove magnetic form factor from being plotted
+        """
         item = self.magElementsSelect.currentText()
         idx = self.magElementsSelect.currentIndex()
         if item != '':
@@ -7519,11 +7543,17 @@ class showFormFactors(QDialog):
             self._plot_ffm()
 
     def _structural(self):
+        """
+        Purpose: activate structural form factor workspace
+        """
         self.magButton.setStyleSheet('background: pink')
         self.structButton.setStyleSheet('background: magenta')
         self.stackLayout.setCurrentIndex(0)
 
     def _magnetic(self):
+        """
+        Purpose: activate magnetic form factor workspace
+        """
         self.magButton.setStyleSheet('background: magenta')
         self.structButton.setStyleSheet('background: pink')
         self.stackLayout.setCurrentIndex(1)
