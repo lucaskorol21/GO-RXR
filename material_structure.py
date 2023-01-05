@@ -385,7 +385,8 @@ class slab:
         self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
         self.eShift = dict()
         self.mag_eShift = dict()
-        self.mag_scale =dict()
+        self.ff_scale = dict()  # keep track of the structural scaling factors
+        self.ffm_scale = dict()  # keep track of the magnetic scaling factors
 
 
 
@@ -1170,10 +1171,12 @@ class slab:
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
+            #scale = float(self.ff_scale[self.find_sf[0][e]])
             sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
+            # scale = float(self.ffm_scale[self.find_sf[0][e]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
@@ -1332,10 +1335,12 @@ class slab:
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
+            # scale = float(self.ff_scale[self.find_sf[0][e]])
             sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
+            # scale = float(self.ffm_scale[self.find_sf[0][e]])
             sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)
 
 
@@ -1372,12 +1377,17 @@ class slab:
         return energy, R
 
     def energy_shift(self):
+        """
+        Purpose: Initialize the energy shift and form factor scaling
+        """
         self.density_profile()
         for e in self.find_sf[0].keys():
             self.eShift[self.find_sf[0][e]] = 0
+            self.ff_scale[self.find_sf[0][e]] = 1
 
         for em in self.find_sf[1].keys():
             self.mag_eShift[self.find_sf[1][em]] = 0
+            self.ffm_scale[self.find_sf[1][em]] = 1
 
 
     def showSampleParameters(self):
