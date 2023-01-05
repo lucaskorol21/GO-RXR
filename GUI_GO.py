@@ -464,6 +464,7 @@ class sampleWidget(QWidget):
         self.varData = {ele: [[['', ''], ['', ''], ['', '']] for i in range(len(sample.structure))] for ele in
                         sample.myelements}  # element variation data
         self.eShift = dict()  # keep track of the energy shift
+        self.ffScale = dict()
         self.currentVal = []  # keep track of the fitting parameter values
         self.change_eShift = True  # boolean used to determine if eShift is changed
         self.varTable = QTableWidget()  # element variation table
@@ -559,8 +560,9 @@ class sampleWidget(QWidget):
 
         # initializing energy shift table (include ff scaling later)
         self.energyShiftTable = QTableWidget()
-        self.energyShiftTable.setColumnCount(1)
-        self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
+        self.energyShiftTable.setColumnCount(2)
+        #self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
+        self.energyShiftTable.setVerticalHeaderLabels(['Energy Shift (eV)', 'Scale'])
 
         # variationWidget and magneticWidget initialization
         self.elementVariation = variationWidget(self, self.sample)
@@ -664,9 +666,12 @@ class sampleWidget(QWidget):
         self.energyShiftTable.setColumnCount(len(keys))
         self.energyShiftTable.setRowCount(1)
         self.energyShiftTable.setHorizontalHeaderLabels(keys)
-        for column, key in enumerate(keys):
+        for column, key in enumerate(keys):  # setting energy shift
             item = QTableWidgetItem(str(self.eShift[key]))
             self.energyShiftTable.setItem(0, column, item)
+        for column, key in enumerate(keys):  # setting scaling factor
+            item = QTableWidgetItem(str(self.ffScale[key]))
+            self.energyShiftTable.setItem(1, column, item)
 
         # set the parameter fit colors
         copy_of_list = copy.deepcopy(self.parameterFit)
@@ -708,19 +713,34 @@ class sampleWidget(QWidget):
         Purpose: Change the energy shift values when signaled
         """
         column = self.energyShiftTable.currentColumn()  # retrieves current column
+        row = self.energyShiftTable.currentRow()  # retrieves current row
         key = self.energyShiftTable.horizontalHeaderItem(column).text()  # retrieves the key
-        value = self.energyShiftTable.item(0, column).text()  # retrieves the value
-        self.eShift[key] = float(value)  # change the value in memory
+        value = self.energyShiftTable.item(row, column).text()  # retrieves the value
 
-        # make changes to the sample
-        if key[:3] == 'ff-':
-            sf = key[3:]
-            self.sample.eShift[sf] = float(value)
-        elif key[:3] == 'ffm':
-            sf = key[4:]
-            self.sample.mag_eShift[sf] = float(value)
+        if row == 0:  # energy shift case
+            self.eShift[key] = float(value)  # change the value in memory
+        elif row == 1: # ff scaling
+            self.ffScale[key] = float(value)
+
+        if row == 0:
+            # make changes to the sample
+            if key[:3] == 'ff-':
+                sf = key[3:]
+                self.sample.eShift[sf] = float(value)
+            elif key[:3] == 'ffm':
+                sf = key[4:]
+                self.sample.mag_eShift[sf] = float(value)
+        elif row == 1:
+            # make changes to the sample
+            if key[:3] == 'ff-':
+                sf = key[3:]
+                self.sample.ff_scale[sf] = float(value)
+            elif key[:3] == 'ffm':
+                sf = key[4:]
+                self.sample.ffm_scale[sf] = float(value)
 
         # update changes to the fitting parameter values and their boundaries
+        # ff scaling is not included in fitting
         for idx, fit in enumerate(self.parameterFit):
             if key[:3] == 'ff-':
                 if fit == ['SCATTERING FACTOR', 'STRUCTURAL', key[3:]]:
@@ -763,10 +783,12 @@ class sampleWidget(QWidget):
                 prev_dict_name = 'ffm-' + prev_value
                 if prev_value != '':  # removes the previous form factor from the energy shift
                     del self.eShift[prev_dict_name]
+                    del self.ffScale[prev_dict_name]
 
                 if value != '':  # sets eShift to 0
                     dict_name = 'ffm-' + value
                     self.eShift[dict_name] = 0
+                    self.ffScale[dict_name] = 1
 
                 if prev_value != value:  # case where the name of the form factor has changed from previous value
                     # replaces form factor in every layer which the old form factors appeared
@@ -887,6 +909,7 @@ class sampleWidget(QWidget):
                             ff_name = 'ff-'+ff_key
                             if ff_name in list(self.eShift.keys()):
                                 del self.eShift[ff_name]
+                                del self.ffScale[ff_name]
 
                     # delete the form factor in eShift
                     for ffm_key in my_ffm:
@@ -894,6 +917,7 @@ class sampleWidget(QWidget):
                             ffm_name = 'ffm-' + ffm_key
                             if ffm_name in list(self.eShift.keys()):
                                 del self.eShift[ffm_name]
+                                del self.ffScale[ffm_name]
 
 
 
@@ -911,10 +935,12 @@ class sampleWidget(QWidget):
                     prev_dict_name = 'ff-' + prev_value
                     if prev_value != '':
                         del self.eShift[prev_dict_name]
+                        del self.ffScale[prev_dict_name]
 
                     # does not include '' as a possible eShift value
                     if value != '':
                         dict_name = 'ff-' + value
+                        self.eShift[dict_name] = 0
                         self.eShift[dict_name] = 0
 
                     for idx, my_layer in enumerate(self.varData[element]):
@@ -967,8 +993,10 @@ class sampleWidget(QWidget):
                     # changing scattering factor info
                     prev_dict_name = 'ff-' + prev_value
                     del self.eShift[prev_dict_name]
+                    del self.ffScale[prev_dict_name]
                     dict_name = 'ff-' + value
                     self.eShift[dict_name] = 0
+                    self.ffScale[dict_name] = 1
                     for i in range(len(self.structTableInfo)):
                         for j in range(len(self.structTableInfo[i])):
                             if self.structTableInfo[i][j][0] == name:
@@ -1079,6 +1107,7 @@ class sampleWidget(QWidget):
         Purpose: Handler used in setting fitting state of energy shift
         """
         column = self.energyShiftTable.currentColumn()  # which column is to be fit
+        row = self.energyShiftTable.currentRow()
         copy_fit_list = copy.deepcopy(self.parameterFit)
         name = self.energyShiftTable.horizontalHeaderItem(column).text()  # name of the header in the selected column
         val = self.energyShiftTable.currentItem().text()  # value of the current energy shift
@@ -1089,6 +1118,10 @@ class sampleWidget(QWidget):
 
         _fit = menu.addAction('Fit')
         _remove_fit = menu.addAction('Remove Fit')
+
+        if row == 1:  # disable fitting capability for the form factor scaling (no longer implemented)
+            _fit.setDisabled(True)
+            _remove_fit.setDisabled(True)
 
         action = menu.exec_(QtGui.QCursor.pos())  # initialize action to be taken
 
@@ -1695,6 +1728,7 @@ class sampleWidget(QWidget):
                             name = 'ff-' + scattering_factor
                             if name not in list(self.eShift.keys()):
                                 self.eShift[name] = 0
+                                self.ffScale[name] = 0
 
                         tempArray[row, col] = str(scattering_factor)
                     elif col == 6:  # stoichiometry
@@ -1976,6 +2010,7 @@ class sampleWidget(QWidget):
                 self.sample.eShift[userinput[i][5]] = 0
                 name = 'ff-' + userinput[i][5]
                 self.eShift[name] = 0
+                self.ffScale[name]= 1
             my_elements.append(userinput[i][0])
             if userinput[i][0] not in list(self.varData.keys()):
                 self.varData[userinput[i][0]] = [[['', ''], ['', ''], ['', '']] for j in range(num_layers)]
@@ -2117,12 +2152,14 @@ class sampleWidget(QWidget):
                     to_remove = key.strip('ff-')
                     if to_remove in ff_to_remove:
                         del self.eShift[key]
+                        del self.ffScale[key]
 
 
                 elif key.startswith('ffm-'):
                     to_remove = key.strip('ffm-')
                     if to_remove in ffm_to_remove:
                         del self.eShift[key]
+                        del self.ffScale[key]
 
     def _copyLayer(self):
         """
@@ -2289,11 +2326,19 @@ class sampleWidget(QWidget):
             sample.addlayer(idx, formula, thickness, density=density, roughness=roughness,
                             linked_roughness=linked_roughness, sf=scat_fact)
 
+        # setting the energy shift value
         for key, value in self.eShift.items():
             if str(key).startswith('ff-'):
                 sample.eShift[str(key)[3:]] = value
             elif str(key).startswith('ffm-'):
                 sample.mag_eShift[str(key)[4:]] = value
+
+        # setting the form factor scaling values
+        for key, value in self.ffScale.items():
+            if str(key).startswith('ff-'):
+                sample.ff_scale[str(key)[3:]] = value
+            elif str(key).startswith('ffm-'):
+                sample.ffm_scale[str(key)[4:]] = value
 
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
@@ -2371,9 +2416,13 @@ class sampleWidget(QWidget):
             if e.startswith('ff-'):
                 key = e.strip('ff-')
                 sample.eShift[key] = self.eShift[e]
+                sample.ff_scale[key] = self.ffScale[e]
             elif e.startswith('ffm-'):
                 key = e.strip('ffm-')
                 sample.mag_eShift[key] = self.eShift[e]
+                sample.ffm_scale[key] = self.ffScale[e]
+
+
 
         return sample
 
@@ -2416,6 +2465,7 @@ class sampleWidget(QWidget):
                             name = 'ffm-' + scat
                             if name not in list(self.eShift.keys()):
                                 self.eShift[name] = 0
+                                self.ffScale[name] = 1
 
                     self.magData[ele][j] = [[ele], mag_density, mag_sf]
 
@@ -2837,12 +2887,14 @@ class reflectivityWidget(QWidget):
         for e in self.sample.find_sf[0].keys():
             name = 'ff-' + self.sample.find_sf[0][e]
             dE = float(self.sWidget.eShift[name])
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)
+            scale = float(self.sWidget.ffScale[name])
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
         # Magnetic Scattering Factor
         for em in self.sample.find_sf[1].keys():
             name = 'ffm-' + self.sample.find_sf[1][em]
             dE = float(self.sWidget.eShift[name])
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)
+            scale = float(self.sWidget.ffScale[name])
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
 
         delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
 
@@ -2878,12 +2930,14 @@ class reflectivityWidget(QWidget):
         for e in self.sample.find_sf[0].keys():
             name = 'ff-' + self.sample.find_sf[0][e]
             dE = float(self.sWidget.eShift[name])
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)
+            scale = float(self.sWidget.ffScale[name])
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
         # Magnetic Scattering Factor
         for em in self.sample.find_sf[1].keys():
             name = 'ffm-' + self.sample.find_sf[1][em]
             dE = float(self.sWidget.eShift[name])
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)
+            scale = float(self.sWidget.ffScale[name])
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
 
         delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)
 
@@ -3267,12 +3321,14 @@ class reflectivityWidget(QWidget):
             for e in self.sample.find_sf[0].keys():
                 name = 'ff-' + self.sample.find_sf[0][e]
                 dE = float(self.sWidget.eShift[name])
-                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)
+                scale = float(self.sWidget.ffScale[name])
+                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
             # Magnetic Scattering Factor
             for em in self.sample.find_sf[1].keys():
                 name = 'ffm-' + self.sample.find_sf[1][em]
                 dE = float(self.sWidget.eShift[name])
-                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)
+                scale = float(self.sWidget.ffScale[name])
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
 
             delta, beta = ms.index_of_refraction(density, sf,
                                                  E)  # calculates dielectric constant for structural component
@@ -6066,6 +6122,7 @@ class ReflectometryApp(QMainWindow):
             self._sampleWidget._setVarMagFromSample(sample)
 
             self._sampleWidget.eShift = dict()
+            self._sampleWidget.ffScale = dict()
 
             # now it's time to load the other information
             self._reflectivityWidget.selectedScans.clear()
@@ -6080,10 +6137,12 @@ class ReflectometryApp(QMainWindow):
             for key in list(sample.eShift.keys()):
                 name = 'ff-' + key
                 self._sampleWidget.eShift[name] = sample.eShift[key]
+                self._sampleWidget.ffScale[name] = sample.ff_scale[key]
 
             for key in list(sample.mag_eShift.keys()):
                 name = 'ffm-' + key
                 self._sampleWidget.eShift[name] = sample.mag_eShift[key]
+                self._sampleWidget.ffScale[name] = sample.ffm_scale[key]
 
             self._sampleWidget.setTableEShift()
 
@@ -6163,6 +6222,7 @@ class ReflectometryApp(QMainWindow):
                 # loading in the background shift and scaling factor
                 self._reflectivityWidget.bs = dict()
                 self._reflectivityWidget.sf = dict()
+
                 for scan_name in fitParams[4]:
                     self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
                     self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
@@ -6184,14 +6244,16 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.whichScan.blockSignals(False)
 
                 self._sampleWidget.eShift = dict()  # make sure we clear the eshift
+                self._sampleWidget.ffScale = dict()
                 for key in list(self.sample.eShift.keys()):
                     name = 'ff-' + key
                     self._sampleWidget.eShift[name] = self.sample.eShift[key]
+                    self._sampleWidget.ffScale[name] = self.sample.ff_scale[key]
 
                 for key in list(self.sample.mag_eShift.keys()):
                     name = 'ffm-' + key
-
                     self._sampleWidget.eShift[name] = self.sample.mag_eShift[key]
+                    self._sampleWidget.ffScale[name] = self.sample.ffm_scale[key]
 
                 self._sampleWidget.setTableEShift()
 
@@ -6224,6 +6286,7 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.selectedScans.blockSignals(False)
 
                 self._reflectivityWidget.bounds = fitParams[5]
+                #self._reflectivityWidget.bounds = [[[0.01125,0.55253]],[[0.01125,0.7]]]
                 self._reflectivityWidget.weights = fitParams[6]
 
                 # self._reflectivityWidget.setTable()
@@ -6412,7 +6475,9 @@ class ReflectometryApp(QMainWindow):
                 file.write("magelements = %s \n" % str(sample.mag_elements))
                 file.write("layermagnetized = %s \n" % sample.layer_magnetized)
                 file.write("energyShift = %s \n" % sample.eShift)
-                file.write("magEnergyShift = %s \n\n" % sample.mag_eShift)
+                file.write("magEnergyShift = %s \n" % sample.mag_eShift)
+                file.write("ffScale = %s \n" % sample.ff_scale)
+                file.write("ffmScale = %s \n\n" % sample.ffm_scale)
 
                 # writing the layer and element information
                 num_lay = 0
