@@ -1171,13 +1171,13 @@ class slab:
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
-            #scale = float(self.ff_scale[self.find_sf[0][e]])
-            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)
+            scale = float(self.ff_scale[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            # scale = float(self.ffm_scale[self.find_sf[0][e]])
-            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)
+            scale = float(self.ffm_scale[self.find_sf[0][e]])
+            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
@@ -1335,13 +1335,13 @@ class slab:
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
             dE = float(self.eShift[self.find_sf[0][e]])
-            # scale = float(self.ff_scale[self.find_sf[0][e]])
-            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)
+            scale = float(self.ff_scale[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            # scale = float(self.ffm_scale[self.find_sf[0][e]])
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)
+            scale = float(self.ffm_scale[self.find_sf[0][e]])
+            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
 
 
         d_len = len(thickness)
