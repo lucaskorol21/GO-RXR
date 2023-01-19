@@ -1176,7 +1176,7 @@ class slab:
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[0][e]])
+            scale = float(self.ffm_scale[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
@@ -1297,7 +1297,7 @@ class slab:
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=1e-8,s_min = 0.1, bShift=0, sFactor=1):
+    def energy_scan(self, Theta, energy, precision=5e-9,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1340,7 +1340,7 @@ class slab:
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[0][e]])
+            scale = float(self.ffm_scale[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
 
 
@@ -1381,6 +1381,8 @@ class slab:
         Purpose: Initialize the energy shift and form factor scaling
         """
         self.density_profile()
+        self.eShift = dict()
+        self.mag_eShift = dict()
         for e in self.find_sf[0].keys():
             self.eShift[self.find_sf[0][e]] = 0
             self.ff_scale[self.find_sf[0][e]] = 1

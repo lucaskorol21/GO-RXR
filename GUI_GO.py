@@ -664,8 +664,9 @@ class sampleWidget(QWidget):
 
         # set the energy shift form factor names and their values
         self.energyShiftTable.setColumnCount(len(keys))
-        self.energyShiftTable.setRowCount(1)
+        self.energyShiftTable.setRowCount(2)
         self.energyShiftTable.setHorizontalHeaderLabels(keys)
+        self.energyShiftTable.setVerticalHeaderLabels(['E (eV)','Scale'])
         for column, key in enumerate(keys):  # setting energy shift
             item = QTableWidgetItem(str(self.eShift[key]))
             self.energyShiftTable.setItem(0, column, item)
@@ -730,7 +731,8 @@ class sampleWidget(QWidget):
             elif key[:3] == 'ffm':
                 sf = key[4:]
                 self.sample.mag_eShift[sf] = float(value)
-        elif row == 1:
+
+        elif row == 1:  # need to check if form factor name changed!!
             # make changes to the sample
             if key[:3] == 'ff-':
                 sf = key[3:]
@@ -941,7 +943,7 @@ class sampleWidget(QWidget):
                     if value != '':
                         dict_name = 'ff-' + value
                         self.eShift[dict_name] = 0
-                        self.eShift[dict_name] = 0
+                        self.ffScale[dict_name] = 0
 
                     for idx, my_layer in enumerate(self.varData[element]):
 
@@ -6212,6 +6214,7 @@ class ReflectometryApp(QMainWindow):
 
                 # read in project information
                 self.sample = ds.ReadSampleHDF5(self.fname)
+                self.sample.energy_shift()
                 fitParams = ds.ReadFitHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
                 self._reflectivityWidget.sample = self.sample
@@ -6223,9 +6226,11 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.bs = dict()
                 self._reflectivityWidget.sf = dict()
 
+
                 for scan_name in fitParams[4]:
-                    self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
-                    self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
+                    if scan_name in list(self.data_dict.keys()):
+                        self._reflectivityWidget.sf[scan_name] = str(self.data_dict[scan_name]['Scaling Factor'])
+                        self._reflectivityWidget.bs[scan_name] = str(self.data_dict[scan_name]['Background Shift'])
 
                 self._sampleWidget._setStructFromSample(self.sample)
                 self._sampleWidget._setVarMagFromSample(self.sample)
@@ -6767,9 +6772,12 @@ class progressWidget(QWidget):
         self.denseButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.denseButton)
 
+        my_scans = list(self.rWidget.data_dict.keys())  # all scans
+
         # plot current scan progress
         self.scanBox = QComboBox()
-        self.scanBox.addItems(self.rWidget.fit)
+        #self.scanBox.addItems(self.rWidget.fit)
+        self.scanBox.addItems(my_scans)
         self.scanBox.activated.connect(self.plot_scan)
         self.scanBox.setFixedWidth(200)
         buttonLayout.addWidget(self.scanBox)
@@ -6881,6 +6889,7 @@ class progressWidget(QWidget):
         """
         Purpose: reset the scans in scanBox
         """
+        my_scans = list(self.rWidget.data_dict.keys())
         self.scanBox.blockSignals(True)
         self.scanBox.clear()
         self.scanBox.setFixedWidth(200)

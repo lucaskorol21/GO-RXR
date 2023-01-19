@@ -736,7 +736,7 @@ def newFileHDF5(fname):
     sample = slab(2)
     sample.addlayer(0,'SrTiO3',50)
     sample.addlayer(1,'LaMnO3', 10)
-
+    sample.energy_shift()
     # creating group that will contain the sample information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
@@ -745,8 +745,9 @@ def newFileHDF5(fname):
     grp1.attrs['MagElements'] = sample.mag_elements
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
-    scattering_factor = []
-    mag_scattering_factor = []
+    scattering_factor = sample.eShift
+    mag_scattering_factor = sample.mag_eShift
+
 
     dsLayer = 0
     for my_layer in sample.structure:
@@ -788,44 +789,18 @@ def newFileHDF5(fname):
                 element.attrs['MagDensity'] = my_layer[ele].mag_density
                 element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
 
-                if type(my_layer[ele].mag_scattering_factor) is list or type(
-                        my_layer[ele].mag_scattering_factor) is np.ndarray:
-                    for msf in my_layer[ele].mag_scattering_factor:
-                        if msf not in mag_scattering_factor:
-                            mag_scattering_factor.append([msf, 0])
-                else:
-                    if my_layer[ele].mag_scattering_factor not in mag_scattering_factor:
-                        mag_scattering_factor.append([my_layer[ele].mag_scattering_factor, 0])
+
 
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
-            if type(my_layer[ele].scattering_factor) is list or type(my_layer[ele].scattering_factor) is np.ndarray:
-                for my_sf in my_layer[ele].scattering_factor:
-                    if my_sf not in scattering_factor:
-                        scattering_factor.append([my_sf, 0])
-            else:
-                if my_layer[ele].scattering_factor not in scattering_factor:
-                    scattering_factor.append([my_layer[ele].scattering_factor, 0])
             element.attrs['Position'] = my_layer[ele].position
 
         dsLayer = dsLayer + 1
 
-    # setting the eShift parameters depending on the user input
-    if len(list(sample.eShift.keys())) == 0:
-        grp1.attrs['FormFactors'] = str(scattering_factor)  # scattering factors
-    else:
-        temp = []
-        for key in list(sample.eShift.keys()):
-            temp.append([key, sample.eShift[key]])
-        grp1.attrs['FormFactors'] = str(temp)
+    grp1.attrs['FormFactors'] = str(scattering_factor)
+    grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)
 
-    # setting the mag eShift depending on the user input
-    if len(list(sample.mag_eShift.keys())) == 0:
-        grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)  # magnetic scattering factors
-    else:
-        temp = []
-        for key in list(sample.mag_eShift.keys()):
-            temp.append([key, sample.mag_eShift[key]])
-        grp1.attrs['MagFormFactors'] = str(temp)
+    grp1.attrs['ffScale'] = str(sample.ff_scale)
+    grp1.attrs['ffmScale'] = str(sample.ffm_scale)
 
 
     # initializes the experimental and simulation data (needs to be loaded later)
@@ -1125,9 +1100,6 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
 
-    scattering_factor = []
-    mag_scattering_factor = []
-
     dsLayer = 0
     for my_layer in sample.structure:
 
@@ -1168,23 +1140,9 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 element.attrs['MagDensity'] = my_layer[ele].mag_density
                 element.attrs['MagScatteringFactor'] = my_layer[ele].mag_scattering_factor
 
-                if type(my_layer[ele].mag_scattering_factor) is list or type(my_layer[ele].mag_scattering_factor) is np.ndarray:
-                    for msf in my_layer[ele].mag_scattering_factor:
-                        if msf not in mag_scattering_factor:
-                            mag_scattering_factor.append([msf, 0])
-                else:
-                    if my_layer[ele].mag_scattering_factor not in mag_scattering_factor:
-                        mag_scattering_factor.append([my_layer[ele].mag_scattering_factor, 0])
 
 
             element.attrs['ScatteringFactor'] = my_layer[ele].scattering_factor
-            if type(my_layer[ele].scattering_factor) is list or type(my_layer[ele].scattering_factor) is np.ndarray:
-                for my_sf in my_layer[ele].scattering_factor:
-                    if my_sf not in scattering_factor:
-                        scattering_factor.append([my_sf, 0])
-            else:
-                if my_layer[ele].scattering_factor not in scattering_factor:
-                    scattering_factor.append([my_layer[ele].scattering_factor, 0])
             element.attrs['Position'] = my_layer[ele].position
 
         dsLayer = dsLayer + 1
@@ -1192,6 +1150,8 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
     grp1.attrs['FormFactors'] = str(sample.eShift)
     grp1.attrs['MagFormFactors'] = str(sample.mag_eShift)
 
+    grp1.attrs['ffScale'] = str(sample.ff_scale)
+    grp1.attrs['ffmScale'] = str(sample.ffm_scale)
 
     # Loading in the experimental data and simulated data
     h = 4.135667696e-15  # Plank's constant eV*s
@@ -1605,6 +1565,8 @@ def ReadSampleHDF5(fname):
     sample.layer_magnetized = S.attrs['LayerMagnetized']
     sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
     sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
+    sample.ff_scale = ast.literal_eval(S.attrs['ffScale'])
+    sample.ffm_scale = ast.literal_eval(S.attrs['ffmScale'])
     sample.find_sf = ast.literal_eval(S.attrs['findFF'])
 
 
@@ -1767,14 +1729,11 @@ def WriteSampleHDF5(fname, sample):
     scattering_factor = sample.eShift
     mag_scattering_factor = sample.mag_eShift
 
-    #for key in list(sample.eShift.keys()):
-    #    scattering_factor.append([key,sample.eShift[key]])
-
-    #for key in list(sample.mag_eShift.keys()):
-    #    mag_scattering_factor.append([key,sample.mag_eShift[key]])
-
     grp1.attrs['FormFactors'] = str(scattering_factor)
     grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)
+
+    grp1.attrs['ffScale'] = str(sample.ff_scale)
+    grp1.attrs['ffmScale'] = str(sample.ffm_scale)
 
     # Sets the information for each layer
     dsLayer = 0
@@ -1846,17 +1805,14 @@ def WriteHDF5Simulation(sample):
     grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
-    scattering_factor = []
-    mag_scattering_factor = sample.mag_eshift
+    scattering_factor = sample.eShift
+    mag_scattering_factor = sample.mag_eShift
 
-    for key in list(sample.eShift.keys()):
-        scattering_factor.append([key, sample.eShift[key]])
+    grp1.attrs['FormFactors'] = str(scattering_factor)
+    grp1.attrs['MagFormFactors'] = str(mag_scattering_factor)
 
-    for key in list(sample.mag_eShift.keys()):
-        mag_scattering_factor.append([key, sample.mag_eShift[key]])
-
-    grp1.attrs['FormFactors'] = np.array(scattering_factor)
-    grp1.attrs['MagFormFactors'] = np.array(mag_scattering_factor)
+    grp1.attrs['ffScale'] = str(sample.ff_scale)
+    grp1.attrs['ffmScale'] = str(sample.ffm_scale)
 
     # Sets the information for each layer
     dsLayer = 0
