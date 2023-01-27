@@ -3426,11 +3426,11 @@ class reflectivityWidget(QWidget):
         idx = self.selectedScans.currentIndex()  # index of scan
 
         name = self.selectedScans.currentText()  # name of scan
-        self.scalingFactor.setText(self.sf[name])  # setting the appropriate scaling factor
 
-        self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
         scan = self.fit[idx]
         if scan != '':
+            self.scalingFactor.setText(self.sf[name])  # setting the appropriate scaling factor
+            self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
 
             E = self.data_dict[scan]['Energy']  # energy of scan
             mykeys = list(self.data_dict[scan].keys())
@@ -6278,21 +6278,27 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.setTableFit()
 
                 # for now let's clear all the fitting parameters
-                self._reflectivityWidget.sfBsFitParams = fitParams[0]
-                self._reflectivityWidget.currentVal = list(fitParams[1])
+                #self._reflectivityWidget.sfBsFitParams = fitParams[0]
+                self._reflectivityWidget.sfBsFitParams = []
+                #self._reflectivityWidget.currentVal = list(fitParams[1])
+                self._reflectivityWidget.currentVal = []
                 self._reflectivityWidget.rom = [True, False, False]
 
                 # checks to make sure that saved scans are still in the dataset
-                selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
+                #selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
+                selectedScans = []
                 self._reflectivityWidget.fit = selectedScans
+                #self._reflectivityWidget.fit = []
 
                 self._reflectivityWidget.selectedScans.blockSignals(True)
                 self._reflectivityWidget.selectedScans.addItems(selectedScans)
                 self._reflectivityWidget.selectedScans.blockSignals(False)
 
-                self._reflectivityWidget.bounds = fitParams[5]
+                #self._reflectivityWidget.bounds = fitParams[5]
+                self._reflectivityWidget.bounds = []
                 #self._reflectivityWidget.bounds = [[[0.01125,0.55253]],[[0.01125,0.7]]]
-                self._reflectivityWidget.weights = fitParams[6]
+                #self._reflectivityWidget.weights = fitParams[6]
+                self._reflectivityWidget.weights = []
 
                 # self._reflectivityWidget.setTable()
                 self._sampleWidget.parameterFit = fitParams[2]
@@ -6438,6 +6444,14 @@ class ReflectometryApp(QMainWindow):
 
             self._reflectivityWidget.data = self.data
             self._reflectivityWidget.data_dict = self.data_dict
+            self._reflectivityWidget.bounds = []
+            self._reflectivityWidget.weights = []
+            self._reflectivityWidget.fit = []
+
+
+            # loading in the background shift and scaling factor
+            self._reflectivityWidget.bs = dict()
+            self._reflectivityWidget.sf = dict()
 
             # make sure we are not plotting when we do not need to
             self._reflectivityWidget.whichScan.blockSignals(True)

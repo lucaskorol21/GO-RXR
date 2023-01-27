@@ -16,14 +16,86 @@ def noise_removal(qz, R, s=1, k=3):
     tck = interpolate.splrep(qz,R, s=s, k=k)
     return interpolate.splev(qz, tck, der=0)
 
+def hamming(v, No, tua):
+    omegaC = 2*np.pi*v/No # cutoff frequency
+    k = np.arange(-tua,tua,1)
+    sink = np.sinc(omegaC*k)*omegaC/np.pi
+    window = 0.54+0.46*np.cos(k/tua)
+    filter = sink*window
 
+    return filter
+
+def Fourier_noise_removal(qz, R):
+    from scipy.interpolate import UnivariateSpline
+    from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
+
+    # convert to log(R)
+    y_old = np.log10(R)
+    y = np.log10(R)
+    x = qz
+    spl = UnivariateSpline(x,y)
+    plt.figure()
+    plt.plot(x,y-spl(x))
+
+    # perform spline subtration
+    spl = UnivariateSpline(x,y)
+    y_sub = spl(x)  # spline for subtraction
+
+    y = y - y_sub  # spline subtraction
+
+    # Fourier
+    N = len(y)  # number of sample points
+    T = np.average(np.diff(x))  # sample spacing
+
+    # I need to make sure that each data point is equally spaced (use some kind of interpolation for this!)
+
+    yf = fft(y)
+    xf = fftfreq(N,T)
+    xf = fftshift(xf)
+    yplot = fftshift(yf)
+    plt.figure()
+    plt.plot(xf, 1.0/N*np.abs(yplot))
+    plt.show()
+
+    filter = np.zeros(len(xf))
+    val = 0.2
+    for idx in range(len(filter)):
+        if xf[idx] > -val and xf[idx] < val:
+            filter[idx] = 1
+
+    yfiltered = yplot*filter
+    plt.figure()
+    plt.plot(xf, 1.0/N*np.abs(yfiltered))
+    plt.show()
+
+    yfiltered = ifftshift(yfiltered)
+
+    ytemp = ifft(yfiltered)
+    print(len(ytemp))
+    plt.figure()
+    plt.plot(x,ytemp)
+    plt.show()
+
+    ynew = ytemp+y_sub
+    plt.figure()
+    plt.plot(x, y_old)
+    plt.plot(x, ynew)
+    plt.legend(['Data','Filtered'])
+    plt.show()
+
+
+
+    # transform back to original data set
+
+    return x,y
 
 
 
 if __name__ == '__main__':
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_v3.h5"
 
     sample = ds.ReadSampleHDF5(fname)
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     thickness, density, density_magnetic = sample.density_profile()
 
@@ -44,7 +116,7 @@ if __name__ == '__main__':
     plt.show()
 
     electron = {'Sr':2,'Ti':4,'La':3,'Mn2+':2,'Mn3+':3.3,'O':-2}
-    d = 40
+    d = 50
 
     electric_conservation = np.zeros(len(density['Sr']))
     idx = np.argwhere(thickness<d)
@@ -57,6 +129,12 @@ if __name__ == '__main__':
     plt.plot(thickness, electric_conservation)
     plt.xlabel('Thickness (Angstrom)')
     plt.ylabel('# electrons per oxygen atom')
-    plt.show()
+    #plt.show()
 
 
+    name = "29_500.71_S"
+    qz = data_dict[name]['Data'][0][4:]
+    theta = data_dict[name]['Data'][1][4:]
+    R = data_dict[name]['Data'][2][4:]
+
+    x,y = Fourier_noise_removal(theta,R)
