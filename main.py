@@ -95,10 +95,12 @@ if __name__ == '__main__':
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_v3.h5"
 
     sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     thickness, density, density_magnetic = sample.density_profile()
-
+    print(density_magnetic)
+    sample.plot_density_profile()
     density['Mn'] = density['Mn2+'] + density['Mn3+']
     density['Sr/La'] = density['La'] + density['Sr']
 
@@ -132,9 +134,10 @@ if __name__ == '__main__':
     #plt.show()
 
 
-    name = "29_500.71_S"
-    qz = data_dict[name]['Data'][0][4:]
-    theta = data_dict[name]['Data'][1][4:]
-    R = data_dict[name]['Data'][2][4:]
+    name = "33_834.59_S"
+    qz = data_dict[name]['Data'][0]
+    theta = data_dict[name]['Data'][1]
+    R = data_dict[name]['Data'][2]
 
-    x,y = Fourier_noise_removal(theta,R)
+    E = data_dict[name]['Energy']
+
