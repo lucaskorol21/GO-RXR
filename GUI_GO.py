@@ -2488,6 +2488,7 @@ class reflectivityWidget(QWidget):
 
         self.rom = [True, False, False]  # [reflectivity, optics magneto-optics]
         self.romSim = [True, False, False]  # same thing but for simulation
+        self.isFit = True
 
         self.scanType = True  # if true do reflectivity scan
 
@@ -2613,7 +2614,7 @@ class reflectivityWidget(QWidget):
 
         self.selectedScans.activated.connect(self.changeColorFit)
         self.whichScan.activated.connect(self.changeColorScan)
-        #self.selectedScans.activated.connect(self.readTable)
+        #self.selectedScans.activated.connect(self.readTable)  # creating issues
         self.selectedScans.activated.connect(self.myPlotting)
         self.whichScan.activated.connect(self.myPlotting)
         self.selectedScans.activated.connect(self.setTable)
@@ -3236,6 +3237,7 @@ class reflectivityWidget(QWidget):
         Purpose: determine to plot reflectometry, optical profile, or magnetic optical profile for simulation
         :return:
         """
+        self.isFit = False
         self.rButton.setStyleSheet('background: grey')
         self.opButton.setStyleSheet('background: grey')
         self.opmButton.setStyleSheet('background: grey')
@@ -3258,6 +3260,7 @@ class reflectivityWidget(QWidget):
         self.rButtonSim.setStyleSheet('background: grey')
         self.opButtonSim.setStyleSheet('background: grey')
         self.opmButtonSim.setStyleSheet('background: grey')
+        self.isFit = True
 
         # self.sample = self.sWidget.sample
         idx = self.rom.index(True)
@@ -3400,8 +3403,10 @@ class reflectivityWidget(QWidget):
                 self.axis_state = False
 
         # plot reflectometry
-        self.myPlotting()
-        self.mySimPlotting()
+        if self.isFit:
+            self.myPlotting()
+        else:
+            self.mySimPlotting()
 
     def changeColorScan(self):
         self.selectedScans.setStyleSheet('background: white; selection-background-color: grey')
