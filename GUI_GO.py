@@ -2525,8 +2525,7 @@ class reflectivityWidget(QWidget):
             self.whichScan.addItem(scan[2])
 
         self.whichScan.setCurrentIndex(0)
-        self.whichScan.activated.connect(self.myPlotting)
-        #self.whichScan.currentIndexChanged.connect(self.myPlotting)  # changed
+
 
 
         whichScanLayout = QHBoxLayout()
@@ -3629,7 +3628,7 @@ class reflectivityWidget(QWidget):
         """
         Purpose: plot scans from whichScan
         """
-
+        self.spectrumWidget.clear()
         if len(self.data) != 0:
             # self.sample = self.sWidget.sample
 
@@ -3700,7 +3699,7 @@ class reflectivityWidget(QWidget):
                     self.spectrumWidget.plot(E, Rsim, pen=pg.mkPen((2, 3), width=2), name='Simulation')
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
                     self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
-
+        self.spectrumWidget.enableAutoRange()  # resets the range such that we view everything
     def plot_selected_scans(self):
         """
         Purpose: Plot scan from selectedScans
