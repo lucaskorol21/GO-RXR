@@ -1562,6 +1562,9 @@ def ReadSampleHDF5(fname):
         sample.mag_elements = dict()
     else:
         sample.mag_elements = ast.literal_eval(S.attrs['MagElements'])
+
+    sample.mag_elements = dict()
+
     sample.layer_magnetized = S.attrs['LayerMagnetized']
     sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
     sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
@@ -1590,6 +1593,12 @@ def ReadSampleHDF5(fname):
             sample.structure[lay_num][ele_key].gamma = element.attrs['Gamma']
             sample.structure[lay_num][ele_key].phi = element.attrs['Phi']
             if element.attrs['Magnetic']:
+
+                if ele_key not in list(sample.mag_elements.keys()):
+                    if ele_key not in list(sample.poly_elements):
+                        sample.mag_elements[ele_key] = ele_key
+                    else:
+                        sample.mag_elements[ele_key] = element.attrs['Polymorph']
                 sample.structure[lay_num][ele_key].mag_density = element.attrs['MagDensity']
                 sample.structure[lay_num][ele_key].mag_scattering_factor = element.attrs['MagScatteringFactor']
 
@@ -1600,7 +1609,7 @@ def ReadSampleHDF5(fname):
                 sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
             sample.structure[lay_num][ele_key].position = element.attrs['Position']
 
-    f.close()
+
     return sample
 
 def ReadDataHDF5(fname):

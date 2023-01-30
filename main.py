@@ -134,10 +134,35 @@ if __name__ == '__main__':
     #plt.show()
 
 
-    name = "33_834.59_S"
-    qz = data_dict[name]['Data'][0]
-    theta = data_dict[name]['Data'][1]
-    R = data_dict[name]['Data'][2]
+    f1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/150.txt"
+    f2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/300.txt"
 
-    E = data_dict[name]['Energy']
+    sample_150 = np.loadtxt(f1)
+    sample_300 = np.loadtxt(f2)
 
+    plt.figure()
+    plt.suptitle('Magnetic Profile for E2 Sample at 150 and 300K')
+    plt.plot(sample_150[:,0], sample_150[:,1]*(-1))
+    plt.plot(sample_300[:,0], sample_300[:,1]*(-1))
+    plt.xlabel('Thickness (angstrom)')
+    plt.ylabel('Density')
+    plt.legend(['150K', '300K'])
+    plt.show()
+
+    d1 = -6
+    d2 = 47.6
+    m = len(sample_300[:,1])
+    my_division = np.zeros(m)
+
+    for i in range(m):
+        if sample_150[i,0] > d1 and sample_150[i,0] < d2:
+            my_division[i] = sample_300[i,1]/sample_150[i,1]
+
+    plt.figure()
+    plt.suptitle('Ratio of E2 Sample at 150 and 300K')
+    plt.plot(sample_300[:,0], my_division)
+    plt.xlabel('Thickness (angstroms)')
+    plt.ylabel('300K/150K')
+    plt.show()
+
+    print(sum(sample_300[:,1])/sum(sample_150[:,1]))

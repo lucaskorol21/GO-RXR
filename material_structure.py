@@ -752,6 +752,7 @@ class slab:
                  density - structural density array in mol/cm^3
                  mag_density - magnetic density array in mol/cm^3
         """
+
         next_density = 0  # initialization required for algorithm
         n = len(self.structure)  # number of layers
         thickness = np.array([])  # thickness array
@@ -983,6 +984,7 @@ class slab:
 
             pm=0
             if ele in mag_keys:
+
                 # initialization of magnetization density dictionary
                 layer = 0
                 not_found = True

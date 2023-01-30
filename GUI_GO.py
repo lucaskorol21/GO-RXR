@@ -3700,6 +3700,7 @@ class reflectivityWidget(QWidget):
                     self.spectrumWidget.setLabel('left', "Reflectivity, R")
                     self.spectrumWidget.setLabel('bottom', "Energy, E (eV)")
         self.spectrumWidget.enableAutoRange()  # resets the range such that we view everything
+
     def plot_selected_scans(self):
         """
         Purpose: Plot scan from selectedScans
