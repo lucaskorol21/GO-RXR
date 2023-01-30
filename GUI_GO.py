@@ -5599,8 +5599,9 @@ class dataSmoothingWidget(QWidget):
         self.optionBoxLayout = QVBoxLayout()
         optionBoxLabel = QLabel('Methodology: ')
         optionBoxLabel.setFixedWidth(200)
+
         self.optionBox = QComboBox()
-        self.optionBox.addItems(['Spline'])
+        self.optionBox.addItems(['Spline', 'Fourier Filter'])
         self.optionBox.setFixedWidth(200)
         self.optionBox.currentIndexChanged.connect(self._changeSmooth)
         self.optionBoxLayout.addWidget(optionBoxLabel)
@@ -5634,7 +5635,55 @@ class dataSmoothingWidget(QWidget):
         self.splineLayout.addLayout(splineKLayout)
         self.splineWidget.setLayout(self.splineLayout)
 
+        # ----------------------- Fourier Filter Layout ---------------------------------------------------------------#
+        self.fourierLayout = QVBoxLayout()
+        self.fourierWidget = QWidget()
+
+        # spline subtraction
+        splineLayout = QVBoxLayout()
+        splineLabel = QLabel('Spline Order (1-5): ')
+        splineLabel.setFixedWidth(200)
+        self.splineOrder = QLineEdit('3')
+        self.splineOrder.setFixedWidth(200)
+        splineLayout.addWidget(splineLabel)
+        splineLayout.addWidget(self.splineOrder)
+
+        # Button Layout
+        buttonLayout = QVBoxLayout()
+        self.splineView = QPushButton('View Spline')
+        self.splineView.setFixedWidth(200)
+        self.splineSub = QPushButton("Spline Subtraction")
+        self.splineSub.setFixedWidth(200)
+        buttonLayout.addWidget(self.splineView)
+        buttonLayout.addWidget(self.splineSub)
+
+        # Filter window
+        filterLayout = QVBoxLayout()
+        filterWindowLabel = QLabel('Window: ')
+        filterWindowLabel.setFixedWidth(200)
+        self.filterWindow = QLineEdit('0.25')
+        self.filterWindow.setFixedWidth(200)
+        filterLayout.addWidget(filterWindowLabel)
+        filterLayout.addWidget(self.filterWindow)
+        self.viewFilter = QPushButton('View Filter')
+        self.viewFilter.setFixedWidth(200)
+        filterLayout.addWidget(self.viewFilter)
+
+        # view filtered signal
+        self.viewSignal = QPushButton('View Filtered Signal')
+        self.viewSignal.setFixedWidth(200)
+
+        self.fourierLayout.addLayout(splineLayout)
+        self.fourierLayout.addLayout(buttonLayout)
+        self.fourierLayout.addStretch(0)
+        self.fourierLayout.addLayout(filterLayout)
+        self.fourierLayout.addStretch(0)
+        self.fourierLayout.addWidget(self.viewSignal)
+
+        self.fourierWidget.setLayout(self.fourierLayout)
+
         self.parameterLayout.addWidget(self.splineWidget)
+        self.parameterLayout.addWidget(self.fourierWidget)
 
         optionLayout.addLayout(self.scanBoxLayout)
         optionLayout.addLayout(self.smoothScaleLayout)
