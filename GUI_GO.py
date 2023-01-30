@@ -3520,6 +3520,7 @@ class reflectivityWidget(QWidget):
             if m != 0:
                 my_idx = m-1
                 self.selectedScans.setCurrentIndex(my_idx)
+
     def _removeScanSelection(self):
         """
         Purpose: Remove scan from selection
