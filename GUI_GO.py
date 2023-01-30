@@ -3516,6 +3516,10 @@ class reflectivityWidget(QWidget):
                 self.bs[name] = str(self.data_dict[name]['Background Shift'])
                 self.sf[name] = str(self.data_dict[name]['Scaling Factor'])
 
+            m = len(self.fit)
+            if m != 0:
+                my_idx = m-1
+                self.selectedScans.setCurrentIndex(my_idx)
     def _removeScanSelection(self):
         """
         Purpose: Remove scan from selection
