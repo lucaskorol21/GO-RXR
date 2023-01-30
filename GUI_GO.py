@@ -2353,7 +2353,6 @@ class sampleWidget(QWidget):
 
                 ratio = poly[1]
                 scattering_factor = poly[2]
-
                 if len(names) > 1:
                     if names[0] != '':
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
@@ -2614,11 +2613,12 @@ class reflectivityWidget(QWidget):
         self.selectedScans = QComboBox()
 
         self.selectedScans.activated.connect(self.changeColorFit)
-        self.selectedScans.activated.connect(self.readTable)
         self.whichScan.activated.connect(self.changeColorScan)
+        self.selectedScans.activated.connect(self.readTable)
         self.selectedScans.activated.connect(self.myPlotting)
+        self.whichScan.activated.connect(self.myPlotting)
         self.selectedScans.activated.connect(self.setTable)
-        self.selectedScans.activated.connect(self.changeFitColor)
+        #self.selectedScans.activated.connect(self.changeFitColor)
 
         # adding and removing boundaries
         self.addBoundaryButton = QPushButton('Add Boundary')
@@ -3427,13 +3427,12 @@ class reflectivityWidget(QWidget):
 
         name = self.selectedScans.currentText()  # name of scan
 
-        scan = self.fit[idx]
-        if scan != '':
+        if name != '':
             self.scalingFactor.setText(self.sf[name])  # setting the appropriate scaling factor
             self.backgroundShift.setText(self.bs[name])  # setting the appropriate background shift
 
-            E = self.data_dict[scan]['Energy']  # energy of scan
-            mykeys = list(self.data_dict[scan].keys())
+            E = self.data_dict[name]['Energy']  # energy of scan
+            mykeys = list(self.data_dict[name].keys())
 
             bound = self.bounds[idx]
             weight = self.weights[idx]
@@ -3485,7 +3484,7 @@ class reflectivityWidget(QWidget):
 
     def _scanSelection(self):
         """
-        Purpose: add scan to sscan selection list when signaled
+        Purpose: add scan to scan selection list when signaled
         """
         idx = self.whichScan.currentIndex()  # index of current scan
         name = self.whichScan.currentText()  # name of current scan
