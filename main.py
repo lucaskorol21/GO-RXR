@@ -99,7 +99,7 @@ if __name__ == '__main__':
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     thickness, density, density_magnetic = sample.density_profile()
-    print(density_magnetic)
+
     sample.plot_density_profile()
     density['Mn'] = density['Mn2+'] + density['Mn3+']
     density['Sr/La'] = density['La'] + density['Sr']

@@ -2613,7 +2613,7 @@ class reflectivityWidget(QWidget):
 
         self.selectedScans.activated.connect(self.changeColorFit)
         self.whichScan.activated.connect(self.changeColorScan)
-        self.selectedScans.activated.connect(self.readTable)
+        #self.selectedScans.activated.connect(self.readTable)
         self.selectedScans.activated.connect(self.myPlotting)
         self.whichScan.activated.connect(self.myPlotting)
         self.selectedScans.activated.connect(self.setTable)
@@ -3011,15 +3011,15 @@ class reflectivityWidget(QWidget):
         self.mySimPlotting()
 
     def value_changed(self):
-        if not self.isChangeTable:
-            idx = self.selectedScans.currentIndex()
-            row = self.boundWeightTable.currentRow()
-            column = self.boundWeightTable.currentColumn()
-            item = self.boundWeightTable.currentItem().text()
-            if row == 0 or row == 1:  # upper or lower bounds
-                self.bounds[idx][column][row] = item
-            elif row == 2:  # weights
-                self.weights[idx][column] = item
+
+        idx = self.selectedScans.currentIndex()
+        row = self.boundWeightTable.currentRow()
+        column = self.boundWeightTable.currentColumn()
+        item = self.boundWeightTable.currentItem().text()
+        if row == 0 or row == 1:  # upper or lower bounds
+            self.bounds[idx][column][row] = item
+        elif row == 2:  # weights
+            self.weights[idx][column] = item
 
     def bsChange(self):
         """
@@ -3422,6 +3422,7 @@ class reflectivityWidget(QWidget):
         """
 
         self.isChangeTable = True
+        self.boundWeightTable.blockSignals(True)
         idx = self.selectedScans.currentIndex()  # index of scan
 
         name = self.selectedScans.currentText()  # name of scan
@@ -3480,6 +3481,7 @@ class reflectivityWidget(QWidget):
                         item = QTableWidgetItem(str(weight[j]))
                         self.boundWeightTable.setItem(i, j, item)
         self.isChangeTable = False
+        self.boundWeightTable.blockSignals(False)
 
     def _scanSelection(self):
         """
@@ -3516,9 +3518,11 @@ class reflectivityWidget(QWidget):
                 self.sf[name] = str(self.data_dict[name]['Scaling Factor'])
 
             m = len(self.fit)
+
             if m != 0:
                 my_idx = m-1
                 self.selectedScans.setCurrentIndex(my_idx)
+                self.setTable()
 
     def _removeScanSelection(self):
         """
@@ -3544,6 +3548,9 @@ class reflectivityWidget(QWidget):
             if len(self.fit) != 0:
                 self.setTable()  # makes sure that the table is switched
                 self.myPlotting()
+            else:
+                self.spectrumWidget.clear()
+
 
     def addBoundWeight(self):
         """
