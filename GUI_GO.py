@@ -21,6 +21,9 @@ from scipy import signal
 import h5py
 import multiprocessing as mp
 import pickle
+from scipy.interpolate import interp1d, UnivariateSpline
+from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
+
 
 global stop
 stop = False
@@ -5642,18 +5645,23 @@ class dataSmoothingWidget(QWidget):
         # spline subtraction
         splineLayout = QVBoxLayout()
         splineLabel = QLabel('Spline Order (1-5): ')
+        note = QLabel('*0 for no spline')
         splineLabel.setFixedWidth(200)
+        note.setFixedWidth(200)
         self.splineOrder = QLineEdit('3')
         self.splineOrder.setFixedWidth(200)
         splineLayout.addWidget(splineLabel)
+        splineLayout.addWidget(note)
         splineLayout.addWidget(self.splineOrder)
 
         # Button Layout
         buttonLayout = QVBoxLayout()
         self.splineView = QPushButton('View Spline')
         self.splineView.setFixedWidth(200)
+        self.splineView.clicked.connect(self._plot_spline)
         self.splineSub = QPushButton("Spline Subtraction")
         self.splineSub.setFixedWidth(200)
+        self.splineSub.clicked.connect(self._plot_spline_sub)
         buttonLayout.addWidget(self.splineView)
         buttonLayout.addWidget(self.splineSub)
 
@@ -5667,10 +5675,12 @@ class dataSmoothingWidget(QWidget):
         filterLayout.addWidget(self.filterWindow)
         self.viewFilter = QPushButton('View Filter')
         self.viewFilter.setFixedWidth(200)
+        self.viewFilter.clicked.connect(self._plot_filter)
         filterLayout.addWidget(self.viewFilter)
 
         # view filtered signal
         self.viewSignal = QPushButton('View Filtered Signal')
+        self.viewSignal.clicked.connect(self._plotGraph)
         self.viewSignal.setFixedWidth(200)
 
         self.fourierLayout.addLayout(splineLayout)
@@ -5693,18 +5703,294 @@ class dataSmoothingWidget(QWidget):
         optionLayout.addStretch(1)
         optionLayout.addLayout(self.parameterLayout)
 
+        myWidget = QWidget()
+        myLayout = QHBoxLayout()
         # smoothing dict = {'Name': {'Data':[...],'Smoothing',[...]}}
         # create the plotting area
         self.graph = pg.PlotWidget()
         self.graph.setBackground('w')
         self.graph.addLegend()
+        myLayout.addWidget(self.graph)
+        myWidget.setLayout(myLayout)
 
-        pagelayout.addWidget(self.graph)
+
+
+        pagelayout.addWidget(myWidget)
+        pagelayout.expandingDirections()
+        pagelayout.addStretch(1)
         pagelayout.addLayout(optionLayout)
 
-
-
         self.setLayout(pagelayout)
+
+
+    def _plot_spline(self):
+        scan = self.scanBox.currentText()
+        if scan != '' or scan != None:
+            type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
+            my_scale = self.smoothScale.currentText()
+
+            if type == 'Energy':
+                E = self.data_dict[scan]['Data'][3]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+                Theta = self.data_dict[scan]['Theta']
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                    R= np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText("Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(E, R, k=order)
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(E, R, pen=pg.mkPen((1, 4), width=2), name='Data')
+                    self.graph.plot(E, spl(E), pen=pg.mkPen((2, 4), width=2), name='Spline')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Energy, E (eV)")
+
+            elif type == 'Reflectivity':
+                qz = self.data_dict[scan]['Data'][0]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    R = np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText(
+                        "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(qz, R, k=order)
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(qz, R, pen=pg.mkPen((1, 4), width=2), name='Data')
+                    self.graph.plot(qz, spl(qz), pen=pg.mkPen((2, 4), width=2), name='Spline')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Energy, E (eV)")
+
+    def _plot_spline_sub(self):
+        scan = self.scanBox.currentText()
+        if scan != '' or scan != None:
+            type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
+            my_scale = self.smoothScale.currentText()
+
+            if type == 'Energy':
+                E = self.data_dict[scan]['Data'][3]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+                Theta = self.data_dict[scan]['Theta']
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                    R = np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText(
+                        "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(E, R, k=order)
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(E, R-spl(E), pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Momentum Transfer, qz (1/angstrom)")
+
+            elif type == 'Reflectivity':
+                qz = self.data_dict[scan]['Data'][0]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    R = np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText(
+                        "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(qz, R, k=order)
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(qz, R-spl(qz), pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Momentum Transfer, qz (1/angstrom)")
+
+    def _plot_filter(self):
+        scan = self.scanBox.currentText()
+        if scan != '' or scan != None:
+            type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
+            my_scale = self.smoothScale.currentText()
+
+            if type == 'Energy':
+                E = self.data_dict[scan]['Data'][3]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+                Theta = self.data_dict[scan]['Theta']
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                    R = np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText(
+                        "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(E, R, k=order)
+                    Rspline = R-spl(E)
+
+                    # for equal spacing
+                    Emin = E[0]
+                    Emax = E[-1]
+                    Eint = np.linspace(Emin, Emax, num=len(R)*2)
+                    f = interp1d(E, Rspline)
+
+                    N = len(Eint)
+                    T = np.average(np.diff(Eint))
+
+                    Rf = fft(f(Eint))
+                    Ef = fftfreq(N,T)
+                    Ef = fftshift(Ef)
+                    Rplot = fftshift(Rf)
+
+                    # create filter
+                    filter = np.zeros(N)
+
+                    self.filterWindow.blockSignals(True)
+                    window = abs(float(self.filterWindow.text()))
+                    self.filterWindow.blockSignals(False)
+
+
+                    for idx in range(len(filter)):
+                        if Ef[idx] > -window and Ef[idx] < window:
+                            filter[idx] = 1
+                    max_val = max(1.0/N*np.abs(Rplot))/2
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(Ef, 1.0/N*np.abs(Rplot), pen=pg.mkPen((1, 4), width=2), name='Fourier Transform')
+                    self.graph.plot(Ef, max_val*filter, pen=pg.mkPen((2, 4), width=2), name='Data')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Time, t")
+
+            elif type == 'Reflectivity':
+                qz = self.data_dict[scan]['Data'][0]  # energy array
+                R = self.data_dict[scan]['Data'][2]  # relfectivity array
+
+                if my_scale == 'log(x)':
+                    R = np.log10(R)
+                elif my_scale == 'ln(x)':
+                    R = np.log(R)
+                elif my_scale == 'x':
+                    pass
+                elif my_scale == 'qz^4':
+                    R = np.multiply(R, np.power(qz, 4))
+
+                self.splineOrder.blockSignals(True)
+                order = int(self.splineOrder.text())
+                self.splineOrder.setText(str(order))
+                self.splineOrder.blockSignals(False)
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Order out of range")
+                    messageBox.setText(
+                        "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
+                    messageBox.exec()
+                else:
+                    spl = UnivariateSpline(qz, R, k=order)
+                    Rspline = R-spl(qz)
+                    # for equal spacing
+                    qmin = qz[0]
+                    qmax = qz[-1]
+                    qz_int = np.linspace(qmin, qmax, num=len(R) * 2)
+                    f = interp1d(qz, Rspline)
+
+                    N = len(qz_int)
+                    T = np.average(np.diff(qz_int))
+
+                    Rf = fft(f(qz_int))
+                    qzf = fftfreq(N, T)
+                    qzf = fftshift(qzf)
+                    Rplot = fftshift(Rf)
+
+                    # create filter
+                    filter = np.zeros(N)
+
+                    self.filterWindow.blockSignals(True)
+                    window = abs(float(self.filterWindow.text()))
+                    self.filterWindow.blockSignals(False)
+
+                    for idx in range(len(filter)):
+                        if qzf[idx] > -window and qzf[idx] < window:
+                            filter[idx] = 1
+
+                    max_val = max(1.0 / N * np.abs(Rplot)) / 2
+                    self.graph.clear()
+                    self.graph.plot()
+                    self.graph.plot(qzf, 1.0/N*np.abs(Rplot), pen=pg.mkPen((1, 4), width=2), name='Fourier Transform')
+                    self.graph.plot(qzf, max_val*filter, pen=pg.mkPen((2, 4), width=2), name='Spline')
+                    self.graph.setLabel('left', "f(R)")
+                    self.graph.setLabel('bottom', "Spatial Frequency")
 
     def _plotGraph(self):
         """
@@ -5835,6 +6121,19 @@ class dataSmoothingWidget(QWidget):
                 self.splineK.blockSignals(False)
 
                 self._plotGraph()
+            elif smooth == 'Fourier Filter':
+                order = self.smoothScans[scan][smooth][0]
+                window = self.smoothScans[scan][smooth][1]
+
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
+
+                self.splineOrder.setText(str(order))
+                self.filterWindow.setText(str(window))
+
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
+
 
     def _selectNoiseReduction(self):
         """
@@ -5930,15 +6229,17 @@ class dataSmoothingWidget(QWidget):
 
                     self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)
 
-        self._plotGraph()
+                self._plotGraph()
 
-
+            elif smooth == "Fourier Filter":
+                pass
 
     def _changeSmooth(self):
         # changes the smoothing algorithm that we will use
         idx = self.optionBox.currentIndex()
         self.parameterLayout.setCurrentIndex(idx)
-        self._plotGraph()  # now we are using a completely different smoothing methodology
+        if idx == 0:
+            self._plotGraph()  # now we are using a completely different smoothing methodology
 
 
 
@@ -5957,6 +6258,7 @@ class dataSmoothingWidget(QWidget):
             else:
                 self.smoothScans[name]['Type'] = 'Reflectivity'
             self.smoothScans[name]['Spline'] = [1, 3]  # [s, k]
+            self.smoothScans[name]['Fourier Filter'] = [3,0.25]
 
         # blocks all signals
         self.splineK.blockSignals(True)
