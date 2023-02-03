@@ -5,6 +5,8 @@ import global_optimization as go
 from scipy.signal import *
 import copy
 from scipy import interpolate
+import material_model as mm
+import os
 
 
 from scipy.fft import fft, fftfreq, fftshift, ifft
@@ -24,6 +26,23 @@ def hamming(v, No, tua):
     filter = sink*window
 
     return filter
+
+def fourier_transform(x,y):
+    from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
+
+    # Fourier
+    N = len(y)  # number of sample points
+    T = np.average(np.diff(x))  # sample spacing
+
+    # I need to make sure that each data point is equally spaced (use some kind of interpolation for this!)
+
+    yf = fft(y)
+    xf = fftfreq(N, T)
+    xf = fftshift(xf)
+    yf = fftshift(yf)
+    return xf,yf, N, T
+
+
 
 def Fourier_noise_removal(qz, R):
     from scipy.interpolate import UnivariateSpline
@@ -89,80 +108,108 @@ def Fourier_noise_removal(qz, R):
 
     return x,y
 
+def index_correction(theta, theta_c, E, R):
+    idx = [i for i in range(len(theta)) if theta[i]>=theta_c]
+    theta = theta[idx]
+    R = R[idx]
+    qz = E*(0.001013546247)*np.sqrt(np.power(np.sin(theta*np.pi/180),2)-np.power(np.sin(theta_c*np.pi/180),2))
+    return qz, R
+
+def find_cga(theta,R):
+    from scipy.interpolate import interp1d
+
+    f = interp1d(R,theta)
+    return f(0.5)
 
 
 if __name__ == '__main__':
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_v3.h5"
+    from scipy.interpolate import UnivariateSpline
+    import material_structure as ms
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
+    #sample = ms.slab(2)
+    #sample.addlayer(0,'SrTiO3',50,roughness=0)
+    #sample.addlayer(1,'LaMnO3',246,roughness=0)
+    #sample.energy_shift()
+
+
+    struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
+    #self._sampleWidget.struct_ff = struct_names
+    #self._sampleWidget.mag_ff = mag_names
+
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    name = "33_834.59_S"
+    qz_temp = data_dict[name]['Data'][0]
+    E = data_dict[name]['Energy']
+
+    qz_min = qz_temp[0]
+    qz_max = qz_temp[-1]
+
+    qz = np.linspace(qz_min, qz_max, num=15000)
+
+    qz, R = sample.reflectivity(E, qz)
+
+    R = R['S']
+
+    dat = np.array([qz,R])
+    dat = np.transpose(dat)
+
+    np.savetxt('834.59_15000.txt',dat)
+    """
     thickness, density, density_magnetic = sample.density_profile()
 
-    sample.plot_density_profile()
-    density['Mn'] = density['Mn2+'] + density['Mn3+']
-    density['Sr/La'] = density['La'] + density['Sr']
+    E = 834 #eV
+    order = 5
+    b = 0
+    theta_i = 0.01
+    theta_f = 60.01
 
-    #keys = ['Ti', 'O','Sr','La','Mn2+','Mn3+']
-    keys = ['Ti', 'O','Sr/La','Mn']
+    qz_i = np.sin(theta_i*np.pi/180)*E*(0.001013546247)
+    qz_f = np.sin(theta_f*np.pi/180)*E*(0.001013546247)
 
-    plt.figure()
-    for name in keys:
-        plt.plot(thickness,density[name])
+    qz = np.linspace(qz_i,qz_f, num=10001)
+    theta = np.arcsin(qz/(E*(0.001013546247)))*180/np.pi
 
-    plt.legend(keys)
-    #plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel('Density (mol/cm^3)')
+    qz, R = sample.reflectivity(E, qz)
+    R = R['S']
+
+
+
+    theta_c = find_cga(theta,R)
+    qz, R = index_correction(theta, theta_c, E,R)
+    #R = np.log10(R)
+
+    spl = UnivariateSpline(qz,np.log10(R), k=order)
+
+
+    R4 = np.multiply(R, np.power(qz, 4))
+    Rs = np.log10(R)-spl(qz)
+
+    x,y,N,T = fourier_transform(qz,Rs)
+
+
+    from scipy.signal import find_peaks
+
+    peaks = find_peaks(np.abs(y), height=0)
+    peaks = peaks[0]
+    print(x[peaks])
+
+    plt.figure(1)
+    plt.plot(qz, Rs)
+    #plt.plot(qz,R4*1e6)
+
+    plt.figure(2)
+    plt.plot(qz,np.log10(R))
+    plt.plot(qz,spl(qz))
+    #plt.plot(qz,spl(qz))
+
+
+    plt.figure(3)
+    plt.plot(x,1.0/N*np.abs(y))
+    plt.xlabel('Position (angstroms)')
     plt.show()
+    """
 
-    electron = {'Sr':2,'Ti':4,'La':3,'Mn2+':2,'Mn3+':3.3,'O':-2}
-    d = 50
-
-    electric_conservation = np.zeros(len(density['Sr']))
-    idx = np.argwhere(thickness<d)
-
-    for key in list(electron.keys()):
-        electric_conservation[idx] = electric_conservation[idx] - electron[key]*density[key][idx]
-
-    electric_conservation[idx] = electric_conservation[idx]/density['O'][idx]
-    plt.figure()
-    plt.plot(thickness, electric_conservation)
-    plt.xlabel('Thickness (Angstrom)')
-    plt.ylabel('# electrons per oxygen atom')
-    #plt.show()
-
-
-    f1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/150.txt"
-    f2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/300.txt"
-
-    sample_150 = np.loadtxt(f1)
-    sample_300 = np.loadtxt(f2)
-
-    plt.figure()
-    plt.suptitle('Magnetic Profile for E2 Sample at 150 and 300K')
-    plt.plot(sample_150[:,0], sample_150[:,1]*(-1))
-    plt.plot(sample_300[:,0], sample_300[:,1]*(-1))
-    plt.xlabel('Thickness (angstrom)')
-    plt.ylabel('Density')
-    plt.legend(['150K', '300K'])
-    plt.show()
-
-    d1 = -6
-    d2 = 47.6
-    m = len(sample_300[:,1])
-    my_division = np.zeros(m)
-
-    for i in range(m):
-        if sample_150[i,0] > d1 and sample_150[i,0] < d2:
-            my_division[i] = sample_300[i,1]/sample_150[i,1]
-
-    plt.figure()
-    plt.suptitle('Ratio of E2 Sample at 150 and 300K')
-    plt.plot(sample_300[:,0], my_division)
-    plt.xlabel('Thickness (angstroms)')
-    plt.ylabel('300K/150K')
-    plt.show()
-
-    print(sum(sample_300[:,1])/sum(sample_150[:,1]))

@@ -5565,6 +5565,7 @@ class dataSmoothingWidget(QWidget):
 
         self.selectedScans = []  # scans to be used in the data fitting
         self.data_dict = dict()  # used to retrieve the data
+        self.boundaries = []
 
         # will contain the parameters and the smoothed data
         self.smoothScans = dict()  # used to store the smoothed out scans
@@ -5669,7 +5670,7 @@ class dataSmoothingWidget(QWidget):
         filterLayout = QVBoxLayout()
         filterWindowLabel = QLabel('Window: ')
         filterWindowLabel.setFixedWidth(200)
-        self.filterWindow = QLineEdit('0.25')
+        self.filterWindow = QLineEdit('100')
         self.filterWindow.setFixedWidth(200)
         filterLayout.addWidget(filterWindowLabel)
         filterLayout.addWidget(self.filterWindow)
@@ -5722,17 +5723,101 @@ class dataSmoothingWidget(QWidget):
 
         self.setLayout(pagelayout)
 
+    def fourier_filter(self,x,y, order, window):
+
+        spl = UnivariateSpline(x,y, k=order)  # spline
+
+        #interpolate the data
+        x_int = np.linspace(x[0],x[-1], num=len(x)*2)
+        N = len(x_int)
+
+        if order != 0:
+            yspline = y-spl(x)  # spline subtraction
+            f = interp1d(x,yspline)  # interpolated spline subtraction
+
+            y_int = f(x_int)  # interpolated spline subtraction
+            T = np.average(np.diff(x_int))  # spacing
+
+
+            # take the fourier transform
+            yf = fft(y_int)  # Fourier Transform
+            xf = fftfreq(N,T)  # frequency
+            xf = fftshift(xf)  # shift the x-axis
+            yf = fftshift(yf)  # shift the y-axis
+
+
+            # create the filter
+            filter = np.zeros(N)
+            for idx in range(N):
+                if xf[idx]>-window and xf[idx] < window:
+                    filter[idx] = 1
+
+            yf_filtered = yf*filter # filter the signal
+            yf_filtered = ifftshift(yf_filtered)  # invert the shift
+            yf_filtered = ifft(yf_filtered)  # inverse fourier transform
+
+            # back interpolation
+            fb = interp1d(x_int, yf_filtered)
+            ynew = fb(x)  # original dataset
+
+            # running average
+
+            # #invert
+            ynew = ynew+spl(x)
+        else:
+
+            f = interp1d(x, y)  # interpolated spline subtraction
+
+            y_int = f(x_int)  # interpolated spline subtraction
+            T = np.average(np.diff(x_int))  # spacing
+
+            # take the fourier transform
+            yf = fft(y_int)  # Fourier Transform
+            xf = fftfreq(N, T)  # frequency
+            xf = fftshift(xf)  # shift the x-axis
+            yf = fftshift(yf)  # shift the y-axis
+
+            # create the filter
+            filter = np.zeros(N)
+            for idx in range(N):
+                if xf[idx] > -window and xf[idx] < window:
+                    filter[idx] = 1
+
+            yf_filtered = yf * filter  # filter the signal
+            yf_filtered = ifftshift(yf_filtered)  # invert the shift
+            yf_filtered = ifft(yf_filtered)  # inverse fourier transform
+
+            # back interpolation
+            fb = interp1d(x_int, yf_filtered)
+            ynew = fb(x)  # original dataset
+
+            # running average
+
+        return np.real(ynew)
 
     def _plot_spline(self):
         scan = self.scanBox.currentText()
+        idx = self.scanBox.currentIndex()
+
         if scan != '' or scan != None:
+
+            boundary = self.boundaries[idx]
+
+            lw = float(boundary[0][0])
+            up = float(boundary[-1][-1])
+
             type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
             my_scale = self.smoothScale.currentText()
 
             if type == 'Energy':
+
                 E = self.data_dict[scan]['Data'][3]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
-                Theta = self.data_dict[scan]['Theta']
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]
+
+                E = E[idx]
+                R = R[idx]
+                Theta = self.data_dict[scan]['Angle']
 
                 if my_scale == 'log(x)':
                     R = np.log10(R)
@@ -5748,13 +5833,16 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText("Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
                     messageBox.exec()
                 else:
-                    spl = UnivariateSpline(E, R, k=order)
+                    if order == 0:
+                        spl = UnivariateSpline(E, R)
+                    else:
+                        spl = UnivariateSpline(E, R, k=order)
                     self.graph.clear()
                     self.graph.plot()
                     self.graph.plot(E, R, pen=pg.mkPen((1, 4), width=2), name='Data')
@@ -5765,6 +5853,10 @@ class dataSmoothingWidget(QWidget):
             elif type == 'Reflectivity':
                 qz = self.data_dict[scan]['Data'][0]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]
+
+                qz = qz[idx]
+                R = R[idx]
 
 
                 if my_scale == 'log(x)':
@@ -5780,14 +5872,18 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText(
                         "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
                     messageBox.exec()
                 else:
-                    spl = UnivariateSpline(qz, R, k=order)
+                    if order == 0:
+                        spl = UnivariateSpline(qz, R)
+                    else:
+                        spl = UnivariateSpline(qz, R, k=order)
+
                     self.graph.clear()
                     self.graph.plot()
                     self.graph.plot(qz, R, pen=pg.mkPen((1, 4), width=2), name='Data')
@@ -5797,6 +5893,11 @@ class dataSmoothingWidget(QWidget):
 
     def _plot_spline_sub(self):
         scan = self.scanBox.currentText()
+        idx = self.scanBox.currentIndex()
+        boundary = self.boundaries[idx]
+
+        lw = float(boundary[0][0])
+        up = float(boundary[-1][-1])
         if scan != '' or scan != None:
             type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
             my_scale = self.smoothScale.currentText()
@@ -5804,7 +5905,11 @@ class dataSmoothingWidget(QWidget):
             if type == 'Energy':
                 E = self.data_dict[scan]['Data'][3]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
-                Theta = self.data_dict[scan]['Theta']
+                idx_new = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]
+
+                E = E[idx_new]
+                R = R[idx_new]
+                Theta = self.data_dict[scan]['Angle']
 
                 if my_scale == 'log(x)':
                     R = np.log10(R)
@@ -5820,17 +5925,22 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText(
                         "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
                     messageBox.exec()
                 else:
-                    spl = UnivariateSpline(E, R, k=order)
+                    if order == 0:
+                        Rplot = R
+                    else:
+                        spl = UnivariateSpline(E, R, k=order)
+                        Rplot = R-spl(E)
+
                     self.graph.clear()
                     self.graph.plot()
-                    self.graph.plot(E, R-spl(E), pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
+                    self.graph.plot(E, Rplot, pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
                     self.graph.setLabel('left', "f(R)")
                     self.graph.setLabel('bottom', "Momentum Transfer, qz (1/angstrom)")
 
@@ -5838,6 +5948,10 @@ class dataSmoothingWidget(QWidget):
                 qz = self.data_dict[scan]['Data'][0]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
 
+                idx_new = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]
+                qz = qz[idx_new]
+                R = R[idx_new]
+
                 if my_scale == 'log(x)':
                     R = np.log10(R)
                 elif my_scale == 'ln(x)':
@@ -5851,22 +5965,31 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText(
                         "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
                     messageBox.exec()
                 else:
-                    spl = UnivariateSpline(qz, R, k=order)
+                    if order == 0:
+                        Rplot = R
+                    else:
+                        spl = UnivariateSpline(qz, R, k=order)
+                        Rplot = R - spl(qz)
                     self.graph.clear()
                     self.graph.plot()
-                    self.graph.plot(qz, R-spl(qz), pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
+                    self.graph.plot(qz, Rplot, pen=pg.mkPen((2, 4), width=2), name='Spline Subtraction')
                     self.graph.setLabel('left', "f(R)")
                     self.graph.setLabel('bottom', "Momentum Transfer, qz (1/angstrom)")
 
     def _plot_filter(self):
         scan = self.scanBox.currentText()
+        idx = self.scanBox.currentIndex()
+        boundary = self.boundaries[idx]
+
+        lw = float(boundary[0][0])
+        up = float(boundary[-1][-1])
         if scan != '' or scan != None:
             type = self.smoothScans[scan]['Type']  # energy or reflectivity scan
             my_scale = self.smoothScale.currentText()
@@ -5874,7 +5997,11 @@ class dataSmoothingWidget(QWidget):
             if type == 'Energy':
                 E = self.data_dict[scan]['Data'][3]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
-                Theta = self.data_dict[scan]['Theta']
+                idx_new = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]
+
+                E = E[idx_new]
+                R = R[idx_new]
+                Theta = self.data_dict[scan]['Angle']
 
                 if my_scale == 'log(x)':
                     R = np.log10(R)
@@ -5890,7 +6017,7 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText(
@@ -5927,7 +6054,6 @@ class dataSmoothingWidget(QWidget):
                             filter[idx] = 1
                     max_val = max(1.0/N*np.abs(Rplot))/2
                     self.graph.clear()
-                    self.graph.plot()
                     self.graph.plot(Ef, 1.0/N*np.abs(Rplot), pen=pg.mkPen((1, 4), width=2), name='Fourier Transform')
                     self.graph.plot(Ef, max_val*filter, pen=pg.mkPen((2, 4), width=2), name='Data')
                     self.graph.setLabel('left', "f(R)")
@@ -5936,6 +6062,10 @@ class dataSmoothingWidget(QWidget):
             elif type == 'Reflectivity':
                 qz = self.data_dict[scan]['Data'][0]  # energy array
                 R = self.data_dict[scan]['Data'][2]  # relfectivity array
+                idx_new = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]
+
+                qz = qz[idx_new]
+                R = R[idx_new]
 
                 if my_scale == 'log(x)':
                     R = np.log10(R)
@@ -5950,20 +6080,24 @@ class dataSmoothingWidget(QWidget):
                 order = int(self.splineOrder.text())
                 self.splineOrder.setText(str(order))
                 self.splineOrder.blockSignals(False)
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Order out of range")
                     messageBox.setText(
                         "Order must be found between 1 and 5. If order selected to be 0 then no spline can be displayed.")
                     messageBox.exec()
                 else:
-                    spl = UnivariateSpline(qz, R, k=order)
-                    Rspline = R-spl(qz)
+
                     # for equal spacing
                     qmin = qz[0]
                     qmax = qz[-1]
                     qz_int = np.linspace(qmin, qmax, num=len(R) * 2)
-                    f = interp1d(qz, Rspline)
+                    if order == 0:
+                        f = interp1d(qz, R)
+                    else:
+                        spl = UnivariateSpline(qz, R, k=order)
+                        Rspline = R - spl(qz)
+                        f = interp1d(qz, Rspline)
 
                     N = len(qz_int)
                     T = np.average(np.diff(qz_int))
@@ -5972,6 +6106,7 @@ class dataSmoothingWidget(QWidget):
                     qzf = fftfreq(N, T)
                     qzf = fftshift(qzf)
                     Rplot = fftshift(Rf)
+
 
                     # create filter
                     filter = np.zeros(N)
@@ -5986,11 +6121,12 @@ class dataSmoothingWidget(QWidget):
 
                     max_val = max(1.0 / N * np.abs(Rplot)) / 2
                     self.graph.clear()
-                    self.graph.plot()
                     self.graph.plot(qzf, 1.0/N*np.abs(Rplot), pen=pg.mkPen((1, 4), width=2), name='Fourier Transform')
                     self.graph.plot(qzf, max_val*filter, pen=pg.mkPen((2, 4), width=2), name='Spline')
                     self.graph.setLabel('left', "f(R)")
                     self.graph.setLabel('bottom', "Spatial Frequency")
+
+
 
     def _plotGraph(self):
         """
@@ -6002,13 +6138,20 @@ class dataSmoothingWidget(QWidget):
         smooth = self.optionBox.currentText()  # which methodology to use
         type = self.smoothScans[scan]['Type']
         my_scale = self.smoothScale.currentText()
+        idx = self.scanBox.currentIndex()
+        boundary = self.boundaries[idx]
+
+        lw = float(boundary[0][0])
+        up = float(boundary[-1][-1])
 
         if type == 'Energy':
             # get data
             E = self.data_dict[scan]['Data'][3]
+            idx_new = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]
+            E = E[idx_new]
             Theta = self.data_dict[scan]['Angle']
-            Rdata = self.data_dict[scan]['Data'][2]  # data
-            Rprev = self.smoothScans[scan]['Data'][2]  # previous smooth
+            Rdata = self.data_dict[scan]['Data'][2][idx_new]  # data
+            Rprev = self.smoothScans[scan]['Data'][2][idx_new] # previous smooth
             if my_scale == 'log(x)':
                 Rdata = np.log10(Rdata)
                 Rprev = np.log10(Rprev)
@@ -6043,7 +6186,31 @@ class dataSmoothingWidget(QWidget):
 
 
                 Rsmooth = self._noiseRemoval(E, Rdata, s=s,k=k)
+            elif smooth == "Fourier Filter":
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
 
+                order = self.splineOrder.text()
+                window = float(self.filterWindow.text())
+
+                self.splineOrder.blockSignals(False)
+                self.filterWindow.blockSignals(False)
+
+                if '.' in order:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as spline order must be an integer.")
+                    messageBox.exec()
+                order = int(order)
+
+                if order < 0 or order>5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved. Assumed k = 3.")
+                    messageBox.exec()
+                    order = 3
+
+                Rsmooth = self.fourier_filter(E, Rdata, order, window)
 
             self.graph.plot(E, Rdata, pen=pg.mkPen((0,4), width=2), name='Data')
             self.graph.plot(E, Rprev, pen=pg.mkPen((3, 4), width=2), name='Previous')
@@ -6054,8 +6221,10 @@ class dataSmoothingWidget(QWidget):
         elif type == 'Reflectivity':
             # get data
             qz = self.data_dict[scan]['Data'][0]
-            Rdata = self.data_dict[scan]['Data'][2]  # data
-            Rprev = self.smoothScans[scan]['Data'][2]  # previous smooth
+            idx_new = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]
+            qz = qz[idx_new]
+            Rdata = self.data_dict[scan]['Data'][2][idx_new]  # data
+            Rprev = self.smoothScans[scan]['Data'][2][idx_new]  # previous smooth
             if my_scale == 'log(x)':
                 Rdata = np.log10(Rdata)
                 Rprev = np.log10(Rprev)
@@ -6089,6 +6258,33 @@ class dataSmoothingWidget(QWidget):
                     k = 3
 
                 Rsmooth = self._noiseRemoval(qz, Rdata, s=s, k=k)
+
+            elif smooth == "Fourier Filter":
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
+
+                order = self.splineOrder.text()
+                window = float(self.filterWindow.text())
+
+                self.splineOrder.blockSignals(False)
+                self.filterWindow.blockSignals(False)
+
+                if '.' in order:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as spline order must be an integer.")
+                    messageBox.exec()
+                order = int(order)
+
+                if order < 1 or order > 5:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText(
+                        "The polynomial order must be found between 0 and 5. Values not saved. Assumed k = 3.")
+                    messageBox.exec()
+                    order = 3
+
+                Rsmooth = self.fourier_filter(qz, Rdata, order, window)
 
             self.graph.plot(qz, Rdata, pen=pg.mkPen((0, 4), width=2), name='Data')
             self.graph.plot(qz, Rprev, pen=pg.mkPen((3, 4), width=2), name='Previous')
@@ -6243,10 +6439,10 @@ class dataSmoothingWidget(QWidget):
 
 
 
-    def _resetVariables(self,data_dict, fit):
+    def _resetVariables(self,data_dict, fit, boundaries):
         # This will be used in the loading in of data as well as when this tab is activated
         self.data_dict = data_dict
-
+        self.boundaries = boundaries
         # double checking to make sure that the saved fit is found in the dataset provided
         self.selectedScans = [scan for scan in fit if scan in list(self.data_dict.keys())]
 
@@ -6258,7 +6454,7 @@ class dataSmoothingWidget(QWidget):
             else:
                 self.smoothScans[name]['Type'] = 'Reflectivity'
             self.smoothScans[name]['Spline'] = [1, 3]  # [s, k]
-            self.smoothScans[name]['Fourier Filter'] = [3,0.25]
+            self.smoothScans[name]['Fourier Filter'] = [3,100]
 
         # blocks all signals
         self.splineK.blockSignals(True)
@@ -6654,6 +6850,7 @@ class ReflectometryApp(QMainWindow):
                 # checks to make sure that saved scans are still in the dataset
                 #selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
                 selectedScans = []
+                boundaries = []
                 self._reflectivityWidget.fit = selectedScans
                 #self._reflectivityWidget.fit = []
 
@@ -6681,7 +6878,7 @@ class ReflectometryApp(QMainWindow):
                     self._goWidget.parameters.append(param)
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
-                self._noiseWidget._resetVariables(self.data_dict, selectedScans)
+                self._noiseWidget._resetVariables(self.data_dict, selectedScans, boundaries)
             elif fname.endswith('.all'):
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("ReMagX Implementation")
@@ -6828,7 +7025,7 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.whichScan.addItem(scan[2])
             self._reflectivityWidget.whichScan.blockSignals(False)
 
-            self._noiseWidget._resetVariables(self.data_dict, [''])
+            self._noiseWidget._resetVariables(self.data_dict, [''], [])
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("ReMagX File")
@@ -7046,7 +7243,7 @@ class ReflectometryApp(QMainWindow):
         self.progressButton.setStyleSheet("background-color: pink")
 
         #self._noiseWidget.selectedScans = self._reflectivityWidget.fit
-        self._noiseWidget._resetVariables(self.data_dict, self._reflectivityWidget.fit)
+        self._noiseWidget._resetVariables(self.data_dict, self._reflectivityWidget.fit, self._reflectivityWidget.bounds)
 
         self.stackedlayout.setCurrentIndex(2)
 
@@ -7276,6 +7473,7 @@ class progressWidget(QWidget):
         self.scanBox.setFixedWidth(200)
         self.scanBox.addItems(self.rWidget.fit)
         self.scanBox.blockSignals(False)
+        self.boundaries = self.rWidget.bounds
 
     def computeScan(self, x_array):
         """
