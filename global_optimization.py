@@ -259,6 +259,14 @@ def scanCompute(x, *args):
             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
             Rsim = Rsim[pol]
 
+            j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
+            qz = qz[j]
+            if len(Rsim) != len(j):
+                Rsim = Rsim[j]
+            if len(Rdat) != len(j):
+                Rdat = Rdat[j]
+            if len(Rsmooth) != len(j):
+                Rsmooth = Rsmooth[j]
             # transforms R depending on users selection
             if r_scale == 'log(x)':
                 Rsim = np.log10(Rsim)
@@ -317,6 +325,15 @@ def scanCompute(x, *args):
             E, Rsim = sample.energy_scan(Theta, E)
             Rsim = Rsim[pol]
 
+            j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
+            E = E[j]
+
+            if len(Rsim) != len(j):
+                Rsim = Rsim[j]
+            if len(Rdat) != len(j):
+                Rdat = Rdat[j]
+            if len(Rsmooth) != len(j):
+                Rsmooth = Rsmooth[j]
             # transforms data and simulation as specified by user
             if r_scale == 'log(x)':
                 Rsim = np.log10(Rsim)

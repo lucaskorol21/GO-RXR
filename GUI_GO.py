@@ -6341,8 +6341,12 @@ class dataSmoothingWidget(QWidget):
 
         if smooth != '' and scan != '':  # makes sure a methodology is chosen
             if smooth == 'Spline':  # spline case
+                self.splineSmooth.blockSignals(True)
+                self.splineK.blockSignals(True)
                 s = float(self.splineSmooth.text())
                 k = self.splineK.text()
+                self.splineSmooth.blockSignals(False)
+                self.splineK.blockSignals(False)
 
                 if '.' in k:  # incorrect input
                     messageBox = QMessageBox()
@@ -6351,7 +6355,7 @@ class dataSmoothingWidget(QWidget):
                     messageBox.exec()
                 k = int(k)
 
-                if k < 0 or k>5:  # incoreect input
+                if k < 0 or k>5:  # incorrect input
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Invalid Entry")
                     messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved.")
@@ -6428,7 +6432,94 @@ class dataSmoothingWidget(QWidget):
                 self._plotGraph()
 
             elif smooth == "Fourier Filter":
-                pass
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
+                self.splineK.blockSignals(True)
+                order = self.splineOrder.text()
+                window = float(self.filterWindow.text())
+                self.splineOrder.blockSignals(True)
+                self.filterWindow.blockSignals(True)
+
+                if '.' in order:  # incorrect input
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Assumption Made")
+                    messageBox.setText("Program assumed integer value as polynomial order must be an integer.")
+                    messageBox.exec()
+                order = int(order)
+
+                if order < 0 or order > 5:  # incorrect input
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Invalid Entry")
+                    messageBox.setText("The polynomial order must be found between 0 and 5. Values not saved.")
+                    messageBox.exec()
+                else:
+                    self.smoothScans[scan][smooth][0] = order
+                    self.smoothScans[scan][smooth][1] = window
+
+                # performs the data smoothing
+                type = self.smoothScans[scan]['Type']
+                if type == 'Energy':
+                    E = self.data_dict[scan]['Data'][3]
+                    R = copy.copy(self.data_dict[scan]['Data'][2])
+                    Theta = self.data_dict[scan]['Angle']
+
+                    # performs transformation of reflectivity for data smoothing
+                    my_scale = self.smoothScale.currentText()
+                    if my_scale == 'log(x)':
+                        R = np.log10(R)
+                    elif my_scale == 'ln(x)':
+                        R = np.log(R)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                        R = np.multiply(R, np.power(qz, 4))
+
+                    Rsmooth = self.fourier_filter(qz,R,order,window)
+
+                    # transform back to original R-scale
+                    if my_scale == 'log(x)':
+                        Rsmooth = np.power(10, Rsmooth)
+                    elif my_scale == 'ln(x)':
+                        Rsmooth = np.exp(Rsmooth)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                        Rsmooth = np.divide(Rsmooth, np.power(qz, 4))
+
+                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)  # save the smoothed data
+
+                elif type == 'Reflectivity':
+                    qz = self.data_dict[scan]['Data'][0]
+                    R = copy.copy(self.data_dict[scan]['Data'][2])
+
+                    # transform reflectivity data for smoothing
+                    my_scale = self.smoothScale.currentText()
+                    if my_scale == 'log(x)':
+                        R = np.log10(R)
+                    elif my_scale == 'ln(x)':
+                        R = np.log(R)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        R = np.multiply(R, np.power(qz, 4))
+
+                    Rsmooth = self.fourier_filter(qz,R,order,window)
+
+                    # transform back to orginal R-scale
+                    if my_scale == 'log(x)':
+                        Rsmooth = np.power(10, Rsmooth)
+                    elif my_scale == 'ln(x)':
+                        Rsmooth = np.exp(Rsmooth)
+                    elif my_scale == 'x':
+                        pass
+                    elif my_scale == 'qz^4':
+                        Rsmooth = np.divide(Rsmooth, np.power(qz, 4))
+
+                    self.smoothScans[scan]['Data'][2] = copy.copy(Rsmooth)
+
+                self._plotGraph()
 
     def _changeSmooth(self):
         # changes the smoothing algorithm that we will use
@@ -7513,6 +7604,15 @@ class progressWidget(QWidget):
                         qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
                         Rsim = Rsim[pol]
 
+                        j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
+                        qz = qz[j]
+                        if len(Rsim) != len(j):
+                            Rsim = Rsim[j]
+                        if len(Rdat) != len(j):
+                            Rdat = Rdat[j]
+                        if len(Rsmooth) != len(j):
+                            Rsmooth = Rsmooth[j]
+
                         if self.y_scale == 'log(x)':
                             Rsim = np.log10(Rsim)
                             Rdat = np.log10(Rdat)
@@ -7532,7 +7632,7 @@ class progressWidget(QWidget):
                         #R = go.rolling_average(Rdat, window)
                         # total variation
                         var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
-                        val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
+                        val = go.total_variation(Rsmooth, Rsim[var_idx]) / len(Rsmooth)
                         self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
@@ -7571,6 +7671,15 @@ class progressWidget(QWidget):
 
                         E, Rsim = sample.energy_scan(Theta, E)
                         Rsim = Rsim[pol]
+
+                        j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
+                        E = E[j]
+                        if len(Rsim) != len(j):
+                            Rsim = Rsim[j]
+                        if len(Rdat) != len(j):
+                            Rdat = Rdat[j]
+                        if len(Rsmooth) != len(j):
+                            Rsmooth = Rsmooth[j]
 
                         if self.y_scale == 'log(x)':
                             Rsim = np.log10(Rsim)
