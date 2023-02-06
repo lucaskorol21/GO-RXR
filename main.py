@@ -31,6 +31,7 @@ def fourier_transform(x,y):
     from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
 
     # Fourier
+    print(np.diff(x))
     N = len(y)  # number of sample points
     T = np.average(np.diff(x))  # sample spacing
 
@@ -108,6 +109,9 @@ def Fourier_noise_removal(qz, R):
 
     return x,y
 
+def adaptive_running_average(R, window):
+    pass
+
 def index_correction(theta, theta_c, E, R):
     idx = [i for i in range(len(theta)) if theta[i]>=theta_c]
     theta = theta[idx]
@@ -148,21 +152,12 @@ if __name__ == '__main__':
     qz_min = qz_temp[0]
     qz_max = qz_temp[-1]
 
-    qz = np.linspace(qz_min, qz_max, num=15000)
 
-    qz, R = sample.reflectivity(E, qz)
 
-    R = R['S']
-
-    dat = np.array([qz,R])
-    dat = np.transpose(dat)
-
-    np.savetxt('834.59_15000.txt',dat)
-    """
     thickness, density, density_magnetic = sample.density_profile()
 
-    E = 834 #eV
-    order = 5
+    E = 834.99 #eV
+    order = 4
     b = 0
     theta_i = 0.01
     theta_f = 60.01
@@ -179,8 +174,9 @@ if __name__ == '__main__':
 
 
     theta_c = find_cga(theta,R)
-    qz, R = index_correction(theta, theta_c, E,R)
+    #qz, R = index_correction(theta, theta_c, E,R)
     #R = np.log10(R)
+    #print(np.diff(qz))
 
     spl = UnivariateSpline(qz,np.log10(R), k=order)
 
@@ -188,7 +184,7 @@ if __name__ == '__main__':
     R4 = np.multiply(R, np.power(qz, 4))
     Rs = np.log10(R)-spl(qz)
 
-    x,y,N,T = fourier_transform(qz,Rs)
+    x,y,N,T = fourier_transform(qz,R4)
 
 
     from scipy.signal import find_peaks
@@ -196,10 +192,11 @@ if __name__ == '__main__':
     peaks = find_peaks(np.abs(y), height=0)
     peaks = peaks[0]
     print(x[peaks])
+    print(np.diff(x[peaks]))
 
     plt.figure(1)
     plt.plot(qz, Rs)
-    #plt.plot(qz,R4*1e6)
+    plt.plot(qz,R4*1e6)
 
     plt.figure(2)
     plt.plot(qz,np.log10(R))
@@ -211,5 +208,5 @@ if __name__ == '__main__':
     plt.plot(x,1.0/N*np.abs(y))
     plt.xlabel('Position (angstroms)')
     plt.show()
-    """
+
 

@@ -2310,7 +2310,14 @@ class sampleWidget(QWidget):
                 element = layer[ele]  # element data
 
                 # recreates the chemical formula string
-                formula = formula + element[0]
+                # remove numbers from symbol
+                symbol = []
+                for c in element[0]:
+                    if not c.isdigit():
+                        symbol.append(c)
+
+                symbol = ''.join(symbol)
+                formula = formula + symbol
                 if element[6] != '1':
                     formula = formula + element[6]
 
@@ -5725,13 +5732,12 @@ class dataSmoothingWidget(QWidget):
 
     def fourier_filter(self,x,y, order, window):
 
-        spl = UnivariateSpline(x,y, k=order)  # spline
-
         #interpolate the data
-        x_int = np.linspace(x[0],x[-1], num=len(x)*2)
+        x_int = np.linspace(x[0],x[-1], num=len(x)*2+1)
         N = len(x_int)
 
         if order != 0:
+            spl = UnivariateSpline(x, y, k=order)  # spline
             yspline = y-spl(x)  # spline subtraction
             f = interp1d(x,yspline)  # interpolated spline subtraction
 
@@ -5744,6 +5750,8 @@ class dataSmoothingWidget(QWidget):
             xf = fftfreq(N,T)  # frequency
             xf = fftshift(xf)  # shift the x-axis
             yf = fftshift(yf)  # shift the y-axis
+
+            max_val = xf[-1]
 
 
             # create the filter
@@ -5761,7 +5769,7 @@ class dataSmoothingWidget(QWidget):
             ynew = fb(x)  # original dataset
 
             # running average
-
+            #ynew = np.convolve(ynew,np.ones(5)/5,mode='same')
             # #invert
             ynew = ynew+spl(x)
         else:
@@ -5792,8 +5800,14 @@ class dataSmoothingWidget(QWidget):
             ynew = fb(x)  # original dataset
 
             # running average
+            #ynew = np.convolve(np.real(ynew), np.ones(5)/5, mode='same')
 
-        return np.real(ynew)
+        last1 = np.real(ynew)[-1]
+        last2 = np.real(ynew)[-2]
+        ynew = np.convolve(np.real(ynew), np.ones(5)/5, mode='same')
+        ynew[-1] = last1
+        ynew[-2] = last2
+        return ynew
 
     def _plot_spline(self):
         scan = self.scanBox.currentText()
@@ -6276,7 +6290,7 @@ class dataSmoothingWidget(QWidget):
                     messageBox.exec()
                 order = int(order)
 
-                if order < 1 or order > 5:
+                if order < 0 or order > 5:
                     messageBox = QMessageBox()
                     messageBox.setWindowTitle("Invalid Entry")
                     messageBox.setText(
@@ -6289,6 +6303,8 @@ class dataSmoothingWidget(QWidget):
             self.graph.plot(qz, Rdata, pen=pg.mkPen((0, 4), width=2), name='Data')
             self.graph.plot(qz, Rprev, pen=pg.mkPen((3, 4), width=2), name='Previous')
             self.graph.plot(qz, Rsmooth, pen=pg.mkPen((1, 4), width=2), name='Current')
+
+
 
 
     def _setSmoothingVariables(self):
