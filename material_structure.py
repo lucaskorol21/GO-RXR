@@ -671,6 +671,7 @@ class slab:
 
 
         # ------------------------------------------------------------------------------------------------------------ #
+        my_idx = [i for i in range(len(sf)) if sf[i] != '' and sf[i] != '0' and sf[i] != 0]
         layer = self.structure[lay]
         poly_start = True
         if type(identifier) == list or type(identifier) == np.ndarray:
@@ -681,23 +682,29 @@ class slab:
                             # pre-initializing for polymorph case
                             layer[key].polymorph = list(layer[key].polymorph)
                             poly_idx = layer[key].polymorph.index(identifier[idx])  # determine index of poly
-                            number = [i for i in range(len(layer[key].polymorph)) if layer[key].polymorph[i] in identifier]
+
                             # initialization
                             if poly_start:  # first polymorph appearance
-                                self.structure[lay][key].mag_scattering_factor = [0 for i in range(len(layer[key].polymorph))]
+                                self.structure[lay][key].mag_scattering_factor = ['' for i in range(len(layer[key].polymorph))]
                                 self.structure[lay][key].mag_density = np.zeros(len(layer[key].polymorph))
                                 #self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
-                                self.mag_elements[key] = [0 for i in range(len(number))]
+
+                                # required in case where not all element variations are magnetic!!!
+                                self.mag_elements[key] = ['' for i in range(len(my_idx))]
+                                for j,k in enumerate(my_idx):
+                                    self.mag_elements[key][j] = layer[key].polymorph[j]
+
                                 poly_start = False
                                 # gamma and phi entered as multiple arrays
                                 if type(gamma) == list and type(phi) == list:
                                     self.structure[lay][key].gamma = np.zeros(len(layer[key].polymorph))
                                     self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
+
                             self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
                             self.structure[lay][key].mag_density[poly_idx] = density[idx]
 
 
-                            self.mag_elements[key][poly_idx] = identifier[idx]
+
                             if type(gamma) == list and type(phi) == list:
                                 self.structure[lay][key].gamma = gamma[idx]
                                 self.structure[lay][key].phi = phi[idx]
@@ -759,8 +766,8 @@ class slab:
         thickness = np.array([])  # thickness array
         density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
-
         density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
+
 
         # Pre-initialized density_poly array
         for ele in list(self.poly_elements.keys()):
@@ -768,8 +775,10 @@ class slab:
             density_poly[ele] = {k: np.array([]) for k in self.poly_elements[ele]}
 
         # Pre-initializes density_mag array
+
         for ele in list(self.mag_elements.keys()):
             density_mag[ele] = {k: np.array([]) for k in self.mag_elements[ele]}
+
 
         struct_keys = list(density_struct.keys()) # retrieves structure keys
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
@@ -1039,8 +1048,13 @@ class slab:
 
                             # finds magnetic scattering factors
                             if mag not in self.find_sf[1]:
-                                self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
-                                name = self.structure[layer][ele].mag_scattering_factor[ma]
+                                mag_sf = self.structure[layer][ele].mag_scattering_factor[ma]
+                                my_check = ['',0,'0']
+
+                                if mag_sf not in my_check:
+                                    self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
+                                    name = self.structure[layer][ele].mag_scattering_factor[ma]
+
 
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
@@ -1165,11 +1179,11 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-
         thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
 
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
+
 
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
@@ -1386,13 +1400,33 @@ class slab:
         self.density_profile()
         self.eShift = dict()
         self.mag_eShift = dict()
+
+        key_delete = []
+        mag_key_delete = []
         for e in self.find_sf[0].keys():
-            self.eShift[self.find_sf[0][e]] = 0
-            self.ff_scale[self.find_sf[0][e]] = 1
+            if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
+                key_delete.append(e)
+            else:
+                self.eShift[self.find_sf[0][e]] = 0
+                self.ff_scale[self.find_sf[0][e]] = 1
 
         for em in self.find_sf[1].keys():
-            self.mag_eShift[self.find_sf[1][em]] = 0
-            self.ffm_scale[self.find_sf[1][em]] = 1
+            if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
+                mag_key_delete.append(em)
+            else:
+                self.mag_eShift[self.find_sf[1][em]] = 0
+                self.ffm_scale[self.find_sf[1][em]] = 1
+
+        for key in key_delete:
+            del self.find_sf[0][key]
+        for key in mag_key_delete:
+            del  self.find_sf[1][key]
+
+        for ele in self.mag_elements.keys():
+            for key in key_delete:
+                if key in self.mag_elements[ele]:
+                    self.mag_elements[ele].remove(key)
+
 
 
     def showSampleParameters(self):

@@ -2463,7 +2463,6 @@ class sampleWidget(QWidget):
                 sample.ffm_scale[key] = self.ffScale[e]
 
 
-
         return sample
 
     def getData(self):
@@ -6649,6 +6648,7 @@ class ReflectometryApp(QMainWindow):
 
         self.sample = ms.slab(1)  # app is initialized and no project is selected
         self.sample.addlayer(0, 'SrTiO3', 50)
+        self.sample.energy_shift()
 
         # set the title
         self.setWindowTitle('Reflectometry of Quantum Materials')
@@ -6814,6 +6814,7 @@ class ReflectometryApp(QMainWindow):
             sample = ms.slab(2)
             sample.addlayer(0, 'SrTiO3', 50)
             sample.addlayer(1, 'LaMnO3', 10)
+            sample.energy_shift()
             self.sample = sample
             self._sampleWidget.sample = sample
 
@@ -6921,6 +6922,7 @@ class ReflectometryApp(QMainWindow):
 
                 # read in project information
                 self.sample = ds.ReadSampleHDF5(self.fname)
+
                 self.sample.energy_shift()
                 fitParams = ds.ReadFitHDF5(self.fname)
                 self._sampleWidget.sample = self.sample
