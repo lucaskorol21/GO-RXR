@@ -135,10 +135,13 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     # maintain the element variation ratios (except the change variable)
                     x_temp = []
                     sum = 0
+
                     for i in range(num):
                         x_temp.append(float(sample.structure[layer][element].poly_ratio[i]))
                         if i != poly:
                             sum = sum + float(sample.structure[layer][element].poly_ratio[i])
+
+                    x_temp = np.array(x_temp)
                     x_prime = ratio*x_temp/sum
                     for i in range(num):
                         if i == poly:

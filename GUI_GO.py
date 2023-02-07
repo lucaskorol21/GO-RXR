@@ -887,6 +887,10 @@ class sampleWidget(QWidget):
                             self.varData[element][i][0][row] = value
                             self.magData[element][i][0][row] = value
 
+                            # preset all ratio values as a zero if not already initialized
+                            if self.varData[element][i][1][row] == '':
+                                self.varData[element][i][1][row] = 0
+
 
                 # Now we check if the user has erased the element variation names
                 isReset = True
@@ -946,7 +950,7 @@ class sampleWidget(QWidget):
                     if value != '':
                         dict_name = 'ff-' + value
                         self.eShift[dict_name] = 0
-                        self.ffScale[dict_name] = 0
+                        self.ffScale[dict_name] = 1
 
                     for idx, my_layer in enumerate(self.varData[element]):
 
@@ -1672,9 +1676,22 @@ class sampleWidget(QWidget):
 
 
                 # element writing
+
                 if len(element.mag_density) != 0:
-                    self.magData[ele][idx][1] = element.mag_density
-                    self.magData[ele][idx][2] = element.mag_scattering_factor
+                    n = len(element.mag_density)
+                    mag_elements = sample.mag_elements[ele]
+
+                    for i in range(n):
+                        if self.magData[ele][idx][0][i] in mag_elements:
+                            self.magData[ele][idx][1][i] = element.mag_density[i]
+                            self.magData[ele][idx][2][i] = element.mag_scattering_factor[i]
+                        else:
+                            self.magData[ele][idx][1][i] = ''
+                            self.magData[ele][idx][2][i] = ''
+
+
+
+
 
                 # retrieve the correct magnetization direction
                 gamma = layer[ele].gamma
@@ -1733,7 +1750,7 @@ class sampleWidget(QWidget):
                             name = 'ff-' + scattering_factor
                             if name not in list(self.eShift.keys()):
                                 self.eShift[name] = 0
-                                self.ffScale[name] = 0
+                                self.ffScale[name] = 1
 
                         tempArray[row, col] = str(scattering_factor)
                     elif col == 6:  # stoichiometry
@@ -2309,13 +2326,14 @@ class sampleWidget(QWidget):
             for ele in range(len(layer)):
                 element = layer[ele]  # element data
 
-                # recreates the chemical formula string
+
                 # remove numbers from symbol
                 symbol = []
                 for c in element[0]:
                     if not c.isdigit():
                         symbol.append(c)
 
+                # recreates the chemical formula string
                 symbol = ''.join(symbol)
                 formula = formula + symbol
                 if element[6] != '1':
@@ -2365,12 +2383,14 @@ class sampleWidget(QWidget):
                 scattering_factor = poly[2]
                 if len(names) > 1:
                     if names[0] != '':
+
                         ratio = [float(ratio[i]) for i in range(len(ratio))]
 
                         if type(scattering_factor) is str:
                             sample.polymorphous(idx, ele_name, names, ratio, ast.literal_eval(scattering_factor))
                         else:
                             sample.polymorphous(idx, ele_name, names, ratio, scattering_factor)
+
 
         # determines the magnetization direction
         for idx in range(m):
@@ -2379,7 +2399,6 @@ class sampleWidget(QWidget):
                 ele_name = layer[ele][0]
 
                 mag = self.magData[ele_name][idx]
-
                 magDir = self.magDirection[idx]
 
                 gamma = 0
@@ -2398,7 +2417,16 @@ class sampleWidget(QWidget):
                 ratio = mag[1]
                 scattering_factor = mag[2]
 
+
                 if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
+                    # handle case where not every polymorph is magnetic
+
+
+                    my_idx = [j for j in range(len(ratio)) if ratio[j] != '' or (scattering_factor[j] != 0 and scattering_factor[j] != '')]
+
+                    ratio = np.array(ratio)[my_idx]
+                    names = np.array(names)[my_idx]
+                    scattering_factor = np.array(scattering_factor)[my_idx]
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
                     sample.magnetization(idx, names, ratio, scattering_factor, gamma=gamma,phi=phi)
 
@@ -2407,6 +2435,7 @@ class sampleWidget(QWidget):
 
                 sample.structure[idx][ele_name].gamma = gamma
                 sample.structure[idx][ele_name].phi = phi
+
         # changing the form factors
         for idx in range(m):
             layer = self.structTableInfo[idx]  # gets the layer information
@@ -2460,6 +2489,11 @@ class sampleWidget(QWidget):
                     if len(layer[ele].mag_scattering_factor) != 0:
                         mag_sf = layer[ele].mag_scattering_factor
 
+                    # make sure that magData is in format that software can understand
+                    for i in range(len(mag_sf)):
+                        if mag_sf[i] == 0 or mag_sf[i] == '0':
+                            mag_sf[i] = ''
+                            mag_density[i] = ''
                     self.magData[ele][j] = [layer[ele].polymorph, mag_density, mag_sf]
 
 
@@ -4969,6 +5003,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Peform this after optimization has finished
         """
+
         # send signal to callback function to stop data fitting
         global stop
         stop = True
@@ -4980,14 +5015,15 @@ class GlobalOptimizationWidget(QWidget):
 
         self.sWidget.resetX = False  # do not reset x
         self.sample = copy.deepcopy(self.temp_sample)
-
         # purpose of this is to reset the structure from anything the user did before optimization finished
         self.sWidget._setStructFromSample(self.sample)
         self.sWidget._setVarMagFromSample(self.sample)
+
         self.sWidget.getData()
         self.sWidget.setTable()
         self.sWidget.setTableMag()
         self.sWidget.setTableVar()
+
 
         # make sure that I all the other parameters are returned back to original value after the global optimization
         self.worker = Worker(self)
@@ -4997,6 +5033,7 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         self.runButton.setStyleSheet('background: green')
         self.runButton.blockSignals(False)
+
 
     def _run_global_optimization(self):
         """
@@ -7324,6 +7361,7 @@ class ReflectometryApp(QMainWindow):
 
     def activate_tab_2(self):
         # reflectivity
+
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
         self._reflectivityWidget.sample = copy.deepcopy(self.sample)
         self._goWidget.sample = copy.deepcopy(self.sample)
@@ -7827,6 +7865,7 @@ class progressWidget(QWidget):
                                              name=list(density.keys())[idx])
 
                 for idx in range(len(mag_val)):
+
                     myname = 'Mag: ' + list(density_magnetic.keys())[idx]
                     self.plotWidget.plot(thickness, -mag_val[idx],
                                          pen=pg.mkPen((num - idx, num), width=2, style=Qt.DashLine), name=myname)

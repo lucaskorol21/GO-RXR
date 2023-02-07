@@ -202,7 +202,7 @@ def checkstring(formula):
                'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se' , 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
                'Cs', 'Ba', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po' , 'At', 'Rn', 'Fr', 'Ra', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
                'Rg', 'Cn', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
-               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'X']
+               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'X', 'Q']
 
     info = []  # list to store the element symbol and it's stoichiometry
     n = len(formula)  # Get's the number of characters in the list
@@ -681,12 +681,13 @@ class slab:
                             # pre-initializing for polymorph case
                             layer[key].polymorph = list(layer[key].polymorph)
                             poly_idx = layer[key].polymorph.index(identifier[idx])  # determine index of poly
-
+                            number = [i for i in range(len(layer[key].polymorph)) if layer[key].polymorph[i] in identifier]
                             # initialization
                             if poly_start:  # first polymorph appearance
                                 self.structure[lay][key].mag_scattering_factor = [0 for i in range(len(layer[key].polymorph))]
                                 self.structure[lay][key].mag_density = np.zeros(len(layer[key].polymorph))
-                                self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
+                                #self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
+                                self.mag_elements[key] = [0 for i in range(len(number))]
                                 poly_start = False
                                 # gamma and phi entered as multiple arrays
                                 if type(gamma) == list and type(phi) == list:
@@ -758,6 +759,7 @@ class slab:
         thickness = np.array([])  # thickness array
         density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
+
         density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
 
         # Pre-initialized density_poly array
@@ -774,7 +776,6 @@ class slab:
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
         # Initializing thickness array
-        #transition = [0]
         transition = [[0],[0],[0]]  # array that contains thickness that slab transition occurs
         thick1 = 0
         thick2 = 0
@@ -800,7 +801,7 @@ class slab:
         thick = max(thick1,thick2,thick3)
 
         #step = 0.05  # thickness step size
-        thickness = np.arange(-20,thick+15+step, step) # Creates thickness array
+        thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
