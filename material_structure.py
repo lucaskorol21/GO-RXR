@@ -569,7 +569,10 @@ class slab:
         if len(set([type(x) for x in poly_ratio])) != 1:
             raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
 
+
         if abs(1 - sum(poly_ratio)) > 1e-3:
+            print(lay, ':', poly_ratio)
+            print(sum(poly_ratio))
             warnings.warn('Addition of all values in poly_ratio should add up to 1.')
         # ------------------------------------------------------------------------------------------------------------ #
 

@@ -4770,7 +4770,7 @@ class GlobalOptimizationWidget(QWidget):
         self.changeFitParameters()
 
         self.sWidget.sample, self.rWidget.bs, self.rWidget.sf = go.changeSampleParams(self.x, self.parameters,
-                                                                                      self.sWidget.sample,
+                                                                                      copy.deepcopy(self.sWidget.sample),
                                                                                       self.rWidget.bs, self.rWidget.sf)
 
         # updates all the sample information across all the different Widgets
@@ -4787,9 +4787,12 @@ class GlobalOptimizationWidget(QWidget):
         self.rWidget.scalingFactor.blockSignals(False)
 
         self.setTableFit()
+        self.sWidget._setStructFromSample(self.sample)  # required for when changing to different tab
+        self.sWidget._setVarMagFromSample(self.sample)
         self.sWidget.setTable()
         self.sWidget.setTableVar()
         self.sWidget.setTableMag()
+
 
     def plot_scan(self):
         """

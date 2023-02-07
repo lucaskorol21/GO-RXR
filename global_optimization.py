@@ -12,6 +12,7 @@ import sys
 import os
 from PIL import Image, ImageTk
 import functools
+import copy
 
 global x_vars
 x_vars = []
@@ -136,13 +137,16 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     x_temp = []
                     sum = 0
 
-                    for i in range(num):
-                        x_temp.append(float(sample.structure[layer][element].poly_ratio[i]))
-                        if i != poly:
-                            sum = sum + float(sample.structure[layer][element].poly_ratio[i])
+                    my_idx = [i for i in range(num) if i != poly]  #indices of polymorph that are not the varying element variation
+                    poly_ratio = copy.copy(np.array([float(sample.structure[layer][element].poly_ratio[i]) for i in range(num)]))
 
-                    x_temp = np.array(x_temp)
-                    x_prime = ratio*x_temp/sum
+                    sum = np.sum(poly_ratio[my_idx])
+                    #for i in range(num):
+                    #    x_temp.append(float(sample.structure[layer][element].poly_ratio[i]))
+                    #    if i != poly:
+                    #        sum = sum + float(sample.structure[layer][element].poly_ratio[i])
+
+                    x_prime = ratio*poly_ratio/sum
                     for i in range(num):
                         if i == poly:
                             sample.structure[layer][element].poly_ratio[i] = x[p]

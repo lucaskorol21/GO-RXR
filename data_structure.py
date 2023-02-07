@@ -1601,7 +1601,6 @@ def ReadSampleHDF5(fname):
                         sample.mag_elements[ele_key] = element.attrs['Polymorph']
                 sample.structure[lay_num][ele_key].mag_density = element.attrs['MagDensity']
                 sample.structure[lay_num][ele_key].mag_scattering_factor = element.attrs['MagScatteringFactor']
-                print(element.attrs['MagScatteringFactor'])
 
 
             if element.attrs['ScatteringFactor'][0] == '[':
