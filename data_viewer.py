@@ -6,38 +6,7 @@ import sys
 
 
 
-def saveSimulationHDF5(fname, sim_dict):
-    f = h5py.File(fname, 'a')  # create fname hdf5 file
 
-    simulated = f['Simulated_data']
-
-    simR = simulated['Reflectivity_Scan']
-    simE = simulated['Energy_Scan']
-
-    for name in list(sim_dict.keys()):
-
-        if 'Angle' in list(sim_dict[name].keys()):
-            dset = simE[name]
-            dset[...] = sim_dict[name]['Data']
-
-
-            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
-            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
-            dset.attrs['Energy'] = sim_dict[name]['Energy']
-            dset.attrs['Angle'] = sim_dict[name]['Angle']
-            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
-            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
-            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
-        else:
-            dset = simR[name]
-            dset[...] = sim_dict[name]['Data']
-
-            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
-            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
-            dset.attrs['Energy'] = sim_dict[name]['Energy']
-            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
-            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
-            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
 
 def saveDataHDF5(fname, data_dict):
     f = h5py.File(fname, 'a')  # create fname hdf5 file
@@ -51,6 +20,8 @@ def saveDataHDF5(fname, data_dict):
 
         if 'Angle' in list(data_dict[name].keys()):
             dset = simE[name]
+            m = np.shape(np.array(data_dict[name]['Data']))
+            dset.reshape(m)
             dset[...] = data_dict[name]['Data']
 
 
@@ -63,6 +34,8 @@ def saveDataHDF5(fname, data_dict):
             dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
         else:
             dset = simR[name]
+            m = np.array(data_dict[name]['Data'])
+            dset.reshape(m)
             dset[...] = data_dict[name]['Data']
 
             dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
@@ -73,6 +46,21 @@ def saveDataHDF5(fname, data_dict):
             dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
 
 def recalibrate_data(data_dict):
+    """
+    Purpose: Makes sure that the qz and Theta are of the same length
+    :param data_dict: Originally data dictionary
+    :return: Recalibrated data dictionary
+    """
+    keys = list(data_dict.keys())
+    for key in keys:
+        # only deal with reflectivity scans
+        if 'Angle' not in list(data_dict[key].keys()):
+            data = data_dict[key]['Data']
+            E = data_dict[key]['Energy']
+            if len(data[0]) != len(data[1]):
+                qz = data[0]
+                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi
+                data_dict[key]['Data'][1] = Theta
     return data_dict
 
 def hdf5ToDict(hform):
@@ -345,7 +333,7 @@ class DataViewerApp(QMainWindow):
 if __name__ == "__main__":
 
     # the path + filename
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v11.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9-test.h5"
     # -------------------------------- run the data viewer application -------------------------------- -------------- #
     #app = QApplication(sys.argv)
     #demo = DataViewerApp()
@@ -355,5 +343,18 @@ if __name__ == "__main__":
     #sys.exit(app.exec_())
 
 
-    # ------------------------------------------------- save data    ------------------------------------------------- #
-    print('hello')
+    # these are all the keys for the reflectivity scans!
+    keys = ['26_452.77_S', '35_460.76_S', '19_500.71_S', '31_635.99_S', '22_640.99_S', '24_644.02_S', '33_834.59_S',
+            '9_642.12_LC', '10_642.12_RC', '9-10_642.12_AC_Asymm', '13_644.03_LC', '14_644.03_RC',
+            '13-14_644.03_AC_Asymm',
+            '16_653.06_LC', '17_653.06_RC', '16-17_653.06_AC_Asymm']
+
+    # ------------------------------------------------- Workspace ---------------------------------------------------- #
+    data, data_dict, sim_dict = ReadDataHDF5(fname)
+    data_dict = recalibrate_data(data_dict)
+
+    #sim_dict and data_dict work in the exact same way where the reflectivity data is retrieved using the key 'Data'
+
+    # ------------------------------------------------- Save Data ---------------------------------------------------- #
+
+    # saveDataHDF5(fname, data_dict)

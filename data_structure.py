@@ -373,7 +373,10 @@ def saveSimulationHDF5(fname, sim_dict):
 
         if 'Angle' in list(sim_dict[name].keys()):
             dset = simE[name]
-            dset[...] = sim_dict[name]['Data']
+            m = np.shape(np.array(sim_dict[name]['Data']))
+
+            dset.resize(m)
+            dset[...] = np.array(sim_dict[name]['Data'])
 
 
             dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
@@ -385,7 +388,13 @@ def saveSimulationHDF5(fname, sim_dict):
             dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
         else:
             dset = simR[name]
-            dset[...] = sim_dict[name]['Data']
+            n = len(sim_dict[name]['Data'][0])
+            m = np.shape(np.array(sim_dict[name]['Data']))
+            print(m)
+
+            dset.resize(m)
+            dset[...] = np.array(sim_dict[name]['Data'])
+
 
             dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
             dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
@@ -429,7 +438,9 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     for name in list(data_dict.keys()):
         if 'Angle' in data_dict[name].keys():
             dat = data_dict[name]['Data']
-            dset = energyScan.create_dataset(name, data=dat)
+            dat = np.array(dat)
+            m = np.shape(dat)
+            dset = energyScan.create_dataset(name, m, data=dat, maxshape=(4,None), chunks=True)
             dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
             dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
             dset.attrs['Energy'] = data_dict[name]['Energy']
@@ -439,7 +450,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
             dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
 
             dat1 = sim_dict[name]['Data']
-            dset1 = simE.create_dataset(name, data=dat1)
+            dset1 = simE.create_dataset(name, m, data=dat1,maxshape=(4,None), chunks=True)
             dset1.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
             dset1.attrs['DataPoints'] = sim_dict[name]['DataPoints']
             dset1.attrs['Energy'] = sim_dict[name]['Energy']
@@ -449,7 +460,10 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
             dset1.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
         else:
             dat = data_dict[name]['Data']
-            dset = reflScan.create_dataset(name, data=dat)
+            dat = np.array(dat)
+            m = np.shape(dat)
+
+            dset = reflScan.create_dataset(name, m, data=dat, maxshape=(3,None), chunks=True)
             dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
             dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
             dset.attrs['Energy'] = data_dict[name]['Energy']
@@ -458,7 +472,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
             dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
 
             dat1 = sim_dict[name]['Data']
-            dset1 = simR.create_dataset(name, data=dat1)
+            dset1 = simR.create_dataset(name, m, data=dat1, maxshape=(3,None), chunks=True)
             dset1.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
             dset1.attrs['DataPoints'] = sim_dict[name]['DataPoints']
             dset1.attrs['Energy'] = sim_dict[name]['Energy']
@@ -606,7 +620,6 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     x = fit[7]
     fun = fit[8]
 
-    print(fname)
     f = h5py.File(fname, "a")
     # initializes the optimization information
     opt = f["Optimization"]
@@ -1652,6 +1665,7 @@ def ReadDataHDF5(fname):
 
     # Sorts data in appropriate order
     data = np.array(data)
+
     sort_idx = np.argsort(data[:,0].astype(int))
     data = data[sort_idx]
 

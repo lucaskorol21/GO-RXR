@@ -133,12 +133,37 @@ if __name__ == '__main__':
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-    print(sample.ffm_scale)
-    #print(sample.ffm_scale)
+
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
-    #print(sim_dict.keys())
+    keys = ['26_452.77_S' ,'35_460.76_S','19_500.71_S', '31_635.99_S','22_640.99_S','24_644.02_S','33_834.59_S',
+            '9_642.12_LC' ,'10_642.12_RC', '9-10_642.12_AC_Asymm', '13_644.03_LC','14_644.03_RC','13-14_644.03_AC_Asymm',
+            '16_653.06_LC', '17_653.06_RC', '16-17_653.06_AC_Asymm']
+
+    for key in keys:
+        E = data_dict[key]['Energy']
+        pol = data_dict[key]['Polarization']
+        qz = data_dict[key]['Data'][0]
+
+        # use to create new number of points!
+        qz_min = qz[0]
+        qz_max = qz[-1]
+        number_points = 1000
+
+        qz_new = np.linspace(qz_min,qz_max,num=number_points)
+        Theta = np.arcsin(qz_new / E / (0.001013546247)) * 180 / np.pi  # initial angle
+
+        qz_new, R = sample.reflectivity(E,qz_new)
+        R = R[pol]
+
+
+        sim_dict[key]['Data'] = np.array([qz_new, Theta, R])
+
+
+        print('Done - ', key)
+
+    ds.saveSimulationHDF5(fname, sim_dict)
 
 
