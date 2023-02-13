@@ -5,6 +5,76 @@ from PyQt5.QtWidgets import *
 import sys
 
 
+
+def saveSimulationHDF5(fname, sim_dict):
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    simulated = f['Simulated_data']
+
+    simR = simulated['Reflectivity_Scan']
+    simE = simulated['Energy_Scan']
+
+    for name in list(sim_dict.keys()):
+
+        if 'Angle' in list(sim_dict[name].keys()):
+            dset = simE[name]
+            dset[...] = sim_dict[name]['Data']
+
+
+            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset.attrs['Energy'] = sim_dict[name]['Energy']
+            dset.attrs['Angle'] = sim_dict[name]['Angle']
+            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+        else:
+            dset = simR[name]
+            dset[...] = sim_dict[name]['Data']
+
+            dset.attrs['DatasetNumber'] = sim_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = sim_dict[name]['DataPoints']
+            dset.attrs['Energy'] = sim_dict[name]['Energy']
+            dset.attrs['Polarization'] = sim_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
+
+def saveDataHDF5(fname, data_dict):
+    f = h5py.File(fname, 'a')  # create fname hdf5 file
+
+    simulated = f['Experimental_data']
+
+    simR = simulated['Reflectivity_Scan']
+    simE = simulated['Energy_Scan']
+
+    for name in list(data_dict.keys()):
+
+        if 'Angle' in list(data_dict[name].keys()):
+            dset = simE[name]
+            dset[...] = data_dict[name]['Data']
+
+
+            dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+            dset.attrs['Energy'] = data_dict[name]['Energy']
+            dset.attrs['Angle'] = data_dict[name]['Angle']
+            dset.attrs['Polarization'] = data_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+        else:
+            dset = simR[name]
+            dset[...] = data_dict[name]['Data']
+
+            dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+            dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+            dset.attrs['Energy'] = data_dict[name]['Energy']
+            dset.attrs['Polarization'] = data_dict[name]['Polarization']
+            dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+            dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+def recalibrate_data(data_dict):
+    return data_dict
+
 def hdf5ToDict(hform):
 
     mydict = dict()
@@ -273,9 +343,17 @@ class DataViewerApp(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    demo = DataViewerApp()
 
-    demo.show()
+    # the path + filename
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v11.h5"
+    # -------------------------------- run the data viewer application -------------------------------- -------------- #
+    #app = QApplication(sys.argv)
+    #demo = DataViewerApp()
 
-    sys.exit(app.exec_())
+    #demo.show()
+
+    #sys.exit(app.exec_())
+
+
+    # ------------------------------------------------- save data    ------------------------------------------------- #
+    print('hello')

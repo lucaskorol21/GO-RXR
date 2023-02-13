@@ -129,84 +129,16 @@ def find_cga(theta,R):
 if __name__ == '__main__':
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9-test.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-
-    #sample = ms.slab(2)
-    #sample.addlayer(0,'SrTiO3',50,roughness=0)
-    #sample.addlayer(1,'LaMnO3',246,roughness=0)
-    #sample.energy_shift()
-
-
+    print(sample.ffm_scale)
+    #print(sample.ffm_scale)
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
-    #self._sampleWidget.struct_ff = struct_names
-    #self._sampleWidget.mag_ff = mag_names
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
-    name = "33_834.59_S"
-    qz_temp = data_dict[name]['Data'][0]
-    E = data_dict[name]['Energy']
 
-    qz_min = qz_temp[0]
-    qz_max = qz_temp[-1]
-
-
-
-    thickness, density, density_magnetic = sample.density_profile()
-
-    E = 834.99 #eV
-    order = 4
-    b = 0
-    theta_i = 0.01
-    theta_f = 60.01
-
-    qz_i = np.sin(theta_i*np.pi/180)*E*(0.001013546247)
-    qz_f = np.sin(theta_f*np.pi/180)*E*(0.001013546247)
-
-    qz = np.linspace(qz_i,qz_f, num=10001)
-    theta = np.arcsin(qz/(E*(0.001013546247)))*180/np.pi
-
-    qz, R = sample.reflectivity(E, qz)
-    R = R['S']
-
-
-
-    theta_c = find_cga(theta,R)
-    #qz, R = index_correction(theta, theta_c, E,R)
-    #R = np.log10(R)
-    #print(np.diff(qz))
-
-    spl = UnivariateSpline(qz,np.log10(R), k=order)
-
-
-    R4 = np.multiply(R, np.power(qz, 4))
-    Rs = np.log10(R)-spl(qz)
-
-    x,y,N,T = fourier_transform(qz,R4)
-
-
-    from scipy.signal import find_peaks
-
-    peaks = find_peaks(np.abs(y), height=0)
-    peaks = peaks[0]
-    print(x[peaks])
-    print(np.diff(x[peaks]))
-
-    plt.figure(1)
-    plt.plot(qz, Rs)
-    plt.plot(qz,R4*1e6)
-
-    plt.figure(2)
-    plt.plot(qz,np.log10(R))
-    plt.plot(qz,spl(qz))
-    #plt.plot(qz,spl(qz))
-
-
-    plt.figure(3)
-    plt.plot(x,1.0/N*np.abs(y))
-    plt.xlabel('Position (angstroms)')
-    plt.show()
+    #print(sim_dict.keys())
 
 

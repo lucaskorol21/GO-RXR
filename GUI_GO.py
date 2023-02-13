@@ -5762,10 +5762,9 @@ class dataSmoothingWidget(QWidget):
 
 
 
-        pagelayout.addWidget(myWidget)
-        pagelayout.expandingDirections()
-        pagelayout.addStretch(1)
         pagelayout.addLayout(optionLayout)
+        pagelayout.addWidget(myWidget)
+
 
         self.setLayout(pagelayout)
 

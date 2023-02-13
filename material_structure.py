@@ -1400,25 +1400,26 @@ class slab:
         """
         Purpose: Initialize the energy shift and form factor scaling
         """
+
         self.density_profile()
-        self.eShift = dict()
-        self.mag_eShift = dict()
+        #self.eShift = dict()
+        #self.mag_eShift = dict()
 
         key_delete = []
         mag_key_delete = []
         for e in self.find_sf[0].keys():
             if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
                 key_delete.append(e)
-            else:
-                self.eShift[self.find_sf[0][e]] = 0
-                self.ff_scale[self.find_sf[0][e]] = 1
+            #else:
+            #    self.eShift[self.find_sf[0][e]] = 0
+            #    self.ff_scale[self.find_sf[0][e]] = 1
 
         for em in self.find_sf[1].keys():
             if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
                 mag_key_delete.append(em)
-            else:
-                self.mag_eShift[self.find_sf[1][em]] = 0
-                self.ffm_scale[self.find_sf[1][em]] = 1
+            #else:
+            #    self.mag_eShift[self.find_sf[1][em]] = 0
+            #    self.ffm_scale[self.find_sf[1][em]] = 1
 
         for key in key_delete:
             del self.find_sf[0][key]

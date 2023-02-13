@@ -36,6 +36,7 @@ def _use_given_ff(directory):
         if file.endswith(".ff"):
             name = directory +'/' + file
             element = file.strip(".ff")
+
             struct_names.append(element)
             with open(name,'rb') as f:
                 ff[element] = np.loadtxt(name)
@@ -91,6 +92,7 @@ def find_form_factor(element, E, mag):
         F = form_factor(ffm[element],E)
     else:
         struc_keys = list(ff.keys())
+
         if element not in struc_keys:
             raise NameError(element + " not found in structural form factors")
         F = form_factor(ff[element], E)
