@@ -461,6 +461,7 @@ class sampleWidget(QWidget):
     # sample widget that contains all the information about the sample parameters
     def __init__(self, sample):
         super(sampleWidget, self).__init__()
+        self.data_dict = {}
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
         self.parameterFit = []  # keeps track of parameters to fit
@@ -7632,13 +7633,25 @@ class progressWidget(QWidget):
 
         my_scans = list(self.rWidget.data_dict.keys())  # all scans
 
+
         # plot current scan progress
+        scanBoxLabel = QLabel('Selected Scans: ')
         self.scanBox = QComboBox()
-        #self.scanBox.addItems(self.rWidget.fit)
-        self.scanBox.addItems(my_scans)
+        self.scanBox.addItems(self.rWidget.fit)
         self.scanBox.activated.connect(self.plot_scan)
         self.scanBox.setFixedWidth(200)
+        buttonLayout.addWidget(scanBoxLabel)
         buttonLayout.addWidget(self.scanBox)
+        buttonLayout.addSpacing(10)
+
+        allBoxLabel = QLabel('All Scans: ')
+        self.allScans = QComboBox()
+        self.allScans.addItems(my_scans)
+        self.allScans.activated.connect(self.plot_scans_all)
+        self.allScans.setFixedWidth(200)
+        buttonLayout.addWidget(allBoxLabel)
+        buttonLayout.addWidget(self.allScans)
+
         buttonLayout.addStretch(1)
 
         # plot that will show current progress
@@ -7655,6 +7668,8 @@ class progressWidget(QWidget):
         """
         Purpose: plot the data and current iteration of the data fitting
         """
+        self.scanBox.setStyleSheet('background: red; selection-background-color: grey')
+        self.allScans.setStyleSheet('background: white; selection-background-color: red')
 
         # retrieve current iteration of the data fitting
         global x_vars
@@ -7743,16 +7758,111 @@ class progressWidget(QWidget):
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
+    def plot_scans_all(self):
+        """
+        Purpose: plot the data and current iteration of the data fitting
+        """
+
+        self.scanBox.setStyleSheet('background: white; selection-background-color: grey')
+        self.allScans.setStyleSheet('background: red; selection-background-color: red')
+        # retrieve current iteration of the data fitting
+        global x_vars
+        x = copy.deepcopy(x_vars)
+        if len(x) == 0:
+            x = go.return_x()
+
+        self.plotWidget.clear()
+
+        step_size = float(self.sWidget._step_size)
+        name = self.allScans.currentText()
+
+        sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
+                                                      self.backS, self.scaleF)
+        background_shift = float(backS[name])
+        scaling_factor = float(scaleF[name])
+
+        if name != '':
+
+            background_shift = self.rWidget.data_dict[name]['Background Shift']
+            scaling_factor = self.rWidget.data_dict[name]['Scaling Factor']
+            idx = 0
+            notDone = True
+            while notDone and idx == len(self.data) - 1:
+                temp_name = self.data[idx][2]
+                if temp_name == name:
+                    notDone = False
+                else:
+                    idx = idx + 1
+
+            dat = self.rWidget.data_dict[name]['Data']
+            pol = self.rWidget.data_dict[name]['Polarization']
+
+            if 'Angle' not in list(self.rWidget.data_dict[name].keys()):
+                qz = dat[0]
+                R = dat[2]
+                E = self.rWidget.data_dict[name]['Energy']
+                qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
+                                               sFactor=scaling_factor)
+                Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
+
+                Rsim = Rsim[pol]
+                if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
+
+                    if self.rWidget.axis_state:
+                        self.plotWidget.plot(qz, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                    else:
+                        self.plotWidget.plot(Theta, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+
+                    self.plotWidget.setLabel('left', "Reflectivity, R")
+                    self.plotWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+                    self.plotWidget.setLogMode(False, True)
+
+                elif pol == 'AL' or pol == 'AC':
+                    rm_idx = [i for i in range(len(R)) if R[i] < 4 and R[i] > -4]
+                    if self.rWidget.axis_state:
+                        self.plotWidget.plot(qz[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.plotWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                                             name='Simulation')
+                    else:
+                        self.plotWidget.plot(Theta[rm_idx], R[rm_idx], pen=pg.mkPen((0, 2), width=2), name='Data')
+                        self.plotWidget.plot(Theta[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 2), width=2),
+                                             name='Simulation')
+
+                    self.plotWidget.setLogMode(False, False)
+                    self.plotWidget.setLabel('left', "Reflectivity, R")
+                    self.plotWidget.setLabel('bottom', "Momentum Transfer, qz (Å^{-1})")
+
+            else:
+                E = dat[3]
+                R = dat[2]
+                Theta = self.rWidget.data_dict[name]['Angle']
+                E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
+                                             sFactor=scaling_factor)
+                Rsim = Rsim[pol]
+                self.plotWidget.setLogMode(False, False)
+                self.plotWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
+                self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
+                self.plotWidget.setLabel('left', "Reflectivity, R")
+                self.plotWidget.setLabel('bottom', "Energy, E (eV)")
+
     def reset_fit_scans(self):
         """
         Purpose: reset the scans in scanBox
         """
+
         my_scans = list(self.rWidget.data_dict.keys())
         self.scanBox.blockSignals(True)
+        self.allScans.blockSignals(True)
         self.scanBox.clear()
+        self.allScans.clear()
         self.scanBox.setFixedWidth(200)
         self.scanBox.addItems(self.rWidget.fit)
+        self.allScans.setFixedWidth(200)
+        self.allScans.addItems(my_scans)
         self.scanBox.blockSignals(False)
+        self.allScans.blockSignals(False)
         self.boundaries = self.rWidget.bounds
 
     def computeScan(self, x_array):
@@ -8173,6 +8283,7 @@ class progressWidget(QWidget):
         self.costButton.setStyleSheet('background: lightGrey')
         self.varButton.setStyleSheet('background: blue; color: white')
         self.parButton.setStyleSheet('background: lightGrey')
+        self.denseButton.setStyleSheet('background: lightGrey')
 
         self.whichPlot = [False, False, True, False, False]
 
