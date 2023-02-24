@@ -12,128 +12,52 @@ import os
 from scipy.fft import fft, fftfreq, fftshift, ifft
 
 
+def g(x,y):
+    return (x+y)*np.log(abs(x+y)) + abs(x-y)*np.log(abs(x-y))
 
+def variationKK(E,E0,E2,E4):
+    """
 
-def noise_removal(qz, R, s=1, k=3):
-    tck = interpolate.splrep(qz,R, s=s, k=k)
-    return interpolate.splev(qz, tck, der=0)
+    :param E: current energy
+    :param E0: denotes Ej-2
+    :param E2: denotes Ej
+    :param E4: denotes Ej+1
+    :return:
+    """
+    t1 = g(E,E0)/(E2-E0)
+    t2 = (E4-E0)*g(E,E2)/((E2-E0)*(E4-E2))
+    t3 = g(E,E4)/(E4-E2)
 
-def hamming(v, No, tua):
-    omegaC = 2*np.pi*v/No # cutoff frequency
-    k = np.arange(-tua,tua,1)
-    sink = np.sinc(omegaC*k)*omegaC/np.pi
-    window = 0.54+0.46*np.cos(k/tua)
-    filter = sink*window
+    return (t1+t2+t3)/np.pi
 
-    return filter
+def triangle_function(i,j,E):
+    """
+    :param j: current index
+    :param E: energy array
+    :return:
+    """
+    delta = np.zeros(len(E))
 
-def fourier_transform(x,y):
-    from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
+    if E[i]>E[j] and E[i] < E[j]:
+        delta[j] = (E[j] - E[i-2])/(E[i]-E[i-2])
+    elif E[i] < E[j+2] and E[i] > E[j]:
+        delta[j] = (E[i+2] - E[j])/(E[i+2]-E[i])
+    elif E[i] == E[j]:
+        delta[j] = 1
+    else:
+        delta[i] = 0
 
-    # Fourier
-    print(np.diff(x))
-    N = len(y)  # number of sample points
-    T = np.average(np.diff(x))  # sample spacing
-
-    # I need to make sure that each data point is equally spaced (use some kind of interpolation for this!)
-
-    yf = fft(y)
-    xf = fftfreq(N, T)
-    xf = fftshift(xf)
-    yf = fftshift(yf)
-    return xf,yf, N, T
-
-
-
-def Fourier_noise_removal(qz, R):
-    from scipy.interpolate import UnivariateSpline
-    from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
-
-    # convert to log(R)
-    y_old = np.log10(R)
-    y = np.log10(R)
-    x = qz
-    spl = UnivariateSpline(x,y)
-    plt.figure()
-    plt.plot(x,y-spl(x))
-
-    # perform spline subtration
-    spl = UnivariateSpline(x,y)
-    y_sub = spl(x)  # spline for subtraction
-
-    y = y - y_sub  # spline subtraction
-
-    # Fourier
-    N = len(y)  # number of sample points
-    T = np.average(np.diff(x))  # sample spacing
-
-    # I need to make sure that each data point is equally spaced (use some kind of interpolation for this!)
-
-    yf = fft(y)
-    xf = fftfreq(N,T)
-    xf = fftshift(xf)
-    yplot = fftshift(yf)
-    plt.figure()
-    plt.plot(xf, 1.0/N*np.abs(yplot))
-    plt.show()
-
-    filter = np.zeros(len(xf))
-    val = 0.2
-    for idx in range(len(filter)):
-        if xf[idx] > -val and xf[idx] < val:
-            filter[idx] = 1
-
-    yfiltered = yplot*filter
-    plt.figure()
-    plt.plot(xf, 1.0/N*np.abs(yfiltered))
-    plt.show()
-
-    yfiltered = ifftshift(yfiltered)
-
-    ytemp = ifft(yfiltered)
-    print(len(ytemp))
-    plt.figure()
-    plt.plot(x,ytemp)
-    plt.show()
-
-    ynew = ytemp+y_sub
-    plt.figure()
-    plt.plot(x, y_old)
-    plt.plot(x, ynew)
-    plt.legend(['Data','Filtered'])
-    plt.show()
-
-
-
-    # transform back to original data set
-
-    return x,y
-
-def adaptive_running_average(R, window):
-    pass
-
-def index_correction(theta, theta_c, E, R):
-    idx = [i for i in range(len(theta)) if theta[i]>=theta_c]
-    theta = theta[idx]
-    R = R[idx]
-    qz = E*(0.001013546247)*np.sqrt(np.power(np.sin(theta*np.pi/180),2)-np.power(np.sin(theta_c*np.pi/180),2))
-    return qz, R
-
-def find_cga(theta,R):
-    from scipy.interpolate import interp1d
-
-    f = interp1d(R,theta)
-    return f(0.5)
-
+    return delta
 
 if __name__ == '__main__':
+
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9-test.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_v1.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-
+    """
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -165,5 +89,92 @@ if __name__ == '__main__':
         print('Done - ', key)
 
     ds.saveSimulationHDF5(fname, sim_dict)
+    
+    
+    thickness, density, mag_density = sample.density_profile()
+
+    my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
+
+    electrons = np.zeros(len(thickness))
+    oxidation_keys = ['Sr','La','Ti','Mn2+','Mn3+', 'O']
+
+    state = {'Sr':2,'Ti':4, 'La': 3, 'Mn2+':2,'Mn3+':3,'O':-2}
+    for element in oxidation_keys:
+        electrons = + electrons + density[element]*state[element]
+
+    d = 21.6
+    idx = [i for i in range(len(thickness)) if thickness[i] < d]
 
 
+
+    plt.figure(1)
+    plt.plot(thickness[idx], electrons[idx])
+    density['Mn'] = density['Mn2+'] + density['Mn3+']
+
+
+
+    plt.figure(2)
+    for key in my_keys:
+        plt.plot(thickness, density[key])
+
+    plt.ylabel('Density (mol/cm^3)')
+    plt.xlabel('Thickness (angstroms)')
+    plt.legend(my_keys)
+    plt.show()
+    
+    """
+    E = np.linspace(1,2,num=100)
+
+
+    j = 25
+    delta1 = triangle_function(j-1,j,E)
+    delta2 = triangle_function(j,j,E)
+    delta3 = triangle_function(j+1,j,E)
+
+    C1 = 0.5
+    C2 = 1
+    C3 = 1.25
+
+
+    E_prime = E[j]
+    E2 = E[j]
+
+    E0 = E[j-2]
+    E4 = E[j+2]
+
+    KK = variationKK(E_prime,E0,E2,E4)
+    
+    """
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_exp.h5"
+
+    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
+
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+
+    keys = ['26_452.77_S', '35_460.76_S', '19_500.71_S', '31_635.99_S', '22_640.99_S', '24_644.02_S', '33_834.59_S',
+            '9_642.12_LC', '10_642.12_RC', '9-10_642.12_AC_Asymm', '13_644.03_LC', '14_644.03_RC',
+            '13-14_644.03_AC_Asymm',
+            '16_653.06_LC', '17_653.06_RC', '16-17_653.06_AC_Asymm']
+
+
+    
+    destination = '\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation'
+    for E in range(401,901,2):
+        Theta = np.linspace(0.1, 60, num=2000)
+        qz = np.sin(Theta * np.pi / 180) * E * (0.001013546247)
+
+        qz, R = sample.reflectivity(E, qz)
+
+        filename = 'E1_' + str(E)
+        dat = np.transpose(np.array([qz, R['S']]))
+        file = r"\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation"
+        file = file + '\E1_' + str(E)
+        np.savetxt(file, dat)
+
+
+
+    #np.savetxt('E1_' + str(E), dat)
+    """

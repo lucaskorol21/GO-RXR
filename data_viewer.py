@@ -4,13 +4,11 @@ import pyqtgraph as pg
 from PyQt5.QtWidgets import *
 import sys
 
-
-
+import data_structure
 
 
 def saveDataHDF5(fname, data_dict):
     f = h5py.File(fname, 'a')  # create fname hdf5 file
-
     simulated = f['Experimental_data']
 
     simR = simulated['Reflectivity_Scan']
@@ -21,7 +19,7 @@ def saveDataHDF5(fname, data_dict):
         if 'Angle' in list(data_dict[name].keys()):
             dset = simE[name]
             m = np.shape(np.array(data_dict[name]['Data']))
-            dset.reshape(m)
+            dset.resize(m)
             dset[...] = data_dict[name]['Data']
 
 
@@ -34,9 +32,10 @@ def saveDataHDF5(fname, data_dict):
             dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
         else:
             dset = simR[name]
-            m = np.array(data_dict[name]['Data'])
-            dset.reshape(m)
-            dset[...] = data_dict[name]['Data']
+
+            m = np.shape(np.array(data_dict[name]['Data']))
+            dset.resize(m)
+            dset[...] = np.array(data_dict[name]['Data'])
 
             dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
             dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
@@ -333,7 +332,7 @@ class DataViewerApp(QMainWindow):
 if __name__ == "__main__":
 
     # the path + filename
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9-test.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_exp_sim_newNN.h5"
     # -------------------------------- run the data viewer application -------------------------------- -------------- #
     #app = QApplication(sys.argv)
     #demo = DataViewerApp()
@@ -350,11 +349,65 @@ if __name__ == "__main__":
             '16_653.06_LC', '17_653.06_RC', '16-17_653.06_AC_Asymm']
 
     # ------------------------------------------------- Workspace ---------------------------------------------------- #
+    import matplotlib.pyplot as plt
     data, data_dict, sim_dict = ReadDataHDF5(fname)
+    idx = np.array([i for i in range(0, 1000, 8)])
+    idx[1:-1] = idx[1:-1] - 1
+    idx = list(idx)
+    for key in keys:
+
+        qz0 = data_dict[key]['Data'][0]
+        Theta0 = data_dict[key]['Data'][1]
+        R0 = data_dict[key]['Data'][2]
+
+        data_dict[key]['Data'][0] = qz0[idx]
+        data_dict[key]['Data'][1] = Theta0[idx]
+        data_dict[key]['Data'][2] = R0[idx]
+
+
+    import data_structure as ds
+    saveDataHDF5(fname, data_dict)
+    ds.saveSimulationHDF5(fname,data_dict)
+    """
+    # the variable 'data' has no use to you
+    # the variable data_dict is a dictionary containing all the data information
+    # the variable sim_dict is a dictionary containing all the simulation data
+    # - note that both data_dict and sim_dict have the exact same structure
+
+    # retrieving the data_dict information using the scan '26_452.77_S'
+    scan_name = '26_452.77_S'
+    qz_data = data_dict[scan_name]['Data'][0]  # momentum transfer
+    R_data = data_dict[scan_name]['Data'][2]  # reflectivity
+
+    # retrieving the sim_dict information using the same scan
+    qz_sim = sim_dict[scan_name]['Data'][0]  # momentum transfer (should have length 1000)
+    R_sim = sim_dict[scan_name]['Data'][2]  # reflectivity (should have length 1000)
+
+    # create data with the neural network
+    # ......
+    # ......
+
+    qz_new = qz_sim  # this should actually be whatever the neural network outputs and not the simulated data
+    R_new = R_sim   # I just used the simulated data as an example
+
+    # then what you can do is then change the value in the data dictionary
+
+    data_dict[scan_name]['Data'][0] = qz_new
+    data_dict[scan_name]['Data'][2] = R_new
+
+    # now the 'Data' at index 0 will not be the same length as so I created to function 'recalibrate_data'
+    #  - this function takes in the data_dict and checks all the data and makes sure they are the same length
     data_dict = recalibrate_data(data_dict)
+
+    # once you have finished with everything you wanted to do, you can then save the new data to your data file
+    # - this can be done using the saveDataHDF5 file which required the filename (fname) and the newly change data_dict
+
+    saveDataHDF5(fname, data_dict)
 
     #sim_dict and data_dict work in the exact same way where the reflectivity data is retrieved using the key 'Data'
 
     # ------------------------------------------------- Save Data ---------------------------------------------------- #
 
     # saveDataHDF5(fname, data_dict)
+    
+    """

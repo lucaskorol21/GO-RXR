@@ -725,7 +725,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
 
     f.close()
 
-def newFileHDF5(fname):
+def newFileHDF5(fname, sample):
     """
         Purpose: Take in data and sample model and save it as an hdf5 file
         :param fname: File name with .hdf5 file extension
@@ -745,17 +745,13 @@ def newFileHDF5(fname):
     if os.path.exists(fname):
         f.clear()
 
-    # preset slab model required for initialization of GUI
-    sample = slab(2)
-    sample.addlayer(0,'SrTiO3',50)
-    sample.addlayer(1,'LaMnO3', 10)
-    sample.energy_shift()
+
     # creating group that will contain the sample information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
     grp1.attrs['NumberLayers'] = int(m)
-    grp1.attrs['PolyElements'] = sample.poly_elements
-    grp1.attrs['MagElements'] = sample.mag_elements
+    grp1.attrs['PolyElements'] = str(sample.poly_elements)
+    grp1.attrs['MagElements'] = str(sample.mag_elements)
     grp1.attrs['LayerMagnetized'] = np.array(sample.layer_magnetized)
 
     scattering_factor = sample.eShift
@@ -826,8 +822,6 @@ def newFileHDF5(fname):
     grpE = grp2.create_group("Energy_Scan")
     subE = grp3.create_group("Energy_Scan")
 
-
-    # initializes the optimization information
     grp4 = f.create_group("Optimization")
 
     diff_ev = grp4.create_group("Differential Evolution")
@@ -891,6 +885,7 @@ def newFileHDF5(fname):
 
     results.attrs['Value'] = str([])
     results.attrs['Chi'] = 0
+
 
     f.close()
 

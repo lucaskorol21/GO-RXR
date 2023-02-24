@@ -6796,6 +6796,7 @@ class ReflectometryApp(QMainWindow):
 
         # create a new file or project workspace
         filename, _ = QFileDialog.getSaveFileName()
+
         fname = filename.split('/')[-1]
         self.fname = filename
         # checks to make sure filename is in the correct format
@@ -6810,13 +6811,16 @@ class ReflectometryApp(QMainWindow):
             cont = False
 
         if cont:  # create the new file
-            ds.newFileHDF5(self.fname)
+
 
             # random sample input
             sample = ms.slab(2)
             sample.addlayer(0, 'SrTiO3', 50)
             sample.addlayer(1, 'LaMnO3', 10)
             sample.energy_shift()
+
+            ds.newFileHDF5(self.fname, sample)
+
             self.sample = sample
             self._sampleWidget.sample = sample
 
@@ -6869,17 +6873,18 @@ class ReflectometryApp(QMainWindow):
             # change this for an arbitrary sample model
             self._sampleWidget.layerBox.addItems(layerList)
 
-            self._goWidget.goParameters = {
+            self.goParameters = {
                 'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
                                            'immediate'],
                 'simplicial homology': ['None', 1, 'simplicial'],
-                'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True]}
+                'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
+                'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None']}
 
             self._goWidget.setGOParameters()
             self._goWidget.setTableFit()
 
             # for now let's clear all the fitting parameters
-            self._reflectivityWidget.sfBsFitParams = list()
+            self._reflectivityWidget.sfbsFitParams = list()
             self._reflectivityWidget.currentVal = list()
             self._reflectivityWidget.rom = [True, False, False]
             self._reflectivityWidget.fit = list()
@@ -7022,7 +7027,7 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.parameters = []
                 for param in self._sampleWidget.parameterFit:
                     self._goWidget.parameters.append(param)
-                for param in self._reflectivityWidget.sfBsFitParams:
+                for param in self._reflectivityWidget.sfbsFitParams:
                     self._goWidget.parameters.append(param)
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
@@ -7261,7 +7266,7 @@ class ReflectometryApp(QMainWindow):
                 parameters = []
                 for param in self._sampleWidget.parameterFit:
                     parameters.append(param)
-                for param in self._reflectivityWidget.sfBsFitParams:
+                for param in self._reflectivityWidget.sfbsFitParams:
                     parameters.append(param)
 
                 current_val = []
