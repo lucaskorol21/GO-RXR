@@ -6718,25 +6718,32 @@ class ReflectometryApp(QMainWindow):
         fileMenu = QMenu("&File", self)
 
         # create a new file
-        self.newFile = QAction("&New", self)
+        self.newFile = QAction("&New Workspace", self)
         self.newFile.triggered.connect(self._newFile)
         fileMenu.addAction(self.newFile)
+        fileMenu.addSeparator()
 
         # load a file
-        self.loadFile = QAction("&Load", self)
+        self.loadFile = QAction("&Load Workspace", self)
         self.loadFile.triggered.connect(self._loadFile)
         fileMenu.addAction(self.loadFile)
 
+        # load a file
+        self.loadSample= QAction("&Load Sample", self)
+        self.loadSample.triggered.connect(self._loadSample)
+        fileMenu.addAction(self.loadSample)
+        fileMenu.addSeparator()
+
         # save current working file
-        self.saveFile = QAction("&Save", self)
+        self.saveFile = QAction("&Save Workspace", self)
         self.saveFile.triggered.connect(self._saveFile)
         fileMenu.addAction(self.saveFile)
 
         # save file as a new project
-        self.saveAsFile = QAction("&Save As", self)
+        self.saveAsFile = QAction("&Save Workspace As", self)
         self.saveAsFile.triggered.connect(self._saveAsFile)
         fileMenu.addAction(self.saveAsFile)
-        fileMenu.addSeparator()
+
         # save only the sample information
         self.saveSampleFile = QAction("&Save Sample", self)
         self.saveSampleFile.triggered.connect(self._saveSample)
@@ -6884,7 +6891,7 @@ class ReflectometryApp(QMainWindow):
             self._goWidget.setTableFit()
 
             # for now let's clear all the fitting parameters
-            self._reflectivityWidget.sfbsFitParams = list()
+            self._reflectivityWidget.sfBsFitParams = list()
             self._reflectivityWidget.currentVal = list()
             self._reflectivityWidget.rom = [True, False, False]
             self._reflectivityWidget.fit = list()
@@ -6900,15 +6907,15 @@ class ReflectometryApp(QMainWindow):
             self._goWidget.parameters = []
             for param in self._sampleWidget.parameterFit:
                 self._goWidget.parameters.append(param)
-            for param in self._reflectivityWidget.sfbsFitParams:
+            for param in self._reflectivityWidget.sfBsFitParams:
                 self._goWidget.parameters.append(param)
 
             # reset all of the tables!!!
             # - otherwise we have everything for the load function
         else:
             messageBox = QMessageBox()
-            messageBox.setWindowTitle("Invalid file")
-            messageBox.setText("Selected filename or path is not valid. Please select a valid file name.")
+            messageBox.setWindowTitle("Invalid file name")
+            messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
             messageBox.exec()
 
     def _loadFile(self):
@@ -7027,15 +7034,130 @@ class ReflectometryApp(QMainWindow):
                 self._goWidget.parameters = []
                 for param in self._sampleWidget.parameterFit:
                     self._goWidget.parameters.append(param)
-                for param in self._reflectivityWidget.sfbsFitParams:
+                for param in self._reflectivityWidget.sfBsFitParams:
                     self._goWidget.parameters.append(param)
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
                 self._noiseWidget._resetVariables(self.data_dict, selectedScans, boundaries)
             elif fname.endswith('.all'):
                 messageBox = QMessageBox()
-                messageBox.setWindowTitle("ReMagX Implementation")
-                messageBox.setText("Currently there is no implementation!")
+                messageBox.setWindowTitle("ReMagX")
+                messageBox.setText("Application cannot properly load in ReMagX workspace. To load data from a ReMagX file please select the 'Load ReMagX' in the File tab.")
+                messageBox.exec()
+            else:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Improper File Type")
+                messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
+                messageBox.exec()
+
+    def _loadSample(self):
+        """
+                Purpose: Load a new file or project workspace
+                """
+
+        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+        fname = self.fname.split('/')[-1]  # used to check file type
+
+        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
+            if fname.endswith('.h5') and fname != 'demo.h5':
+                struct_names, mag_names = mm._use_given_ff(
+                    self.fname.strip(fname))  # look for form factors in directory
+
+                # set form factors found in file directory
+                self._sampleWidget.struct_ff = struct_names
+                self._sampleWidget.mag_ff = mag_names
+
+                # read in project information
+                self.sample = ds.ReadSampleHDF5(self.fname)
+
+                self.sample.energy_shift()
+
+
+                self._sampleWidget.sample = self.sample
+                self._reflectivityWidget.sample = self.sample
+                self._goWidget.sample = self.sample
+
+
+
+                # loading in the background shift and scaling factor
+                self._reflectivityWidget.bs = dict()
+                self._reflectivityWidget.sf = dict()
+
+                self._sampleWidget._setStructFromSample(self.sample)
+                self._sampleWidget._setVarMagFromSample(self.sample)
+
+                ## now it's time to load the other information
+                #self._reflectivityWidget.selectedScans.clear()
+                #self._reflectivityWidget.whichScan.clear()
+
+
+                self._sampleWidget.eShift = dict()  # make sure we clear the eshift
+                self._sampleWidget.ffScale = dict()
+                for key in list(self.sample.eShift.keys()):
+                    name = 'ff-' + key
+                    self._sampleWidget.eShift[name] = self.sample.eShift[key]
+                    self._sampleWidget.ffScale[name] = self.sample.ff_scale[key]
+
+                for key in list(self.sample.mag_eShift.keys()):
+                    name = 'ffm-' + key
+                    self._sampleWidget.eShift[name] = self.sample.mag_eShift[key]
+                    self._sampleWidget.ffScale[name] = self.sample.ffm_scale[key]
+
+                self._sampleWidget.setTableEShift()
+
+                layerList = []
+                for i in range(len(self.sample.structure)):
+                    if i == 0:
+                        layerList.append('Substrate')
+                    else:
+                        layerList.append('Layer ' + str(i))
+
+                self._sampleWidget.layerBox.clear()
+                # change this for an arbitrary sample model
+                self._sampleWidget.layerBox.addItems(layerList)
+
+
+                # for now let's clear all the fitting parameters
+                # self._reflectivityWidget.sfBsFitParams = fitParams[0]
+                self._reflectivityWidget.sfBsFitParams = []
+                # self._reflectivityWidget.currentVal = list(fitParams[1])
+                self._reflectivityWidget.currentVal = []
+                self._reflectivityWidget.rom = [True, False, False]
+
+                # checks to make sure that saved scans are still in the dataset
+                # selectedScans = [scan for scan in fitParams[4] if scan in list(self.data_dict.keys())]
+
+                #self._reflectivityWidget.fit = []
+
+
+                # self._reflectivityWidget.bounds = fitParams[5]
+                self._reflectivityWidget.bounds = []
+                self._reflectivityWidget.weights = []
+
+                # self._reflectivityWidget.setTable()
+                self._sampleWidget.parameterFit = []
+                self._sampleWidget.currentVal = []
+
+                self._goWidget.x = []
+                self._goWidget.fun = 0
+
+                self._goWidget.parameters = []
+                self._sampleWidget.parameterFit = []
+
+                self._sampleWidget.setTableEShift()  # reset the energy shift table
+                #self._noiseWidget._resetVariables(self.data_dict, [], [])
+
+            elif fname.endswith('.all'):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("ReMagX")
+                messageBox.setText(
+                    "Application cannot load sample information from ReMagX file.")
+                messageBox.exec()
+            else:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Improper File Type")
+                messageBox.setText(
+                    "File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
 
     def _saveFile(self):
@@ -7044,9 +7166,8 @@ class ReflectometryApp(QMainWindow):
         """
 
         filename = self.fname  # retrieve the current file name
-        fname = filename.split('/')[-1]
 
-        if fname != 'demo.h5':  # makes sure the current workspace is not the demo
+        if not(filename.endswith('demo.h5')):  # makes sure the current workspace is not the demo
             self.sample = self._sampleWidget._createSample()  # retrieve sample info
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
@@ -7065,6 +7186,11 @@ class ReflectometryApp(QMainWindow):
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
             ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams)  # save the information
+        else:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Create New File")
+            messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
+            messageBox.exec()
 
     def _saveAsFile(self):
         """
@@ -7266,7 +7392,7 @@ class ReflectometryApp(QMainWindow):
                 parameters = []
                 for param in self._sampleWidget.parameterFit:
                     parameters.append(param)
-                for param in self._reflectivityWidget.sfbsFitParams:
+                for param in self._reflectivityWidget.sfBsFitParams:
                     parameters.append(param)
 
                 current_val = []
