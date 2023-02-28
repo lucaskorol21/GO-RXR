@@ -7616,7 +7616,7 @@ class progressWidget(QWidget):
         self.varButton.setFixedWidth(200)
         self.varButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.varButton)
-
+        buttonLayout.addSpacing(20)
         # show variation in parameters
         self.parButton = QPushButton('Parameters')
         self.parButton.clicked.connect(self._setPar)
@@ -7630,7 +7630,7 @@ class progressWidget(QWidget):
         self.denseButton.setFixedWidth(200)
         self.denseButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.denseButton)
-
+        buttonLayout.addSpacing(20)
         my_scans = list(self.rWidget.data_dict.keys())  # all scans
 
 

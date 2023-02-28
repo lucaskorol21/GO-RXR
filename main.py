@@ -49,6 +49,28 @@ def triangle_function(i,j,E):
 
     return delta
 
+def getRoughness(layer, identifier):
+    pass
+def setRoughness(layer, identifier, sigma):
+    pass
+
+def setRatio(layer, element, identifier1,identifier2, ratio):
+    pass
+def getThickness(layer, identifier):
+    pass
+
+def setThickness(layer, identifier, d):
+    pass
+
+def setCombinedThickness(layer_start, layer_end, identifier, d):
+    # dprime = 0
+    # for i in range(layer_start, layer_end, 1):
+    #       dprime = dprime + sample[i][identifier].thickness
+
+    # for i in range(layer_start, layer_end, 1):
+    #       val = copy.deepcopy(sample[i][identifier].thickness)
+    #       sample[i][identifier].thickness = val*dprime/d
+    pass
 if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
