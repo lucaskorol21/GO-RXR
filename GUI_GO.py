@@ -3985,6 +3985,16 @@ class GlobalOptimizationWidget(QWidget):
         # Global optimization parameters and fitting
         buttonLayout = QVBoxLayout()
 
+        mylayout = QHBoxLayout()
+        self.checkBoxLabel = QLabel('Run Script: ')
+        self.checkBoxLabel.setFixedWidth(60)
+        self.checkBox = QCheckBox()
+        mylayout.addWidget(self.checkBoxLabel)
+        mylayout.addSpacing(5)
+        mylayout.addWidget(self.checkBox)
+
+
+
         self.runButton = QPushButton('Run Optimization')
         self.runButton.pressed.connect(self._run_global_optimization)
         self.runButton.setStyleSheet('background: green')
@@ -4002,6 +4012,7 @@ class GlobalOptimizationWidget(QWidget):
         buttonLayout.addLayout(selectedScansLayout)
         buttonLayout.addLayout(isLogLayout)
         buttonLayout.addStretch(1)
+        buttonLayout.addLayout(mylayout)
         buttonLayout.addWidget(self.runButton)
         buttonLayout.addWidget(self.stopButton)
         buttonLayout.addStretch(1)
@@ -4479,6 +4490,27 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         self.checkscript()
 
+    def checkbracket(self,myStr):
+        # checks to make sure that the brackets are maintained
+        open_list = ["[", "{", "("]
+        close_list = ["]", "}", ")"]
+
+        stack = []
+        for i in myStr:
+            if i in open_list:
+                stack.append(i)
+            elif i in close_list:
+                pos = close_list.index(i)
+                if ((len(stack) > 0) and
+                        (open_list[pos] == stack[len(stack) - 1])):
+                    stack.pop()
+                else:
+                    return True
+        if len(stack) == 0:
+            return False
+        else:
+            return True
+
     def checkscript(self):
         script = os.getcwd() + '/default_script.txt'
         my_script = list()
@@ -4487,6 +4519,7 @@ class GlobalOptimizationWidget(QWidget):
                 test = line.strip(' ')
                 if test != "\n" and not(test.startswith('#')):
                     my_script.append(line.strip("\n").split('='))
+                    n = len(my_script)
         f.close()
 
         my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
@@ -4498,17 +4531,179 @@ class GlobalOptimizationWidget(QWidget):
         # checks to make sure that all functions agree with what we expect
         for line in my_script:
             if len(line) == 1:
-                function = line[0].split('(')[0]
+                function = line[0].split('(')[0].strip(' ')
+
+                if not(problem):
+                    problem = self.checkbracket(line[0])
+
+
                 if function.lower() not in my_function_1:
                     problem = True
+                    print(1)
+
+
+
+                if not(problem):
+                    params = line[0].strip(' ').strip(function)
+
+                    params = params.strip('(')
+                    params = params.strip(')')
+                    params = params.strip(' ')
+                    params = params.split(',')
+
+                    if function.lower() == 'setcombinedthickness':
+                        if len(params) != 4:  # not expected number of arguments
+                            problem = True
+                            print(2)
+
+                        if not (params[0].isdigit()) and not (problem):  # first two arguments are not digits
+                            problem = True
+                            print(3)
+
+                        else:
+                            if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
+                                problem = True
+                                print(4)
+
+                            start = int(params[0])
+                            end = int(params[1])
+
+                            if start > end:
+                                problem = True
+                                print(5)
+
+                            if start < 0:
+                                problem = True
+                                print(6)
+
+                            m = len(self.sample.structure)
+
+
+                            if m - 1 < end:
+                                problem = True
+                                print(7)
+
+                            if not (problem):
+
+                                key = params[2].strip(' ')
+
+                                if key.lower() != 'all':
+                                    for i in range(start, end + 1, 1):
+                                        if key not in list(self.sample.structure[i].keys()):
+                                            problem = True
+
+
+                    else:
+                        if len(params) != 3:
+                            problem = True
+
+
+
+                        if not(problem) and params[0].isdigit():
+                            if '.' in params[0]:
+                                problem = True
+                                print(9)
+                            layer = int(params[0])
+
+                            if layer > len(self.sample.structure) - 1:
+                                problem = True
+                                print(10)
+
+                            if not (problem):
+                                key = params[1].strip(' ')
+                                if key not in list(self.sample.structure[layer].keys()):
+                                    problem = True
+                                    print(11)
+
+                        else:
+                            problem = True
+                            print(12)
+
 
             elif len(line) == 2:
-                function = line[1].split('(')[0]
+                if not(problem):
+                    problem = self.checkbracket(line[1])
+
+                function = line[1].split('(')[0].strip(' ')
                 if function.lower() not in my_function_2:
                     problem = True
+                    print(13)
+
+                if not(problem):
+                    params = line[1].strip(' ').strip(function)
+
+                    params = params.strip('(')
+                    params = params.strip(')')
+                    params = params.strip(' ')
+                    params = params.split(',')
+
+                    if function.lower() == 'gettotalthickness':
+                        if len(params) != 3:  # not expected number of arguments
+                            problem = True
+                            print(14)
+                        if not(params[0].isdigit()) or not(params[1].isdigit()) and not(problem):  # first two arguments are not digits
+                            problem = True
+                            print(15)
+                        else:
+                            if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
+                                problem=True
+                                print(16)
+
+                            start = int(params[0])
+                            end = int(params[1])
+
+                            if start > end:
+                                problem = True
+                                print(17)
+                            if start < 0:
+                                problem = True
+                                print(18)
+
+                            m = len(self.sample.structure)
+
+                            if m-1 < end:
+                                problem = True
+                                print(19)
+
+                            if not(problem):
+                                key = params[2].strip(' ')
+                                if key.lower() != 'all':
+                                    for i in range(start,end+1,1):
+                                        if key not in list(self.sample.structure[i].keys()):
+                                            problem = True
+                                            print(20)
+
+                    else:
+                        if len(params) != 2:
+                            problem = True
+                            print(21)
+                        if not(problem) and params[0].isdigit():
+                            if '.' in params[0]:
+                                problem = True
+                                print(22)
+                            layer = int(params[0])
+
+                            if layer > len(self.sample.structure)-1:
+                                problem = True
+                                print(23)
+
+                            if not(problem):
+                                key = params[1].strip(' ')
+                                if key.lower() != 'all':
+                                    if key not in list(self.sample.structure[layer].keys()):
+                                            problem = True
+                                            print(24)
+                        else:
+                            problem = True
+                            print(25)
+
+
+
             else:
                 problem = True
+                print(26)
 
+        return problem
 
 
     def _clear_fit(self):

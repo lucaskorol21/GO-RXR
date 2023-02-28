@@ -1476,8 +1476,18 @@ class slab:
         elif identifier.upper() == 'ALL':
             for key in keys:
                 self.structure[layer][key].roughness = density
-    def setRatio(self):
-        pass
+
+    def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
+        # for now this will only work for 3 element variations
+        keys = list(self.structure[layer].keys())
+
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) == 3:
+                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier1 or
+                       self.structure[layer][symbol].polymorph[i] != identifier2]
+
+
+
 
     def getThickness(self, layer, identifier):
         # gets the thickness of a certain element in a certain layer
@@ -1493,7 +1503,7 @@ class slab:
     def getTotalThickness(self,start_layer,end_layer, identifier):
         # gets the total thickness from start_layer to end_layer of a specific element (identifier)
         d = 0
-        for i in range(start_layer, end_layer,1):
+        for i in range(start_layer, end_layer+1,1):
             keys = list(self.structure[i].keys())
 
             if identifier in keys:
@@ -1524,7 +1534,7 @@ class slab:
             elif identifier.upper() == 'ALL':
                 dprime = dprime + self.structure[i][keys[0]].thickness
 
-        for i in range(layer_start, layer_end, 1):
+        for i in range(layer_start, layer_end+1, 1):
             keys = list(self.structure[i].keys())
             if identifier in keys:
                 val = copy.deepcopy(self.structure[i][identifier].thickness)

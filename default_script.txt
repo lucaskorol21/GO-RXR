@@ -2,7 +2,7 @@
 
 # Thickness Workspace
 
-d = getThickness(0, Sr)
+d = getThickness(0, A)
 setThickness(0,Ti, d)
          
 dtot = getTotalThickness(0,5, all)
@@ -11,7 +11,7 @@ setCombinedThickness(0,5,all,dtot)
 # Roughness Workspace
 
 sigma = getRoughness(5, Mn)
-setRoughness(4,La, sigma)
+setRoughness(4,A, sigma)
 
 # Density Workspace
 

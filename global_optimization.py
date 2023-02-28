@@ -167,13 +167,110 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     #poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
-
+    # the purpose of this code is to run the script and change the values accordingly
+    use_script = False
+    script = 'Nothing'
+    if use_script:
+        sample = readScript(sample,script)
     # include th script functionality here
     return sample, backS, scaleF
 
+
 def readScript(sample, script):
+    setFunctions =  ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
+    getFunctions = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
+    variables = dict()
+    for line in script:
+        if len(line) == 2:  # setting a variable as a value
+            key = line[0].strip(' ')
+            function = line[1].split('(')[0].strip(' ')
+            variables[key] = 0
+
+            params = line[1].strip(' ').strip(function)  # parameters
+
+            params = params.strip('(')
+            params = params.strip(')')
+            params = params.strip(' ')
+            params = params.split(',')
+            if function.lower() == 'getroughness':
+                layer = int(params[0].strip(' '))
+                K = params[1].strip(' ')
+                variables[key] = float(sample.getRoughness(layer, K))
+
+            elif function.lower() == 'getdensity':
+                layer = int(params[0].strip(' '))
+                K = params[1].strip(' ')
+                variables[key] = float(sample.getDensity(layer, K))
+
+            elif function.lower() == 'getthickness':
+                layer = int(params[0].strip(' '))
+                K = params[1].strip(' ')
+                variables[key] = float(sample.getThickness(layer, K))
+
+            elif function.lower() == 'gettotalthickness':
+                start_layer = int(params[0].strip(' '))
+                end_layer = int(params[1].strip(' '))
+                K = params[2].strip(' ')
+                variables[key] = float(sample.getTotalThickness(start_layer,end_layer, K))
+
+        elif len(line) == 1:  # setting functions
+            function = line[0].split('(')[0].strip(' ')
+
+            params = line[0].strip(' ').strip(function)  # parameters
+
+            params = params.strip('(')
+            params = params.strip(')')
+            params = params.strip(' ')
+            params = params.split(',')
+
+            if function.lower() == 'setroughness':
+                layer = int(params[0])
+                identifier = params[1].strip(' ')
+                key = params[2].strip(' ')
+                if key.isdigit():
+                    sample.setRoughness(layer, identifier, float(key))
+                else:
+                    sample.setRoughness(layer, identifier, variables[key])
+
+            elif function.lower() == 'setdensity':
+                layer = int(params[0])
+                identifier = params[1].strip(' ')
+                key = params[2].strip(' ')
+                if key.isdigit():
+                    sample.setDensity(layer, identifier, float(key))
+                else:
+                    sample.setDensity(layer, identifier, variables[key])
+
+            elif function.lower() =='setthickness':
+                layer = int(params[0])
+                identifier = params[1].strip(' ')
+                key = params[2].strip(' ')
+                if key.isdigit():
+                    sample.setThickness(layer, identifier, float(key))
+                else:
+                    sample.setThickness(layer, identifier, variables[key])
+
+            elif function.lower() == 'setcombinedthickness':
+                layer_start = int(params[0])
+                layer_end = int(params[1])
+                identifier = params[2].strip(' ')
+                key = params[3].strip(' ')
+                if key.isdigit():
+                    sample.setCombinedThickness(layer_start, layer_end, identifier, float(key))
+                else:
+                    sample.setCombinedThickness(layer_start, layer_end, identifier, variables[key])
+
+            elif function.lower() == 'setratio':
+                layer = int(params[0])
+                symbol = params[1].strip(' ')
+                identifier1 = params[2].strip(' ')
+                identifier2 = params[3].strip(' ')
+                ratio = params[3].strip(' ')
+                sample.setRatio(layer, symbol, identifier1, identifier2, ratio)
+
+    return sample
     # script must be a list of lines
-    pass
+
 
 def smooth_function(R):
     """
