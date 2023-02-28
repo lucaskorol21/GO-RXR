@@ -1,15 +1,27 @@
 # Comments are made using #
 
-# use this area to give your sample a thickness constraint
-Thickness:
+# Thickness Workspace
+
+d = getThickness(0, Sr)
+setThickness(0,Ti, d)
+         
+dtot = getTotalThickness(0,5, all)
+setCombinedThickness(0,5,all,dtot)
+
+# Roughness Workspace
+
+sigma = getRoughness(5, Mn)
+setRoughness(4,La, sigma)
+
+# Density Workspace
+
+rho = getDensity(2, O)
+setDensity(3,O, rho)
+
+# Element Variation Ratio Workspace
 
 
-# use this area to give your sample a ratio constraint
-Element Variation Ratio:
 
-
-# use this area to give your sample a density constraint
-Density:
 
 # Written by Lucas Korol
 

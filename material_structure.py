@@ -1455,6 +1455,27 @@ class slab:
             for key in keys:
                 self.structure[layer][key].roughness = sigma
 
+    def getDensity(self, layer, identifier):
+        # gets the roughness of a select element
+
+        keys = list(self.structure[layer].keys())
+        density = 0.028
+        if identifier in keys:
+            sigma = self.structure[layer][identifier].density
+
+        return density
+
+
+
+    def setDensity(self, layer, identifier, density):
+        # sets the roughness of a certain element in a certain layer
+        keys = list(self.structure[layer].keys())
+
+        if identifier in keys:
+            self.structure[layer][identifier].density = density
+        elif identifier.upper() == 'ALL':
+            for key in keys:
+                self.structure[layer][key].roughness = density
     def setRatio(self):
         pass
 

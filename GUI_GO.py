@@ -3869,6 +3869,8 @@ class UpdateWorker(QObject):
         self.function = function  # globalOptimizationWidget
 
     def run(self):
+        # first check script
+        # if script good continue, otherwise apport
         self.function.update_optimization()  # run update cost function
         self.finished.emit()  # process finished
 
@@ -4475,6 +4477,39 @@ class GlobalOptimizationWidget(QWidget):
         self.setGOParameters()
         self.setLayout(pagelayout)
         self.setTableFit()
+        self.checkscript()
+
+    def checkscript(self):
+        script = os.getcwd() + '/default_script.txt'
+        my_script = list()
+        with open(script, "r") as f:
+            for line in f.readlines():
+                test = line.strip(' ')
+                if test != "\n" and not(test.startswith('#')):
+                    my_script.append(line.strip("\n").split('='))
+        f.close()
+
+        my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
+
+        my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
+
+        problem = False
+
+        # checks to make sure that all functions agree with what we expect
+        for line in my_script:
+            if len(line) == 1:
+                function = line[0].split('(')[0]
+                if function.lower() not in my_function_1:
+                    problem = True
+
+            elif len(line) == 2:
+                function = line[1].split('(')[0]
+                if function.lower() not in my_function_2:
+                    problem = True
+            else:
+                problem = True
+
+
 
     def _clear_fit(self):
         """
@@ -7454,6 +7489,7 @@ class ReflectometryApp(QMainWindow):
         script.show()
         script.exec_()
         script.close()
+        self._goWidget.checkscript()
 
     def _showFormFactor(self):
         """
@@ -8676,11 +8712,11 @@ class scriptWidget(QDialog):
         """
         Purpose: Open a new script file
         """
-        self.fname, filter_type = QFileDialog.getOpenFileName(self, "Open new file", "", "All files (*)")
+        fname, filter_type = QFileDialog.getOpenFileName(self, "Open new file", "", "All files (*)")
         if self.fname.endswith('.txt'):
-            with open(self.fname, "r") as f:
+            with open(fname, "r") as f:
                 file_contents = f.read()
-                self.title.setText(self.fname)
+                self.title.setText(fname)
                 self.scrollable_text_area.setText(file_contents)
         else:
             messageBox = QMessageBox()

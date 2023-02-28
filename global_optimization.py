@@ -167,9 +167,13 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     #poly = np.where(sample.structure[layer][element].polymorph == polymorph)
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
+
+    # include th script functionality here
     return sample, backS, scaleF
 
-
+def readScript(sample, script):
+    # script must be a list of lines
+    pass
 
 def smooth_function(R):
     """
