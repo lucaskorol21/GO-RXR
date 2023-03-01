@@ -17,7 +17,7 @@ import copy
 global x_vars
 x_vars = []
 
-def changeSampleParams(x, parameters, sample, backS, scaleF):
+def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=False):
     """
     Purpose: Change the parameters for the input sample for x-values
     :param x: A list that contains the new parameters values
@@ -168,17 +168,20 @@ def changeSampleParams(x, parameters, sample, backS, scaleF):
                     sample.structure[layer][element].mag_density[poly] = x[p]
 
     # the purpose of this code is to run the script and change the values accordingly
-    use_script = False
-    script = 'Nothing'
     if use_script:
         sample = readScript(sample,script)
     # include th script functionality here
     return sample, backS, scaleF
 
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
 
 def readScript(sample, script):
-    setFunctions =  ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
-    getFunctions = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
+
     variables = dict()
     for line in script:
         if len(line) == 2:  # setting a variable as a value
@@ -227,7 +230,7 @@ def readScript(sample, script):
                 layer = int(params[0])
                 identifier = params[1].strip(' ')
                 key = params[2].strip(' ')
-                if key.isdigit():
+                if isfloat(key):
                     sample.setRoughness(layer, identifier, float(key))
                 else:
                     sample.setRoughness(layer, identifier, variables[key])
@@ -236,7 +239,7 @@ def readScript(sample, script):
                 layer = int(params[0])
                 identifier = params[1].strip(' ')
                 key = params[2].strip(' ')
-                if key.isdigit():
+                if isfloat(key):
                     sample.setDensity(layer, identifier, float(key))
                 else:
                     sample.setDensity(layer, identifier, variables[key])
@@ -245,7 +248,7 @@ def readScript(sample, script):
                 layer = int(params[0])
                 identifier = params[1].strip(' ')
                 key = params[2].strip(' ')
-                if key.isdigit():
+                if isfloat(key):
                     sample.setThickness(layer, identifier, float(key))
                 else:
                     sample.setThickness(layer, identifier, variables[key])
@@ -255,7 +258,8 @@ def readScript(sample, script):
                 layer_end = int(params[1])
                 identifier = params[2].strip(' ')
                 key = params[3].strip(' ')
-                if key.isdigit():
+
+                if isfloat(key):
                     sample.setCombinedThickness(layer_start, layer_end, identifier, float(key))
                 else:
                     sample.setCombinedThickness(layer_start, layer_end, identifier, variables[key])
@@ -330,13 +334,15 @@ def scanCompute(x, *args):
     optimizeSave = args[10]  # save optimization values
     r_scale = args[11]  # defines how to transform R [log(x), ln(x), x, qz^4]
     smooth_dict = args[12]  # dictionary of already smoothed out data
+    script = args[13]
+    use_script = args[14]
 
     # determines if saving will be done in callback function
     if optimizeSave:
         x_vars.append(x)
 
     # change the sample parameters
-    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF)
+    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF,script, use_script=use_script)
 
 
     i = 0 # keeps track of which boundary to use
@@ -489,7 +495,7 @@ def scanCompute(x, *args):
 
     return fun
 
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -499,7 +505,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script]  # required format for function scanCompute
 
     p=True
     if goParam[8] == 'True':
@@ -521,7 +527,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
     global x_vars
     x_vars = []
 
@@ -530,7 +536,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -548,7 +554,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
     global x_vars
     x_vars = []
 
@@ -557,7 +563,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script]
 
     p = True
     if goParam[6] == 'True':
@@ -578,7 +584,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
-def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict):
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
     global x_vars
     x_vars = []
 
@@ -587,7 +593,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script]
 
     diff = goParam[8]
     _max = goParam[9]
@@ -625,7 +631,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     f.close()
     return x, fun
 
-def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict):
+def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -635,7 +641,7 @@ def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBound
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
 
     # checking if locally biased
     p=True

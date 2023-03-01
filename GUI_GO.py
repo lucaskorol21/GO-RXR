@@ -3994,7 +3994,6 @@ class GlobalOptimizationWidget(QWidget):
         mylayout.addWidget(self.checkBox)
 
 
-
         self.runButton = QPushButton('Run Optimization')
         self.runButton.pressed.connect(self._run_global_optimization)
         self.runButton.setStyleSheet('background: green')
@@ -4488,222 +4487,10 @@ class GlobalOptimizationWidget(QWidget):
         self.setGOParameters()
         self.setLayout(pagelayout)
         self.setTableFit()
-        self.checkscript()
-
-    def checkbracket(self,myStr):
-        # checks to make sure that the brackets are maintained
-        open_list = ["[", "{", "("]
-        close_list = ["]", "}", ")"]
-
-        stack = []
-        for i in myStr:
-            if i in open_list:
-                stack.append(i)
-            elif i in close_list:
-                pos = close_list.index(i)
-                if ((len(stack) > 0) and
-                        (open_list[pos] == stack[len(stack) - 1])):
-                    stack.pop()
-                else:
-                    return True
-        if len(stack) == 0:
-            return False
-        else:
-            return True
-
-    def checkscript(self):
-        script = os.getcwd() + '/default_script.txt'
-        my_script = list()
-        with open(script, "r") as f:
-            for line in f.readlines():
-                test = line.strip(' ')
-                if test != "\n" and not(test.startswith('#')):
-                    my_script.append(line.strip("\n").split('='))
-                    n = len(my_script)
-        f.close()
-
-        my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
-
-        my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
-
-        problem = False
-
-        # checks to make sure that all functions agree with what we expect
-        for line in my_script:
-            if len(line) == 1:
-                function = line[0].split('(')[0].strip(' ')
-
-                if not(problem):
-                    problem = self.checkbracket(line[0])
-
-
-                if function.lower() not in my_function_1:
-                    problem = True
-                    print(1)
+        #self.checkscript()
 
 
 
-                if not(problem):
-                    params = line[0].strip(' ').strip(function)
-
-                    params = params.strip('(')
-                    params = params.strip(')')
-                    params = params.strip(' ')
-                    params = params.split(',')
-
-                    if function.lower() == 'setcombinedthickness':
-                        if len(params) != 4:  # not expected number of arguments
-                            problem = True
-                            print(2)
-
-                        if not (params[0].isdigit()) and not (problem):  # first two arguments are not digits
-                            problem = True
-                            print(3)
-
-                        else:
-                            if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
-                                problem = True
-                                print(4)
-
-                            start = int(params[0])
-                            end = int(params[1])
-
-                            if start > end:
-                                problem = True
-                                print(5)
-
-                            if start < 0:
-                                problem = True
-                                print(6)
-
-                            m = len(self.sample.structure)
-
-
-                            if m - 1 < end:
-                                problem = True
-                                print(7)
-
-                            if not (problem):
-
-                                key = params[2].strip(' ')
-
-                                if key.lower() != 'all':
-                                    for i in range(start, end + 1, 1):
-                                        if key not in list(self.sample.structure[i].keys()):
-                                            problem = True
-
-
-                    else:
-                        if len(params) != 3:
-                            problem = True
-
-
-
-                        if not(problem) and params[0].isdigit():
-                            if '.' in params[0]:
-                                problem = True
-                                print(9)
-                            layer = int(params[0])
-
-                            if layer > len(self.sample.structure) - 1:
-                                problem = True
-                                print(10)
-
-                            if not (problem):
-                                key = params[1].strip(' ')
-                                if key not in list(self.sample.structure[layer].keys()):
-                                    problem = True
-                                    print(11)
-
-                        else:
-                            problem = True
-                            print(12)
-
-
-            elif len(line) == 2:
-                if not(problem):
-                    problem = self.checkbracket(line[1])
-
-                function = line[1].split('(')[0].strip(' ')
-                if function.lower() not in my_function_2:
-                    problem = True
-                    print(13)
-
-                if not(problem):
-                    params = line[1].strip(' ').strip(function)
-
-                    params = params.strip('(')
-                    params = params.strip(')')
-                    params = params.strip(' ')
-                    params = params.split(',')
-
-                    if function.lower() == 'gettotalthickness':
-                        if len(params) != 3:  # not expected number of arguments
-                            problem = True
-                            print(14)
-                        if not(params[0].isdigit()) or not(params[1].isdigit()) and not(problem):  # first two arguments are not digits
-                            problem = True
-                            print(15)
-                        else:
-                            if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
-                                problem=True
-                                print(16)
-
-                            start = int(params[0])
-                            end = int(params[1])
-
-                            if start > end:
-                                problem = True
-                                print(17)
-                            if start < 0:
-                                problem = True
-                                print(18)
-
-                            m = len(self.sample.structure)
-
-                            if m-1 < end:
-                                problem = True
-                                print(19)
-
-                            if not(problem):
-                                key = params[2].strip(' ')
-                                if key.lower() != 'all':
-                                    for i in range(start,end+1,1):
-                                        if key not in list(self.sample.structure[i].keys()):
-                                            problem = True
-                                            print(20)
-
-                    else:
-                        if len(params) != 2:
-                            problem = True
-                            print(21)
-                        if not(problem) and params[0].isdigit():
-                            if '.' in params[0]:
-                                problem = True
-                                print(22)
-                            layer = int(params[0])
-
-                            if layer > len(self.sample.structure)-1:
-                                problem = True
-                                print(23)
-
-                            if not(problem):
-                                key = params[1].strip(' ')
-                                if key.lower() != 'all':
-                                    if key not in list(self.sample.structure[layer].keys()):
-                                            problem = True
-                                            print(24)
-                        else:
-                            problem = True
-                            print(25)
-
-
-
-            else:
-                problem = True
-                print(26)
-
-        return problem
 
 
     def _clear_fit(self):
@@ -5000,9 +4787,16 @@ class GlobalOptimizationWidget(QWidget):
 
         self.changeFitParameters()
 
+        # including scipt implementation
+        script, problem = checkscript(self.sWidget.sample)
+
+        use_script = False
+        if not(problem):
+            use_script = True
+
         self.sWidget.sample, self.rWidget.bs, self.rWidget.sf = go.changeSampleParams(self.x, self.parameters,
                                                                                       copy.deepcopy(self.sWidget.sample),
-                                                                                      self.rWidget.bs, self.rWidget.sf)
+                                                                                      self.rWidget.bs, self.rWidget.sf, script, use_script=use_script)
 
         # updates all the sample information across all the different Widgets
         self.rWidget.sample = copy.deepcopy(self.sWidget.sample)
@@ -5029,6 +4823,11 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: plot and compare the data, previous simulation, and new fit all in one graph
         """
+        script, problem = checkscript(self.sample)
+        use_script = False
+
+        if not(problem):
+            use_script = True
 
         self.plotWidget.clear()  # clear current graph
         name = self.selectedScans.currentText()  # name of selected scan
@@ -5057,7 +4856,7 @@ class GlobalOptimizationWidget(QWidget):
             scaleF = copy.deepcopy(self.rWidget.sf)
             if len(self.x) != 0:
                 sample2, backS, scaleS = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample2), backS,
-                                                               scaleF)
+                                                               scaleF, script, use_script=use_script)
                 isGO = True
 
             scaling_factor_old = float(self.rWidget.sf[name])
@@ -5302,7 +5101,10 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Run data fitting algorithms
         """
-
+        script, problem = checkscript(self.sample)
+        use_script = False
+        if not(problem):
+            use_script = True
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
@@ -5365,29 +5167,29 @@ class GlobalOptimizationWidget(QWidget):
                 x, fun = go.differential_evolution(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['differential evolution'], self.callback,
-                                                   self.objective, self.shape_weight, r_scale, smooth_dict)
+                                                   self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
             elif idx == 1:
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
-                                 self.objective, self.shape_weight, r_scale, smooth_dict)
+                                 self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds,
                                            sWeights,
                                            self.goParameters['dual annealing'], self.callback,
-                                           self.objective, self.shape_weight, r_scale, smooth_dict)
+                                           self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
             elif idx == 3:
                 bounds = (lw, up)
                 x, fun = go.least_squares(x0, sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
-                                          self.objective, self.shape_weight, r_scale, smooth_dict)
+                                          self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script)
             """
             elif idx == 4:
                 bounds = (lw,up)
                 x,fun = go.direct(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['direct'], self.callback,
-                                                 self.objective, self.shape_weight, r_scale, smoothe_dict)
+                                                 self.objective, self.shape_weight, r_scale, smoothe_dict, script, use_script)
             """
         else:
             print('Try again')
@@ -7684,7 +7486,7 @@ class ReflectometryApp(QMainWindow):
         script.show()
         script.exec_()
         script.close()
-        self._goWidget.checkscript()
+        checkscript(self.sample)
 
     def _showFormFactor(self):
         """
@@ -7899,6 +7701,15 @@ class progressWidget(QWidget):
         """
         Purpose: plot the data and current iteration of the data fitting
         """
+
+        # script checker
+        script, problem = checkscript(self.sample)
+
+        use_script=False
+        if not(problem):
+            use_script=True
+
+        #script, problem = self.
         self.scanBox.setStyleSheet('background: red; selection-background-color: grey')
         self.allScans.setStyleSheet('background: white; selection-background-color: red')
 
@@ -7915,9 +7726,9 @@ class progressWidget(QWidget):
         b_idx = self.scanBox.currentIndex()
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
-                                                      self.backS, self.scaleF)
-        background_shift = float(backS[name])
-        scaling_factor = float(scaleF[name])
+                                                      self.backS, self.scaleF, script, use_script=use_script)
+        background_shift = 0
+        scaling_factor = 1
 
         if name != '':
             bound = self.rWidget.bounds[b_idx]
@@ -7993,6 +7804,11 @@ class progressWidget(QWidget):
         """
         Purpose: plot the data and current iteration of the data fitting
         """
+        script, problem = checkscript(self.sample)
+        use_script=False
+
+        if not(problem):
+            use_script=True
 
         self.scanBox.setStyleSheet('background: white; selection-background-color: grey')
         self.allScans.setStyleSheet('background: red; selection-background-color: red')
@@ -8008,7 +7824,7 @@ class progressWidget(QWidget):
         name = self.allScans.currentText()
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
-                                                      self.backS, self.scaleF)
+                                                      self.backS, self.scaleF,script,use_script=use_script)
         background_shift = float(backS[name])
         scaling_factor = float(scaleF[name])
 
@@ -8096,11 +7912,12 @@ class progressWidget(QWidget):
         self.allScans.blockSignals(False)
         self.boundaries = self.rWidget.bounds
 
-    def computeScan(self, x_array):
+    def computeScan(self, x_array, script, use_script=False):
         """
         Purpose: calculate the cost function of the current data fitting iteration
         :param x_array: current iteration parameters
         """
+
         smooth_dict = self.nWidget.smoothScans  # retrieve the smoothed data
 
         if len(x_array) != 0:
@@ -8109,7 +7926,7 @@ class progressWidget(QWidget):
 
             for x in x_array[n:]:
                 sample, backS, scaleF = go.changeSampleParams(x, self.parameters, self.sample,
-                                                              self.backS, self.scaleF)
+                                                              self.backS, self.scaleF,script,use_script=use_script)
                 gamma = 0
                 fun = 0
 
@@ -8268,6 +8085,10 @@ class progressWidget(QWidget):
         """
         Purpose: plot the progress of the scans
         """
+        script, problem = checkscript(self.sWidget.sample)
+        use_script=False
+        if not(problem):
+            use_script=True
 
         # retrieve the parameters of the current data fitting iteration
         global x_vars
@@ -8276,7 +8097,7 @@ class progressWidget(QWidget):
             x = go.return_x()
         self.plotWidget.clear()
 
-        self.computeScan(x)
+        self.computeScan(x, script,use_script=use_script)
 
         idx = self.whichPlot.index(True)
         n = len(x)
@@ -8316,7 +8137,7 @@ class progressWidget(QWidget):
             elif idx == 4:  # plot the density profile
                 sample = copy.deepcopy(self.sample)
                 sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, sample,
-                                                              self.backS, self.scaleF)
+                                                              self.backS, self.scaleF, script, use_script=True)
 
                 thickness, density, density_magnetic = sample.density_profile()
 
@@ -8550,6 +8371,11 @@ class progressWidget(QWidget):
         """
         Purpose: Data fitting update process
         """
+        script, problem = checkscript(self.sWidget.sample)
+        use_script=False
+        if not(problem):
+            use_script=True
+
         self.keep_going = True
         idx = 0
         while self.keep_going:
@@ -8562,7 +8388,7 @@ class progressWidget(QWidget):
                 if len(x) == 0:
                     x = go.return_x()
 
-                self.computeScan(x)
+                self.computeScan(x, script, use_script=use_script)
                 idx = 0
         return
 
@@ -8983,6 +8809,220 @@ class LoadingScreen(QDialog):
 
         self.accept()
 
+def checkbracket(myStr):
+    # checks to make sure that the brackets are maintained
+    open_list = ["[", "{", "("]
+    close_list = ["]", "}", ")"]
+
+    stack = []
+    for i in myStr:
+        if i in open_list:
+            stack.append(i)
+        elif i in close_list:
+            pos = close_list.index(i)
+            if ((len(stack) > 0) and
+                    (open_list[pos] == stack[len(stack) - 1])):
+                stack.pop()
+            else:
+                return True
+    if len(stack) == 0:
+        return False
+    else:
+        return True
+
+def checkscript(sample):
+    script = os.getcwd() + '/default_script.txt'
+    my_script = list()
+    with open(script, "r") as f:
+        for line in f.readlines():
+            test = line.strip(' ')
+            if test != "\n" and not(test.startswith('#')):
+                my_script.append(line.strip("\n").split('='))
+                n = len(my_script)
+    f.close()
+
+    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
+
+    my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
+
+    problem = False
+
+    # checks to make sure that all functions agree with what we expect
+    for line in my_script:
+        if len(line) == 1:
+            function = line[0].split('(')[0].strip(' ')
+
+            if not(problem):
+                problem = checkbracket(line[0])
+
+
+            if function.lower() not in my_function_1:
+                problem = True
+                print(1)
+
+
+
+            if not(problem):
+                params = line[0].strip(' ').strip(function)
+
+                params = params.strip('(')
+                params = params.strip(')')
+                params = params.strip(' ')
+                params = params.split(',')
+
+                if function.lower() == 'setcombinedthickness':
+                    if len(params) != 4:  # not expected number of arguments
+                        problem = True
+                        print(2)
+
+                    if not (params[0].isdigit()) and not (problem):  # first two arguments are not digits
+                        problem = True
+                        print(3)
+
+                    else:
+                        if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
+                            problem = True
+                            print(4)
+
+                        start = int(params[0])
+                        end = int(params[1])
+
+                        if start > end:
+                            problem = True
+                            print(5)
+
+                        if start < 0:
+                            problem = True
+                            print(6)
+
+                        m = len(sample.structure)
+
+
+                        if m - 1 < end:
+                            problem = True
+                            print(7)
+
+                        if not (problem):
+
+                            key = params[2].strip(' ')
+
+                            if key.lower() != 'all':
+                                for i in range(start, end + 1, 1):
+                                    if key not in list(sample.structure[i].keys()):
+                                        problem = True
+
+
+                else:
+                    if len(params) != 3:
+                        problem = True
+
+
+
+                    if not(problem) and params[0].isdigit():
+                        if '.' in params[0]:
+                            problem = True
+                            print(9)
+                        layer = int(params[0])
+
+                        if layer > len(sample.structure) - 1:
+                            problem = True
+                            print(10)
+
+                        if not (problem):
+                            key = params[1].strip(' ')
+                            if key not in list(sample.structure[layer].keys()):
+                                problem = True
+                                print(11)
+
+                    else:
+                        problem = True
+                        print(12)
+
+
+        elif len(line) == 2:
+            if not(problem):
+                problem = checkbracket(line[1])
+
+            function = line[1].split('(')[0].strip(' ')
+            if function.lower() not in my_function_2:
+                problem = True
+                print(13)
+
+            if not(problem):
+                params = line[1].strip(' ').strip(function)
+
+                params = params.strip('(')
+                params = params.strip(')')
+                params = params.strip(' ')
+                params = params.split(',')
+
+                if function.lower() == 'gettotalthickness':
+                    if len(params) != 3:  # not expected number of arguments
+                        problem = True
+                        print(14)
+                    if not(params[0].isdigit()) or not(params[1].isdigit()) and not(problem):  # first two arguments are not digits
+                        problem = True
+                        print(15)
+                    else:
+                        if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
+                            problem=True
+                            print(16)
+
+                        start = int(params[0])
+                        end = int(params[1])
+
+                        if start > end:
+                            problem = True
+                            print(17)
+                        if start < 0:
+                            problem = True
+                            print(18)
+
+                        m = len(sample.structure)
+
+                        if m-1 < end:
+                            problem = True
+                            print(19)
+
+                        if not(problem):
+                            key = params[2].strip(' ')
+                            if key.lower() != 'all':
+                                for i in range(start,end+1,1):
+                                    if key not in list(sample.structure[i].keys()):
+                                        problem = True
+                                        print(20)
+
+                else:
+                    if len(params) != 2:
+                        problem = True
+                        print(21)
+                    if not(problem) and params[0].isdigit():
+                        if '.' in params[0]:
+                            problem = True
+                            print(22)
+                        layer = int(params[0])
+
+                        if layer > len(sample.structure)-1:
+                            problem = True
+                            print(23)
+
+                        if not(problem):
+                            key = params[1].strip(' ')
+                            if key.lower() != 'all':
+                                if key not in list(sample.structure[layer].keys()):
+                                        problem = True
+                                        print(24)
+                    else:
+                        problem = True
+                        print(25)
+
+
+
+        else:
+            problem = True
+            print(26)
+
+    return my_script, problem
 
 if __name__ == '__main__':
     fname = 'Pim10uc.h5'

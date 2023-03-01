@@ -2,21 +2,21 @@
 
 # Thickness Workspace
 
-d = getThickness(0, A)
-setThickness(0,Ti, d)
+#d = getThickness(0, A)
+#setThickness(0,Ti, d)
          
-dtot = getTotalThickness(0,5, all)
-setCombinedThickness(0,5,all,dtot)
+#dtot = getTotalThickness(0,5, all)
+setCombinedThickness(9,12,all,4.387682258496046)
 
 # Roughness Workspace
 
-sigma = getRoughness(5, Mn)
-setRoughness(4,A, sigma)
+#sigma = getRoughness(5, Mn)
+#setRoughness(4,A, sigma)
 
 # Density Workspace
 
-rho = getDensity(2, O)
-setDensity(3,O, rho)
+#rho = getDensity(2, O)
+#setDensity(3,O, rho)
 
 # Element Variation Ratio Workspace
 

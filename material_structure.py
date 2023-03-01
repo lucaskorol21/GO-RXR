@@ -1527,12 +1527,13 @@ class slab:
         # makes sure that the combine thickness from layer_start to layer_end is constant (d)
         import copy
         dprime = 0
-        for i in range(layer_start, layer_end, 1):
+        for i in range(layer_start, layer_end + 1, 1):
             keys = list(self.structure[i].keys())
             if identifier in keys:
                 dprime = dprime + self.structure[i][identifier].thickness
             elif identifier.upper() == 'ALL':
                 dprime = dprime + self.structure[i][keys[0]].thickness
+
 
         for i in range(layer_start, layer_end+1, 1):
             keys = list(self.structure[i].keys())
@@ -1542,10 +1543,11 @@ class slab:
             elif identifier.upper() == 'ALL':
                 val = copy.deepcopy(self.structure[i][keys[0]].thickness)
                 for key in keys:
-                    self.structure[i][key].thickness = val * dprime / d
+                    self.structure[i][key].thickness = val * d / dprime
 
 
 
+        print(dprime, d)
 
 if __name__ == "__main__":
     print('Nope')
