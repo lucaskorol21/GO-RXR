@@ -17,6 +17,120 @@ import copy
 global x_vars
 x_vars = []
 
+
+def checkParameters(x, parameters, script):
+    # The purpose of this is to change the x-value of the global optimization based on the script
+    # Loop through each sample parameter
+    for p in range(len(parameters)):
+        params = parameters[p]
+
+
+        if params[0] not in ['SCATTERING FACTOR',"BACKGROUND SHIFT", "SCALING FACTOR"]:
+            layer = params[0]  # Determine which layer to change
+            property = params[1]  # structural/polymorphous/magnetic
+            if property == 'STRUCTURAL':
+                mode = params[2]
+                # Determine if user wants to use compound or element mode
+                if mode == 'COMPOUND':
+                    characteristic = params[3]  # thickness/density/roughness/linked roughness
+                    ele_idx = params[4]
+
+                    my_ele = list(sample.structure[layer].keys())[ele_idx]
+                    diffT = x[p] - sample.structure[layer][my_ele].thickness
+                    diffD = x[p] - sample.structure[layer][my_ele].density
+                    diffR = x[p] - sample.structure[layer][my_ele].roughness
+                    diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
+                    # print(sample.structure)
+                    # determine the difference parameter for compound mode (will always be the first element)
+                    for ele in list(sample.structure[layer].keys()):
+                        if characteristic == 'THICKNESS':
+
+                            if ele == my_ele:
+                                sample.structure[layer][ele].thickness = x[p]
+                            else:
+                                sample.structure[layer][ele].thickness = sample.structure[layer][ele].thickness + diffT
+                        elif characteristic == 'DENSITY':
+                            stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
+                            molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
+                            if ele == my_ele:
+                                sample.structure[layer][ele].density = x[p]  # set density
+                            else:
+                                sample.structure[layer][ele].density = sample.structure[layer][
+                                                                           ele].density + diffD * stoich  # set density
+                        elif characteristic == 'ROUGHNESS':
+                            if ele == my_ele:
+                                sample.structure[layer][ele].roughness = x[p]
+                            else:
+                                sample.structure[layer][ele].roughness = sample.structure[layer][ele].roughness + diffR
+                        elif characteristic == 'LINKED ROUGHNESS':
+                            if ele == my_ele:
+                                sample.structure[layer][ele].linked_roughness = x[p]
+                            else:
+                                sample.structure[layer][ele].linked_roughness = sample.structure[layer][
+                                                                                    ele].linked_roughness + diffLR
+
+                elif mode == 'ELEMENT':
+                    element = params[3]  # determines the element to change
+                    characteristic = params[4]  # thickness/density/roughness/linked roughness
+                    if characteristic == 'THICKNESS':
+                        sample.structure[layer][element].thickness = x[p]
+                    elif characteristic == 'DENSITY':
+                        sample.structure[layer][element].density = x[p]
+                    elif characteristic == 'ROUGHNESS':
+                        sample.structure[layer][element].roughness = x[p]
+                    elif characteristic == 'LINKED ROUGHNESS':
+                        sample.structure[layer][element].linked_roughness = x[p]
+
+
+            elif property == 'POLYMORPHOUS':
+                element = params[2]  # determines the element that contains the polymorph
+                polymorph = params[3]  # determines the polymorph to change
+
+                ratio = 1 - x[p]  # Assumes only two possible polymorphs for now and computes other polymorph ratio
+
+                # poly = np.where(sample.structure[layer][element].polymorph == polymorph)  # determines location of polymorph
+                my_poly = list(sample.structure[layer][element].polymorph)
+                num = len(my_poly)
+
+                poly = my_poly.index(polymorph)
+
+                if num == 2:
+                    # sets poly_ratio value making sure sum equals to 1
+                    if poly == 0:
+                        sample.structure[layer][element].poly_ratio[0] = x[p]
+                        sample.structure[layer][element].poly_ratio[1] = ratio
+                    elif poly == 1:
+                        sample.structure[layer][element].poly_ratio[1] = x[p]
+                        sample.structure[layer][element].poly_ratio[0] = ratio
+                else:  # more than one element variation
+
+                    # maintain the element variation ratios (except the change variable)
+                    x_temp = []
+                    sum = 0
+
+                    my_idx = [i for i in range(num) if
+                              i != poly]  # indices of polymorph that are not the varying element variation
+                    poly_ratio = copy.copy(
+                        np.array([float(sample.structure[layer][element].poly_ratio[i]) for i in range(num)]))
+
+                    sum = np.sum(poly_ratio[my_idx])
+                    # for i in range(num):
+                    #    x_temp.append(float(sample.structure[layer][element].poly_ratio[i]))
+                    #    if i != poly:
+                    #        sum = sum + float(sample.structure[layer][element].poly_ratio[i])
+
+                    x_prime = ratio * poly_ratio / sum
+                    for i in range(num):
+                        if i == poly:
+                            sample.structure[layer][element].poly_ratio[i] = x[p]
+                        else:
+                            sample.structure[layer][element].poly_ratio[i] = x_prime[i]
+
+
+
+
+    # the purpose of this code is to run the script and change the values accordingly
+
 def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=False):
     """
     Purpose: Change the parameters for the input sample for x-values
@@ -183,6 +297,7 @@ def isfloat(num):
 def readScript(sample, script):
 
     variables = dict()
+
     for line in script:
         if len(line) == 2:  # setting a variable as a value
             key = line[0].strip(' ')
@@ -228,6 +343,7 @@ def readScript(sample, script):
 
             if function.lower() == 'setroughness':
                 layer = int(params[0])
+
                 identifier = params[1].strip(' ')
                 key = params[2].strip(' ')
                 if isfloat(key):

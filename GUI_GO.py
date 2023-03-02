@@ -4845,8 +4845,11 @@ class GlobalOptimizationWidget(QWidget):
                     notDone = False
                 else:
                     idx = idx + 1
+            scan_type = 'Reflectivity'
+            if 'Angle' in list(self.rWidget.data_dict[name].keys()):
+                scan_type = 'Energy'
 
-            scan_type = self.rWidget.data[idx][1]
+            print(scan_type)
             step_size = float(self.sWidget._step_size)
 
             sample1 = copy.deepcopy(self.sample)
@@ -4930,6 +4933,7 @@ class GlobalOptimizationWidget(QWidget):
                 E = dat[3]
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
+
                 E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor_old,
                                               bShift=background_shift_old)
                 if isGO:
@@ -4938,7 +4942,7 @@ class GlobalOptimizationWidget(QWidget):
                     Rgo = Rgo[pol]
 
                 Rsim = Rsim[pol]
-                self.plotWidget.setLogMode(False, False)
+
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                 if isGO:
@@ -4946,6 +4950,8 @@ class GlobalOptimizationWidget(QWidget):
                                                   bShift=background_shift)
                     Rgo = Rgo[pol]
                     self.plotWidget.plot(E, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
+
+                self.plotWidget.setLogMode(False, False)
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
