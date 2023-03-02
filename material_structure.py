@@ -1478,15 +1478,23 @@ class slab:
                 self.structure[layer][key].roughness = density
 
     def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
+        # ratio = identifier1/identifier2
         # for now this will only work for 3 element variations
         keys = list(self.structure[layer].keys())
 
         if symbol in keys:
             if len(self.structure[layer][symbol].polymorph) == 3:
-                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier1 or
+                # determines the index of the polymorph that is not identifer 1 or 2
+                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier1 and
                        self.structure[layer][symbol].polymorph[i] != identifier2]
 
+                val = self.structure[layer][symbol].poly_ratio[idx_no][0]
 
+                idx1 = list(self.structure[layer][symbol].polymorph).index(identifier1)
+                idx2 = list(self.structure[layer][symbol].polymorph).index(identifier2)
+
+                self.structure[layer][symbol].poly_ratio[idx1] = (1-val)/(ratio+1)
+                self.structure[layer][symbol].poly_ratio[idx2] = ratio*(1-val)/(ratio+1)
 
 
     def getThickness(self, layer, identifier):

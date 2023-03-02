@@ -21,6 +21,17 @@ setCombinedThickness(9,12,all,4.387682258496046)
 # Element Variation Ratio Workspace
 
 
+setRatio(2,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(3,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(4,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(5,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(6,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(7,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(8,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(9,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(10,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(11,Mn,Mn3+,Mn4+,0.428571429)
+setRatio(12,Mn,Mn3+,Mn4+,0.428571429)
 
 
 # Written by Lucas Korol

@@ -7491,7 +7491,8 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: initialize the script widget
         """
-        script = scriptWidget(self._sampleWidget.sample)
+
+        script = scriptWidget(self._sampleWidget)
         script.show()
         script.exec_()
         script.close()
@@ -7502,6 +7503,7 @@ class ReflectometryApp(QMainWindow):
         Purpose: initialize the form factor widget
         """
         self.sample = copy.deepcopy(self._sampleWidget._createSample())
+
         formFactor = showFormFactors(self.sample)
         formFactor.show()
         formFactor.exec_()
@@ -8696,32 +8698,36 @@ class scriptWidget(QDialog):
     """
     Purpose: Initialize script window to allow user to perform special operations
     """
-    def __init__(self, sample):
+    def __init__(self, sWidget):
         super().__init__()
 
         cwd = os.getcwd()
         self.fname = cwd + '/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
-        self.sample = sample
+        self.sWidget = sWidget
 
         # open and save the script buttons
         pagelayout = QHBoxLayout()
         openButton = QPushButton('Open Script')
-        openButton.setFixedWidth(80)
+        openButton.setFixedWidth(100)
         openButton.clicked.connect(self.open_new_file)
         saveButton = QPushButton('Save Script')
-        saveButton.setFixedWidth(80)
+        saveButton.setFixedWidth(100)
         saveButton.clicked.connect(self.save_file)
-        checkButton = QPushButton('Check Script')
-        checkButton.setFixedWidth(80)
+        checkButton = QPushButton('Check Saved Script')
+        checkButton.setFixedWidth(100)
         checkButton.clicked.connect(self.check_script)
+        runButton = QPushButton('Run Saved Script')
+        runButton.setFixedWidth(100)
+        runButton.clicked.connect(self.run_script)
 
         buttonLayout = QVBoxLayout()
         buttonLayout.addStretch(1)
         buttonLayout.addWidget(openButton)
         buttonLayout.addWidget(saveButton)
         buttonLayout.addWidget(checkButton)
+        buttonLayout.addWidget(runButton)
         buttonLayout.addStretch(1)
 
         # creating the script workspace
@@ -8772,9 +8778,28 @@ class scriptWidget(QDialog):
             f.write(text)
         f.close()
 
+    def run_script(self):
+        sample = self.sWidget._createSample()
+        my_script, problem = checkscript(sample)
+        if problem:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Script unable to execute")
+            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.exec()
+        else:
+            sample = go.readScript(sample, my_script)
+            self.sWidget.sample = copy.deepcopy(sample)
+            self.sWidget._setStructFromSample(sample)
+            self.sWidget._setVarMagFromSample(sample)
+            self.sWidget.setTable()
+            self.sWidget.setTableMag()
+            self.sWidget.setTableVar()
+
+
+
     def check_script(self):
 
-        my_script, problem = checkscript(self.sample)
+        my_script, problem = checkscript(self.sWidget._createSample())
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
@@ -8868,7 +8893,7 @@ def checkscript(sample):
                 n = len(my_script)
     f.close()
 
-    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness']
+    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio']
 
     my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
 
@@ -8937,6 +8962,45 @@ def checkscript(sample):
                                 for i in range(start, end + 1, 1):
                                     if key not in list(sample.structure[i].keys()):
                                         problem = True
+
+                elif function.lower() == 'setratio':
+                    if len(params) != 5:
+                        problem = True
+
+
+                    if not (params[0].isdigit()) and not(problem):
+                        print('30')
+                        problem = True
+
+                    m = len(sample.structure)
+
+                    if int(params[0]) > m-1 and not(problem):
+                        problem = True
+                        print('31')
+
+                    if params[1].isdigit() or params[2].isdigit() or params[3].isdigit():
+                        problem = True
+                        print('32')
+
+                    if not(problem):
+
+                        if params[1] not in list(sample.structure[int(params[0])].keys()):
+                            problem = True
+                            print('33')
+                        if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not(problem):
+                            problem=True
+                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
+                            print(sample.structure[int(params[0])][params[1]].polymorph)
+                            print('34')
+
+
+                        if not(problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
+                            problem = True
+                            print('35')
+
+                        if not(problem) and params[3] not in sample.structure[int(params[0])][params[1]].polymorph:
+                            problem = True
+                            print('36')
 
 
                 else:
@@ -9018,7 +9082,6 @@ def checkscript(sample):
                                     if key not in list(sample.structure[i].keys()):
                                         problem = True
                                         print(20)
-
                 else:
                     if len(params) != 2:
                         problem = True
@@ -9042,14 +9105,18 @@ def checkscript(sample):
                     else:
                         problem = True
                         print(25)
-
-
-
         else:
             problem = True
             print(26)
 
     return my_script, problem
+
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
 
 if __name__ == '__main__':
     fname = 'Pim10uc.h5'

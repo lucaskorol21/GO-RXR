@@ -269,8 +269,12 @@ def readScript(sample, script):
                 symbol = params[1].strip(' ')
                 identifier1 = params[2].strip(' ')
                 identifier2 = params[3].strip(' ')
-                ratio = params[3].strip(' ')
-                sample.setRatio(layer, symbol, identifier1, identifier2, ratio)
+                key = params[4].strip(' ')
+
+                if isfloat(key):
+                    sample.setRatio(layer, symbol, identifier1, identifier2, float(key))
+                else:
+                    sample.setRatio(layer, symbol, identifier1, identifier2, variables[key])
 
     return sample
     # script must be a list of lines
