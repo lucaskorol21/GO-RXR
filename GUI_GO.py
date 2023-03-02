@@ -4789,9 +4789,9 @@ class GlobalOptimizationWidget(QWidget):
 
         # including scipt implementation
         script, problem = checkscript(self.sWidget.sample)
-
+        state = self.checkBox.checkState()
         use_script = False
-        if not(problem):
+        if not(problem) and state > 0:
             use_script = True
 
         self.sWidget.sample, self.rWidget.bs, self.rWidget.sf = go.changeSampleParams(self.x, self.parameters,
@@ -4825,8 +4825,9 @@ class GlobalOptimizationWidget(QWidget):
         """
         script, problem = checkscript(self.sample)
         use_script = False
+        check = self.checkBox.checkState()
 
-        if not(problem):
+        if not(problem) and check>0:
             use_script = True
 
         self.plotWidget.clear()  # clear current graph
@@ -5071,6 +5072,14 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Set up threads to run data fitting and update function in parallel
         """
+
+        # determines if the script will be run
+        state = self.checkBox.checkState()
+        my_state = False
+        if state > 0:
+            my_state = True
+
+        self.pWidget.check_script_state(my_state)
 
         # runs the optimizer method to perform the global optimization
         self.thread = QThread()  # initialize the thread
@@ -7482,7 +7491,7 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: initialize the script widget
         """
-        script = scriptWidget()
+        script = scriptWidget(self._sampleWidget.sample)
         script.show()
         script.exec_()
         script.close()
@@ -7619,6 +7628,7 @@ class progressWidget(QWidget):
         self.objective = None
         self.shape_weight = None
         self.keep_going = True
+        self.script_state = False
 
         self.objFun = dict()
         self.costFun = dict()
@@ -7697,6 +7707,9 @@ class progressWidget(QWidget):
 
         self.setLayout(pagelayout)
 
+    def check_script_state(self, state):
+        self.script_state = state
+
     def plot_scan(self):
         """
         Purpose: plot the data and current iteration of the data fitting
@@ -7706,7 +7719,7 @@ class progressWidget(QWidget):
         script, problem = checkscript(self.sample)
 
         use_script=False
-        if not(problem):
+        if not(problem) and self.script_state:
             use_script=True
 
         #script, problem = self.
@@ -7727,8 +7740,8 @@ class progressWidget(QWidget):
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
                                                       self.backS, self.scaleF, script, use_script=use_script)
-        background_shift = 0
-        scaling_factor = 1
+        background_shift = float(backS[name])
+        scaling_factor = float(scaleF[name])
 
         if name != '':
             bound = self.rWidget.bounds[b_idx]
@@ -7807,7 +7820,7 @@ class progressWidget(QWidget):
         script, problem = checkscript(self.sample)
         use_script=False
 
-        if not(problem):
+        if not(problem) and self.script_state:
             use_script=True
 
         self.scanBox.setStyleSheet('background: white; selection-background-color: grey')
@@ -7825,8 +7838,8 @@ class progressWidget(QWidget):
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
                                                       self.backS, self.scaleF,script,use_script=use_script)
-        background_shift = float(backS[name])
-        scaling_factor = float(scaleF[name])
+        background_shift = 0
+        scaling_factor = 1
 
         if name != '':
 
@@ -8087,7 +8100,7 @@ class progressWidget(QWidget):
         """
         script, problem = checkscript(self.sWidget.sample)
         use_script=False
-        if not(problem):
+        if not(problem) and self.script_state:
             use_script=True
 
         # retrieve the parameters of the current data fitting iteration
@@ -8683,13 +8696,14 @@ class scriptWidget(QDialog):
     """
     Purpose: Initialize script window to allow user to perform special operations
     """
-    def __init__(self):
+    def __init__(self, sample):
         super().__init__()
 
         cwd = os.getcwd()
         self.fname = cwd + '/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
+        self.sample = sample
 
         # open and save the script buttons
         pagelayout = QHBoxLayout()
@@ -8699,11 +8713,15 @@ class scriptWidget(QDialog):
         saveButton = QPushButton('Save Script')
         saveButton.setFixedWidth(80)
         saveButton.clicked.connect(self.save_file)
+        checkButton = QPushButton('Check Script')
+        checkButton.setFixedWidth(80)
+        checkButton.clicked.connect(self.check_script)
 
         buttonLayout = QVBoxLayout()
         buttonLayout.addStretch(1)
         buttonLayout.addWidget(openButton)
         buttonLayout.addWidget(saveButton)
+        buttonLayout.addWidget(checkButton)
         buttonLayout.addStretch(1)
 
         # creating the script workspace
@@ -8753,6 +8771,15 @@ class scriptWidget(QDialog):
         with open(self.fname, 'w') as f:
             f.write(text)
         f.close()
+
+    def check_script(self):
+
+        my_script, problem = checkscript(self.sample)
+        if problem:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Script unable to execute")
+            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.exec()
 
 
 class LoadingScreen(QDialog):

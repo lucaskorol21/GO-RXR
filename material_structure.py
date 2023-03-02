@@ -1547,7 +1547,7 @@ class slab:
 
 
 
-        print(dprime, d)
+
 
 if __name__ == "__main__":
     print('Nope')
