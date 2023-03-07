@@ -164,16 +164,17 @@ if __name__ == '__main__':
     E0 = E[j-2]
     E4 = E[j+2]
 
-    KK = variationKK(E_prime,E0,E2,E4)
+    #KK = variationKK(E_prime,E0,E2,E4)
     
-    """
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_exp.h5"
+
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
 
     struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-
+    print(sample.eShift)
+    """
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     keys = ['26_452.77_S', '35_460.76_S', '19_500.71_S', '31_635.99_S', '22_640.99_S', '24_644.02_S', '33_834.59_S',

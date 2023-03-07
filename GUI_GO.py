@@ -4849,7 +4849,7 @@ class GlobalOptimizationWidget(QWidget):
             if 'Angle' in list(self.rWidget.data_dict[name].keys()):
                 scan_type = 'Energy'
 
-            print(scan_type)
+
             step_size = float(self.sWidget._step_size)
 
             sample1 = copy.deepcopy(self.sample)

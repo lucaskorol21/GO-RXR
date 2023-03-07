@@ -1553,7 +1553,50 @@ class slab:
                 for key in keys:
                     self.structure[i][key].thickness = val * d / dprime
 
+    def getMagDensity(self, layer,symbol,variation):
+        # retrieve the magnetic density
+        # if there is no element variation just input the same variable
 
+        polymorph = self.structure[layer][symbol].polymorph
+        if len(polymorph) != 0:
+            idx = [polymorph[i] for i in range(len(polymorph)) if variation == 'polymorph']
+            mag_density = self.structure[layer][symbol].mag_density[idx]
+            if type(mag_density) is list or type(mag_density) is np.ndarray:
+                mag_density = mag_density[0]
+        else:
+            mag_density = self.structure[layer][symbol].mag_density[0]
+
+        return mag_density
+
+    def setMagDensity(self, layer, symbol, variation, density):
+        # set the magnetic density
+        polymorph = self.structure[layer][symbol].polymorph
+        if len(polymorph) != 0:
+            idx = [polymorph[i] for i in range(len(polymorph)) if variation == 'polymorph']
+            mag_density = self.structure[layer][symbol].mag_density[idx]
+            if type(mag_density) is list or type(mag_density) is np.ndarray:
+                mag_density = mag_density[0]
+            self.structure[layer][symbol].mag_density[idx] = mag_density
+        else:
+            mag_density = self.structure[layer][symbol].mag_density[0]
+            self.structure[layer][symbol].mag_density[0] = mag_density
+
+
+
+    def getEshift(self,ffName):
+        # retieve the energy shift
+        return self.eShift[ffName]
+
+    def setEshift(self, ffName, dE):
+        self.eShift[ffName] = dE
+
+    def getMagEshift(self,ffmName):
+        # retrieve the magnetic energy shift
+        return self.mag_eShift[ffmName]
+
+    def setMagEshift(self, ffmName, dE):
+        # set the magnetic energy shift
+        self.mag_eShift[ffmName] = dE
 
 
 
