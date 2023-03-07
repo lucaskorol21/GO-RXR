@@ -8899,9 +8899,11 @@ def checkscript(sample):
                 n = len(my_script)
     f.close()
 
-    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio']
+    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity']
 
-    my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness']
+    my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness','geteshift', 'getmageshift', 'getmagdensity']
+
+
 
     problem = False
 
@@ -9088,6 +9090,32 @@ def checkscript(sample):
                                     if key not in list(sample.structure[i].keys()):
                                         problem = True
                                         print(20)
+                elif function.lower() in ['geteshift', 'getmageshift']:
+                    ffName = params[0]
+                    if ffName not in list(sample.eShift.keys()):
+                        problem = True
+
+                elif function.lower() == 'getmagdensity':
+                    m = len(sample.structure)
+                    layer = params[0]
+
+                    if not(layer.isdigit()):
+                        problem = True
+                    else:
+                        layer = int(layer)
+
+                    symbol = params[1]
+                    var = params[2]
+                    if not problem:
+                        if m-1 > layer or layer < 0:
+                            problem = True
+                        if not problem:
+                            if symbol not in list(sample.structure[layer].keys()):
+                                problem = True
+
+                            if symbol != var:
+                                if not(problem) and var not in sample.structure[layer][symbol].polymorph:
+                                    problem = True
                 else:
                     if len(params) != 2:
                         problem = True
