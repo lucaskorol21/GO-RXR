@@ -787,6 +787,20 @@ class slab:
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
+        # for an arbitrary size elements
+        num_ele = len(list(self.structure[0].keys()))
+        transition = [[0] for i in range(num_ele)]  # assumes same number elements through entire sample
+        thick_array = np.array([0.0 for i in range(len(list(self.structure[0].keys())))])
+
+        for layer in range(1,n):  # loop over all layers
+            for i in range(num_ele):  # loop over all elements
+                val = transition[i][layer-1] + list(self.structure[layer].values())[i].thickness
+
+                transition[i].append(val)
+                thick_array[i] = val
+
+        thick = max(thick_array)
+        """
         # Initializing thickness array
         transition = [[0],[0],[0]]  # array that contains thickness that slab transition occurs
         thick1 = 0
@@ -805,14 +819,13 @@ class slab:
             transition[2].append(val3)
 
             thick1 = thick1 + list(self.structure[layer].values())[0].thickness
-            thick2 = thick2 + list(self.structure[layer].values())[0].thickness
-            thick3 = thick3 + list(self.structure[layer].values())[0].thickness
-            #val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
-            #transition.append(val)
-            #thick = thick + list(self.structure[layer].values())[0].thickness
+            thick2 = thick2 + list(self.structure[layer].values())[1].thickness
+            thick3 = thick3 + list(self.structure[layer].values())[2].thickness
+
         thick = max(thick1,thick2,thick3)
 
         #step = 0.05  # thickness step size
+        """
         thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
 
         # Loop through elements in sample

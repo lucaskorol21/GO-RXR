@@ -18,14 +18,14 @@
 # ------------------------ Magnetic Density Workspace -------------------------#
 
 
-setMagDensity(7,Mn,Mn2+,0)
+# setMagDensity(7,Mn,Mn2+,0)
 
 # -------------------  Form Factor Workspace -----------------------------#
 
-# dE = getEshift(Mn3)
-# setEshift(Mn2, dE)
-# setMagEshift(Ni, dE)
-# setMagEshift(Co,dE)
+dE = getEshift(Mn3)
+setEshift(Mn2, dE)
+setMagEshift(Ni, dE)
+setMagEshift(Co,dE)
 
 
 # Written by Lucas Korol
