@@ -663,6 +663,7 @@ class sampleWidget(QWidget):
         """
         Purpose: Reset energy table
         """
+
         self.energyShiftTable.blockSignals(True)  # block energy shift signals
         keys = list(self.eShift.keys())  # retrieve energy shift keys
 
@@ -712,6 +713,17 @@ class sampleWidget(QWidget):
                     self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
 
         self.energyShiftTable.blockSignals(False)
+    def eShiftFromSample(self, sample):
+
+        # loop through structural form factors
+        for key in list(sample.eShift.keys()):
+            my_key = 'ff-' + key
+            self.eShift[my_key] = sample.eShift[key]
+
+        # loop through magnetic form factors
+        for key in list(sample.mag_eShift.keys()):
+            my_key = 'ffm-' + key
+            self.eShift[my_key] = sample.mag_eShift[key]
 
     def changeEShiftValues(self):
         """
@@ -4811,12 +4823,18 @@ class GlobalOptimizationWidget(QWidget):
         self.rWidget.backgroundShift.blockSignals(False)
         self.rWidget.scalingFactor.blockSignals(False)
 
+
         self.setTableFit()
+        self.sWidget.sample = copy.deepcopy(self.sample)
+        self.rWidget.sample = copy.deepcopy(self.sample)
         self.sWidget._setStructFromSample(self.sample)  # required for when changing to different tab
         self.sWidget._setVarMagFromSample(self.sample)
         self.sWidget.setTable()
         self.sWidget.setTableVar()
         self.sWidget.setTableMag()
+        self.sWidget.eShiftFromSample(self.sample)
+        self.sWidget.setTableEShift()
+
 
 
     def plot_scan(self):
@@ -8800,6 +8818,8 @@ class scriptWidget(QDialog):
             self.sWidget.setTable()
             self.sWidget.setTableMag()
             self.sWidget.setTableVar()
+            self.sWidget.eShiftFromSample(sample)
+            self.sWidget.setTableEShift()
 
 
 
@@ -8972,8 +8992,12 @@ def checkscript(sample):
                                         problem = True
                 elif function.lower() in ['seteshift', 'setmageshift']:
                     ffName = params[0]
-                    if ffName not in list(sample.eShift.keys()):
-                        problem = True
+                    if function.lower() == 'seteshift':
+                        if ffName not in list(sample.eShift.keys()):
+                            problem = True
+                    else:
+                        if ffName not in list(sample.mag_eShift.keys()):
+                            problem = True
 
                 elif function.lower() == 'setmagdensity':
                     m = len(sample.structure)
@@ -8987,7 +9011,7 @@ def checkscript(sample):
                     symbol = params[1]
                     var = params[2]
                     if not problem:
-                        if m - 1 > layer or layer < 0:
+                        if m - 1 < layer or layer < 0:
                             problem = True
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
@@ -9119,8 +9143,12 @@ def checkscript(sample):
 
                 elif function.lower() in ['geteshift', 'getmageshift']:
                     ffName = params[0]
-                    if ffName not in list(sample.eShift.keys()):
-                        problem = True
+                    if function.lower() == 'geteshift':
+                        if ffName not in list(sample.eShift.keys()):
+                            problem = True
+                    else:
+                        if ffName not in list(sample.mag_eShift.keys()):
+                            problem = True
 
                 elif function.lower() == 'getmagdensity':
                     m = len(sample.structure)
@@ -9128,21 +9156,26 @@ def checkscript(sample):
 
                     if not(layer.isdigit()):
                         problem = True
+                        print('d1')
                     else:
                         layer = int(layer)
 
                     symbol = params[1]
                     var = params[2]
                     if not problem:
-                        if m-1 > layer or layer < 0:
+                        if m-1 < layer or layer < 0:
                             problem = True
+                            print('d2')
+
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
                                 problem = True
+                                print('d3')
 
                             if symbol != var:
                                 if not(problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
+                                    print('d4')
                 else:
                     if len(params) != 2:
                         problem = True

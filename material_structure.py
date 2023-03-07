@@ -1561,6 +1561,7 @@ class slab:
         if len(polymorph) != 0:
             idx = [polymorph[i] for i in range(len(polymorph)) if variation == 'polymorph']
             mag_density = self.structure[layer][symbol].mag_density[idx]
+
             if type(mag_density) is list or type(mag_density) is np.ndarray:
                 mag_density = mag_density[0]
         else:
@@ -1572,14 +1573,12 @@ class slab:
         # set the magnetic density
         polymorph = self.structure[layer][symbol].polymorph
         if len(polymorph) != 0:
-            idx = [polymorph[i] for i in range(len(polymorph)) if variation == 'polymorph']
-            mag_density = self.structure[layer][symbol].mag_density[idx]
-            if type(mag_density) is list or type(mag_density) is np.ndarray:
-                mag_density = mag_density[0]
-            self.structure[layer][symbol].mag_density[idx] = mag_density
+            idx = [i for i in range(len(polymorph)) if variation == polymorph[i]]
+
+            self.structure[layer][symbol].mag_density[idx] = float(density)
+            print(self.structure[layer][symbol].mag_density)
         else:
-            mag_density = self.structure[layer][symbol].mag_density[0]
-            self.structure[layer][symbol].mag_density[0] = mag_density
+            self.structure[layer][symbol].mag_density[0] = float(density)
 
 
 

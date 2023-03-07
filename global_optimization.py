@@ -315,18 +315,15 @@ def readScript(sample, script):
                 layer = int(params[0])
                 symbol = params[1]
                 var = params[2]
-                key = params[3]
+                key = params[3].strip(' ')
 
-                ffName = params[0]
-                key = params[1].strip(' ')
 
                 if isfloat(key):
                     sample.setMagDensity(layer, symbol, var, float(key))
-
                 else:
                     sample.setMagDensity(layer, symbol, var, variables[key])
     return sample
-    # script must be a list of lines
+
 
 
 def smooth_function(R):

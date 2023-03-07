@@ -1,27 +1,31 @@
 # Comments are made using #
 
-# Thickness Workspace
-
-#d = getThickness(0, A)
-#setThickness(0,Ti, d)
-         
-#dtot = getTotalThickness(0,5, all)
+# -------Thickness Workspace ------------#
 
 
-# Roughness Workspace
 
-#sigma = getRoughness(5, Mn)
-#setRoughness(4,A, sigma)
-setCombinedThickness(2,7,all,42.84957473713682)
+#-------------- Roughness Workspace---------------#
 
 
-# Density Workspace
 
-#rho = getDensity(2, O)
-#setDensity(3,O, rho)
+# ------------------- Density Workspace ---------------------#
 
-# Element Variation Ratio Workspace
 
+
+# ------------------ Element Variation Ratio Workspace ---------------------#
+
+
+# ------------------------ Magnetic Density Workspace -------------------------#
+
+
+setMagDensity(7,Mn,Mn2+,0)
+
+# -------------------  Form Factor Workspace -----------------------------#
+
+# dE = getEshift(Mn3)
+# setEshift(Mn2, dE)
+# setMagEshift(Ni, dE)
+# setMagEshift(Co,dE)
 
 
 # Written by Lucas Korol
