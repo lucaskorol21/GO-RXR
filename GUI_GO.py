@@ -8974,6 +8974,7 @@ def checkscript(sample):
                     ffName = params[0]
                     if ffName not in list(sample.eShift.keys()):
                         problem = True
+
                 elif function.lower() == 'setmagdensity':
                     m = len(sample.structure)
                     layer = params[0]
