@@ -5166,7 +5166,7 @@ class GlobalOptimizationWidget(QWidget):
 
             self.thread.start()
             self.update_thread.start()
-        else:
+        else: # these are important checks that makes sure everything is entered properly into the GUI
             if empty_fit:
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("Fitting Parameters")
