@@ -1,35 +1,55 @@
-# Comments are made using #
+# Refer to manual for more information
 
 # -------Thickness Workspace ------------#
+# setThickness(layer, element, value)
+# setCombinedThickness(start,end,element, value)
+# getThickness(layer, Element)
+# getCombinedThickness(start,end,element)
+
+setCombinedThickness(3,4,all,8)
+setCombinedThickness(6,7,all,7.196748754213293)
 
 
 
 #-------------- Roughness Workspace---------------#
+# setRoughness(layer, element, value)
+# getRoughness(layer, element)
 
 
 
 # ------------------- Density Workspace ---------------------#
+# setDensity(layer, element, value)
+# getDensity(layer, element)
 
 
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
+#setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#
+# setMagDensity(layer, element, variation, value) if not a variation element than set element=variation
+# getMagDensity(layer,element, variation)
 
 
-# setMagDensity(7,Mn,Mn2+,0)
 
 # -------------------  Form Factor Workspace -----------------------------#
+# getEShift(ffName)
+# getMagEshift(ffmName)
+# setEshift(ffName, value)
+# setMagEshift(ffmName, value)
 
-dE = getEshift(Mn3)
-setEshift(Mn2, dE)
-setMagEshift(Ni, dE)
-setMagEshift(Co,dE)
+#dE = getEshift(Mn3)
+#setEshift(Mn2, dE)
+#setMagEshift(Ni, dE)
+#setMagEshift(Co,dE)
 
 
-# Written by Lucas Korol
 
+# Author: Lucas Korol
+# Institution: University of Saskatchewan
+# Version: 0.1
+# Last Updated: March 7th, 2023
 
 
 

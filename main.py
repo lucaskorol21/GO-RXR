@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
-    print(sample.eShift)
+
     """
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
