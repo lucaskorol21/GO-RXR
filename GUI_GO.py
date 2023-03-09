@@ -1,5 +1,6 @@
 import ast
 
+
 from scipy import interpolate
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
@@ -556,6 +557,7 @@ class sampleWidget(QWidget):
         self.structTable.setColumnCount(7)
         self.structTable.setHorizontalHeaderLabels(
             ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor', 'Stoichiometry'])
+
 
         self._setStructFromSample(sample)  # setting the structural table
 
@@ -5034,6 +5036,7 @@ class GlobalOptimizationWidget(QWidget):
 
         idx = self.algorithmSelect.currentIndex()
 
+
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 # initialize the parameters for optimization saving
@@ -5096,39 +5099,99 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Set up threads to run data fitting and update function in parallel
         """
+        # perform the proper checks first so that global optimization runs smoothly!
+        empty_fit = False
+        empty_scans = False
+        boundary_bad = False
+        weight_bad = False
+        data_bad = False
+        do_data_fit = True
 
-        # determines if the script will be run
-        state = self.checkBox.checkState()
-        my_state = False
-        if state > 0:
-            my_state = True
 
-        self.pWidget.check_script_state(my_state)
+        if len(self.sWidget.parameterFit) == 0 and len(self.rWidget.sfBsFitParams) == 0:
+            empty_fit = True
+            do_data_fit = False
 
-        # runs the optimizer method to perform the global optimization
-        self.thread = QThread()  # initialize the thread
-        self.update_thread = QThread()
+        if len(self.rWidget.fit) == 0:
+            empty_scans = True
+            do_data_fit = False
 
-        self.worker = Worker(self)  # data fitting worker
-        self.update_worker = UpdateWorker(self.pWidget)  # progress report worker
+        for bound in self.rWidget.bounds:
+            for b in bound:
+                if not(isfloat(b[0])) or not(isfloat(b[1])):
+                    boundary_bad = True
+                    do_data_fit = False
 
-        # move worker to thread
-        self.worker.moveToThread(self.thread)
-        self.update_worker.moveToThread(self.update_thread)
 
-        self.thread.started.connect(self.run_first)
+        for weight in self.rWidget.weights:
+            for w in weight:
+                if not(isfloat(w)):
+                    weight_bad = True
+                    do_data_fit = False
 
-        self.thread.started.connect(self.worker.run)
-        self.update_thread.started.connect(self.pWidget.start)
-        self.update_thread.started.connect(self.update_worker.run)
+        if len(list(self.rWidget.data_dict.keys())) == 0:
+            data_bad = True
+            do_data_fit = False
 
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.thread.deleteLater)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.finished.connect(self.optimizationFinished)
+        if do_data_fit:
+            # determines if the script will be run
+            state = self.checkBox.checkState()
+            my_state = False
+            if state > 0:
+                my_state = True
 
-        self.thread.start()
-        self.update_thread.start()
+            self.pWidget.check_script_state(my_state)
+
+            # runs the optimizer method to perform the global optimization
+            self.thread = QThread()  # initialize the thread
+            self.update_thread = QThread()
+
+            self.worker = Worker(self)  # data fitting worker
+            self.update_worker = UpdateWorker(self.pWidget)  # progress report worker
+
+            # move worker to thread
+            self.worker.moveToThread(self.thread)
+            self.update_worker.moveToThread(self.update_thread)
+
+            self.thread.started.connect(self.run_first)
+
+            self.thread.started.connect(self.worker.run)
+            self.update_thread.started.connect(self.pWidget.start)
+            self.update_thread.started.connect(self.update_worker.run)
+
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.thread.deleteLater)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.worker.finished.connect(self.optimizationFinished)
+
+            self.thread.start()
+            self.update_thread.start()
+        else:
+            if empty_fit:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Fitting Parameters")
+                messageBox.setText("A fitting parameter must be selected to perform a data fit.")
+                messageBox.exec()
+            elif empty_scans:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Data Scan")
+                messageBox.setText("A data scan must be selected to perform a data fit.")
+                messageBox.exec()
+            elif boundary_bad:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Scan Boundary")
+                messageBox.setText("There is an error in the scan boundary input. Please check the scan boundaries in the Reflectivity Workspace.")
+                messageBox.exec()
+            elif weight_bad:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Scan Weight")
+                messageBox.setText("There is an error in the scan boundary input. Please check the scan boundaries in the Reflectivity Workspace.")
+                messageBox.exec()
+            elif data_bad:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Data")
+                messageBox.setText("Data must be loaded into the workspace in order to perform a data fit.")
+                messageBox.exec()
 
     def _optimizer(self):
         """
