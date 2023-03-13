@@ -289,11 +289,17 @@ class variationWidget(QDialog):
         self.mainWidget.varTable.setRowCount(2)
         self.mainWidget.varTable.setColumnCount(3)
         self.mainWidget.varTable.setHorizontalHeaderLabels(
-            ['Name', 'Ratio', 'Scattering Factor'])
+            ['Name', 'Ratio', 'Form Factor'])
+
+        aFont = QtGui.QFont()
+        aFont.setBold(True)
+        self.mainWidget.varTable.horizontalHeader().setFont(aFont)
 
         pagelayout.addLayout(self.elelayout)  # add element layout to the page layout
         pagelayout.addWidget(self.mainWidget.varTable)  # add element variation table to page layout
 
+        self.mainWidget.varTable.setStyleSheet('background-color: white;')
+        self.setStyleSheet('background-color: lightgrey;')
         self.setLayout(pagelayout)
 
     def changeElements(self):
@@ -432,7 +438,12 @@ class magneticWidget(QDialog):
         self.mainWidget.magTable.setRowCount(3)
         self.mainWidget.magTable.setColumnCount(2)
         self.mainWidget.magTable.setHorizontalHeaderLabels(
-            ['Magnetic Density (mol/cm^3)', 'Scattering Factor'])
+            ['Magnetic Density (mol/cm^3)', 'Form Factor'])
+
+        afont = QtGui.QFont()
+        afont.setBold(True)
+        self.mainWidget.magTable.horizontalHeader().setFont(afont)
+        self.mainWidget.magTable.verticalHeader().setFont(afont)
 
         self.mainWidget.setTableMag()  # set magTable
 
@@ -440,6 +451,11 @@ class magneticWidget(QDialog):
         pagelayout.addWidget(self.mainWidget.magTable)
         pagelayout.addLayout(magLayout)
         self.setLayout(pagelayout)
+
+        self.mainWidget.magTable.setStyleSheet('background-color: white;')
+
+        self.setStyleSheet('background-color: lightgrey;')
+
 
     def magDirectionChange(self):
         """
@@ -474,6 +490,7 @@ class sampleWidget(QWidget):
         self.change_eShift = True  # boolean used to determine if eShift is changed
         self.varTable = QTableWidget()  # element variation table
         self.elementBox = QComboBox()  # used to select which element to change element variation
+        self.elementBox.setStyleSheet('background-color: white;')
         self.variationElements = sample.poly_elements  # retrieve the variation elements from the sample
 
         self.struct_ff = []  # list that contains the structural form factors
@@ -484,6 +501,7 @@ class sampleWidget(QWidget):
         self.magGo = True  # boolean currently not in use
         self.magDirection = ['z' for i in range(len(sample.structure))] # initialize the magnetization direction
         self.magDirBox = QComboBox()  # magnetization direction selection (x,y,z direction)
+        self.magDirBox.setStyleSheet('background-color: white;')
         self.getData()  # gets the element variation and magnetic information
 
         self.magTable = QTableWidget()  # magnetization property table
@@ -541,13 +559,16 @@ class sampleWidget(QWidget):
         # changes the table on the screen when new layer selected
 
         # buttons for adding and removing layers
+        cblayout.addStretch(1)
         cblayout.addWidget(addlayerButton)
         cblayout.addWidget(copylayerButton)
         cblayout.addWidget(deletelayerButton)
+        cblayout.addSpacing(50)
         cblayout.addLayout(step_size_layout)
 
         # layer combo box
         cblayout.addWidget(self.layerBox)
+        cblayout.addStretch(1)
 
         self.sampleInfoLayout = QStackedLayout()  # stacked layout for the different parameter types
 
@@ -556,9 +577,13 @@ class sampleWidget(QWidget):
         self.structTable.setRowCount(3)
         self.structTable.setColumnCount(7)
         self.structTable.setHorizontalHeaderLabels(
-            ['Element', 'Thickness', 'Density', 'Roughness', 'Linked Roughness', 'Scattering Factor', 'Stoichiometry'])
+            ['Element', 'Thickness (Å)', 'Density (mol/cm^3)', 'Roughness (Å)', 'Linked Roughness (Å)', 'Scattering Factor', 'Stoichiometry'])
 
-
+        afont = QtGui.QFont()
+        afont.setBold(True)
+        self.structTable.horizontalHeader().setSectionResizeMode(1)
+        self.structTable.horizontalHeader().setFont(afont)
+        # <sup>2</sup>
         self._setStructFromSample(sample)  # setting the structural table
 
         # setTable
@@ -569,6 +594,9 @@ class sampleWidget(QWidget):
         self.energyShiftTable.setColumnCount(2)
         #self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
         self.energyShiftTable.setVerticalHeaderLabels(['Energy Shift (eV)', 'Scale'])
+
+        self.energyShiftTable.verticalHeader().setFont(afont)
+        self.energyShiftTable.horizontalHeader().setFont(afont)
 
         # variationWidget and magneticWidget initialization
         self.elementVariation = variationWidget(self, self.sample)
@@ -587,7 +615,7 @@ class sampleWidget(QWidget):
         self.energyShiftTable.viewport().installEventFilter(self)
 
         selectlayout = QVBoxLayout()
-
+        selectlayout.addStretch(1)
         # buttons for choosing which parameters to choose
         self.structButton = QPushButton('Structure')
         self.structButton.setStyleSheet('background: blue; color: white')
@@ -608,7 +636,7 @@ class sampleWidget(QWidget):
         self.magButton.clicked.connect(self.setTableMag)
         selectlayout.addWidget(self.magButton)
 
-        self.shiftButton = QPushButton('Energy Shift')  # energy shift button
+        self.shiftButton = QPushButton('Form Factor')  # energy shift button
         self.shiftButton.setStyleSheet('background: lightGrey')
         self.shiftButton.clicked.connect(self._energy_shift)
         selectlayout.addWidget(self.shiftButton)
@@ -618,12 +646,14 @@ class sampleWidget(QWidget):
         self.polyBool = False
         self.magBool = False
 
+        selectlayout.addSpacing(50)
+
         # button used to plot the density profile
         dpButton = QPushButton('Density Profile')
         dpButton.clicked.connect(self._densityprofile)
         dpButton.setStyleSheet("background-color : cyan")
         selectlayout.addWidget(dpButton)
-
+        selectlayout.addStretch(1)
         # set the page layout
         pagelayout.addLayout(cblayout)
         pagelayout.addLayout(self.sampleInfoLayout)
@@ -845,6 +875,8 @@ class sampleWidget(QWidget):
                         self.parameterFit.remove(fit)
                         self.magTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
 
+        self.magTable.verticalHeader().setSectionResizeMode(1)
+        #self.structTable.horizontalHeader().setSectionResizeMode(1)
     def changeVarValues(self):
         """
         Purpose: change the variation parameters when signaled
@@ -5105,6 +5137,7 @@ class GlobalOptimizationWidget(QWidget):
         boundary_bad = False
         weight_bad = False
         data_bad = False
+        asymmetry_check = False
         do_data_fit = True
 
 
@@ -5133,6 +5166,17 @@ class GlobalOptimizationWidget(QWidget):
             data_bad = True
             do_data_fit = False
 
+
+
+        if not(empty_scans):
+            noisy_text = self.nWidget.smoothScale.currentText()
+            global_text = self.isLogWidget.currentText()
+            for name in self.rWidget.fit:
+                polarization = self.rWidget.data_dict[name]['Polarization']
+                if noisy_text == 'log(x)' or noisy_text == 'ln(x)' or global_text == 'log(x)' or global_text == 'ln(x)':
+                    if polarization =='AC' or polarization == 'AL':
+                        asymmetry_check = True
+                        do_data_fit = False
         if do_data_fit:
             # determines if the script will be run
             state = self.checkBox.checkState()
@@ -5191,6 +5235,11 @@ class GlobalOptimizationWidget(QWidget):
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("Data")
                 messageBox.setText("Data must be loaded into the workspace in order to perform a data fit.")
+                messageBox.exec()
+            elif asymmetry_check:
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Optimization and Smoothing Scale")
+                messageBox.setText("A logarithmic transformation is being used on an asymmetry scan, which has potential for undefined values (logarithm of negative values). It is suggested to use 'x' as the optimization scale in the Noise Reduction and Optimization workspace.")
                 messageBox.exec()
 
     def _optimizer(self):
