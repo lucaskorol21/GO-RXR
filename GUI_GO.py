@@ -6843,12 +6843,21 @@ class ReflectometryApp(QMainWindow):
         pagelayout.addLayout(buttonlayout)
         pagelayout.addLayout(self.stackedlayout)
 
+        afont = QtGui.QFont('Ariel', 11)
+        afont.setBold(True)
+
+
         # initializing workspace buttons
         self.sampleButton = QPushButton('Sample')
+        self.sampleButton.setFont(afont)
         self.reflButton = QPushButton('Reflectivity')
-        self.smoothButton = QPushButton('Noise Reduction')
+        self.reflButton.setFont(afont)
+        self.smoothButton = QPushButton('Smooth Data')
+        self.smoothButton.setFont(afont)
         self.goButton = QPushButton('Optimization')
+        self.goButton.setFont(afont)
         self.progressButton = QPushButton('Progress')
+        self.progressButton.setFont(afont)
         self.scanProgress = QComboBox()
 
         # initializing workspace widgets
