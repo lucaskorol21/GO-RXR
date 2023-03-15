@@ -2676,11 +2676,11 @@ class reflectivityWidget(QWidget):
         self.reflectButton = QPushButton('Reflectivity Scan')
         self.reflectButton.clicked.connect(self.changeToReflScan)
         self.reflectButton.setStyleSheet('background: cyan')
-        self.reflectButton.setFixedWidth(300)
+        self.reflectButton.setFixedWidth(150)
         self.energyButton = QPushButton('Energy Scan')
         self.energyButton.clicked.connect(self.changeToEnergyScan)
         self.energyButton.setStyleSheet('background: grey')
-        self.energyButton.setFixedWidth(300)
+        self.energyButton.setFixedWidth(150)
 
         self.rButtonSim = QPushButton('Reflectometry')
         self.rButtonSim.setStyleSheet('background: grey')
@@ -2765,29 +2765,76 @@ class reflectivityWidget(QWidget):
         buttonLayout.addWidget(self.opButton)
         buttonLayout.addWidget(self.opmButton)
 
+        ERButtonLayout = QHBoxLayout()
+        ERButtonLayout.addWidget(self.reflectButton)
+        ERButtonLayout.addWidget(self.energyButton)
+
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.HLine)
+        line1.setLineWidth(3)
+
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.HLine)
+        line2.setLineWidth(3)
+
+        line3 = QFrame()
+        line3.setFrameShape(QFrame.HLine)
+        line3.setLineWidth(3)
+
+        line4 = QFrame()
+        line4.setFrameShape(QFrame.HLine)
+        line4.setLineWidth(3)
+
+        sideline1 = QFrame()
+        sideline1.setFrameShape(QFrame.VLine)
+        sideline1.setLineWidth(3)
+
+        sideline2 = QFrame()
+        sideline2.setFrameShape(QFrame.VLine)
+        sideline2.setLineWidth(3)
+
         scanSelectionLayout = QVBoxLayout()
+        scanSelectionLayout.addWidget(line1)
+        scanSelectionLayout.addSpacing(20)
+
         scanSelectionLayout.addLayout(whichScanLayout)
         scanSelectionLayout.addWidget(self.fitButton)
         scanSelectionLayout.addLayout(buttonLayout)
-        scanSelectionLayout.addStretch(1)
+
+        scanSelectionLayout.addSpacing(20)
+        scanSelectionLayout.addWidget(line2)
+        scanSelectionLayout.addSpacing(20)
+
         scanSelectionLayout.addLayout(hbox)
         scanSelectionLayout.addLayout(stepLayout)
-        scanSelectionLayout.addStretch(1)
+
+        scanSelectionLayout.addSpacing(20)
+        scanSelectionLayout.addWidget(line3)
+        scanSelectionLayout.addSpacing(20)
+
         scanSelectionLayout.addWidget(simulationLabel)
         scanSelectionLayout.addLayout(simButtonLayout)
+        scanSelectionLayout.addSpacing(20)
+
+        scanSelectionLayout.addLayout(ERButtonLayout)
         scanSelectionLayout.addLayout(simAngleLayout)
         scanSelectionLayout.addLayout(simEnergyLayout)
         scanSelectionLayout.addLayout(energyRangeLayout)
         scanSelectionLayout.addWidget(self.polarBox)
-        scanSelectionLayout.addWidget(self.reflectButton)
-        scanSelectionLayout.addWidget(self.energyButton)
+        scanSelectionLayout.addSpacing(20)
+        scanSelectionLayout.addWidget(line4)
+
+        scanLayout = QHBoxLayout()
+        scanLayout.addWidget(sideline1)
+        scanLayout.addLayout(scanSelectionLayout)
+        scanLayout.addWidget(sideline2)
 
         # scanSelectionLayout.addStretch(1)
         # scanSelectionLayout.addLayout(selectedScansLayout)
 
         toplayout = QHBoxLayout()
         toplayout.addWidget(self.spectrumWidget)
-        toplayout.addLayout(scanSelectionLayout)
+        toplayout.addLayout(scanLayout)
 
         boundWidget = QWidget()
         boundLayout = QVBoxLayout()
@@ -2865,6 +2912,8 @@ class reflectivityWidget(QWidget):
 
         pagelayout = QVBoxLayout()
         pagelayout.addLayout(toplayout)
+        pagelayout.addSpacing(10)
+
         pagelayout.addLayout(bottomlayout)
 
         self.backgroundShift.editingFinished.connect(self.bsChange)
@@ -4028,6 +4077,7 @@ class GlobalOptimizationWidget(QWidget):
 
         self.plotWidget.addLegend()
 
+
         # Global optimization parameters and fitting
         buttonLayout = QVBoxLayout()
 
@@ -4065,7 +4115,8 @@ class GlobalOptimizationWidget(QWidget):
         buttonLayout.addWidget(self.clearFitButton)
 
         # Adding Widgets to plotting layout
-        plotLayout.addWidget(self.plotWidget)
+        plotLayout.addWidget(self.plotWidget, 5)
+
         plotLayout.addLayout(buttonLayout)
 
         self.fittingParamTable = QTableWidget()

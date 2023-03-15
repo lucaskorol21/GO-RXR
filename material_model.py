@@ -10,6 +10,7 @@ with open('form_factor.pkl', 'rb') as f:
     global ff
     ff = pickle.load(f)
 
+
 f.close()
 
 # Loads all scattering factors when program imported
@@ -92,7 +93,6 @@ def find_form_factor(element, E, mag):
         F = form_factor(ffm[element],E)
     else:
         struc_keys = list(ff.keys())
-
         if element not in struc_keys:
             raise NameError(element + " not found in structural form factors")
         F = form_factor(ff[element], E)

@@ -167,14 +167,14 @@ if __name__ == '__main__':
     #KK = variationKK(E_prime,E0,E2,E4)
     
 
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    #fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
 
-    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
+    #struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
 
-    sample = ds.ReadSampleHDF5(fname)
-    sample.energy_shift()
-    a = dict()
-    print(a.keys())
+    #sample = ds.ReadSampleHDF5(fname)
+    #sample.energy_shift()
+
+
     """
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
@@ -201,4 +201,28 @@ if __name__ == '__main__':
 
 
     #np.savetxt('E1_' + str(E), dat)
+    """
+
+    #E = np.arange(10,3000,1)
+    #imaginary = np.zeros(len(E))
+    #real = np.zeros(len(E))
+
+    #data = np.transpose(np.array([E, imaginary, real]))
+
+    #np.savetxt('Z.txt', data,fmt='%.4s')
+
+    """
+    dir = "C:/Users/lsk601/PycharmProjects/MaterialReflection/Scattering_Factor"
+    my_dict = dict()
+    for filename in os.listdir(dir):
+        f = os.path.join(dir, filename)
+        if not(filename.startswith('README')):
+            name = filename.split('.')[0]
+            data =  np.loadtxt(f)
+            my_dict[name] = data
+
+    import pickle
+    with open('form_factor.pkl', 'wb') as handle:
+        pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
     """

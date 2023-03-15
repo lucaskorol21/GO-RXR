@@ -202,7 +202,9 @@ def checkstring(formula):
                'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se' , 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
                'Cs', 'Ba', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po' , 'At', 'Rn', 'Fr', 'Ra', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
                'Rg', 'Cn', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
-               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'X', 'Q']
+               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'D','E','G','J','L','M','P','Q','R','T','W','X','Z']
+
+    # The letters A, D, E, G, J, L, M, P, Q, R, T, W, X, and Z represent 'dummy variables'
 
     info = []  # list to store the element symbol and it's stoichiometry
     n = len(formula)  # Get's the number of characters in the list

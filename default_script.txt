@@ -6,7 +6,9 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
-setCombinedThickness(1,2,all,5.148797787917269)
+setCombinedThickness(3,5,all,12.26607326051976)
+setCombinedThickness(6,7,all,2.4959762055318066)
+
 
 
 
