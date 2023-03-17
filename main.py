@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_v1.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -111,29 +111,26 @@ if __name__ == '__main__':
         print('Done - ', key)
 
     ds.saveSimulationHDF5(fname, sim_dict)
-    
+    """
     
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
 
-    electrons = np.zeros(len(thickness))
-    oxidation_keys = ['Sr','La','Ti','Mn2+','Mn3+', 'O']
 
-    state = {'Sr':2,'Ti':4, 'La': 3, 'Mn2+':2,'Mn3+':3,'O':-2}
-    for element in oxidation_keys:
-        electrons = + electrons + density[element]*state[element]
 
     d = 21.6
     idx = [i for i in range(len(thickness)) if thickness[i] < d]
 
 
 
-    plt.figure(1)
-    plt.plot(thickness[idx], electrons[idx])
     density['Mn'] = density['Mn2+'] + density['Mn3+']
 
+    from scipy import integrate
 
+    total = integrate.trapezoid(mag_density['Mn3+'], x=thickness)
+    print(total/10)
+    print(total/10/40.53)
 
     plt.figure(2)
     for key in my_keys:
@@ -142,27 +139,18 @@ if __name__ == '__main__':
     plt.ylabel('Density (mol/cm^3)')
     plt.xlabel('Thickness (angstroms)')
     plt.legend(my_keys)
+
+
+    x = [4,7,10]
+    y = [0.0007044,0.00220607,0.00279876]
+
+    plt.figure(3)
+    plt.plot(x,y)
+    plt.ylabel('Average Magnetic Density (mol/cm^2)')
+    plt.xlabel('Unit Cells (uc)')
     plt.show()
-    
-    """
-    E = np.linspace(1,2,num=100)
 
 
-    j = 25
-    delta1 = triangle_function(j-1,j,E)
-    delta2 = triangle_function(j,j,E)
-    delta3 = triangle_function(j+1,j,E)
-
-    C1 = 0.5
-    C2 = 1
-    C3 = 1.25
-
-
-    E_prime = E[j]
-    E2 = E[j]
-
-    E0 = E[j-2]
-    E4 = E[j+2]
 
     #KK = variationKK(E_prime,E0,E2,E4)
     

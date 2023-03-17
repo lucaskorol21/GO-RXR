@@ -5235,6 +5235,7 @@ class GlobalOptimizationWidget(QWidget):
             if state > 0:
                 my_state = True
 
+
             self.pWidget.check_script_state(my_state)
 
             # runs the optimizer method to perform the global optimization
@@ -7790,7 +7791,12 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget.sample = self.sample
         self._goWidget.sample = self.sample
         self._progressWidget.reset_fit_scans()  # resets the scans in the fit
+        state = self._goWidget.checkBox.checkState()
+        my_state = False
+        if state > 0:
+            my_state = True
 
+        self._progressWidget.check_script_state(my_state)
         self.sampleButton.setStyleSheet("background-color : pink")
         self.reflButton.setStyleSheet("background-color : pink")
         self.smoothButton.setStyleSheet("background-color : pink")
@@ -7815,6 +7821,7 @@ class progressWidget(QWidget):
         self.y_scale = 'log(x)'
         self.whichPlot = [True, False, False, False, False]
         # parameters required for calculations
+        self.run_script = False
         self.sample = None
         self.scans = None
         self.data = None
@@ -7904,6 +7911,7 @@ class progressWidget(QWidget):
         pagelayout.addWidget(self.plotWidget)
 
         self.setLayout(pagelayout)
+
 
     def check_script_state(self, state):
         self.script_state = state
@@ -8583,7 +8591,7 @@ class progressWidget(QWidget):
         Purpose: Data fitting update process
         """
         script, problem = checkscript(self.sWidget.sample)
-        use_script=False
+        use_script = False
         if not(problem):
             use_script=True
 

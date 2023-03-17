@@ -6,8 +6,7 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
-setCombinedThickness(3,5,all,12.26607326051976)
-setCombinedThickness(6,7,all,2.4959762055318066)
+#setCombinedThickness(4,5,all,24.80428385113182)
 
 
 
@@ -22,7 +21,8 @@ setCombinedThickness(6,7,all,2.4959762055318066)
 # setDensity(layer, element, value)
 # getDensity(layer, element)
 
-
+rho = getDensity(8,Mn)
+setDensity(7,Mn,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
