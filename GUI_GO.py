@@ -5991,6 +5991,7 @@ class dataSmoothingWidget(QWidget):
         myWidget.setLayout(myLayout)
 
 
+        self.graph.setFixedSize(1000,600)
 
         pagelayout.addLayout(optionLayout)
         pagelayout.addWidget(myWidget)
@@ -7595,6 +7596,7 @@ class ReflectometryApp(QMainWindow):
                             formula = formula + ele
                         else:
                             formula = formula + ele + str(stoich)
+
                     file.write("formula = %s \n\n" % formula)
 
                     # writing the element information

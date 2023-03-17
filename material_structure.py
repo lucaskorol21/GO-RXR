@@ -1476,7 +1476,7 @@ class slab:
         keys = list(self.structure[layer].keys())
         density = 0.028
         if identifier in keys:
-            sigma = self.structure[layer][identifier].density
+            density = self.structure[layer][identifier].density
 
         return density
 
