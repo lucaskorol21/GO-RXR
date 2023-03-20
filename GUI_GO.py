@@ -1333,68 +1333,86 @@ class sampleWidget(QWidget):
         row = self.varTable.currentRow()  # retrieves current row
         column = self.varTable.currentColumn()  # retrieves current column
 
+        Disable = False
+        my_items = self.varTable.selectedIndexes()
+        my_columns = []
+        for i in my_items:
+            col = i.column()
+            if col in my_columns:
+                Disable = True
+            my_columns.append(row)
+            for fit in self.parameterFit:
+                if column == 1:
+                    if fit[1] == 'POLYMORPHOUS' and fit[0] == my_layer:
+                        name = self.varTable.item(row, 0).text()
+                        if element == fit[2] and name != fit[3]:
+                            Disable = True
 
 
-        if column == 0:  # disable fitting for identifier (element variation name)
+        if column == 0 or Disable:  # disable fitting for identifier (element variation name)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
 
         action = menu.exec_(QtGui.QCursor.pos())
-        if action == _fit:
-            # add parameter to parameterFit
-            self.resetX = True
-            alreadySelected = False
-            for fit in copy_fit_list:
-                if column == 1:
-                    if fit[1] == 'POLYMORPHOUS' and fit[0] == my_layer:
-                        name = self.varTable.item(row, 0).text()
-                        if element == fit[2] and name == fit[3]:
+        for i in my_items:
+            row = i.row()
+            column = i.column()
+            if action == _fit:
+                # add parameter to parameterFit
+                self.resetX = True
+                alreadySelected = False
+                for fit in copy_fit_list:
+                    if column == 1:
+                        if fit[1] == 'POLYMORPHOUS' and fit[0] == my_layer:
+                            name = self.varTable.item(row, 0).text()
+                            if element == fit[2] and name == fit[3]:
+                                alreadySelected = True
+
+                    elif column == 2:
+                        scattering_factor = self.varTable.item(row, column).text()
+                        if len(fit) == 3 and scattering_factor == fit[2]:
                             alreadySelected = True
-                elif column == 2:
-                    scattering_factor = self.varTable.item(row, column).text()
-                    if len(fit) == 3 and scattering_factor == fit[2]:
-                        alreadySelected = True
 
-            if not alreadySelected:  # case where parameter has not been selected yet
-                if column == 1:
-                    name = self.varTable.item(row, 0).text()
-                    ratio = self.varTable.item(row, 1).text()
-
-                    if ratio != '':
-                        self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
-                        lower = float(ratio) - 0.2
-                        upper = float(ratio) + 0.2
-                        if lower < 0:
-                            lower = 0
-                        if upper > 1:
-                            upper = 1
-
-                        self.currentVal.append([float(ratio), [lower, upper]])
-
-                elif column == 2:  # fitting the energy shift for the structural scattering factor
-                    scattering_factor = self.varTable.item(row, 2).text()
-                    if scattering_factor != '':
-                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
-                        self.currentVal.append([0, [-0.5, 0.5]])
-
-        elif action == _remove_fit:
-            # remove the fit
-            self.resetX = True
-            for fit in copy_fit_list:
-                if column == 1:
-                    if len(fit) == 4 and fit[1] == 'POLYMORPHOUS':
+                if not alreadySelected:  # case where parameter has not been selected yet
+                    if column == 1:
                         name = self.varTable.item(row, 0).text()
-                        if my_layer == fit[0] and element == fit[2] and name == fit[3]:
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                elif column == 2:
-                    if len(fit) == 3:
+                        ratio = self.varTable.item(row, 1).text()
+
+                        if ratio != '':
+                            self.parameterFit.append([my_layer, 'POLYMORPHOUS', element, name])
+                            lower = float(ratio) - 0.2
+                            upper = float(ratio) + 0.2
+                            if lower < 0:
+                                lower = 0
+                            if upper > 1:
+                                upper = 1
+
+                            self.currentVal.append([float(ratio), [lower, upper]])
+
+                    elif column == 2:  # fitting the energy shift for the structural scattering factor
                         scattering_factor = self.varTable.item(row, 2).text()
-                        if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
+                        if scattering_factor != '':
+                            self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
+                            self.currentVal.append([0, [-0.5, 0.5]])
+
+            elif action == _remove_fit:
+                # remove the fit
+                self.resetX = True
+                for fit in copy_fit_list:
+                    if column == 1:
+                        if len(fit) == 4 and fit[1] == 'POLYMORPHOUS':
+                            name = self.varTable.item(row, 0).text()
+                            if my_layer == fit[0] and element == fit[2] and name == fit[3]:
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                    elif column == 2:
+                        if len(fit) == 3:
+                            scattering_factor = self.varTable.item(row, 2).text()
+                            if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
         self.setTableVar()
 
     def structure_handler(self):
