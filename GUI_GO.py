@@ -1514,7 +1514,7 @@ class sampleWidget(QWidget):
                             if item == fit[2]:
                                 alreadySelected = True
 
-                    elif n == 5:  # compound mode
+                    elif n == 5:  # element mode
                         layer = fit[0]
                         param = fit[3]
 
@@ -1533,10 +1533,11 @@ class sampleWidget(QWidget):
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
 
-                    elif n == 6:  # element mode
+
+                    elif n == 4:  # compound mode
                         layer = fit[0]
-                        ele = fit[3]
-                        param = fit[4]
+                        ele = fit[4]
+                        param = fit[3]
                         my_ele = self.structTableInfo[idx][row][0]
 
                         param_num = 1
@@ -1549,43 +1550,51 @@ class sampleWidget(QWidget):
                         elif param == 'LINKED ROUGHNESS':
                             param_num = 4
 
-                        if layer == my_layer and column == param_num and ele == my_ele:
+
+                        if layer == my_layer and column == param_num and my_ele == ele:
                             alreadySelected = True
+
 
                 if not alreadySelected:  # add parameter to parameterFit and pre-set boundary
                     if column == 1:  # thickness
-                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
-                        lower = float(value) - 5
-                        if lower < 0:
-                            lower = 0
-                        upper = float(value) + 5
-                        self.currentVal.append([float(value), [lower, upper]])
+                        if [my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'] not in self.parameterFit:
+                            self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
+                            lower = float(value) - 5
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 5
+                            self.currentVal.append([float(value), [lower, upper]])
                     elif column == 2:  # density
-                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
-                        lower = float(value) - 0.01
-                        if lower < 0:
-                            lower = 0
-                        upper = float(value) + 0.01
-                        self.currentVal.append([float(value), [lower, upper]])
+                        if [my_layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'] not in self.parameterFit:
+                            self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
+                            lower = float(value) - 0.01
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 0.01
+                            self.currentVal.append([float(value), [lower, upper]])
                     elif column == 3:  # roughness
-                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
-                        lower = float(value) - 1
-                        if lower < 0:
-                            lower = 0
-                        upper = float(value) + 1
-                        self.currentVal.append([float(value), [lower, upper]])
+                        if [my_layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'] not in self.parameterFit:
+                            self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 1
+                            self.currentVal.append([float(value), [lower, upper]])
                     elif column == 4:  # linked roughness
-                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
-                        lower = float(value) - 1
-                        if lower < 0:
-                            lower = 0
-                        upper = float(value) + 1
-                        self.currentVal.append([float(value), [lower, upper]])
+                        if [my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'] not in self.parameterFit:
+                            self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                            lower = float(value) - 1
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 1
+                            self.currentVal.append([float(value), [lower, upper]])
                     elif column == 5:  # scattering factor
                         scattering_factor = self.structTable.item(row, 5).text()
-                        if scattering_factor[0] != '[':
-                            self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
-                            self.currentVal.append([0, [-0.5, 0.5]])
+                        if ['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor] not in self.parameterFit:
+
+                            if scattering_factor[0] != '[':
+                                self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
+                                self.currentVal.append([0, [-0.5, 0.5]])
 
             elif action == _compound_fit:
                 self.resetX = True
