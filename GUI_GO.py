@@ -1333,6 +1333,8 @@ class sampleWidget(QWidget):
         row = self.varTable.currentRow()  # retrieves current row
         column = self.varTable.currentColumn()  # retrieves current column
 
+
+
         if column == 0:  # disable fitting for identifier (element variation name)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
@@ -1412,275 +1414,282 @@ class sampleWidget(QWidget):
         _compound_fit = menu.addAction('Compound Fit')
         _remove_fit = menu.addAction('Remove Fit')
 
-        row = self.structTable.currentRow()  # current row
-        column = self.structTable.currentColumn()  # current column
+        for i in self.structTable.selectedIndexes():
+            row = i.row()  # current row
+            column = i.column()  # current column
 
-        # only allows user to fit certain parameters
-        if column == 5:  # disable compound fit if scattering factor selected
-            _compound_fit.setDisabled(True)
-        elif column == 0 or (column == 1 and my_layer == 0): # disable fitting for substrate thickness
-            _element_fit.setDisabled(True)
-            _compound_fit.setDisabled(True)
-            _remove_fit.setDisabled(True)
-        elif column == 4:  # disable fit for linked roughness
-            LRough = self.structTableInfo[my_layer][row][4]
-            if str(LRough).upper() == 'FALSE' or LRough == '':  # there exists a False or '' as input for linked rough
+            # only allows user to fit certain parameters
+            if column == 5:  # disable compound fit if scattering factor selected
+                _compound_fit.setDisabled(True)
+            elif column == 0 or (column == 1 and my_layer == 0): # disable fitting for substrate thickness
                 _element_fit.setDisabled(True)
                 _compound_fit.setDisabled(True)
                 _remove_fit.setDisabled(True)
-            compound = True
-            for cool in self.structTableInfo[my_layer]:  # disables coumpound fit if required
-                if str(cool[4]).upper() == 'FALSE' or cool[4] == '':
-                    compound = False
+            elif column == 4:  # disable fit for linked roughness
+                LRough = self.structTableInfo[my_layer][row][4]
+                if str(LRough).upper() == 'FALSE' or LRough == '':  # there exists a False or '' as input for linked rough
+                    _element_fit.setDisabled(True)
+                    _compound_fit.setDisabled(True)
+                    _remove_fit.setDisabled(True)
+                compound = True
+                for cool in self.structTableInfo[my_layer]:  # disables coumpound fit if required
+                    if str(cool[4]).upper() == 'FALSE' or cool[4] == '':
+                        compound = False
 
-            if not compound:
+                if not compound:
+                    _compound_fit.setDisabled(True)
+            elif column == 6:  # disables fitting for stoichiometry
+                _element_fit.setDisabled(True)
                 _compound_fit.setDisabled(True)
-        elif column == 6:  # disables fitting for stoichiometry
-            _element_fit.setDisabled(True)
-            _compound_fit.setDisabled(True)
-            _remove_fit.setDisabled(True)
+                _remove_fit.setDisabled(True)
 
         action = menu.exec_(QtGui.QCursor.pos())
+        my_indices = []
+        for i in self.structTable.selectedIndexes():
+            row = i.row()  # current row
+            column = i.column()  # current column
+            # Element Mode
+            if action == _element_fit:
+                self.resetX = True
+                value = self.structTable.item(row,column).text()
+                element = self.structTable.item(row, 0).text()
+                alreadySelected = False
 
-        # Element Mode
-        if action == _element_fit:
-            self.resetX = True
-            value = self.structTable.currentItem().text()
-            element = self.structTable.item(row, 0).text()
-            alreadySelected = False
+                # Check to make sure parameter is not already selected
+                for fit in copy_fit_list:
+                    # check if layer and parameter in compound mode
+                    n = len(fit)
+                    if n == 3:  # scattering factor
+                        if column == 5:  # trying to fit scattering factor
+                            item = self.structTable.item(row,column).text()
+                            if item == fit[2]:
+                                alreadySelected = True
 
-            # Check to make sure parameter is not already selected
-            for fit in copy_fit_list:
-                # check if layer and parameter in compound mode
-                n = len(fit)
-                if n == 3:  # scattering factor
-                    if column == 5:  # trying to fit scattering factor
-                        item = self.structTable.currentItem().text()
-                        if item == fit[2]:
+                    elif n == 5:  # compound mode
+                        layer = fit[0]
+                        param = fit[3]
+
+                        param_num = 0
+                        if param == 'THICKNESS':
+                            param_num = 1
+                        elif param == 'DENSITY':
+                            param_num = 2
+                        elif param == 'ROUGHNESS':
+                            param_num = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_num = 4
+
+                        if layer == my_layer and column == param_num and column not in my_indices:
+                            idx = self.parameterFit.index(fit)
+                            self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
+
+                    elif n == 6:  # element mode
+                        layer = fit[0]
+                        ele = fit[3]
+                        param = fit[4]
+                        my_ele = self.structTableInfo[idx][row][0]
+
+                        param_num = 1
+                        if param == 'THICKNESS':
+                            param_num = 1
+                        elif param == 'DENSITY':
+                            param_num = 2
+                        elif param == 'ROUGHNESS':
+                            param_num = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_num = 4
+
+                        if layer == my_layer and column == param_num and ele == my_ele:
                             alreadySelected = True
 
-                elif n == 5:  # compound mode
-                    layer = fit[0]
-                    param = fit[3]
-                    param_num = 0
-                    if param == 'THICKNESS':
-                        param_num = 1
-                    elif param == 'DENSITY':
-                        param_num = 2
-                    elif param == 'ROUGHNESS':
-                        param_num = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_num = 4
-
-                    if layer == my_layer and column == param_num:
-                        idx = self.parameterFit.index(fit)
-                        self.parameterFit.remove(fit)
-                        self.currentVal.pop(idx)
-
-                elif n == 5:  # element mode
-                    layer = fit[0]
-                    ele = fit[3]
-                    param = fit[4]
-                    my_ele = self.structTableInfo[idx][row][0]
-
-                    param_num = 1
-                    if param == 'THICKNESS':
-                        param_num = 1
-                    elif param == 'DENSITY':
-                        param_num = 2
-                    elif param == 'ROUGHNESS':
-                        param_num = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_num = 4
-
-                    if layer == my_layer and column == param_num and ele == my_ele:
-                        alreadySelected = True
-
-            if not alreadySelected:  # add parameter to parameterFit and pre-set boundary
-                if column == 1:  # thickness
-                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
-                    lower = float(value) - 5
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 5
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 2:  # density
-                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
-                    lower = float(value) - 0.01
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 0.01
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 3:  # roughness
-                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
-                    lower = float(value) - 1
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 1
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 4:  # linked roughness
-                    self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
-                    lower = float(value) - 1
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 1
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 5:  # scattering factor
-                    scattering_factor = self.structTable.item(row, 5).text()
-                    if scattering_factor[0] != '[':
-                        self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
-                        self.currentVal.append([0, [-0.5, 0.5]])
-
-        elif action == _compound_fit:
-            self.resetX = True
-            # retrieve minimum value in the row
-            my_vals = list()
-            for i in range(self.structTable.rowCount()):
-                my_vals.append(float(self.structTable.item(i, column).text()))
-
-            my_row = my_vals.index(min(my_vals))
-            value = self.structTable.item(my_row, column).text()  # minimum value
-
-            alreadySelected = False
-            for fit in copy_fit_list:
-                mode = fit[2]
-                if mode == 'COMPOUND':  # compound check
-                    layer = fit[0]
-                    param = fit[3]
-
-                    param_n = 0
-                    if param == 'THICKNESS':
-                        param_n = 1
-                    elif param == 'DENSITY':
-                        param_n = 2
-                    elif param == 'ROUGHNESS':
-                        param_n = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_n = 4
-
-                    if layer == my_layer and param_n == column:
-                        alreadySelected = True
-
-                elif mode == 'ELEMENT':  # element check
-                    layer = fit[0]
-                    param = fit[4]
-                    param_n = 1
-                    if param == 'THICKNESS':
-                        param_n = 1
-                    elif param == 'DENSITY':
-                        param_n = 2
-                    elif param == 'ROUGHNESS':
-                        param_n = 3
-                    elif param == 'LINKED ROUGHNESS':
-                        param_n = 4
-
-                    if param_n == column and layer == my_layer:
-                        idx = self.parameterFit.index(fit)
-                        self.parameterFit.remove(fit)
-                        self.currentVal.pop(idx)
-
-            if not alreadySelected:  # adds parameter to parameterFit and sets boundary
-                if column == 1:  # thickness
-                    if my_layer != 0:
-                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'THICKNESS', my_row]
-                        self.parameterFit.append(my_fit)
+                if not alreadySelected:  # add parameter to parameterFit and pre-set boundary
+                    if column == 1:  # thickness
+                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'THICKNESS'])
                         lower = float(value) - 5
                         if lower < 0:
                             lower = 0
                         upper = float(value) + 5
                         self.currentVal.append([float(value), [lower, upper]])
-                elif column == 2:  # density
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY', my_row]
-                    self.parameterFit.append(my_fit)
-                    lower = float(value) - 0.01
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 0.01
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 3:  # roughness
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS', my_row]
-                    self.parameterFit.append(my_fit)
-                    lower = float(value) - 1
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 1
-                    self.currentVal.append([float(value), [lower, upper]])
-                elif column == 4:  # linked roughness
-                    my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS', my_row]
-                    self.parameterFit.append(my_fit)
-                    lower = float(value) - 1
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 1
-                    self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 2:  # density
+                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'DENSITY'])
+                        lower = float(value) - 0.01
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 0.01
+                        self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 3:  # roughness
+                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'ROUGHNESS'])
+                        lower = float(value) - 1
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 1
+                        self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 4:  # linked roughness
+                        self.parameterFit.append([my_layer, 'STRUCTURAL', 'ELEMENT', element, 'LINKED ROUGHNESS'])
+                        lower = float(value) - 1
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 1
+                        self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 5:  # scattering factor
+                        scattering_factor = self.structTable.item(row, 5).text()
+                        if scattering_factor[0] != '[':
+                            self.parameterFit.append(['SCATTERING FACTOR', 'STRUCTURAL', scattering_factor])
+                            self.currentVal.append([0, [-0.5, 0.5]])
 
-        elif action == _remove_fit:
-            # removes the parameter from parameterFit
-            self.resetX = True
-            element = self.structTableInfo[my_layer][row][0]
-            scattering_factor = self.structTableInfo[my_layer][row][5]
-            for fit in copy_fit_list:
-                n = len(fit)
-                if column == 1:
+            elif action == _compound_fit:
+                self.resetX = True
+                # retrieve minimum value in the row
+                my_vals = list()
+                for i in range(self.structTable.rowCount()):
+                    my_vals.append(float(self.structTable.item(i, column).text()))
+
+                my_row = my_vals.index(min(my_vals))
+                value = self.structTable.item(my_row, column).text()  # minimum value
+
+                alreadySelected = False
+                for fit in copy_fit_list:
                     mode = fit[2]
-                    if mode == "ELEMENT" and my_layer == fit[0]:
-                        ele = fit[3]
-                        if ele == element and fit[4] == 'THICKNESS':
+                    if mode == 'COMPOUND':  # compound check
+                        layer = fit[0]
+                        param = fit[3]
+
+                        param_n = 0
+                        if param == 'THICKNESS':
+                            param_n = 1
+                        elif param == 'DENSITY':
+                            param_n = 2
+                        elif param == 'ROUGHNESS':
+                            param_n = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_n = 4
+
+                        if layer == my_layer and param_n == column:
+                            alreadySelected = True
+
+                    elif mode == 'ELEMENT':  # element check
+                        layer = fit[0]
+                        param = fit[4]
+                        param_n = 1
+                        if param == 'THICKNESS':
+                            param_n = 1
+                        elif param == 'DENSITY':
+                            param_n = 2
+                        elif param == 'ROUGHNESS':
+                            param_n = 3
+                        elif param == 'LINKED ROUGHNESS':
+                            param_n = 4
+
+                        if param_n == column and layer == my_layer and column not in my_indices:
                             idx = self.parameterFit.index(fit)
                             self.parameterFit.remove(fit)
                             self.currentVal.pop(idx)
 
+                if not alreadySelected:  # adds parameter to parameterFit and sets boundary
+                    if column == 1 and column not in my_indices:  # thickness
+                        if my_layer != 0:
+                            my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'THICKNESS', my_row]
+                            self.parameterFit.append(my_fit)
+                            lower = float(value) - 5
+                            if lower < 0:
+                                lower = 0
+                            upper = float(value) + 5
+                            self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 2 and column not in my_indices:  # density
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'DENSITY', my_row]
+                        self.parameterFit.append(my_fit)
+                        lower = float(value) - 0.01
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 0.01
+                        self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 3 and column not in my_indices:  # roughness
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'ROUGHNESS', my_row]
+                        self.parameterFit.append(my_fit)
+                        lower = float(value) - 1
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 1
+                        self.currentVal.append([float(value), [lower, upper]])
+                    elif column == 4 and column not in my_indices:  # linked roughness
+                        my_fit = [my_layer, 'STRUCTURAL', 'COMPOUND', 'LINKED ROUGHNESS', my_row]
+                        self.parameterFit.append(my_fit)
+                        lower = float(value) - 1
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 1
+                        self.currentVal.append([float(value), [lower, upper]])
 
-                    elif mode == 'COMPOUND' and my_layer == fit[0]:
-                        if fit[3] == 'THICKNESS':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                elif column == 2:
-                    mode = fit[2]
-                    if mode == "ELEMENT" and my_layer == fit[0]:
-                        ele = fit[3]
-                        if ele == element and fit[4] == 'DENSITY':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND' and my_layer == fit[0]:
-                        if fit[3] == 'DENSITY':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                elif column == 3:
-                    mode = fit[2]
-                    if mode == "ELEMENT" and my_layer == fit[0]:
-                        ele = fit[3]
-                        if ele == element and fit[4] == 'ROUGHNESS':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND' and my_layer == fit[0]:
-                        if fit[3] == 'ROUGHNESS':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                elif column == 4:
-                    mode = fit[2]
-                    if mode == "ELEMENT" and my_layer == fit[0]:
-                        ele = fit[3]
-                        if ele == element and fit[4] == 'LINKED ROUGHNESS':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                    elif mode == 'COMPOUND' and my_layer == fit[0]:
-                        if fit[3] == 'LINKED ROUGHNESS':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                elif column == 5 and n == 3:
-                    if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
-                        idx = self.parameterFit.index(fit)
-                        self.parameterFit.remove(fit)
-                        self.currentVal.pop(idx)
+            elif action == _remove_fit:
+                # removes the parameter from parameterFit
+                self.resetX = True
+                element = self.structTableInfo[my_layer][row][0]
+                scattering_factor = self.structTableInfo[my_layer][row][5]
+                for fit in copy_fit_list:
+                    n = len(fit)
+                    if column == 1:
+                        mode = fit[2]
+                        if mode == "ELEMENT" and my_layer == fit[0]:
+                            ele = fit[3]
+                            if ele == element and fit[4] == 'THICKNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
 
+
+                        elif mode == 'COMPOUND' and my_layer == fit[0] and column not in my_indices:
+                            if fit[3] == 'THICKNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+
+                    elif column == 2:
+                        mode = fit[2]
+                        if mode == "ELEMENT" and my_layer == fit[0]:
+                            ele = fit[3]
+                            if ele == element and fit[4] == 'DENSITY':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                        elif mode == 'COMPOUND' and my_layer == fit[0] and column not in my_indices:
+                            if fit[3] == 'DENSITY':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                    elif column == 3:
+                        mode = fit[2]
+                        if mode == "ELEMENT" and my_layer == fit[0]:
+                            ele = fit[3]
+                            if ele == element and fit[4] == 'ROUGHNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                        elif mode == 'COMPOUND' and my_layer == fit[0] and column not in my_indices:
+                            if fit[3] == 'ROUGHNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                    elif column == 4:
+                        mode = fit[2]
+                        if mode == "ELEMENT" and my_layer == fit[0]:
+                            ele = fit[3]
+                            if ele == element and fit[4] == 'LINKED ROUGHNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                        elif mode == 'COMPOUND' and my_layer == fit[0] and column not in my_indices:
+                            if fit[3] == 'LINKED ROUGHNESS':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                    elif column == 5 and n == 3:
+                        if scattering_factor == fit[2] and fit[1] == 'STRUCTURAL':
+                            idx = self.parameterFit.index(fit)
+                            self.parameterFit.remove(fit)
+                            self.currentVal.pop(idx)
+
+            my_indices.append(column)
         self.setTable()  # reset the table
 
     def changeStepSize(self):

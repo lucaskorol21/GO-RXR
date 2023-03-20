@@ -21,8 +21,8 @@
 # setDensity(layer, element, value)
 # getDensity(layer, element)
 
-rho = getDensity(8,Mn)
-setDensity(7,Mn,rho)
+#rho = getDensity(8,Mn)
+#setDensity(7,Mn,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
@@ -40,10 +40,10 @@ setDensity(7,Mn,rho)
 # setEshift(ffName, value)
 # setMagEshift(ffmName, value)
 
-#dE = getEshift(Mn3)
-#setEshift(Mn2, dE)
-#setMagEshift(Ni, dE)
-#setMagEshift(Co,dE)
+dE = getEshift(Mn3)
+setEshift(Mn2, dE)
+setMagEshift(Ni, dE)
+setMagEshift(Co,dE)
 
 
 
