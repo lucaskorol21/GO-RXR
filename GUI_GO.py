@@ -1175,41 +1175,50 @@ class sampleWidget(QWidget):
         _fit = menu.addAction('Fit')
         _remove_fit = menu.addAction('Remove Fit')
 
-        if row == 1:  # disable fitting capability for the form factor scaling (no longer implemented)
+        my_items = self.energyShiftTable.selectedIndexes()
+        Disable = False
+        for i in my_items:
+            if i.row() == 1:
+                Disable = True
+
+
+        if row == 1 or Disable:  # disable fitting capability for the form factor scaling (no longer implemented)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
 
         action = menu.exec_(QtGui.QCursor.pos())  # initialize action to be taken
+        for i in my_items:
+            column = i.column()
+            name = self.energyShiftTable.horizontalHeaderItem(column).text()
+            if action == _fit:
+                # add energy shift to the fitting parameters
+                self.resetX = True
+                fit = []
+                if name[:3] == 'ff-':
+                    fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+                elif name[:3] == 'ffm':
+                    fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
 
-        if action == _fit:
-            # add energy shift to the fitting parameters
-            self.resetX = True
-            fit = []
-            if name[:3] == 'ff-':
-                fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
-            elif name[:3] == 'ffm':
-                fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+                if fit != [] and fit not in self.parameterFit:  # set the boundaries
+                    self.parameterFit.append(fit)
+                    lower = str(float(val) - 0.5)
+                    upper = str(float(val) + 0.5)
+                    self.currentVal.append([val, [lower, upper]])
 
-            if fit != []:  # set the boundaries
-                self.parameterFit.append(fit)
-                lower = str(float(val) - 0.5)
-                upper = str(float(val) + 0.5)
-                self.currentVal.append([val, [lower, upper]])
+            elif action == _remove_fit:
+                # remove the parameter from the fit (if found in parameterFit list)
+                self.resetX = True
+                fit = []
+                if name[:3] == 'ff-':
+                    fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+                elif name[:3] == 'ffm':
+                    fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
 
-        elif action == _remove_fit:
-            # remove the parameter from the fit (if found in parameterFit list)
-            self.resetX = True
-            fit = []
-            if name[:3] == 'ff-':
-                fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
-            elif name[:3] == 'ffm':
-                fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
-
-            # remove the fit
-            if fit in self.parameterFit:
-                idx = self.parameterFit.index(fit)
-                self.parameterFit.remove(fit)
-                self.currentVal.pop(idx)
+                # remove the fit
+                if fit in self.parameterFit:
+                    idx = self.parameterFit.index(fit)
+                    self.parameterFit.remove(fit)
+                    self.currentVal.pop(idx)
 
         # reset the tables
         self.setTableEShift()
@@ -1243,72 +1252,94 @@ class sampleWidget(QWidget):
 
         _fit = menu.addAction('Fit')
         _remove_fit = menu.addAction('Remove Fit')
+        my_items = self.magTable.selectedItems()
 
-        if column == 2:  # disable fitting capability for the form factor scaling (no longer implemented)
+        Disable = False
+        for i in my_items:
+            item = self.magTable.item(i.row(),i.column()).text()
+            if item == '':
+                Disable = True
+
+
+        if column == 2 or Disable:  # disable fitting capability for the form factor scaling (no longer implemented)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
 
         action = menu.exec_(QtGui.QCursor.pos())  # sets action
 
-        if action == _fit:
-            self.resetX = True
-            # determines if the element has already been selected
-            alreadySelected = False
-            for fit in copy_fit_list:
-                if column == 0:
-                    if len(fit) == 3:
-                        if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element:
+        for i in my_items:
+            row = i.row()
+            column = i.column()
+
+            name = self.magTable.verticalHeaderItem(row).text()
+            element = ''
+            if name in list(self.magData.keys()):
+                element = name
+            else:
+                for key in list(self.magData.keys()):  # loop through all the keys
+                    if name in self.magData[key][my_layer][0]:
+                        element = key
+            if action == _fit:
+                self.resetX = True
+                # determines if the element has already been selected
+                alreadySelected = False
+                for fit in copy_fit_list:
+                    if column == 0:
+
+                        if len(fit) == 3:
+                            if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element:
+                                alreadySelected = True
+                        elif len(fit) == 4:
+
+                            if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element and fit[2] == name:
+                                alreadySelected = True
+                    elif column == 1:
+                        scattering_factor = self.magTable.item(row, 1)
+                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
                             alreadySelected = True
-                    elif len(fit) == 4:
-                        if fit[0] == my_layer and fit[1] == 'MAGNETIC' and fit[2] == element and fit[2] == name:
-                            alreadySelected = True
-                elif column == 1:
-                    scattering_factor = self.magTable.item(row, 1)
-                    if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == scattering_factor:
-                        alreadySelected = True
 
-            # Check to make sure that parameter not already selected
-            if not alreadySelected:
-                if column == 1:
-                    scattering_factor = self.magTable.item(row, column).text()
-                    self.currentVal.append([0, [-0.5, 0.5]])
-                    self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
+                # Check to make sure that parameter not already selected
+                if not alreadySelected:
+                    if column == 1:
+                        scattering_factor = self.magTable.item(row, column).text()
+                        self.currentVal.append([0, [-0.5, 0.5]])
+                        self.parameterFit.append(['SCATTERING FACTOR', 'MAGNETIC', scattering_factor])
 
-                elif column == 0:
-                    value = self.magTable.item(row, column).text()
-                    lower = float(value) - 0.01
-                    if lower < 0:
-                        lower = 0
-                    upper = float(value) + 0.01
-                    self.currentVal.append([float(value), [lower, upper]])
-                    if name == element:
-                        self.parameterFit.append([my_layer, 'MAGNETIC', element])
-                    else:
-                        self.parameterFit.append([my_layer, 'MAGNETIC', element, name])
+                    elif column == 0:
+                        value = self.magTable.item(row, column).text()
+                        lower = float(value) - 0.01
+                        if lower < 0:
+                            lower = 0
+                        upper = float(value) + 0.01
+                        self.currentVal.append([float(value), [lower, upper]])
+                        if name == element:
+                            self.parameterFit.append([my_layer, 'MAGNETIC', element])
+                        else:
+                            self.parameterFit.append([my_layer, 'MAGNETIC', element, name])
 
-        if action == _remove_fit:
-            # removes fit from parameterFit
-            self.resetX = True
-            for fit in copy_fit_list:
-                if column == 0:  # magnetic density
-                    if len(fit) == 3 and fit[1] == 'MAGNETIC':  # not polymorphous case
-                        if fit[0] == my_layer and fit[2] == name:
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
-                    elif len(fit) == 4 and fit[1] == 'MAGNETIC':  # polymorphous case
-                        if fit[0] == my_layer and fit[3] == name:
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
+            if action == _remove_fit:
+                # removes fit from parameterFit
+                self.resetX = True
+                for fit in copy_fit_list:
+                    if column == 0:  # magnetic density
+                        if len(fit) == 3 and fit[1] == 'MAGNETIC':  # not polymorphous case
+                            if fit[0] == my_layer and fit[2] == name:
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
+                        elif len(fit) == 4 and fit[1] == 'MAGNETIC':  # polymorphous case
+                            if fit[0] == my_layer and fit[3] == name:
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
 
-                elif column == 1:  # Magnetic Scattering Factor
-                    if len(fit) == 3 and fit[0] == 'SCATTERING FACTOR':
-                        scattering_factor = self.magTable.item(row, 1).text()
-                        if scattering_factor == fit[2] and fit[1] == 'MAGNETIC':
-                            idx = self.parameterFit.index(fit)
-                            self.parameterFit.remove(fit)
-                            self.currentVal.pop(idx)
+                    elif column == 1:  # Magnetic Scattering Factor
+                        if len(fit) == 3 and fit[0] == 'SCATTERING FACTOR':
+                            scattering_factor = self.magTable.item(row, 1).text()
+                            if scattering_factor == fit[2] and fit[1] == 'MAGNETIC':
+                                idx = self.parameterFit.index(fit)
+                                self.parameterFit.remove(fit)
+                                self.currentVal.pop(idx)
 
         self.setTableMag()
 
