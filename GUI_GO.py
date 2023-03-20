@@ -4197,6 +4197,7 @@ class GlobalOptimizationWidget(QWidget):
         tableLayout = QVBoxLayout()
         tableLayout.addWidget(self.fittingParamTable)
         self.fittingParamTable.itemChanged.connect(self._changeFitVar)
+        self.fittingParamTable.viewport().installEventFilter(self)
 
         # Include the different input parameters for the global optimization and their algorithms
         self.goParamWidget = QWidget()
@@ -4653,9 +4654,54 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         #self.checkscript()
 
+    def eventFilter(self, source, event):
+        """
+        Purpose: Determine which handler to use when user right clicks on tables
+        :param source: the source of the signal
+        :param event: the type of event
+        """
+
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                top_menu = QMenu()  # initializes the menu
+
+                menu = top_menu.addMenu("Menu")
+
+                _remove_fit = menu.addAction('Remove Fit')
+
+                action = menu.exec_(QtGui.QCursor.pos())
+                my_rows = []
+                n = len(self.sWidget.parameterFit)
+                my_other_rows = []
+                if action == _remove_fit:
+                    my_items = self.fittingParamTable.selectedIndexes()
+                    for i in my_items:
+                        row = i.row()
+                        if row < n:
+                            if row not in my_rows:
+                                my_rows.append(row)
+                        else:
+                            if row not in my_other_rows:
+                                my_other_rows.append(row-n-1)
 
 
+                my_rows = np.array(my_rows)
+                for k in range(len(my_rows)):
+                    self.sWidget.parameterFit.pop(my_rows[k])
+                    self.sWidget.currentVal.pop(my_rows[k])
+                    my_rows = my_rows - 1
 
+                for k in range(len(my_other_rows)):
+                    self.rWidget.sfBsFitParams.pop(my_other_rows[k])
+                    self.rWidget.currentVal.pop(my_other_rows[k])
+                    my_other_rows = my_other_rows - 1
+            self.sWidget.setTable()
+            self.sWidget.setTableEShift()
+            self.sWidget.setTableMag()
+            self.sWidget.setTableVar()
+            self.setTableFit()
+
+        return False
 
     def _clear_fit(self):
         """
