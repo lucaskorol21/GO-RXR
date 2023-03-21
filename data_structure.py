@@ -1761,15 +1761,26 @@ def WriteSampleHDF5(fname, sample):
         name = "Layer_" + str(dsLayer)
         layer = grp1.create_group(name)
         layer.attrs['LayerNumber'] = int(dsLayer)
-        ### Need to change back to previous version
+
 
         formula = ''
         for ele in list(my_layer.keys()):
             stoich = my_layer[ele].stoichiometry
+            # Remove the numbers in the element definition
+            new_ele = ''
+            for c in ele:
+                if not(c.isdigit()):
+                    new_ele = new_ele + c
+
+
+
             if stoich == 1:
-                formula = formula + ele
+                formula = formula + new_ele
             else:
-                formula = formula + ele + str(stoich)
+                formula = formula + new_ele + str(stoich)
+
+        print(formula)
+
         layer.attrs['Formula'] = formula
 
         # Sets the information for each element

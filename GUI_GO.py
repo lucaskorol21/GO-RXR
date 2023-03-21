@@ -679,6 +679,20 @@ class sampleWidget(QWidget):
         self.structTable.setItemDelegateForColumn(0, delegate)
         self.setLayout(mylayout)
 
+    def check_element_number(self):
+        not_empty = True
+        equal_elements = True
+        n = len(self.structTableInfo)
+        if n == 0:
+            not_empty = False
+        else:
+            substrate = len(self.structTableInfo[0])
+            for i in range(n):
+                if len(self.structTableInfo[0]) != substrate:
+                    equal_elements = False
+
+        return not_empty, equal_elements
+
     def _energy_shift(self):
         """
         Purpose: Change to energy shift info
@@ -2138,22 +2152,29 @@ class sampleWidget(QWidget):
         # check to see if we have a new element
 
         num_layers = len(self.structTableInfo)
+
         my_elements = []
-        # checks to see if we have a new element and adds it to the element variation list
-        for i in range(len(userinput)):
-            # includes new scattering factors into the energy shift
-            if userinput[i][5] not in self.sample.eShift.keys():
-                self.sample.eShift[userinput[i][5]] = 0
-                name = 'ff-' + userinput[i][5]
-                self.eShift[name] = 0
-                self.ffScale[name]= 1
-            my_elements.append(userinput[i][0])
-            if userinput[i][0] not in list(self.varData.keys()):
-                self.varData[userinput[i][0]] = [[['', ''], ['', ''], ['', '']] for j in range(num_layers)]
-                self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], ['']] for j in range(num_layers)]
+
 
         # initializing the element variation and magnetic data
-        if len(userinput) != 0:  # checks if user exit the coumpoundInput widget
+        if len(userinput) != len(self.structTableInfo[0]):
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Invalid Entry")
+            messageBox.setText('Each layer must have the same number of structural elements. If you would like to define a different number of structural elements in a layer then a dummy variable can be used (e.g. A, D, E, G, J, L, M, Q, R, T, X, Z). The corresponding form factors and atomic mass of these variables are 0, respectively.')
+            messageBox.exec()
+        elif len(userinput) != 0:  # checks if user exit the coumpoundInput widget
+            for i in range(len(userinput)):
+                # includes new scattering factors into the energy shift
+                if userinput[i][5] not in self.sample.eShift.keys():
+                    self.sample.eShift[userinput[i][5]] = 0
+                    name = 'ff-' + userinput[i][5]
+                    self.eShift[name] = 0
+                    self.ffScale[name] = 1
+                my_elements.append(userinput[i][0])
+                if userinput[i][0] not in list(self.varData.keys()):
+                    self.varData[userinput[i][0]] = [[['', ''], ['', ''], ['', '']] for j in range(num_layers)]
+                    self.magData[userinput[i][0]] = [[[userinput[i][0]], [''], ['']] for j in range(num_layers)]
+
             self.parameterFit = []  # resets the parameter fit info
             self.currentVal = []  # resets fitting parameter values
 
@@ -2450,6 +2471,7 @@ class sampleWidget(QWidget):
                 # recreates the chemical formula string
                 symbol = ''.join(symbol)
                 formula = formula + symbol
+
                 if element[6] != '1':
                     formula = formula + element[6]
 
@@ -7854,73 +7876,122 @@ class ReflectometryApp(QMainWindow):
     def activate_tab_2(self):
         # reflectivity
 
-        self.sample = copy.deepcopy(self._sampleWidget._createSample())
-        self._reflectivityWidget.sample = copy.deepcopy(self.sample)
-        self._goWidget.sample = copy.deepcopy(self.sample)
-        self._goWidget.clearTableFit()
-        self._reflectivityWidget.myPlotting()
-        self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
-        self.sampleButton.setStyleSheet("background-color : pink")
-        self.reflButton.setStyleSheet("background-color : magenta")
-        self.smoothButton.setStyleSheet("background-color : pink")
-        self.goButton.setStyleSheet("background-color : pink")
-        self.progressButton.setStyleSheet("background-color: pink")
-        self.stackedlayout.setCurrentIndex(1)
+        not_empty, equal_elements = self._sampleWidget.check_element_number()
+        if not_empty and equal_elements:
+            self.sample = copy.deepcopy(self._sampleWidget._createSample())
+            self._reflectivityWidget.sample = copy.deepcopy(self.sample)
+            self._goWidget.sample = copy.deepcopy(self.sample)
+            self._goWidget.clearTableFit()
+            self._reflectivityWidget.myPlotting()
+            self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
+            self.sampleButton.setStyleSheet("background-color : pink")
+            self.reflButton.setStyleSheet("background-color : magenta")
+            self.smoothButton.setStyleSheet("background-color : pink")
+            self.goButton.setStyleSheet("background-color : pink")
+            self.progressButton.setStyleSheet("background-color: pink")
+            self.stackedlayout.setCurrentIndex(1)
+        else:
+            if not(not_empty):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Empty Sample Definition")
+                messageBox.setText("A sample definition is required to use any other workspace.")
+                messageBox.exec()
+            elif not(equal_elements):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Invalid Sample Definition")
+                messageBox.setText("Each layer must have the same number of elements defined in each layer. A dummy variable can be used to meet these requirements (A,D,E,G,J,L,M,Q,R,T,X,Z). ")
+                messageBox.exec()
 
     def activate_tab_3(self):
         # Best fit curve
-        self.sample = copy.deepcopy(self._sampleWidget._createSample())
-        self._reflectivityWidget.sample = self.sample
-        self._goWidget.sample = self.sample
+        not_empty, equal_elements = self._sampleWidget.check_element_number()
+        if not_empty and equal_elements:
+            self.sample = copy.deepcopy(self._sampleWidget._createSample())
+            self._reflectivityWidget.sample = self.sample
+            self._goWidget.sample = self.sample
 
-        self.sampleButton.setStyleSheet("background-color : pink")
-        self.reflButton.setStyleSheet("background-color : pink")
-        self.smoothButton.setStyleSheet("background-color : magenta")
-        self.goButton.setStyleSheet("background-color : pink")
-        self.progressButton.setStyleSheet("background-color: pink")
+            self.sampleButton.setStyleSheet("background-color : pink")
+            self.reflButton.setStyleSheet("background-color : pink")
+            self.smoothButton.setStyleSheet("background-color : magenta")
+            self.goButton.setStyleSheet("background-color : pink")
+            self.progressButton.setStyleSheet("background-color: pink")
 
-        #self._noiseWidget.selectedScans = self._reflectivityWidget.fit
-        self._noiseWidget._resetVariables(self.data_dict, self._reflectivityWidget.fit, self._reflectivityWidget.bounds)
+            #self._noiseWidget.selectedScans = self._reflectivityWidget.fit
+            self._noiseWidget._resetVariables(self.data_dict, self._reflectivityWidget.fit, self._reflectivityWidget.bounds)
 
-        self.stackedlayout.setCurrentIndex(2)
-
+            self.stackedlayout.setCurrentIndex(2)
+        else:
+            if not(not_empty):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Empty Sample Definition")
+                messageBox.setText("A sample definition is required to use any other workspace.")
+                messageBox.exec()
+            elif not(equal_elements):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Invalid Sample Definition")
+                messageBox.setText("Each layer must have the same number of elements defined in each layer. A dummy variable can be used to meet these requirements (A,D,E,G,J,L,M,Q,R,T,X,Z). ")
+                messageBox.exec()
     def activate_tab_4(self):
         # global optimization
-        self.sample = copy.deepcopy(self._sampleWidget._createSample())
-        self._reflectivityWidget.sample = self.sample
-        self._goWidget.sample = self.sample
+        not_empty, equal_elements = self._sampleWidget.check_element_number()
+        if not_empty and equal_elements:
+            self.sample = copy.deepcopy(self._sampleWidget._createSample())
+            self._reflectivityWidget.sample = self.sample
+            self._goWidget.sample = self.sample
 
-        self.sampleButton.setStyleSheet("background-color : pink")
-        self.reflButton.setStyleSheet("background-color : pink")
-        self.smoothButton.setStyleSheet("background-color : pink")
-        self.goButton.setStyleSheet("background-color : magenta")
-        self.progressButton.setStyleSheet("background-color: pink")
-        self._goWidget.setTableFit()
-        self._goWidget.updateScreen()
+            self.sampleButton.setStyleSheet("background-color : pink")
+            self.reflButton.setStyleSheet("background-color : pink")
+            self.smoothButton.setStyleSheet("background-color : pink")
+            self.goButton.setStyleSheet("background-color : magenta")
+            self.progressButton.setStyleSheet("background-color: pink")
+            self._goWidget.setTableFit()
+            self._goWidget.updateScreen()
 
-        self.stackedlayout.setCurrentIndex(3)
-
+            self.stackedlayout.setCurrentIndex(3)
+        else:
+            if not(not_empty):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Empty Sample Definition")
+                messageBox.setText("A sample definition is required to use any other workspace.")
+                messageBox.exec()
+            elif not(equal_elements):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Invalid Sample Definition")
+                messageBox.setText("Each layer must have the same number of elements defined in each layer. A dummy variable can be used to meet these requirements (A,D,E,G,J,L,M,Q,R,T,X,Z). ")
+                messageBox.exec()
     def activate_tab_5(self):
         # optimization
-        self.sample = copy.deepcopy(self._sampleWidget._createSample())
-        self._reflectivityWidget.sample = self.sample
-        self._goWidget.sample = self.sample
-        self._progressWidget.reset_fit_scans()  # resets the scans in the fit
-        state = self._goWidget.checkBox.checkState()
-        my_state = False
-        if state > 0:
-            my_state = True
+        not_empty, equal_elements = self._sampleWidget.check_element_number()
+        if not_empty and equal_elements:
+            self.sample = copy.deepcopy(self._sampleWidget._createSample())
+            self._reflectivityWidget.sample = self.sample
+            self._goWidget.sample = self.sample
+            self._progressWidget.reset_fit_scans()  # resets the scans in the fit
+            state = self._goWidget.checkBox.checkState()
+            my_state = False
+            if state > 0:
+                my_state = True
 
-        self._progressWidget.check_script_state(my_state)
-        self.sampleButton.setStyleSheet("background-color : pink")
-        self.reflButton.setStyleSheet("background-color : pink")
-        self.smoothButton.setStyleSheet("background-color : pink")
-        self.goButton.setStyleSheet("background-color : pink")
-        self.progressButton.setStyleSheet("background-color: magenta")
+            self._progressWidget.check_script_state(my_state)
+            self.sampleButton.setStyleSheet("background-color : pink")
+            self.reflButton.setStyleSheet("background-color : pink")
+            self.smoothButton.setStyleSheet("background-color : pink")
+            self.goButton.setStyleSheet("background-color : pink")
+            self.progressButton.setStyleSheet("background-color: magenta")
 
-        self.stackedlayout.setCurrentIndex(4)
+            self.stackedlayout.setCurrentIndex(4)
 
-
+        else:
+            if not(not_empty):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Empty Sample Definition")
+                messageBox.setText("A sample definition is required to use any other workspace.")
+                messageBox.exec()
+            elif not(equal_elements):
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Invalid Sample Definition")
+                messageBox.setText("Each layer must have the same number of elements defined in each layer. A dummy variable can be used to meet these requirements (A,D,E,G,J,L,M,Q,R,T,X,Z). ")
+                messageBox.exec()
 
 
 class progressWidget(QWidget):
