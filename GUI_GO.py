@@ -2598,7 +2598,7 @@ class sampleWidget(QWidget):
                     # handle case where not every polymorph is magnetic
 
 
-                    my_idx = [j for j in range(len(ratio)) if ratio[j] != '' or (scattering_factor[j] != 0 and scattering_factor[j] != '')]
+                    my_idx = [j for j in range(len(ratio)) if ratio[j] != '' and (scattering_factor[j] != 0 and scattering_factor[j] != '')]
 
                     ratio = np.array(ratio)[my_idx]
                     names = np.array(names)[my_idx]

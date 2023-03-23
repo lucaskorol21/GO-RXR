@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_v2.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -112,11 +112,11 @@ if __name__ == '__main__':
 
     ds.saveSimulationHDF5(fname, sim_dict)
     
-    
+    """
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
-
+    my_keys = ['Mn2','Mn3']
 
 
     d = 21.6
@@ -124,22 +124,23 @@ if __name__ == '__main__':
 
 
 
-    density['Mn'] = density['Mn2+'] + density['Mn3+']
+    density['Mn'] = density['Mn2'] + density['Mn3']
 
     from scipy import integrate
 
-    total = integrate.trapezoid(mag_density['Mn3+'], x=thickness)
-    print(total/10)
-    print(total/10/40.53)
+    #total = integrate.trapezoid(mag_density['Mn3'], x=thickness)
+    #print(total/10)
+    #print(total/10/40.53)
 
     plt.figure(2)
     for key in my_keys:
-        plt.plot(thickness, density[key])
+        plt.plot(thickness, density[key], c=np.random.rand(3,))
 
     plt.ylabel('Density (mol/cm^3)')
     plt.xlabel('Thickness (angstroms)')
     plt.legend(my_keys)
-
+    plt.show()
+    """
 
     x = [4,7,10]
     y = [0.0007044,0.00220607,0.00279876]
@@ -214,4 +215,3 @@ if __name__ == '__main__':
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
     """
-    print('hello')

@@ -731,7 +731,7 @@ class slab:
 
 
 
-        print(self.mag_elements)
+
     def error_function(self, t, rough, offset, upward):
         """
         Purpose: Computes the roughness using the error function
@@ -1593,7 +1593,7 @@ class slab:
             idx = [i for i in range(len(polymorph)) if variation == polymorph[i]]
 
             self.structure[layer][symbol].mag_density[idx] = float(density)
-            print(self.structure[layer][symbol].mag_density)
+
         else:
             self.structure[layer][symbol].mag_density[0] = float(density)
 
