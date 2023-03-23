@@ -1393,11 +1393,21 @@ class sampleWidget(QWidget):
                         if element == fit[2] and name != fit[3]:
                             Disable = True
 
+        value = self.varData[element][my_layer][1][row]
+
+        if value == 1 and len(self.varData[element][my_layer][1]) > 2:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Fitting Error")
+            messageBox.setText('Fitting and element variation with ratio value of 1 will result in a divide by zero. Please select another control variable to use. ')
+            messageBox.exec()
+            Disable = True
 
         if column == 0 or Disable:  # disable fitting for identifier (element variation name)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
 
+        if value == 1 and len(self.varData[element][my_layer][1]) > 2:
+            Disable = True
         action = menu.exec_(QtGui.QCursor.pos())
         for i in my_items:
             row = i.row()
@@ -1548,7 +1558,7 @@ class sampleWidget(QWidget):
                             self.currentVal.pop(idx)
 
 
-                    elif n == 4:  # compound mode
+                    elif n == 5:  # compound mode
                         layer = fit[0]
                         ele = fit[4]
                         param = fit[3]
@@ -2553,8 +2563,38 @@ class sampleWidget(QWidget):
                 ratio = mag[1]
                 scattering_factor = mag[2]
 
+                isMagnetized = True
+                nameBool = True
+                notMagnetic = True
+                Magnetic = True
+                count = 0
+                for i in range(len(scattering_factor)):
+                    nameBool = True
+                    notMagnetic = True
+                    Magnetic = True
+                    if names[i] == '':
+                        nameBool = False
 
-                if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
+                    if not(ratio[i] == '' and scattering_factor[i] == ''):
+                        notMagnetic = True
+                    else:
+                        count = count + 1
+
+                    if not(ratio[i] != '' and scattering_factor[i] != ''):
+                        Magnetic = False
+
+                    if not(notMagnetic or Magnetic):
+                        isMagnetized = False
+
+                    if not(nameBool):
+                        isMagnetized = False
+
+                if count == len(scattering_factor):
+                    isMagnetized = False
+
+
+                #if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
+                if isMagnetized:
                     # handle case where not every polymorph is magnetic
 
 
@@ -2564,6 +2604,7 @@ class sampleWidget(QWidget):
                     names = np.array(names)[my_idx]
                     scattering_factor = np.array(scattering_factor)[my_idx]
                     ratio = [float(ratio[i]) for i in range(len(ratio))]
+
                     sample.magnetization(idx, names, ratio, scattering_factor, gamma=gamma,phi=phi)
 
                 # setting phi and gamma for all elements in the layer

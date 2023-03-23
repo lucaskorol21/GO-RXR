@@ -139,7 +139,9 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
                     sum = 0
 
                     my_idx = [i for i in range(num) if i != poly]  #indices of polymorph that are not the varying element variation
+
                     poly_ratio = copy.copy(np.array([float(sample.structure[layer][element].poly_ratio[i]) for i in range(num)]))
+
 
                     sum = np.sum(poly_ratio[my_idx])
                     #for i in range(num):

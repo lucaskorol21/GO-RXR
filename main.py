@@ -111,7 +111,7 @@ if __name__ == '__main__':
         print('Done - ', key)
 
     ds.saveSimulationHDF5(fname, sim_dict)
-    """
+    
     
     thickness, density, mag_density = sample.density_profile()
 
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     #sample.energy_shift()
 
 
-    """
+    
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     keys = ['26_452.77_S', '35_460.76_S', '19_500.71_S', '31_635.99_S', '22_640.99_S', '24_644.02_S', '33_834.59_S',
@@ -214,3 +214,4 @@ if __name__ == '__main__':
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
     """
+    print('hello')

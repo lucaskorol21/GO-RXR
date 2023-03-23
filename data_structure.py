@@ -1779,7 +1779,7 @@ def WriteSampleHDF5(fname, sample):
             else:
                 formula = formula + new_ele + str(stoich)
 
-        print(formula)
+
 
         layer.attrs['Formula'] = formula
 

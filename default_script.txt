@@ -6,7 +6,7 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
-#setCombinedThickness(4,5,all,24.80428385113182)
+#setCombinedThickness(2,5,all,14.39360028319356)
 
 
 
@@ -40,10 +40,10 @@
 # setEshift(ffName, value)
 # setMagEshift(ffmName, value)
 
-dE = getEshift(Mn3)
-setEshift(Mn2, dE)
-setMagEshift(Ni, dE)
-setMagEshift(Co,dE)
+#dE = getEshift(Mn3)
+#setEshift(Mn2, dE)
+#setMagEshift(Ni, dE)
+#setMagEshift(Co,dE)
 
 
 

@@ -694,16 +694,15 @@ class slab:
                                 self.structure[lay][key].mag_density = np.zeros(len(layer[key].polymorph))
                                 #self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
 
-                                # required in case where not all element variations are magnetic!!!
-                                self.mag_elements[key] = ['' for i in range(len(my_idx))]
-                                for j,k in enumerate(my_idx):
-                                    self.mag_elements[key][j] = layer[key].polymorph[j]
 
+                                self.mag_elements[key] = []
                                 poly_start = False
                                 # gamma and phi entered as multiple arrays
                                 if type(gamma) == list and type(phi) == list:
                                     self.structure[lay][key].gamma = np.zeros(len(layer[key].polymorph))
                                     self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
+                            if identifier[idx] not in self.mag_elements[key]:
+                                self.mag_elements[key].append(identifier[idx])
 
                             self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
                             self.structure[lay][key].mag_density[poly_idx] = density[idx]
@@ -732,7 +731,7 @@ class slab:
 
 
 
-
+        print(self.mag_elements)
     def error_function(self, t, rough, offset, upward):
         """
         Purpose: Computes the roughness using the error function
@@ -783,6 +782,7 @@ class slab:
 
         for ele in list(self.mag_elements.keys()):
             density_mag[ele] = {k: np.array([]) for k in self.mag_elements[ele]}
+
 
 
         struct_keys = list(density_struct.keys()) # retrieves structure keys
@@ -1061,9 +1061,9 @@ class slab:
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         const = (next_density - current_density) / 2
 
-                        ma = 0
+                        #ma = 0
                         for mag in list(density_mag[ele].keys()):
-
+                            ma = list(self.structure[layer][ele].polymorph).index(mag)
                             # finds magnetic scattering factors
                             if mag not in self.find_sf[1]:
                                 mag_sf = self.structure[layer][ele].mag_scattering_factor[ma]
@@ -1075,8 +1075,9 @@ class slab:
 
 
                             # Density normalization
+
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
-                            ma = ma + 1
+                            #ma = ma + 1
 
                     else:  # Element not found in current layer
 
@@ -1102,6 +1103,7 @@ class slab:
                         # Loops through all the polymorphs of the selected element
                         ma = 0
                         for mag in list(density_mag[ele].keys()):
+
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + const[ma] * erf_func
                             density_mag[ele][mag][density_mag[ele][mag]<0] = 0

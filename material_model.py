@@ -1,4 +1,29 @@
-from material_structure import *
+"""
+Library: material_model
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 22nd, 2023
+Python: version 3.7
+
+Purpose: This script contains all functions related to retrieving form factors and calculating the structural and
+        magnetic optical constants.
+
+Imported Libraries
+
+material_structure (version 0.1) - Part of the 'name' software package and is used to construct the sample model and calculate the
+                     reflectivity spectra. This is only used for testing of the library functions
+
+pickle - Pickle is used to load the data base of form factors, which are of a dictionary format.
+
+numba (version 0.55.2) - Not currently used in this script.
+
+scipy (version 1.7.1) - This library is used to interpolate the form factors for an arbitrary energy
+
+os -
+"""
+
+from material_structure import *  # version
 import pickle
 from numba import *
 from scipy import interpolate
