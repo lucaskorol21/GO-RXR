@@ -2461,7 +2461,7 @@ class sampleWidget(QWidget):
         for idx in range(m):
             formula = ''  # used to determine the chemical formula
             thickness = []  # thickness of the layer
-            density = []  # density of the layer
+            density = []  # density of the layer☺
             roughness = []  # roughness of the layer
             linked_roughness = []  # linked roughness of the layer
             scat_fact = []
@@ -9326,7 +9326,7 @@ def checkscript(sample):
                 n = len(my_script)
     f.close()
 
-    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity']
+    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant']
 
     my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness','geteshift', 'getmageshift', 'getmagdensity']
 
@@ -9427,6 +9427,39 @@ def checkscript(sample):
                             if symbol != var:
                                 if not (problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
+                elif function.lower() == 'setvariationconstant':
+                    if len(params) != 4:
+                        problem = True
+
+                    m = len(sample.structure)
+
+                    if int(params[0]) > m - 1 and not (problem):
+                        problem = True
+                        print('31')
+
+                    if params[1].isdigit() or params[2].isdigit():
+                        problem = True
+                        print('32')
+
+                    if not (problem):
+                        params[1] = params[1].strip(' ')
+                        params[2] = params[2].strip(' ')
+                        if params[1] not in list(sample.structure[int(params[0])].keys()):
+                            problem = True
+                            print('33')
+
+
+                        if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not (problem):
+                            problem = True
+                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
+                            print(sample.structure[int(params[0])][params[1]].polymorph)
+                            print('34')
+
+                        if not (problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
+                            problem = True
+                            print('35')
+
+
 
                 elif function.lower() == 'setratio':
                     if len(params) != 5:

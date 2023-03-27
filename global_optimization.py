@@ -283,6 +283,17 @@ def readScript(sample, script):
                 else:
                     sample.setCombinedThickness(layer_start, layer_end, identifier, variables[key])
 
+            elif function.lower() == 'setvariationconstant':
+                layer = int(params[0])
+                symbol = params[1].strip(' ')
+                identifier = params[2].strip(' ')
+                key = params[3].strip(' ')
+
+                if isfloat(key):
+                    sample.setVariationConstant(layer, symbol, identifier,  float(key))
+                else:
+                    sample.setVariationConstant(layer, symbol, identifier,  variables[key])
+
             elif function.lower() == 'setratio':
                 layer = int(params[0])
                 symbol = params[1].strip(' ')

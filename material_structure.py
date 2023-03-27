@@ -1494,6 +1494,27 @@ class slab:
             for key in keys:
                 self.structure[layer][key].roughness = density
 
+
+
+    def setVariationConstant(self, layer, symbol, identifier, val):
+        # ratio = identifier1/identifier2
+        # for now this will only work for 3 element variations
+        keys = list(self.structure[layer].keys())
+
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) == 3:
+                # determines the index of the polymorph that is not identifer 1 or 2
+                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier]
+                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] == identifier]
+
+                my_total = sum(list(self.structure[layer][symbol].poly_ratio[idx_no] ))
+
+                for i in idx_no:
+                    r = self.structure[layer][symbol].poly_ratio[i]
+                    self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
+
+                self.structure[layer][symbol].poly_ratio[idx] = val
+
     def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
         # ratio = identifier1/identifier2
         # for now this will only work for 3 element variations

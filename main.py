@@ -113,6 +113,12 @@ if __name__ == '__main__':
     ds.saveSimulationHDF5(fname, sim_dict)
     
     """
+
+    theta = 30
+    E = 640
+    qz = np.sin(theta*np.pi/180)*E*0.001013546247
+    print(qz)
+    """
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
@@ -140,7 +146,7 @@ if __name__ == '__main__':
     plt.xlabel('Thickness (angstroms)')
     plt.legend(my_keys)
     plt.show()
-    """
+    
 
     x = [4,7,10]
     y = [0.0007044,0.00220607,0.00279876]

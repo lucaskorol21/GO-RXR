@@ -26,6 +26,11 @@
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
+#setVariationConstant(layer, element, identifier, value)
+
+#setVariationConstant(4, B, Ti, 0.4265371849878433)
+#setVariationConstant(5, B, Ti, 0.049067758322062796)
+#setVariationConstant(6, B, Ti, 0.06250887791656433)
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#
