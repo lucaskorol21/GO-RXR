@@ -1,3 +1,40 @@
+"""
+Library: data_structure
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 28nd, 2023
+Python: version 3.7
+
+Purpose: This python file contains all the reading and writing functions
+
+---------------------------------------------------------------------------------------------------------------------------------------
+Imported Libraries
+
+numpy (version 1.21.4) - used for array manipulation
+
+material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
+                               calculate the optical constants
+
+material_structure (version 0.1) - Part of the 'name' software package and is used to retrieve to calculate the reflectivity spectra
+
+h5py (version 2.90) - Used to save files in hdf5 form
+
+--------------------------------------------------------------------------------------------------------------------------------------
+Note: Any additional parameters that need to be saved needs to be included into all functions.
+In particular, if additional global optimization algorithms are included this will need to be added all reading and
+writing functions (saveAsFileHDF5, saveFileHDF5, newFileHDF5, WriteDataHDF5, ReadAlgorithmHDF5). View saveAsFile for
+explanation of how to include a new global optimization algorithm.
+
+Warning: Once you've made a change to the HDF5 file format and you have made changes to the reading functions then you will no
+longer be able to read in older files. Be careful when working with the older files while testing as this
+may corrupt the files. I've done this a few times and lost precious work that I need to redo.
+
+Suggestion: Include a new data field called "version". This way we can keep track of the version type and then save
+and load the function appropriately without corrupting the files.
+
+"""
+
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 import os
@@ -56,9 +93,14 @@ def getTitleInfo(title):
     return scan_number, scanType, energy, polarization, angle
 
 def Read_ReMagX(fname):
+    """
+    Purpose: Read ReMagX files and convert to a data and simulation dictionary
+    :param fname: ReMagX filename
+    :return: data_dict and sim_dict
+    """
     data_dict = dict()
     data_info = []
-    if fname.endswith('.all'):
+    if fname.endswith('.all'):  # checks to make sure selected file is a ReMagX file type
         # good to go
         is_data = False
         new_data = True
@@ -169,6 +211,11 @@ def Read_ReMagX(fname):
     return data_info, data_dict
 
 def evaluate_list(string):
+    """
+    Purpose: This is used to evaluate scan boundaries
+    :param string: Scan boundaries in string form
+    :return: Boundary in list format
+    """
     # check to make sure it is a list
     if type(string) is not np.ndarray and type(string) is not list:
         if string[0] != '[' and string[-1] != ']':
@@ -198,6 +245,11 @@ def evaluate_list(string):
 
 
 def find_parameter_bound(string):
+    """
+    Purpose: Convert parameter boundaries from string type to list type
+    :param string: Parameter boundary as string type
+    :return: Parameter boundary as list type
+    """
     my_list = []
 
     my_string = ''
@@ -362,6 +414,12 @@ def evaluate_parameters(parameters):
     return final_array
 
 def saveSimulationHDF5(fname, sim_dict):
+    """
+    Purpose: Save the simulations
+    :param fname: Filename to save the simulations to
+    :param sim_dict: Simulation dictionary
+    :return:
+    """
     f = h5py.File(fname, 'a')  # create fname hdf5 file
 
     simulated = f['Simulated_data']
@@ -404,7 +462,16 @@ def saveSimulationHDF5(fname, sim_dict):
             dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
 
 def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
-
+    """
+    Purpose: Save workspace information with a specfied filename
+    :param fname: filenmae
+    :param sample: slab class
+    :param data_dict: data dictionary
+    :param sim_dict: simulation dictionary
+    :param fit: Fitting parameters
+    :param optimization: Optimization parameters
+    :return:
+    """
 
     f = h5py.File(fname, 'a')  # create fname hdf5 file
 
@@ -498,7 +565,22 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
     shgo = opt.create_group("Simplicial Homology")
     dual = opt.create_group("Dual Annealing")
     least = opt.create_group('Least Squares')
-
+    """
+    # How to include a new optimization algorithm? Let's use the direct algorithm as an example:
+    direct = opt.create_group('Direct')  # create a group for the direct algorithm
+    
+    # Now we can include the attributes to the algorithm
+    direct.attrs['eps'] = optimization['direct'][0]
+    direct.attrs['maxFun'] = optimization['direct'][1]
+    ...
+    ...
+    ...
+    direct.attrs['last parameters'] = optimization['direct'][n]
+    
+    # Note that optimization is a dictionary that contains the algorithm name as the key and a list of the function 
+    # variables as the values. This initialization of this dictionary can be found in GUI_GO in the initialization of 
+    # the GlobalOptimizationWidget widget class. I will provide a little detail in GUI_GO of to include a new algorithm.
+    """
     # load in optimization parameters for differential evolution
     diff_ev.attrs['strategy'] = optimization['differential evolution'][0]
     diff_ev.attrs['maxIter'] = optimization['differential evolution'][1]
