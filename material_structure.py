@@ -1,9 +1,9 @@
 """
-Library: material_model
+Library: material_structure
 Version: 0.1
 Author: Lucas Korol
 Institution: University of Saskatchewan
-Last Updated: March 22nd, 2023
+Last Updated: March 28nd, 2023
 Python: version 3.7
 
 Purpose: This script contains all functions related to retrieving form factors and calculating the structural and
