@@ -11,18 +11,18 @@ Purpose: This script contains functions used for the global optimization, which 
 
 Imported Libraries
 
-material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
-                               calculate the optical constants
+data_structure (version 0.1) - Part of the 'name' software package and contains all functions used for reading and
+                               writing of hdf5 files
 
-Pythonreflectivity (version 1.0) - Software used to calculate the reflectivity spectra. Currently this software is only
-                                   compatible with python 3.7. The function generate_structure, slab.reflectivity, and
-                                   slab.energy_scan will need to be altered for newer versions.
+material_model (version 0.1) - Part of the 'name' software package and is used to calculate the reflectivity spectra
+                               for cost function calculation.
 
-numba (version 0.55.2) - Used to speed up certain functions with long executions times and frequent use.
+numpy (version 1.21.4) - used for array manipulation
 
-scipy (version 1.7.1) - This python file uses the error function from the scipy library to model the roughness of a
-                        material
+scipy (version 1.7.1) - This python file uses scipy for the Fourier filter implementation for smoothing data
 
+Note - Once Pythonreflectivity is compatible with higher version of python consider testing the direct algorithm
+       implementation or any new global optimization algorithms included into the scipy library.
 """
 
 from scipy import optimize, signal
@@ -42,8 +42,13 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     :param x: A list that contains the new parameters values
     :param parameters: A list that defines which parameter to change in the sample definition
     :param sample: A slab object class
-    :return: The new sample
+    :param backS: Dictionary containing scan names as keys and background shift as values
+    :param scaleF: Dictionary containing scan names as keys and scaling factor as values
+    :param script: List containing the lines of code from retrived from the script to be interpreted
+    :param use_script: Boolean used to determine if the script will be used when changing the sample parameters
+    :return: A new slab class with the changed sample parameters
     """
+
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
@@ -57,7 +62,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
                 scaleF[name] = str(x[p])
 
             sample.scaling_factor = x[p]  # sets the sample scaling factor
-        elif params[0] == "BACKGROUND SHIFT":
+        elif params[0] == "BACKGROUND SHIFT":  # shift the reflectivity spectra
             name = params[1]
             if name == 'ALL SCANS':
                 for key in list(backS.keys()):
@@ -65,7 +70,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
             else:
                 backS[name] = "{:e}".format(x[p])
 
-        elif params[0] == 'SCATTERING FACTOR':
+        elif params[0] == 'SCATTERING FACTOR':  # change the energy shift of the scattering factor
             mode =params[1]
             element = params[2]
             dE = x[p]
@@ -195,6 +200,11 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     return sample, backS, scaleF
 
 def isfloat(num):
+    """
+    Purpose: Determine if variable can be converted to a float value
+    :param num: Variable to check and is typical of string type
+    :return: Boolean stating if it is a float value (True = is a float)
+    """
     try:
         float(num)
         return True
@@ -202,156 +212,162 @@ def isfloat(num):
         return False
 
 def readScript(sample, script):
+    """
+    Purpose: This function is used to interpret the script inputted by the user
+    :param sample: slab class
+    :param script: List containing the lines of code
+    :return: The slab class with changed parameters as specified by the script
+    """
 
-    variables = dict()
+    variables = dict()  # dictionary use to store variable place holders
 
     for line in script:
         if len(line) == 2:  # setting a variable as a value
-            key = line[0].strip(' ')
-            function = line[1].split('(')[0].strip(' ')
-            variables[key] = 0
+            key = line[0].strip(' ')  # retrieves the variable place holder key
+            function = line[1].split('(')[0].strip(' ') # retrieves the function call
+            variables[key] = 0  # initializes the variable value
 
-            params = line[1].strip(' ').strip(function)  # parameters
+            params = line[1].strip(' ').strip(function)  # retrieves the input parameters to the function
 
-            params = params.strip('(')
+            params = params.strip('(')  # strips all brackets and spaces
             params = params.strip(')')
             params = params.strip(' ')
-            params = params.split(',')
+            params = params.split(',')  # separates all input parameters into a list using comma as separator
+
             if function.lower() == 'getroughness':
-                layer = int(params[0].strip(' '))
-                K = params[1].strip(' ')
-                variables[key] = float(sample.getRoughness(layer, K))
+                layer = int(params[0].strip(' '))  # gets layer
+                K = params[1].strip(' ')  # gets the element symbol
+                variables[key] = float(sample.getRoughness(layer, K))  # determines roughness value
 
             elif function.lower() == 'getdensity':
-                layer = int(params[0].strip(' '))
-                K = params[1].strip(' ')
-                variables[key] = float(sample.getDensity(layer, K))
+                layer = int(params[0].strip(' '))  # gets layer
+                K = params[1].strip(' ')  # gets element symbol
+                variables[key] = float(sample.getDensity(layer, K))  # retrieves density value
 
             elif function.lower() == 'getthickness':
-                layer = int(params[0].strip(' '))
-                K = params[1].strip(' ')
-                variables[key] = float(sample.getThickness(layer, K))
+                layer = int(params[0].strip(' '))  # gets layer
+                K = params[1].strip(' ')  # gets element symbol
+                variables[key] = float(sample.getThickness(layer, K))  # retrieves thickness value
 
             elif function.lower() == 'gettotalthickness':
-                start_layer = int(params[0].strip(' '))
-                end_layer = int(params[1].strip(' '))
-                K = params[2].strip(' ')
-                variables[key] = float(sample.getTotalThickness(start_layer,end_layer, K))
+                start_layer = int(params[0].strip(' '))  # gets start layer
+                end_layer = int(params[1].strip(' '))  # gets end layer
+                K = params[2].strip(' ')  # gets element symbol
+                variables[key] = float(sample.getTotalThickness(start_layer,end_layer, K))  # retrieves total thickness
 
             elif function.lower() == 'geteshift':
-                ffName = params[0]
-                variables[key] = float(sample.getEshift(ffName))
+                ffName = params[0]  # gets form factor names
+                variables[key] = float(sample.getEshift(ffName))  # retrieves form factor value
 
             elif function.lower() == 'getmageshift':
-                ffmName = params[0]
-                variables[key] = float(sample.getMagEshift(ffmName))
+                ffmName = params[0]  # gets magnetic form factor name
+                variables[key] = float(sample.getMagEshift(ffmName))  # retrieves magnetic form factor value
 
             elif function.lower() == 'getmagdensity':
-                layer = int(params[0])
-                symbol = params[1]
-                var = params[2]
-                variables[key] = float(sample.getMagDensity(layer, symbol, var))
+                layer = int(params[0])  # gets magnetic density layer
+                symbol = params[1]  # gets element symbol
+                var = params[2]  # gets variation identifier
+                variables[key] = float(sample.getMagDensity(layer, symbol, var))  # retrieves magnetic density
 
         elif len(line) == 1:  # setting functions
-            function = line[0].split('(')[0].strip(' ')
+            function = line[0].split('(')[0].strip(' ')  # retrieves the function call
 
-            params = line[0].strip(' ').strip(function)  # parameters
+            params = line[0].strip(' ').strip(function)  # retrieves the parameters
 
-            params = params.strip('(')
+            params = params.strip('(')  # strips all bracktes
             params = params.strip(')')
             params = params.strip(' ')
-            params = params.split(',')
+            params = params.split(',')  # gets all parameters and puts the in a list
 
             if function.lower() == 'setroughness':
-                layer = int(params[0])
+                layer = int(params[0])  # get layer
 
-                identifier = params[1].strip(' ')
-                key = params[2].strip(' ')
-                if isfloat(key):
+                identifier = params[1].strip(' ')  # get element symbol
+                key = params[2].strip(' ')  # get variable key or variable value
+                if isfloat(key):  # variable value
                     sample.setRoughness(layer, identifier, float(key))
-                else:
+                else:  # variable key case
                     sample.setRoughness(layer, identifier, variables[key])
 
             elif function.lower() == 'setdensity':
-                layer = int(params[0])
-                identifier = params[1].strip(' ')
-                key = params[2].strip(' ')
-                if isfloat(key):
+                layer = int(params[0])  # gets layer
+                identifier = params[1].strip(' ')  # gets symbol identifier
+                key = params[2].strip(' ')  # get variable key or variable value
+                if isfloat(key):  # variable value
                     sample.setDensity(layer, identifier, float(key))
-                else:
+                else:  # variable key case
                     sample.setDensity(layer, identifier, variables[key])
 
             elif function.lower() =='setthickness':
-                layer = int(params[0])
-                identifier = params[1].strip(' ')
-                key = params[2].strip(' ')
-                if isfloat(key):
+                layer = int(params[0])  # gets layer index
+                identifier = params[1].strip(' ')  # gets element symbol
+                key = params[2].strip(' ')  # get variable value or key
+                if isfloat(key):  # value case
                     sample.setThickness(layer, identifier, float(key))
-                else:
+                else:  # key case
                     sample.setThickness(layer, identifier, variables[key])
 
             elif function.lower() == 'setcombinedthickness':
-                layer_start = int(params[0])
-                layer_end = int(params[1])
-                identifier = params[2].strip(' ')
-                key = params[3].strip(' ')
+                layer_start = int(params[0])  # gets start layer
+                layer_end = int(params[1])  # gets end layer index
+                identifier = params[2].strip(' ')  # gets element symbol
+                key = params[3].strip(' ')  # gets variable value or key
 
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setCombinedThickness(layer_start, layer_end, identifier, float(key))
-                else:
+                else:  # key case
                     sample.setCombinedThickness(layer_start, layer_end, identifier, variables[key])
 
             elif function.lower() == 'setvariationconstant':
-                layer = int(params[0])
-                symbol = params[1].strip(' ')
-                identifier = params[2].strip(' ')
-                key = params[3].strip(' ')
+                layer = int(params[0])  # gets layer index
+                symbol = params[1].strip(' ')  # gets element symbol
+                identifier = params[2].strip(' ')  # gets element variation identifier
+                key = params[3].strip(' ')  # gets value or key
 
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setVariationConstant(layer, symbol, identifier,  float(key))
-                else:
+                else:  # key case
                     sample.setVariationConstant(layer, symbol, identifier,  variables[key])
 
             elif function.lower() == 'setratio':
-                layer = int(params[0])
-                symbol = params[1].strip(' ')
-                identifier1 = params[2].strip(' ')
-                identifier2 = params[3].strip(' ')
-                key = params[4].strip(' ')
+                layer = int(params[0])  # gets layer index
+                symbol = params[1].strip(' ')  # get element symbol
+                identifier1 = params[2].strip(' ')  # gets element variation identifier
+                identifier2 = params[3].strip(' ')  # gets element variation identifier
+                key = params[4].strip(' ')  # retrieves value or key
 
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setRatio(layer, symbol, identifier1, identifier2, float(key))
-                else:
+                else:  # key case
                     sample.setRatio(layer, symbol, identifier1, identifier2, variables[key])
 
             elif function.lower() == 'seteshift':
-                ffName = params[0]
-                key = params[1].strip(' ')
+                ffName = params[0]  # gets non-magnetic form factor name
+                key = params[1].strip(' ')  # gets value or key
 
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setEshift(ffName, float(key))
-                else:
+                else:  # key case
                     sample.setEshift(ffName,variables[key])
 
             elif function.lower() == 'setmageshift':
-                ffmName = params[0]
-                key = params[1].strip(' ')
+                ffmName = params[0]  # gets magnetic form factor name
+                key = params[1].strip(' ')  # gets value or key
 
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setMagEshift(ffmName, float(key))
-                else:
+                else:  # key case
                     sample.setMagEshift(ffmName, variables[key])
 
             elif function.lower() == 'setmagdensity':
-                layer = int(params[0])
-                symbol = params[1]
-                var = params[2]
-                key = params[3].strip(' ')
+                layer = int(params[0])  # gets layer index
+                symbol = params[1]  # gets element symbol
+                var = params[2]  # gets element variation identifier
+                key = params[3].strip(' ')  # gets value or key
 
-
-                if isfloat(key):
+                if isfloat(key):  # value case
                     sample.setMagDensity(layer, symbol, var, float(key))
-                else:
+                else:  # key case
                     sample.setMagDensity(layer, symbol, var, variables[key])
     return sample
 
@@ -576,17 +592,47 @@ def scanCompute(x, *args):
 
     return fun
 
+"""
+Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
+evolution wrapper. 
+"""
 def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
+    """
+    Purpose: wrapper used to setup and run the scipy differential evolution algorithm
+    :param sample: slab class
+    :param data_info: A list of lists [[scan number, scan type, scan name]]
+    :param data: dictionary containing the data
+    :param scan: list containing the names of the scans to optimize
+    :param backS: dictionary containing the background shifts of all the data scans
+    :param scaleF: dictionary containing the scaling factors of all the data scans
+    :param parameters: A list of list containing the information for the parameters to change (same format as found in  function changeSampleParams)
+    :param bounds: Contains the parameter boundaries (note their index position are the same as the parameters)
+    :param sBounds: A list of lists containing the scan boundaries
+    :param sWeights: A list of lists containing the scan boundary weights
+    :param goParam: The global optimization parameters
+    :param cb: callback function
+    :param objective: Defines methodology in cost function (chi-square, L1-norm, L2-norm)
+    :param shape_weight: Determines the weight to use for the total variation implementation
+    :param r_scale:  Determines whether to transform the reflectivity spectra using log(R), ln(R), R, R*qz^4
+    :param smooth_dict: Dictionary containing the smoothed data using the smooth data feature in the GUI
+    :param script: A list containing the lines of code in the script
+    :param use_script: Boolean that determines if the script should be used
+    :return:
+        x - the parameter values
+        fun - the cost function value
+    """
     # performs the differential evolution global optimization
-    global x_vars
-    x_vars = []
+    global x_vars  # resets the parameters values
+    x_vars = []  # this is used to keep track of the parameter values after each iteration
 
     scans = []
+    # retrieves scan names
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)
 
     params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script]  # required format for function scanCompute
+
 
     p=True
     if goParam[8] == 'True':
@@ -613,6 +659,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     x_vars = []
 
     scans = []
+    # retrieves scan names
     for s, info in enumerate(data_info):
         if info[2] in scan:
             scans.append(info)

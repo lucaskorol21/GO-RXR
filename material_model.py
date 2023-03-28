@@ -11,6 +11,8 @@ Purpose: This script contains all functions related to retrieving form factors a
 
 Imported Libraries
 
+numpy (version 1.21.4) - used for array manipulation
+
 material_structure (version 0.1) - Part of the 'name' software package and is used to construct the sample model and calculate the
                      reflectivity spectra. This is only used for testing of the library functions
 
