@@ -1,17 +1,35 @@
+"""
+Library: global_optimization.py
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 28nd, 2023
+Python: version 3.7
+
+Purpose: This script contains functions used for the global optimization, which includes the cost function used
+         for all calculations.
+
+Imported Libraries
+
+material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
+                               calculate the optical constants
+
+Pythonreflectivity (version 1.0) - Software used to calculate the reflectivity spectra. Currently this software is only
+                                   compatible with python 3.7. The function generate_structure, slab.reflectivity, and
+                                   slab.energy_scan will need to be altered for newer versions.
+
+numba (version 0.55.2) - Used to speed up certain functions with long executions times and frequent use.
+
+scipy (version 1.7.1) - This python file uses the error function from the scipy library to model the roughness of a
+                        material
+
+"""
+
 from scipy import optimize, signal
-from material_structure import *
 import numpy as np
 from data_structure import *
-import matplotlib.pyplot as plt
 import time
-from tkinter import *
 from material_model import *
-from tkinter import ttk
-import multiprocessing as mp
-import sys
-import os
-from PIL import Image, ImageTk
-import functools
 import copy
 
 global x_vars

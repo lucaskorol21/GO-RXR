@@ -26,16 +26,14 @@ scipy (version 1.7.1) - This python file uses the error function from the scipy 
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 from material_model import *
 import Pythonreflectivity as pr
-
 from numba import *
 from collections import OrderedDict
 from scipy.special import erf
 import warnings
 import copy
-
-
 
 @njit()
 def ALS(alpha, beta, precision=1e-6):
@@ -1313,7 +1311,7 @@ class slab:
             idx = idx + 1
 
 
-        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-20)  # Computes the reflectivity
         R = dict()
         """

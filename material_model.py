@@ -136,9 +136,9 @@ def MOC(rho, sfm, E, n):
     c = 2.99792450e10  # Speed of light in vacuum [cm/s]
     re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
     avocado = 6.02214076e23  # avagoadro's number
-    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+    k0 = 2 * np.pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
 
-    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+    constant = 2 * np.pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
 
 
@@ -239,8 +239,8 @@ def index_of_refraction(rho, sf, E):
     re = 2.817940322719e-13  # Classical electron radius (Thompson scattering length) [cm]
     avocado = 6.02214076e23  # avagoadro's number
     #avocado = 6.0221e23
-    k0 = 2 * pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
-    constant = 2 * pi * re * (avocado) / (k0 ** 2)  # constant for density sum
+    k0 = 2 * np.pi * E / (h * c)  # photon wavenumber in vacuum [1/cm]
+    constant = 2 * np.pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
     f1 = 0  # dispersive form factor
     f2 = 0  # absorptive form factor
