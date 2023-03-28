@@ -20,7 +20,7 @@ numba (version 0.55.2) - Not currently used in this script.
 
 scipy (version 1.7.1) - This library is used to interpolate the form factors for an arbitrary energy
 
-os -
+os - used to access database of atomic masses
 """
 
 from material_structure import *  # version
@@ -30,25 +30,22 @@ from scipy import interpolate
 import os
 
 
-# Loads all scattering factors when program imported
+# Loads the non-magnetic form factors stored in our database
 with open('form_factor.pkl', 'rb') as f:
     global ff
-    ff = pickle.load(f)
-
-
+    ff = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
 f.close()
 
-# Loads all scattering factors when program imported
+# Loads the magnetic form factors stored in our database
 with open('form_factor_magnetic.pkl','rb') as f:
     global ffm
     ffm = pickle.load(f)
-
 f.close()
 
 def _use_given_ff(directory):
     """
     Purpose: Scan cwd for form factors files and return their names (with .ff and .ffm stripped)
-    :param directory: Current working directory (cwd)
+    :param directory: Current working directory
     :return: names of form factors (magnetic and structural) found in directory
     """
     global ff
@@ -81,17 +78,19 @@ def _use_given_ff(directory):
     return struct_names, mag_names
 
 def form_factor(f,E):
-    global ff
 
     """
     Purpose: Determines form factors with energy E using linear interpolation
-    :param f: List of form factors
-    :param E: Desired energy
-    :return: Array contains real and imaginary component of form factor at energy E: f=[real, imaginary]
+    :param f: List of form factors of form np.array([E, f_real, f_imag]) where E, f_real, and f_imag are arrays
+    :param E: Float or list of desired energy
+    :return: Array that contains the real and imaginary values of the form factor at energy E: f=[real, imaginary].
+             If user inputs an array of energies [E_1,E_2,..,E_n] the output will be [[fr_1,fi_1],[fr_2,fi_2],...,[fr_n,fi_n]].
+             Note - All values are real and are converted to imaginary numbers elsewhere.
     """
+
     # Linear interpolation
-    fr = interpolate.interp1d(f[:,0],f[:,1])
-    fi = interpolate.interp1d(f[:,0],f[:,2])
+    fr = interpolate.interp1d(f[:,0],f[:,1])  # real component
+    fi = interpolate.interp1d(f[:,0],f[:,2])  # imaginary component
 
     if isinstance(E, list) or isinstance(E, np.ndarray):  # handle multiple energy case (energy scan)
         F = np.array([np.array([fr(x), fi(x)]) if x > f[0, 0] and x < f[-1, 0] else np.array([0, 0]) for x in E])
@@ -105,18 +104,18 @@ def find_form_factor(element, E, mag):
     Purpose: Return the magnetic or non-magnetic form factor of a selected element and energy
     :param element: String containing element symbol
     :param E: Energy in electron volts
-    :param mag: Boolean specifying if the magnetic form factor is desired
+    :param mag: Boolean used to identify if non-magnetic or magnetic form factor is requested
     :return:
     """
     #global ffm
     #global ff
 
-    if mag:
+    if mag:  # magnetic form factor
         mag_keys = list(ffm.keys())
         if element not in mag_keys:
             raise NameError(element + " not found in magnetic form factors")
         F = form_factor(ffm[element],E)
-    else:
+    else:  # non-magnetic form factor
         struc_keys = list(ff.keys())
         if element not in struc_keys:
             raise NameError(element + " not found in structural form factors")
@@ -126,7 +125,7 @@ def find_form_factor(element, E, mag):
 
 def MOC(rho, sfm, E, n):
     """
-    Purpose: computes the magneto-optical constant for the energy scan
+    Purpose: Computes the magneto-optical constant for the energy scan
     :param rho: dictionary containing the element symbol as the key and a numpy array as the value
     :param sfm: dictionary that contains the element symbol as the key and the absorptive and dispersive form factor components
     :param E: a numpy array containing energy values in eV

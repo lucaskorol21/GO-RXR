@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_v2.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_v2.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -114,11 +114,7 @@ if __name__ == '__main__':
     
     """
 
-    theta = 30
-    E = 640
-    qz = np.sin(theta*np.pi/180)*E*0.001013546247
-    print(qz)
-    """
+
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
@@ -136,7 +132,7 @@ if __name__ == '__main__':
 
     #total = integrate.trapezoid(mag_density['Mn3'], x=thickness)
     #print(total/10)
-    #print(total/10/40.53)
+    #print(total/10/4)
 
     plt.figure(2)
     for key in my_keys:
@@ -155,19 +151,19 @@ if __name__ == '__main__':
     plt.plot(x,y)
     plt.ylabel('Average Magnetic Density (mol/cm^2)')
     plt.xlabel('Unit Cells (uc)')
-    plt.show()
 
 
-
+    """
+    
     #KK = variationKK(E_prime,E0,E2,E4)
     
 
-    #fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
 
-    #struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
+    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas")  # look for form factors in directory
 
-    #sample = ds.ReadSampleHDF5(fname)
-    #sample.energy_shift()
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
 
 
     
@@ -180,8 +176,9 @@ if __name__ == '__main__':
 
 
     
-    destination = '\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation'
-    for E in range(401,901,2):
+    destination = '\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation-0.1eV'
+    for i in range(0,300+1,1):
+        E = 450 + i*0.1
         Theta = np.linspace(0.1, 60, num=2000)
         qz = np.sin(Theta * np.pi / 180) * E * (0.001013546247)
 
@@ -189,14 +186,14 @@ if __name__ == '__main__':
 
         filename = 'E1_' + str(E)
         dat = np.transpose(np.array([qz, R['S']]))
-        file = r"\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation"
+        file = r"\\cabinet\work$\lsk601\My Documents\Data_for_Jesus\RXR-Twente-E1-150K-simulation-0.1eV"
         file = file + '\E1_' + str(E)
         np.savetxt(file, dat)
 
 
 
     #np.savetxt('E1_' + str(E), dat)
-    """
+    
 
     #E = np.arange(10,3000,1)
     #imaginary = np.zeros(len(E))
@@ -206,7 +203,7 @@ if __name__ == '__main__':
 
     #np.savetxt('Z.txt', data,fmt='%.4s')
 
-    """
+
     dir = "C:/Users/lsk601/PycharmProjects/MaterialReflection/Scattering_Factor"
     my_dict = dict()
     for filename in os.listdir(dir):
