@@ -1,15 +1,35 @@
-import ast
+"""
+Library: material_model
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 22nd, 2023
+Python: version 3.7
+
+Purpose: This script contains all functions related to retrieving form factors and calculating the structural and
+        magnetic optical constants.
+
+Imported Libraries
+
+material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
+                               caluculate the optical constants
+
+Pythonreflectivity (version 1.0) - Software used to calculate the reflectivity spectra. Currently this software is only
+                                   compatible with python 3.7. The function generate_structure, slab.reflectivity, and
+                                   slab.energy_scan will need to be altered for newer versions.
+
+numba (version 0.55.2) - Used to speed up certain functions with long executions times and frequent use.
+
+scipy (version 1.7.1) - This python file uses the error function from the scipy library to model the roughness of a
+                        material
+
+"""
 
 import matplotlib.pyplot as plt
-import sys
-
-from KK_And_Merge import *
 from material_model import *
 import Pythonreflectivity as pr
 
 from numba import *
-import tkinter as tk
-from tkinter import ttk
 from collections import OrderedDict
 from scipy.special import erf
 import warnings
@@ -78,6 +98,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     gamma = 90  # pre-initialize magnetization direction
     phi = 90
 
+    # Recent versions of Pythonreflectivity use the susceptibility instead of the dielectric constant
     for m_i in my_slabs:
         d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
         eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
@@ -92,10 +113,8 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
                         phi = structure[0][ele].phi
 
         # Determines the magnetization direction of the other layers
-
         temp_list = [transition[i][layer] for i in range(len(transition))]
         trans = max(temp_list)
-        #trans = max(transition[layer])
         if trans <= thickness[m_j] and layer < len(transition[0]) - 1:
             layer = layer + 1
             if layer_magnetized[layer]:
@@ -136,6 +155,8 @@ def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
     :param wavelength: Wavelength of photon energy
     :param R: Pre-initialized numpy array
     :param E: Integer that defined energy location for pre-initialized reflectivity dicitonary R
+    :param backS: Float value that contains the background shift applied to the scan
+    :param scaleF: Float value that contains the scaling factor applied to the scan
     :return: Reflectivity R
     """
 
@@ -147,12 +168,12 @@ def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
         R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
         R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # Asymmetry linear polarized
     elif len(Rtemp) == 4:
-        R['S'][E] = Rtemp[0][0]*scaleF + backS
-        R['P'][E] = Rtemp[1][0]*scaleF + backS
-        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)
-        R['LC'][E] = Rtemp[2][0]*scaleF + backS
-        R['RC'][E] = Rtemp[3][0]*scaleF + backS
-        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0])+2*backS)
+        R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
+        R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
+        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # linear asymmetry
+        R['LC'][E] = Rtemp[2][0]*scaleF + backS  # left circular polarization
+        R['RC'][E] = Rtemp[3][0]*scaleF + backS  # right circular polarization
+        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0])+2*backS)  # circular asymmetry
     else:
         raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
     return R
@@ -160,7 +181,7 @@ def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
 
 def get_number(string):
     """
-    Purpose: Strip successive digits from a string
+    Purpose: Strip successive digits from a string. This function is used to interpret chemical formulas
     Input:
      string - A string containing letters and digits
     Output:
@@ -204,7 +225,7 @@ def checkstring(formula):
                'Rg', 'Cn', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
                'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'D','E','G','J','L','M','Q','R','T','X','Z']
 
-    # The letters A, D, E, G, J, L, M, P, Q, R, T, W, X, and Z represent 'dummy variables'
+    # The letters A, D, E, G, J, L, M, Q, R, T, X, and Z represent 'dummy variables'
 
     info = []  # list to store the element symbol and it's stoichiometry
     n = len(formula)  # Get's the number of characters in the list
@@ -332,10 +353,20 @@ def atomic_mass(atom):
     return float(mass)
 
 def error_function(t, sigma1, sigma2, offset1, offset2):
-
-    result1 = (erf((t-offset1)/sigma1/sqrt(2))+1)/2
-    result2 = (erf((offset2-t)/sigma2/sqrt(2))+1)/2
+    """
+    Purpose: Calculates the error function
+    :param t: thickness
+    :param sigma1: interface 1 roughness value
+    :param sigma2: interface 2 roughness value
+    :param offset1: interface 1 offset thickness value
+    :param offset2:  interface 2 offset thickness value
+    :return:
+    """
+    result1 = (erf((t-offset1)/sigma1/np.sqrt(2))+1)/2
+    result2 = (erf((offset2-t)/sigma2/np.sqrt(2))+1)/2
     result = result1*result2
+
+    # This function is not used for the error function calculation
     return result
 
 class element:
@@ -751,9 +782,9 @@ class slab:
                 val = np.heaviside(offset-t, 1) * 2 - 1
 
         elif upward: # Upward error function
-            val = erf((t-offset)/rough/sqrt(2))
+            val = erf((t-offset)/rough/np.sqrt(2))
         else:  # Downward error function
-            val = erf((offset-t) / rough / sqrt(2))
+            val = erf((offset-t) / rough / np.sqrt(2))
 
         return val
 
@@ -789,8 +820,9 @@ class slab:
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
-        # for an arbitrary size elements
-        num_ele = len(list(self.structure[0].keys()))
+        # for an arbitrary size of elements
+        # note that this relies that all layers in the slab definition have the same number of elements!
+        num_ele = len(list(self.structure[0].keys()))  # assumes all layers have the same number of elements
         transition = [[0] for i in range(num_ele)]  # assumes same number elements through entire sample
         thick_array = np.array([0.0 for i in range(len(list(self.structure[0].keys())))])
 
@@ -802,33 +834,8 @@ class slab:
                 thick_array[i] = val
 
         thick = max(thick_array)
-        """
-        # Initializing thickness array
-        transition = [[0],[0],[0]]  # array that contains thickness that slab transition occurs
-        thick1 = 0
-        thick2 = 0
-        thick3 = 0
 
-        # Find the largest thickness
-        for layer in range(1, n):
-            # Need to make more general ******
-            val1 = transition[0][layer-1] +list(self.structure[layer].values())[0].thickness
-            val2 = transition[1][layer-1] +list(self.structure[layer].values())[1].thickness
-            val3 = transition[2][layer - 1] + list(self.structure[layer].values())[2].thickness
-
-            transition[0].append(val1)
-            transition[1].append(val2)
-            transition[2].append(val3)
-
-            thick1 = thick1 + list(self.structure[layer].values())[0].thickness
-            thick2 = thick2 + list(self.structure[layer].values())[1].thickness
-            thick3 = thick3 + list(self.structure[layer].values())[2].thickness
-
-        thick = max(thick1,thick2,thick3)
-
-        #step = 0.05  # thickness step size
-        """
-        thickness = np.arange(-25,thick+15+step, step) # Creates thickness array
+        thickness = np.arange(-25,thick+15+step, step) # Initializes the thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
@@ -1185,12 +1192,14 @@ class slab:
         :param qf: End momentum transfer
         :param precision: Precision value
         :param s_min: Minimum step size (None indicates using default value)
+        :param bShift: float containing the background shift value
+        :param sFactor: float containing the scaling factor value
         :return:
             qz - momentum transfer
             R1 - reflectivity
 
         """
-        # initialize the reflectivity array
+
 
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
@@ -1220,14 +1229,11 @@ class slab:
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
 
         # definition as described in Lott Dieter Thesis
-        n = 1 + np.vectorize(complex)(-delta, beta)
-        #n = 1 - delta + 1j*beta
-        #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+        n = 1 + np.vectorize(complex)(-delta, beta)  # index of refraction
         epsilon = n**2
 
-        #Q = np.vectorize(complex)(delta, beta)
+        # magneto-optical constant as defined in Lott Dieter Thesis
         Q = np.vectorize(complex)(beta_m, delta_m)
-        #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
 
         my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
@@ -1238,8 +1244,7 @@ class slab:
 
 
         m = len(my_slabs)  # number of slabs
-        #m = len(epsilon)
-        A =pr.Generate_structure(m)  # creates object for reflectivity computation
+        A =pr.Generate_structure(m)  # creates Pythonreflectivity object class
 
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
@@ -1247,6 +1252,8 @@ class slab:
         gamma = 90  # pre-initialize magnetization direction
         phi = 90
 
+        # loops through each layer setting the dielectric matrix
+        # This function will need to be altered for newer version of PythonReflectivity
         for m_i in my_slabs:
 
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
@@ -1451,6 +1458,12 @@ class slab:
 
 
     def getRoughness(self, layer, identifier):
+        """
+        Purpose: Retrieve roughness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Roughness as a float value
+        """
         # gets the roughness of a select element
 
         keys = list(self.structure[layer].keys())
@@ -1463,6 +1476,12 @@ class slab:
 
 
     def setRoughness(self, layer, identifier, sigma):
+        """
+        Purpose: Sets roughness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param sigma: Roughness value of type float
+        """
         # sets the roughness of a certain element in a certain layer
         keys = list(self.structure[layer].keys())
 
@@ -1473,7 +1492,12 @@ class slab:
                 self.structure[layer][key].roughness = sigma
 
     def getDensity(self, layer, identifier):
-        # gets the roughness of a select element
+        """
+        Purpose: Retrieve density of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Density as a float value
+        """
 
         keys = list(self.structure[layer].keys())
         density = 0.028
@@ -1485,6 +1509,12 @@ class slab:
 
 
     def setDensity(self, layer, identifier, density):
+        """
+        Purpose: Sets density of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param density: Density as float value
+        """
         # sets the roughness of a certain element in a certain layer
         keys = list(self.structure[layer].keys())
 
@@ -1497,29 +1527,48 @@ class slab:
 
 
     def setVariationConstant(self, layer, symbol, identifier, val):
-        # ratio = identifier1/identifier2
+        """
+        Purpose: Sets element variation of a certain layer to a constant value
+        :param layer: Layer as an interger type
+        :param symbol: Symbol of element or dummy variable
+        :param identifier: Element variation identifier
+        :param val: Constant value as float type
+        :return:
+        """
+
         # for now this will only work for 3 element variations
         keys = list(self.structure[layer].keys())
 
+        # loops through elements in the layer until symbol is found
         if symbol in keys:
             if len(self.structure[layer][symbol].polymorph) == 3:
                 # determines the index of the polymorph that is not identifer 1 or 2
-                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier]
-                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] == identifier]
+                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier]  # indices of non-desired element variation
+                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] == identifier]  # index of desired element variation
 
-                my_total = sum(list(self.structure[layer][symbol].poly_ratio[idx_no] ))
+                my_total = sum(list(self.structure[layer][symbol].poly_ratio[idx_no] ))  # total value of non-desired element variation values
 
+                # sets non-constant element variation ratio's appropriately
                 for i in idx_no:
                     r = self.structure[layer][symbol].poly_ratio[i]
                     self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
 
-                self.structure[layer][symbol].poly_ratio[idx] = val
+                self.structure[layer][symbol].poly_ratio[idx] = val  # sets constant ratio value
 
     def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
+        """
+        Purpose: Sets the ratio between two element variation to be constant
+        :param layer: Layer as integer type
+        :param symbol: Symbol of element or dummy variable
+        :param identifier1: Element variation identifier
+        :param identifier2: Element variation identifier
+        :param ratio: Constant ratio value as float type
+        """
         # ratio = identifier1/identifier2
         # for now this will only work for 3 element variations
         keys = list(self.structure[layer].keys())
 
+        # loops through all elements in layer until symbol is found
         if symbol in keys:
             if len(self.structure[layer][symbol].polymorph) == 3:
                 # determines the index of the polymorph that is not identifer 1 or 2
@@ -1536,6 +1585,12 @@ class slab:
 
 
     def getThickness(self, layer, identifier):
+        """
+        Purpose: Retrieve thickness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Thickness as a float value
+        """
         # gets the thickness of a certain element in a certain layer
         keys = list(self.structure[layer].keys())
         d = 2
@@ -1547,6 +1602,13 @@ class slab:
         return d
 
     def getTotalThickness(self,start_layer,end_layer, identifier):
+        """
+        Purpose: Retrieves total thickness from start_layer to end_layer for specified element or dummy variable
+        :param start_layer: Index of layer closest to substrate
+        :param end_layer: Index of layer furthest from substrate
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Total thickness as a float value
+        """
         # gets the total thickness from start_layer to end_layer of a specific element (identifier)
         d = 0
         for i in range(start_layer, end_layer+1,1):
@@ -1554,13 +1616,18 @@ class slab:
 
             if identifier in keys:
                 d = d + self.structure[i][identifier].thickness
-            elif identifier.upper() == 'ALL':
+            elif identifier.upper() == 'ALL':  # case where we want the total thickness of all elements
                 d = d + self.structure[i][keys[0]].thickness
 
         return d
 
     def setThickness(self,layer, identifier, d):
-        # sets the roughness of a certain element in a certain layer
+        """
+        Purpose: Sets thickness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Thickness as a float value
+        """
         keys = list(self.structure[layer].keys())
 
         if identifier in keys:
@@ -1570,6 +1637,13 @@ class slab:
                 self.structure[layer][key].thickness = d
 
     def setCombinedThickness(self, layer_start, layer_end, identifier, d):
+        """
+        Purpose: Sets total thickness from start_layer to end_layer for specified element or dummy variable
+        :param start_layer: Index of layer closest to substrate
+        :param end_layer: Index of layer furthest from substrate
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param d: Total thickness value as float type
+        """
         # makes sure that the combine thickness from layer_start to layer_end is constant (d)
         import copy
         dprime = 0
@@ -1592,6 +1666,13 @@ class slab:
                     self.structure[i][key].thickness = val * d / dprime
 
     def getMagDensity(self, layer,symbol,variation):
+        """
+        Purpose: Retrieves the magnetic density
+        :param layer: Layer of integer type
+        :param symbol: Symbol of element or dummy variable
+        :param variation: Element variation identifier, if not an element variation set this to the same as symbol
+        :return mag_density: Magnetic density as float type
+        """
         # retrieve the magnetic density
         # if there is no element variation just input the same variable
 
@@ -1608,6 +1689,13 @@ class slab:
         return mag_density
 
     def setMagDensity(self, layer, symbol, variation, density):
+        """
+        Purpose: Sets the magnetic density
+        :param layer: Layer of integer type
+        :param symbol: Symbol of element or dummy variable
+        :param variation: Element variation identifier, if not an element variation set this to the same as symbol
+        :param density: Magnetic density value of float type
+        """
         # set the magnetic density
         polymorph = self.structure[layer][symbol].polymorph
         if len(polymorph) != 0:
@@ -1619,19 +1707,38 @@ class slab:
             self.structure[layer][symbol].mag_density[0] = float(density)
 
 
-
     def getEshift(self,ffName):
+        """
+        Purpose: Retrieves the energy shift of specified non-magnetic form factor
+        :param ffName: form factor name without .ff extension
+        :return: Form factor energy shift as float type
+        """
         # retieve the energy shift
         return self.eShift[ffName]
 
     def setEshift(self, ffName, dE):
+        """
+        Purpose: Set the non-magnetic form factor energy shift
+        :param ffName: Form factor name without .ff extension
+        :param dE: Energy shift as a float type
+        """
         self.eShift[ffName] = dE
 
     def getMagEshift(self,ffmName):
+        """
+        Purpose: Retrieves the energy shift of specified magnetic form factor
+        :param ffmName: form factor name without .ffm extension
+        :return: Magnetic form factor energy shift as float type
+        """
         # retrieve the magnetic energy shift
         return self.mag_eShift[ffmName]
 
     def setMagEshift(self, ffmName, dE):
+        """
+        Purpose: Set magnetic form factor energy shift
+        :param ffmName: Magnetic form factor name without .ffm extension
+        :param dE: Energy shift as float type
+        """
         # set the magnetic energy shift
         self.mag_eShift[ffmName] = dE
 
