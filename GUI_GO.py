@@ -1,6 +1,50 @@
+"""
+Library: GUI_GO
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 28nd, 2023
+Python: version 3.7
+
+Purpose: This python file contains the graphical user interface for the GO-RXR software package.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+Imported Libraries
+
+material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
+                               calculate the optical constants
+
+material_structure (version 0.1) - Part of the 'name' software package and is used to retrieve to calculate the reflectivity spectra
+
+global_optimization (version 0.1) - Part of the 'name' software package and is used to perform the global optimization
+
+data_structure (version 0.1) - Part of the 'name' software package that is used to saving and loading the workspace
+
+numpy (version 1.21.4) - used for array manipulation
+
+scipy (version 1.7.1) - used for data smoothing
+
+PyQt5 (version 5.15.7) - This library is used to contruct the application
+
+pyqtgraph (version 0.12.4) - This library is used for the plotting widget
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
+Note: Any additional parameters that need to be saved needs to be included into all functions.
+In particular, if additional global optimization algorithms are included this will need to be added all reading and
+writing functions (saveAsFileHDF5, saveFileHDF5, newFileHDF5, WriteDataHDF5, ReadAlgorithmHDF5). View saveAsFile for
+explanation of how to include a new global optimization algorithm.
+
+Warning: Once you've made a change to the HDF5 file format and you have made changes to the reading functions then you will no
+longer be able to read in older files. Be careful when working with the older files while testing as this
+may corrupt the files. I've done this a few times and lost precious work that I need to redo.
+
+Suggestion: Include a new data field called "version". This way we can keep track of the version type and then save
+and load the function appropriately without corrupting the files.
+
+"""
+
 import ast
-
-
 from scipy import interpolate
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
