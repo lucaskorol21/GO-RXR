@@ -925,7 +925,7 @@ def createDataFileHDF5(fname, AScans, AInfo, EScans, EInfo):
         qz = AScans[i][:, 2]  # momentum transfer
         R0 = AScans[i][:, 3]  # reflectivity
         energy = float(AInfo[i][3])  # energy of scan
-        Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+        Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
         dat = np.array([qz, Theta, R0])
 
         energy = float(AInfo[i][3])
@@ -966,7 +966,7 @@ def createDataFileHDF5(fname, AScans, AInfo, EScans, EInfo):
                 qz = AScans[i][:, 2]
                 A = (AScans[i - 1][:, 3] - AScans[i][:, 3]) / (AScans[i - 1][:, 3]) + AScans[i][:, 3]
                 energy = float(AInfo[i][3])
-                Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+                Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
                 dat = np.array([qz, Theta, A])
 
                 datasetpoints = len(qz)
@@ -1000,7 +1000,7 @@ def createDataFileHDF5(fname, AScans, AInfo, EScans, EInfo):
         R0 = EScans[i][:, 3]
         E = EScans[i][:, 0]
 
-        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
         datasetpoints = len(qz)
         dat = np.array([qz, Theta, R0, E])
 
@@ -1044,7 +1044,7 @@ def createDataFileHDF5(fname, AScans, AInfo, EScans, EInfo):
                 qz = EScans[i][:, 2]
                 E = EScans[i][:, 0]
                 A = (EScans[i - 1][:, 3] - EScans[i][:, 3]) / (EScans[i - 1][:, 3] + EScans[i][:, 3])
-                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
                 dat = np.array([qz, Theta, A, E])
                 energy = float(EInfo[i][3])
 
@@ -1180,7 +1180,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         qz = AScans[i][:,2]  # momentum transfer
         R0 = AScans[i][:,3]  # reflectivity
         energy = float(AInfo[i][3])  # energy of scan
-        Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+        Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
         dat = np.array([qz, Theta, R0])
 
         energy = float(AInfo[i][3])
@@ -1229,7 +1229,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 qz = AScans[i][:,2]
                 A = (AScans[i - 1][:,3] - AScans[i][:,3]) / (AScans[i - 1][:,3]) + AScans[i][:,3]
                 energy = float(AInfo[i][3])
-                Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+                Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
                 dat = np.array([qz, Theta, A])
 
                 datasetpoints = len(qz)
@@ -1272,7 +1272,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
         R0 = EScans[i][:,3]
         E = EScans[i][:,0]
 
-        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
         datasetpoints = len(qz)
         dat = np.array([qz,Theta,R0,E])
 
@@ -1326,7 +1326,7 @@ def WriteDataHDF5(fname, AScans,AInfo, EScans, EInfo, sample):
                 qz = EScans[i][:,2]
                 E = EScans[i][:,0]
                 A = (EScans[i-1][:,3]-EScans[i][:,3])/(EScans[i-1][:,3]+EScans[i][:,3])
-                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+                Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
                 dat = np.array([qz, Theta, A,E])
                 energy = float(EInfo[i][3])
 
@@ -2450,7 +2450,7 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
             R0 = np.array(data[1])
             R0sim = np.array(simData[1])
             energy = info['energy']
-            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
             dat = [qz, Theta, R0]
             sim = [qz, Theta, R0sim]
 
@@ -2488,7 +2488,7 @@ def ConvertASCIItoHDF5(fascii, fhdf5):
             qz = np.array(data[2])
             energy = info['energy']
             angle = info['angle']
-            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / pi  # initial angle
+            Theta = np.arcsin(qz / energy / (0.001013546247)) * 180 / np.pi  # initial angle
 
             dat = [qz, Theta, R, E]
             sim = [qz, Theta, Rsim, E]
