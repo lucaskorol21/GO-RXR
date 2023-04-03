@@ -23,17 +23,18 @@
 # getDensity(layer, element)
 
 
-rho = getDensity(6,A)
-setDensity(5,A,rho)
+#rho = getDensity(6,A)
+#setDensity(5,A,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(3, B, Ti,0.782089097314841)
-#setVariationConstant(4, B, Ti,0.5716836628519028)
-#setVariationConstant(5, B, Ti, 0.016050726711528962)
-#setVariationConstant(6, B, Ti,0.008844912518776227)
+#setVariationConstant(2, B, Ti,0.8648529196573551)
+#setVariationConstant(3, B, Ti,0.8499652805177822)
+#setVariationConstant(4, B, Ti,0.6485649847252293)
+#setVariationConstant(5, B, Ti, 0.04916692379729858)
+#setVariationConstant(6, B, Ti,0.0489990622331125)
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#

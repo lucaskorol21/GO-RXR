@@ -2782,9 +2782,19 @@ class sampleWidget(QWidget):
 
 
 class reflectivityWidget(QWidget):
+    """
+    Purpose: This widget handles the reflectivity workspace
+    """
     def __init__(self, sWidget, data, data_dict, sim_dict):
+        """
+        :param sWidget: sampleWidget
+        :param data: data information
+        :param data_dict: data dictionary
+        :param sim_dict: simulation dictionary
+        """
         super().__init__()
 
+        # --------------------------- Parameter Definition --------------------------------- #
         self.rom = [True, False, False]  # [reflectivity, optics magneto-optics]
         self.romSim = [True, False, False]  # same thing but for simulation
         self.isFit = True
@@ -2811,6 +2821,7 @@ class reflectivityWidget(QWidget):
         self.scan_state = True
         self.previousIdx = 0
 
+        # --------------------------- Layout Definition --------------------------------- #
         # Adding the plotting Widget
         self.spectrumWidget = pg.PlotWidget()
         self.spectrumWidget.setBackground('w')
@@ -2835,7 +2846,7 @@ class reflectivityWidget(QWidget):
 
         self.plot_scans()
 
-        # button used to select with scans to fit
+        # button used to select which scans to fit
         self.fitButton = QPushButton('Fit Scan')
         self.fitButton.clicked.connect(self._scanSelection)
 
@@ -2978,6 +2989,7 @@ class reflectivityWidget(QWidget):
         ERButtonLayout.addWidget(self.reflectButton)
         ERButtonLayout.addWidget(self.energyButton)
 
+        # the line definitions are simply used to add line separators in the widget appearance
         line1 = QFrame()
         line1.setFrameShape(QFrame.HLine)
         line1.setLineWidth(3)
@@ -3038,13 +3050,12 @@ class reflectivityWidget(QWidget):
         scanLayout.addLayout(scanSelectionLayout)
         scanLayout.addWidget(sideline2)
 
-        # scanSelectionLayout.addStretch(1)
-        # scanSelectionLayout.addLayout(selectedScansLayout)
 
         toplayout = QHBoxLayout()
         toplayout.addWidget(self.spectrumWidget)
         toplayout.addLayout(scanLayout)
 
+        # setting up the scan boundary workspace -------------------------------------------------------------
         boundWidget = QWidget()
         boundLayout = QVBoxLayout()
         boundLayout.addLayout(selectedScansLayout)
@@ -3360,6 +3371,9 @@ class reflectivityWidget(QWidget):
         self.mySimPlotting()
 
     def value_changed(self):
+        """
+        Purpose: Changes scan boundaries
+        """
 
         idx = self.selectedScans.currentIndex()
         row = self.boundWeightTable.currentRow()
@@ -3757,13 +3771,16 @@ class reflectivityWidget(QWidget):
             self.mySimPlotting()
 
     def changeColorScan(self):
+        """
+        Purpose: Changes all scan combobox to red demonstrating that the current scan being shown is from that selection
+        """
         self.selectedScans.setStyleSheet('background: white; selection-background-color: grey')
         self.whichScan.setStyleSheet('background: red; selection-background-color: red')
         self.scan_state = True
 
     def changeColorFit(self):
         """
-        Purpose: Change color of comboBox depending on which scan is being shown
+        Purpose: Change color of comboBox showing the fit combobox scan is currently being shown on the plot
         """
         self.selectedScans.setStyleSheet('background: red; selection-background-color: red')
         self.whichScan.setStyleSheet('background: white; selection-background-color: grey')
@@ -3857,7 +3874,7 @@ class reflectivityWidget(QWidget):
             self.weights.append(['1'])  # add pre-set weight
             self.selectedScans.addItem(name)
 
-            # sets the bs and sf values
+            # sets the bs and sf values  (background shift and scaling factor)
             if self.allScan.checkState() == 2:  # all scans state checked
                 if len(self.bs) == 0:
                     self.bs[name] = str(self.data_dict[name]['Background Shift'])
@@ -3910,9 +3927,9 @@ class reflectivityWidget(QWidget):
         Purpose: Add boundary weight
         """
         col = self.boundWeightTable.columnCount()
-        idx = self.selectedScans.currentIndex()
+        idx = self.selectedScans.currentIndex()  # gets scan index
         n = len(self.bounds[idx])
-        upper = self.bounds[idx][n - 1][1]
+        upper = self.bounds[idx][n - 1][1]  # gets the last boundary
         self.bounds[idx][n - 1][1] = ''
         self.bounds[idx].append(['', upper])
         self.weights[idx].append('1')
@@ -3939,7 +3956,7 @@ class reflectivityWidget(QWidget):
 
     def readTable(self):
         """
-        Purpose: read the table for scan boundaries
+        Purpose: Read the table for scan boundaries
         """
         idx = self.selectedScans.currentIndex()  # current scan index
         name = self.selectedScans.currentText()  # current scan name
@@ -4221,6 +4238,9 @@ class GlobalOptimizationWidget(QWidget):
     def __init__(self, sWidget, rWidget, nWidget, pWidget, rApp):
         super().__init__()
 
+
+        # ------------------------- Parameter Definitions ----------------------------------#
+
         self.sWidget = sWidget  # sampleWidget
         self.rWidget = rWidget  # reflectivityWidget
         self.nWidget = nWidget  # smoothingWidget
@@ -4240,7 +4260,7 @@ class GlobalOptimizationWidget(QWidget):
         self.objective = 'Chi-Square'  # initialized objective function
         self.shape_weight = 0  # initialized total variation weight
 
-        # plotting layout ---------------------------------------------------------------------------------------------
+
         plotLayout = QHBoxLayout()  # plotting layout
 
         self.goParameters = {
@@ -4249,6 +4269,8 @@ class GlobalOptimizationWidget(QWidget):
             'simplicial homology': ['None', 1, 'simplicial'],
             'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
             'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None']}
+
+        # Uncomment this is the direct algorithm is used
         """
         self.goParameters = {
             'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
@@ -4258,6 +4280,8 @@ class GlobalOptimizationWidget(QWidget):
             'least squares': ['2-point', 'trf', 1e-8, 1e-8, 1e-8, 1.0, 'linear', 1.0, 'None', 'None'],
             'direct': [0.0001, 'None', 1000, False, 0.0001,1e-16,1e-6]}
         """
+
+        # ------------------------------- Layout Definition -------------------------------- #
 
         # determine R transformation
         isLogLayout = QVBoxLayout()
@@ -4798,7 +4822,7 @@ class GlobalOptimizationWidget(QWidget):
 
     def eventFilter(self, source, event):
         """
-        Purpose: Determine which handler to use when user right clicks on tables
+        Purpose: Allows user to remove fits directly from globalOptimization widget
         :param source: the source of the signal
         :param event: the type of event
         """
@@ -4815,7 +4839,7 @@ class GlobalOptimizationWidget(QWidget):
                 my_rows = []
                 n = len(self.sWidget.parameterFit)
                 my_other_rows = []
-                if action == _remove_fit:
+                if action == _remove_fit:  # removes the appropriate parameter
                     my_items = self.fittingParamTable.selectedIndexes()
                     for i in my_items:
                         row = i.row()
@@ -4837,6 +4861,7 @@ class GlobalOptimizationWidget(QWidget):
                     self.rWidget.sfBsFitParams.pop(my_other_rows[k])
                     self.rWidget.currentVal.pop(my_other_rows[k])
                     my_other_rows = my_other_rows - 1
+
             self.sWidget.setTable()
             self.sWidget.setTableEShift()
             self.sWidget.setTableMag()
@@ -5501,16 +5526,15 @@ class GlobalOptimizationWidget(QWidget):
             self.update_worker = UpdateWorker(self.pWidget)  # progress report worker
 
             # move worker to thread
-            self.worker.moveToThread(self.thread)
+            self.worker.moveToThread(self.thread)  # starts two threads
             self.update_worker.moveToThread(self.update_thread)
 
-            self.thread.started.connect(self.run_first)
-
-            self.thread.started.connect(self.worker.run)
+            self.thread.started.connect(self.run_first)  # run run_first when process started
+            self.thread.started.connect(self.worker.run) # then run the worker
             self.update_thread.started.connect(self.pWidget.start)
             self.update_thread.started.connect(self.update_worker.run)
 
-            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.thread.quit)  # quit
             self.worker.finished.connect(self.thread.deleteLater)
             self.worker.finished.connect(self.worker.deleteLater)
             self.worker.finished.connect(self.optimizationFinished)
@@ -9114,12 +9138,18 @@ class showFormFactors(QDialog):
             E = self.ff[key][:, 0]
             im = self.ff[key][:, 2]
 
-            if self.real.checkState() != 0:
+            if self.real.checkState() != 0 and self.im.checkState() != 0:
+
                 my_name = 'r: ' + key
-                self.structPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
-            if self.im.checkState() != 0:
+                self.structPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
                 my_name = 'i: ' + key
-                self.structPlot.plot(E, im, pen=pg.mkPen((idx, n), width=2), name=my_name)
+                self.structPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
+            elif self.real.checkState() != 0:
+                my_name = 'r: ' + key
+                self.structPlot.plot(E, re, pen=pg.mkPen((idx, n+1), width=2), name=my_name)
+            elif self.im.checkState() != 0:
+                my_name = 'i: ' + key
+                self.structPlot.plot(E, im, pen=pg.mkPen((idx, n+1), width=2), name=my_name)
 
         self.structPlot.setLabel('left', "Form Factor")
         self.structPlot.setLabel('bottom', "Energy, (eV))")
@@ -9131,6 +9161,7 @@ class showFormFactors(QDialog):
         self.magPlot.clear()
         n = 0  # number of data to plot
         m = len(self.selectedffm)
+
         if self.realMag.checkState() != 0 and self.imMag.checkState() != 0:
             n = m * 2  # plot real and imaginary component
         if self.realMag.checkState() != 0 or self.imMag.checkState() != 0:
@@ -9141,12 +9172,20 @@ class showFormFactors(QDialog):
             re = self.ffm[key][:, 1]
             E = self.ffm[key][:, 0]
             im = self.ffm[key][:, 2]
-            if self.real.checkState() != 0:
+
+            if self.real.checkState() != 0 and self.im.checkState() != 0:
+
+                my_name = 'r: ' + key
+                self.structPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
+                my_name = 'i: ' + key
+                self.structPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
+            elif self.real.checkState() != 0:
                 my_name = 'r: ' + key
                 self.magPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
-            if self.im.checkState() != 0:
+
+            elif self.im.checkState() != 0:
                 my_name = 'i: ' + key
-                self.magPlot.plot(E, im, pen=pg.mkPen((idx, n), width=2), name=my_name)
+                self.magPlot.plot(E, im, pen=pg.mkPen((idx+1, n), width=2), name=my_name)
 
         self.magPlot.setLabel('left', "Form Factor")
         self.magPlot.setLabel('bottom', "Energy, (eV))")
