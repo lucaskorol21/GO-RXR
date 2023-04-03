@@ -30,11 +30,34 @@ pyqtgraph (version 0.12.4) - This library is used for the plotting widget
 
 
 --------------------------------------------------------------------------------------------------------------------------------------
-Note: I will provide some more detail on certain portions of each widget that I think are relevant to improve the
-      overall flow. I will especially go into detail about certain aspects of the code that I think could use some
-      improvements.
+Note: There are a few immediate changes that could be implemented for future versions which are listed below:
 
-Warning:
+1. Magnetization direction. Currently, we can only calculate the reflectivity spectra for a magnetization direction
+   in the x, y, and z-directions. In the case where we can have an arbitarty direction that are defined by phi and theta
+   this should be altered. Instead of using a QComboBox in magneticWidget for the magnetization direction I would create
+   two QLineEdits for phi and theta respectively. I would make sure to include checks that the angles are physically
+   appropriate. Note that if this is done changes would need to be made in the magneticWidget, sampleWidget, and the
+   data_structure python file (save the magnetization direction as phi and theta instead of a string x,y,z). A good plan
+   to make sure you have changed everything accordingly would be to search magDirection in the python file.
+
+2. Layer magnetization. Currently, the user has the ability to give different magnetization directions per layer.
+   The current reflectivity calculation implementation is unable to handle multiple magnetization directions, so
+   it would make sense to remove this capability. If I have time I will get to this.
+
+3. Data fitting progress. In certain instances when the _update_optimization process is running the program will
+   terminate unexpectedly. From my experience this occurs for very large number of parameters and scans in the fit.
+   My theory is that 'worker' for the global optimization terminates while the 'updateWorker' is still running. When
+   the global optimization worker terminates this signals to the program to delete all threads being used. However,
+   sometimes the updateWorker is still running when the threads are deleted. I'm wondering if this is the root of the
+   problem.
+
+4. Inclusion of other global optimization algorithms. I would like to include the direct algorithm into the the list of
+   algorithms to use. The issue is that we required python 3.8 and above to use it, but some of the underlining
+   code that is used for the reflectivity calculations does not allow for the use of python 3.8 and above. I've already
+   included a lot of the code to include the direct algorithm, or any other algorithm. I would suggest searching 'direct'
+   in all of the python files (or another algorithm) to see where to make the appropriate changes.
+
+Warning: Any changes to the data type would need to be carefully considered.
 
 """
 
@@ -5431,8 +5454,18 @@ class GlobalOptimizationWidget(QWidget):
         global stop
         stop = True
 
+
+
         self.update_worker.stop()  # stop update worker
         self.update_thread.quit()  # quit update worker thread
+
+        self.thread.wait()
+        self.update_thread.wait()
+        # The while loop is used to check and make sure the thread has finished before deleting
+        #while not(self.update_thread.isFinished()):
+        #    time.sleep(0.5)
+        #    pass
+
         self.update_thread.deleteLater()  # delete update thread
         self.update_worker.deleteLater() # delete update worker
 
@@ -5541,6 +5574,9 @@ class GlobalOptimizationWidget(QWidget):
 
             self.thread.start()
             self.update_thread.start()
+
+
+
         else: # these are important checks that makes sure everything is entered properly into the GUI
             if empty_fit:
                 messageBox = QMessageBox()
@@ -8935,7 +8971,7 @@ class progressWidget(QWidget):
         idx = 0
         while self.keep_going:
             idx = idx + 1
-            time.sleep(0.0001)
+            time.sleep(0.01)
 
             if 51 / idx == 1:
                 global x_vars
