@@ -9257,6 +9257,7 @@ class scriptWidget(QDialog):
         super().__init__()
 
         cwd = os.getcwd()
+
         self.fname = cwd + '/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
@@ -9324,6 +9325,8 @@ class scriptWidget(QDialog):
             messageBox.setText("Selected filename or path is not valid. Please select a valid file.")
             messageBox.exec()
 
+        self.fname = fname  # change the script file that will be altered
+
     def save_file(self):
         """
         Purpose: save current script
@@ -9334,6 +9337,9 @@ class scriptWidget(QDialog):
         f.close()
 
     def run_script(self):
+        """
+        Purpose: Checks the script and runs it if all checks passed
+        """
         sample = self.sWidget._createSample()
         my_script, problem = checkscript(sample)
         if problem:
@@ -9355,6 +9361,9 @@ class scriptWidget(QDialog):
 
 
     def check_script(self):
+        """
+        Purpose: Checks the script
+        """
 
         my_script, problem = checkscript(self.sWidget._createSample())
         if problem:
