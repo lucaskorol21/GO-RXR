@@ -535,17 +535,22 @@ class magneticWidget(QDialog):
 
 
 class sampleWidget(QWidget):
+    """
+    Purpose: This widget contains all the information about the sample and all it's properties.
+    """
     # sample widget that contains all the information about the sample parameters
     def __init__(self, sample):
         super(sampleWidget, self).__init__()
+
+        # ------------------------------- parameter initialization -------------------------------------#
         self.data_dict = {}
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
         self.parameterFit = []  # keeps track of parameters to fit
         self.varData = {ele: [[['', ''], ['', ''], ['', '']] for i in range(len(sample.structure))] for ele in
-                        sample.myelements}  # element variation data
+                        sample.myelements}  # element variation data [identifier, ratio, form factor]
         self.eShift = dict()  # keep track of the energy shift
-        self.ffScale = dict()
+        self.ffScale = dict()  # keeps track of the form factor scaling information
         self.currentVal = []  # keep track of the fitting parameter values
         self.change_eShift = True  # boolean used to determine if eShift is changed
         self.varTable = QTableWidget()  # element variation table
@@ -557,7 +562,7 @@ class sampleWidget(QWidget):
         self.mag_ff = []  # list that contains the magnetic form factors
 
         self.magData = {ele: [[[''], [''], ['']] for i in range(len(sample.structure))] for ele in
-                        sample.myelements}  # initialize the magnetic data
+                        sample.myelements}  # initialize the magnetic data [identifier, density, form factor]
         self.magGo = True  # boolean currently not in use
         self.magDirection = ['z' for i in range(len(sample.structure))] # initialize the magnetization direction
         self.magDirBox = QComboBox()  # magnetization direction selection (x,y,z direction)
@@ -575,6 +580,7 @@ class sampleWidget(QWidget):
         self.changeLayer = False  # no longer in use
         self.firstStruct = True # no longer in use
 
+        # ------------------------------- Widget Layout -------------------------------------#
         # setting up step size
         self._step_size = '0.1'
         self.step_size = QLineEdit()
@@ -676,6 +682,7 @@ class sampleWidget(QWidget):
 
         selectlayout = QVBoxLayout()
         selectlayout.addStretch(1)
+
         # buttons for choosing which parameters to choose
         self.structButton = QPushButton('Structure')
         self.structButton.setStyleSheet('background: blue; color: white')
@@ -714,6 +721,7 @@ class sampleWidget(QWidget):
         dpButton.setStyleSheet("background-color : cyan")
         selectlayout.addWidget(dpButton)
         selectlayout.addStretch(1)
+
         # set the page layout
         pagelayout.addLayout(cblayout)
         pagelayout.addLayout(self.sampleInfoLayout)
@@ -740,15 +748,21 @@ class sampleWidget(QWidget):
         self.setLayout(mylayout)
 
     def check_element_number(self):
+        """
+        Purpose: Checks to make sure that there is a sample defined and the number of elements in each layer is the same
+        :return: booleans not_empty and equal_elements where True states there are no defined layers and there
+                 are not an equal number of elements in each layer, respectively.
+        """
+
         not_empty = True
         equal_elements = True
         n = len(self.structTableInfo)
-        if n == 0:
+        if n == 0:  # no defined layers
             not_empty = False
         else:
             substrate = len(self.structTableInfo[0])
             for i in range(n):
-                if len(self.structTableInfo[0]) != substrate:
+                if len(self.structTableInfo[0]) != substrate: # unequal number of elements throughout the sample layers
                     equal_elements = False
 
         return not_empty, equal_elements
@@ -820,7 +834,11 @@ class sampleWidget(QWidget):
 
         self.energyShiftTable.blockSignals(False)
     def eShiftFromSample(self, sample):
-
+        """
+        Purpose: Sets the energy shift from the input sample. This function is mostly used for the loading functions.
+        :param sample: slab class
+        :return:
+        """
         # loop through structural form factors
         for key in list(sample.eShift.keys()):
             my_key = 'ff-' + key
@@ -950,7 +968,7 @@ class sampleWidget(QWidget):
                         self.magTable.item(row, column).setBackground(QtGui.QColor(255, 255, 255))
 
         self.magTable.verticalHeader().setSectionResizeMode(1)
-        #self.structTable.horizontalHeader().setSectionResizeMode(1)
+
     def changeVarValues(self):
         """
         Purpose: change the variation parameters when signaled
@@ -2138,13 +2156,13 @@ class sampleWidget(QWidget):
             for ele_idx in range(len(self.structTableInfo[layer_idx])):
                 element = self.structTableInfo[layer_idx][ele_idx][0]
 
-                names = self.magData[element][layer_idx][0]
-                D = self.magData[element][layer_idx][1]
-                S = self.magData[element][layer_idx][2]
+                names = self.magData[element][layer_idx][0]  # retrieves the identifiers
+                D = self.magData[element][layer_idx][1]  # retrieves the density
+                S = self.magData[element][layer_idx][2]  # retrieves the form factors
 
 
                 num = len(names)
-                if num != 0:
+                if num != 0:  # element variation case
                     for i in range(num):
                         labels.append(names[i])
                         if len(D) != 0:
@@ -2156,7 +2174,7 @@ class sampleWidget(QWidget):
                         else:
                             sf.append('')
 
-                else:
+                else:  # non-element variation
                     labels.append(element)
                     if len(D) != 0:
                         density.append(D[0])
@@ -2186,14 +2204,15 @@ class sampleWidget(QWidget):
                     item = QTableWidgetItem(str(mydensity))
                     self.magTable.setItem(row, 0, item)
 
-                    for fit in self.parameterFit:
+                    for fit in self.parameterFit:  # checks to see if element variation in current layer are to be fitted
                         if len(fit) == 3 and fit[0] != 'SCATTERING FACTOR':
                             if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[2] == name:
                                 self.magTable.item(row, 0).setBackground(QtGui.QColor(150, 255, 150))
                         elif len(fit) == 4 and fit[1] == 'MAGNETIC':
                             if layer_idx == fit[0] and fit[1] == 'MAGNETIC' and fit[3] == name:
                                 self.magTable.item(row, 0).setBackground(QtGui.QColor(150, 255, 150))
-                if mysf == '':
+
+                if mysf == '':  # checks to see if scattering factor is filled
                     item = QTableWidgetItem('')
                     self.magTable.setItem(row, 1, item)
                 else:
@@ -2227,7 +2246,7 @@ class sampleWidget(QWidget):
 
 
         # initializing the element variation and magnetic data
-        if len(userinput) != len(self.structTableInfo[0]):
+        if len(userinput) != len(self.structTableInfo[0]):  # checks to make sure number of elements is consistent
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Invalid Entry")
             messageBox.setText('Each layer must have the same number of structural elements. If you would like to define a different number of structural elements in a layer then a dummy variable can be used (e.g. A, D, E, G, J, L, M, Q, R, T, X, Z). The corresponding form factors and atomic mass of these variables are 0, respectively.')
@@ -2250,7 +2269,7 @@ class sampleWidget(QWidget):
 
             num = self.layerBox.count()  # retrieves current number of layers
             idx = self.layerBox.currentIndex()  # gets current layer
-            if num == 0:  # resets everything if there are not layers
+            if num == 0:  # resets everything if there are no layers currently defined
                 self.varData = dict()
 
                 self.structTableInfo.insert(0, userinput)
@@ -2423,7 +2442,7 @@ class sampleWidget(QWidget):
 
     def _structural(self):
         """
-        Purpose: Reset button colors and change to sampleWidget
+        Purpose: Sets workspace to sampleWidget
         """
         self.structButton.setStyleSheet('background: blue; color: white')
         self.polyButton.setStyleSheet('background: lightGrey')
@@ -2433,7 +2452,7 @@ class sampleWidget(QWidget):
 
     def _elementVariation(self):
         """
-        Purpose: Reset button colors and change to variationWidget
+        Purpose: Sets workspace to variationWidget
         """
         self.structButton.setStyleSheet('background: lightGrey')
         self.polyButton.setStyleSheet('background: blue; color: white')
@@ -2443,7 +2462,7 @@ class sampleWidget(QWidget):
 
     def _magnetic(self):
         """
-        Purpose: Reset button colors and change to magneticWidget
+        Purpose: Sets workspace to magneticWidget
         """
         self.structButton.setStyleSheet('background: lightGrey')
         self.polyButton.setStyleSheet('background: lightGrey')
@@ -2510,7 +2529,7 @@ class sampleWidget(QWidget):
 
     def _createSample(self):
         """
-        Purpose: Takes information from tables and converts into slab model
+        Purpose: Takes information from tables and converts into slab class
         :return: Information in format of slab class
         """
 
@@ -2521,7 +2540,7 @@ class sampleWidget(QWidget):
         for idx in range(m):
             formula = ''  # used to determine the chemical formula
             thickness = []  # thickness of the layer
-            density = []  # density of the layer☺
+            density = []  # density of the layer
             roughness = []  # roughness of the layer
             linked_roughness = []  # linked roughness of the layer
             scat_fact = []
@@ -2628,6 +2647,8 @@ class sampleWidget(QWidget):
                 notMagnetic = True
                 Magnetic = True
                 count = 0
+
+                # loops through all the elements and determines if the layer is magnetized
                 for i in range(len(scattering_factor)):
                     nameBool = True
                     notMagnetic = True
@@ -2655,9 +2676,8 @@ class sampleWidget(QWidget):
 
                 #if ratio[0] != '' and names[0] != '' and scattering_factor[0] != '':
                 if isMagnetized:
+
                     # handle case where not every polymorph is magnetic
-
-
                     my_idx = [j for j in range(len(ratio)) if ratio[j] != '' and (scattering_factor[j] != 0 and scattering_factor[j] != '')]
 
                     ratio = np.array(ratio)[my_idx]
@@ -2686,7 +2706,7 @@ class sampleWidget(QWidget):
                     if names[0] == '':
                         sample._set_form_factors(layer[ele][0], layer[ele][5])
 
-        sample.energy_shift()
+        sample.energy_shift()  # this is done to make sure all the form factors are accounted for
 
         # retrieving the energy shift of the form factors
         for e in self.eShift.keys():
@@ -2698,7 +2718,6 @@ class sampleWidget(QWidget):
                 key = e.strip('ffm-')
                 sample.mag_eShift[key] = self.eShift[e]
                 sample.ffm_scale[key] = self.ffScale[e]
-
 
         return sample
 

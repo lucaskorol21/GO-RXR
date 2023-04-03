@@ -82,7 +82,7 @@ if __name__ == '__main__':
     Theta = 15
     energy = 640.2
     qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
-    print(qz)
+
     """
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
