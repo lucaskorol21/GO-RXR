@@ -44,18 +44,15 @@ Note: There are a few immediate changes that could be implemented for future ver
    The current reflectivity calculation implementation is unable to handle multiple magnetization directions, so
    it would make sense to remove this capability. If I have time I will get to this.
 
-3. Data fitting progress. In certain instances when the _update_optimization process is running the program will
-   terminate unexpectedly. From my experience this occurs for very large number of parameters and scans in the fit.
-   My theory is that 'worker' for the global optimization terminates while the 'updateWorker' is still running. When
-   the global optimization worker terminates this signals to the program to delete all threads being used. However,
-   sometimes the updateWorker is still running when the threads are deleted. I'm wondering if this is the root of the
-   problem.
-
-4. Inclusion of other global optimization algorithms. I would like to include the direct algorithm into the the list of
+3. Inclusion of other global optimization algorithms. I would like to include the direct algorithm into the the list of
    algorithms to use. The issue is that we required python 3.8 and above to use it, but some of the underlining
    code that is used for the reflectivity calculations does not allow for the use of python 3.8 and above. I've already
    included a lot of the code to include the direct algorithm, or any other algorithm. I would suggest searching 'direct'
    in all of the python files (or another algorithm) to see where to make the appropriate changes.
+
+4. Data smoothing. It may be worth including other data smoothing methods. For example, there has been discussion of
+   using neural networks to perform some of the smoothing. The neural networks have been found to remove the noise
+   while maintaining the shape, even for very noisy signals.
 
 Warning: Any changes to the data type would need to be carefully considered.
 
