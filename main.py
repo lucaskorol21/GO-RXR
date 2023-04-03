@@ -79,6 +79,10 @@ if __name__ == '__main__':
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
+    Theta = 15
+    energy = 640.2
+    qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
+    print(qz)
     """
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
@@ -112,7 +116,7 @@ if __name__ == '__main__':
 
     ds.saveSimulationHDF5(fname, sim_dict)
     
-    """
+    
 
 
     thickness, density, mag_density = sample.density_profile()
@@ -153,7 +157,7 @@ if __name__ == '__main__':
     plt.xlabel('Unit Cells (uc)')
 
 
-    """
+    
     
     #KK = variationKK(E_prime,E0,E2,E4)
     

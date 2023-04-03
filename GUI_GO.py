@@ -30,17 +30,11 @@ pyqtgraph (version 0.12.4) - This library is used for the plotting widget
 
 
 --------------------------------------------------------------------------------------------------------------------------------------
-Note: Any additional parameters that need to be saved needs to be included into all functions.
-In particular, if additional global optimization algorithms are included this will need to be added all reading and
-writing functions (saveAsFileHDF5, saveFileHDF5, newFileHDF5, WriteDataHDF5, ReadAlgorithmHDF5). View saveAsFile for
-explanation of how to include a new global optimization algorithm.
+Note: I will provide some more detail on certain portions of each widget that I think are relevant to improve the
+      overall flow. I will especially go into detail about certain aspects of the code that I think could use some
+      improvements.
 
-Warning: Once you've made a change to the HDF5 file format and you have made changes to the reading functions then you will no
-longer be able to read in older files. Be careful when working with the older files while testing as this
-may corrupt the files. I've done this a few times and lost precious work that I need to redo.
-
-Suggestion: Include a new data field called "version". This way we can keep track of the version type and then save
-and load the function appropriately without corrupting the files.
+Warning:
 
 """
 
@@ -110,7 +104,11 @@ def stringcheck(string):
 
 
 class compoundInput(QDialog):
-    # Class used to add a new layer in compound mode
+    """
+    Purpose: Creates a widget when user wants to add another layer. This widget allows the user to select the chemical
+             formula, thickness, density (g/cm^3), roughness, and linked roughness for the layer.
+    """
+
     def __init__(self):
         super().__init__()
         self.val = []  # class value used to store layer properties
@@ -292,14 +290,24 @@ class compoundInput(QDialog):
 
 
 class variationWidget(QDialog):
-    # class used in setting element variation properties
-    # - can be used for different oxidation states or tied elements (e.g. La_{0.3}Sr_{0.7}MnO3 where Mn->{Mn2+, Mn3+})
+    """
+    Purpose: This widget provides the user a workspace to handle elemental variations.It allows for the user to include
+             the different oxidation states of a material. The only properites that the user may change is the number
+             of element variations, their ratio, and their form factors.
+    """
+
     def __init__(self, mainWidget, sample):
+        """
+        Purpose: Initialize the widget
+        :param mainWidget: This is the sampleWidget. This is used as an input value so the information stored in sample
+                           widget can be used in the variationWidget.
+        :param sample: This is the most recent material model (slab class)
+        """
         super().__init__()
 
         pagelayout = QHBoxLayout()  # page layout
 
-        self.elelayout = QVBoxLayout()
+        self.elelayout = QVBoxLayout()  # This is the element layout
         self.mainWidget = mainWidget  # referring to the structuralWidget
         self.mainWidget.layerBox.currentIndexChanged.connect(self.changeElements)  # change elements when layer changed
 
@@ -320,7 +328,7 @@ class variationWidget(QDialog):
             ele = list(self.sample.structure[idx].keys())[j]
             self.mainWidget.elementBox.addItem(ele)
 
-        self.mainWidget.elementBox.currentIndexChanged.connect(self.mainWidget.setTableVar)  # element slection changed
+        self.mainWidget.elementBox.currentIndexChanged.connect(self.mainWidget.setTableVar)  # element selection changed
         self.elelayout.addWidget(self.mainWidget.elementBox)  # add combobox to layout
 
         self.mainWidget.setTableVar()  # set the element variation table
@@ -448,8 +456,14 @@ class ReadOnlyDelegate(QStyledItemDelegate):
 
 
 class magneticWidget(QDialog):
-    # Used to set magnetic info (relies on info set from variationWidget)
+    """
+    Purpose: This widget is used to set the magnetic info based on the user's input
+    """
     def __init__(self, mainWidget, sample):
+        """
+        :param mainWidget: This is the sampleWidget which allows for access of information from this widget
+        :param sample: This is the most recent sample model (slab class)
+        """
         super().__init__()
 
         pagelayout = QHBoxLayout()  # page layout
@@ -466,6 +480,8 @@ class magneticWidget(QDialog):
         magLayout = QVBoxLayout()
 
         # magnetization direction (use phi and theta in future versions)
+        # - instead of using a combobox consider using two QLineEdit widgets (one for phi and one for theta)
+        #
         self.mainWidget.magDirBox.addItem('x-direction')
         self.mainWidget.magDirBox.addItem('y-direction')
         self.mainWidget.magDirBox.addItem('z-direction')
@@ -496,8 +512,8 @@ class magneticWidget(QDialog):
         pagelayout.addLayout(magLayout)
         self.setLayout(pagelayout)
 
+        # setting the
         self.mainWidget.magTable.setStyleSheet('background-color: white;')
-
         self.setStyleSheet('background-color: lightgrey;')
 
 
@@ -509,7 +525,7 @@ class magneticWidget(QDialog):
         lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
         mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
 
-        # sets the magnetization direction
+        # sets the magnetization direction for the current layer (lay)
         if mag == 0:
             self.mainWidget.magDirection[lay] = 'x'
         elif mag == 1:
@@ -8469,7 +8485,10 @@ class progressWidget(QWidget):
                         #R = go.rolling_average(Rdat, window)
                         # total variation
                         var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
-                        val = go.total_variation(Rsmooth, Rsim[var_idx]) / len(Rsmooth)
+                        if len(Rsmooth) != 0:
+                            val = go.total_variation(Rsmooth, Rsim[var_idx]) / len(Rsmooth)
+                        else:
+                            val = 0
                         self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
@@ -8539,7 +8558,10 @@ class progressWidget(QWidget):
 
                         var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
                         # total variation
-                        val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
+                        if len(Rsmooth[var_idx]) != 0:
+                            val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
+                        else:
+                            val = 0
                         self.varFun[name].append(val * self.shape_weight)
                         gamma = gamma + val
 
@@ -9563,7 +9585,7 @@ def checkscript(sample):
 
                         if not (problem):
                             key = params[1].strip(' ')
-                            if key not in list(sample.structure[layer].keys()):
+                            if key not in list(sample.structure[layer].keys()) and key != 'all':
                                 problem = True
                                 print(11)
 

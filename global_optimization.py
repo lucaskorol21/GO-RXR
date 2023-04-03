@@ -399,9 +399,15 @@ def total_variation(R, Rsim):
     :param Rsim: Reflectivity simulation
     :return: Difference in total variation
     """
+    if len(R) == 0:
+        totVar = 0
+    else:
+        totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data (arc length)
 
-    totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data (arc length)
-    totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])/len(Rsim)  # total variation in simulation
+    if len(Rsim) == 0:
+        totVarSim = 0
+    else:
+        totVarSim = sum([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])/len(Rsim)  # total variation in simulation
 
     variation = abs(totVar-totVarSim)
     return variation

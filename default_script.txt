@@ -6,6 +6,7 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
+
 #setCombinedThickness(2,5,all,14.39360028319356)
 
 
@@ -21,16 +22,18 @@
 # setDensity(layer, element, value)
 # getDensity(layer, element)
 
-#rho = getDensity(8,Mn)
-#setDensity(7,Mn,rho)
+
+rho = getDensity(6,A)
+setDensity(5,A,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(4, B, Ti, 0.4265371849878433)
-#setVariationConstant(5, B, Ti, 0.049067758322062796)
-#setVariationConstant(6, B, Ti, 0.06250887791656433)
+#setVariationConstant(3, B, Ti,0.782089097314841)
+#setVariationConstant(4, B, Ti,0.5716836628519028)
+#setVariationConstant(5, B, Ti, 0.016050726711528962)
+#setVariationConstant(6, B, Ti,0.008844912518776227)
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#
