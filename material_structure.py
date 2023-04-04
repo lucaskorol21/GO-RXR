@@ -1341,7 +1341,7 @@ class slab:
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=5e-9,s_min = 0.1, bShift=0, sFactor=1):
+    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1678,11 +1678,11 @@ class slab:
 
         polymorph = self.structure[layer][symbol].polymorph
         if len(polymorph) != 0:
-            idx = [polymorph[i] for i in range(len(polymorph)) if variation == 'polymorph']
+            idx = [i for i in range(len(polymorph)) if variation == polymorph[i]]
             mag_density = self.structure[layer][symbol].mag_density[idx]
 
-            if type(mag_density) is list or type(mag_density) is np.ndarray:
-                mag_density = mag_density[0]
+            #if type(mag_density) is list or type(mag_density) is np.ndarray:
+            #    mag_density = mag_density
         else:
             mag_density = self.structure[layer][symbol].mag_density[0]
 

@@ -30,16 +30,23 @@
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(2, B, Ti,0.8648529196573551)
-#setVariationConstant(3, B, Ti,0.8499652805177822)
-#setVariationConstant(4, B, Ti,0.6485649847252293)
-#setVariationConstant(5, B, Ti, 0.04916692379729858)
-#setVariationConstant(6, B, Ti,0.0489990622331125)
+#setVariationConstant(2, B, Ti,0.9005050999579164)
+#setVariationConstant(3, B, Ti,0.7837314508266071)
+#setVariationConstant(4, B, Ti,0.4999997485917171)
+#setVariationConstant(5, B, Ti, 0.0422918374042055)
+#setVariationConstant(6, B, Ti,0.00036844090888239756)
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#
+
 # setMagDensity(layer, element, variation, value) if not a variation element than set element=variation
 # getMagDensity(layer,element, variation)
+
+rho = getMagDensity(7, B, Mn3)
+setMagDensity(8, B,Mn3,rho)
+setMagDensity(9, B,Mn3,rho)
+setMagDensity(10, B,Mn3,rho)
+setMagDensity(11, B,Mn3,rho)
 
 
 

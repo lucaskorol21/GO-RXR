@@ -256,17 +256,17 @@ def readScript(sample, script):
                 variables[key] = float(sample.getTotalThickness(start_layer,end_layer, K))  # retrieves total thickness
 
             elif function.lower() == 'geteshift':
-                ffName = params[0]  # gets form factor names
+                ffName = params[0].strip(' ')  # gets form factor names
                 variables[key] = float(sample.getEshift(ffName))  # retrieves form factor value
 
             elif function.lower() == 'getmageshift':
-                ffmName = params[0]  # gets magnetic form factor name
+                ffmName = params[0].strip(' ')  # gets magnetic form factor name
                 variables[key] = float(sample.getMagEshift(ffmName))  # retrieves magnetic form factor value
 
             elif function.lower() == 'getmagdensity':
                 layer = int(params[0])  # gets magnetic density layer
-                symbol = params[1]  # gets element symbol
-                var = params[2]  # gets variation identifier
+                symbol = params[1].strip(' ')  # gets element symbol
+                var = params[2].strip(' ')  # gets variation identifier
                 variables[key] = float(sample.getMagDensity(layer, symbol, var))  # retrieves magnetic density
 
         elif len(line) == 1:  # setting functions
@@ -361,8 +361,8 @@ def readScript(sample, script):
 
             elif function.lower() == 'setmagdensity':
                 layer = int(params[0])  # gets layer index
-                symbol = params[1]  # gets element symbol
-                var = params[2]  # gets element variation identifier
+                symbol = params[1].strip(' ')  # gets element symbol
+                var = params[2].strip(' ')  # gets element variation identifier
                 key = params[3].strip(' ')  # gets value or key
 
                 if isfloat(key):  # value case

@@ -9581,8 +9581,8 @@ def checkscript(sample):
                     else:
                         layer = int(layer)
 
-                    symbol = params[1]
-                    var = params[2]
+                    symbol = params[1].strip(' ')
+                    var = params[2].strip(' ')
                     if not problem:
                         if m - 1 < layer or layer < 0:
                             problem = True
@@ -9766,8 +9766,8 @@ def checkscript(sample):
                     else:
                         layer = int(layer)
 
-                    symbol = params[1]
-                    var = params[2]
+                    symbol = params[1].strip(' ')
+                    var = params[2].strip(' ')
                     if not problem:
                         if m-1 < layer or layer < 0:
                             problem = True
