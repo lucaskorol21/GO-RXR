@@ -28,6 +28,8 @@ PyQt5 (version 5.15.7) - This library is used to contruct the application
 
 pyqtgraph (version 0.12.4) - This library is used for the plotting widget
 
+pyinstaller (version 5.9.0) - This library is used to create a standalone executable file
+
 
 --------------------------------------------------------------------------------------------------------------------------------------
 Note: There are a few immediate changes that could be implemented for future versions which are listed below:
@@ -56,6 +58,26 @@ Note: There are a few immediate changes that could be implemented for future ver
 
 Warning: Any changes to the data type would need to be carefully considered.
 
+Instructions to create executable using pytinstaller:
+
+1. Install pyinstaller in the python environement.
+2. Run 'pyinstaller GUI.GO.py' in the terminal.
+3. A new file named GUI_GO.spec will appear in the project file. Open this file.
+4. In this file there is a filed called datas = []. Replace the empty array with:
+    datas = [('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
+    ('.\\material_model.py','.'), ('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
+    ('.\\form_factor_magnetic.pkl','.'), ('.\\Perovskite_Density.txt','.'), ('.\\Atomic_Mass.txt','.'),
+    ('.\\demo.h5','.')]
+5. This includes all the python files, text files, and all other data used to execute GUI_GO.py. If newer versions
+   of GO-RXR depend on more files than they must be included into this array. Follow the same naming convention as shown.
+6. Once satisfied run 'pyinstaller GUI_GO.spec' in the terminal. This will ensure that all desired data is included into
+   the data file.
+7. The executable file will be found in the 'dist' directory in the project workspace. There should now be a directory
+   in this workspace with the name GUI_GO.
+8. You can copy this file an input it into another directory. From here I would suggest creating a file zip file that
+   can be distributed.
+9. A one file that can compile the executable into a single file instead of a directory. However, this can take much longer
+   to initialize as with the one file all the libraries and files need to be unpacked before the software can be run.
 """
 
 import ast
@@ -545,6 +567,8 @@ class magneticWidget(QDialog):
         #lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
         mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
         m = len(self.mainWidget.structTableInfo)
+
+        # changes the magnetization direction for all layer
         for i in range(m):
             if mag == 0:
                 self.mainWidget.magDirection[i] = 'x'
@@ -4395,8 +4419,10 @@ class GlobalOptimizationWidget(QWidget):
         algorithmLayout = QVBoxLayout()
         algorithmLabel = QLabel('Algorithm Selection')
         self.algorithmSelect = QComboBox()
+        #self.algorithmSelect.addItems(
+        #    ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares', 'direct'])
         self.algorithmSelect.addItems(
-            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares', 'direct'])
+            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares'])
         self.algorithmSelect.currentIndexChanged.connect(self.change_algorithm)
         algorithmLayout.addWidget(algorithmLabel)
         algorithmLayout.addWidget(self.algorithmSelect)
@@ -4420,14 +4446,25 @@ class GlobalOptimizationWidget(QWidget):
         self.totalVarWeight.setFixedWidth(50)
         totLayout.addWidget(totLabel)
         totLayout.addWidget(self.totalVarWeight)
-        totLayout.addStretch(1)
 
+        totLayout.addStretch(1)
+        costButton = QPushButton('Cost Value')
+        costButton.setFixedWidth(80)
+        costButton.clicked.connect(self.calculateCost)
+        self.costValue = QLineEdit('0')
+        self.costValue.setFixedWidth(50)
+        self.costValue.setFixedHeight(20)
+        costlayout = QHBoxLayout()
+        costlayout.addWidget(costButton)
+        costlayout.addWidget(self.costValue)
+        costlayout.addStretch(1)
         vbox = QVBoxLayout()
         vbox.addWidget(objectiveFunction)
         vbox.addWidget(self.chi)
         vbox.addWidget(self.L1)
         vbox.addWidget(self.L2)
         vbox.addLayout(totLayout)
+        vbox.addLayout(costlayout)
 
         algorithmLayout.addLayout(vbox)
         algorithmWidget = QWidget()
@@ -4841,6 +4878,149 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         #self.checkscript()
 
+    def calculateCost(self):
+        """
+        Purpose: calculate the cost function of the current data fitting iteration
+        :param x_array: current iteration parameters
+        """
+
+        sample = self.sample
+        bounds = self.rWidget.bounds
+        weights = self.rWidget.weights
+        scans = [self.selectedScans.currentText()]
+        y_scale = self.isLogWidget.currentText()
+        fun = 0
+
+
+        for i, scan in enumerate(scans):
+            name = scan
+
+            fun_val = 0
+            xbound = bounds[i]
+            weights = weights[i]
+
+            background_shift = 0
+            scaling_factor = 1
+            data = self.rWidget.data_dict
+            if 'Angle' not in data[name].keys():
+                myDataScan = data[name]
+                myData = myDataScan['Data']
+                E = myDataScan['Energy']
+                pol = myDataScan['Polarization']
+                Rdat = np.array(myData[2])
+
+                qz = np.array(myData[0])
+                qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+                Rsim = Rsim[pol]
+
+                j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
+                qz = qz[j]
+                if len(Rsim) != len(j):
+                    Rsim = Rsim[j]
+                if len(Rdat) != len(j):
+                    Rdat = Rdat[j]
+
+
+                if y_scale == 'log(x)':
+                    Rsim = np.log10(Rsim)
+                    Rdat = np.log10(Rdat)
+
+                elif y_scale == 'ln(x)':
+                    Rsim = np.log(Rsim)
+                    Rdat = np.log(Rdat)
+
+                elif y_scale == 'qz^4':
+                    Rsim = np.multiply(Rsim, np.power(qz, 4))
+                    Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+                elif y_scale == 'x':
+                    pass
+
+
+
+                m = 0
+                for b in range(len(xbound)):
+                    lw = xbound[b][0]
+                    up = xbound[b][1]
+                    w = weights[b]
+
+                    idx = [x for x in range(len(qz)) if
+                           qz[x] >= lw and qz[x] < up]  # determines index boundaries
+
+                    k = len(idx)
+                    m = m + k
+                    if len(idx) != 0:
+                        if self.objective == 'Chi-Square':
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+
+                        elif self.objective == 'L1-Norm':
+                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        elif self.objective == 'L2-Norm':
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+                if m != 0:
+                    fun = fun + fun_val / m
+
+            else:
+                myDataScan = data[name]
+                myData = myDataScan['Data']
+                Theta = myDataScan['Angle']
+                Rdat = np.array(myData[2])
+                E = np.array(myData[3])
+                pol = myDataScan['Polarization']
+
+                E, Rsim = sample.energy_scan(Theta, E)
+                Rsim = Rsim[pol]
+
+                j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
+                E = E[j]
+                if len(Rsim) != len(j):
+                    Rsim = Rsim[j]
+                if len(Rdat) != len(j):
+                    Rdat = Rdat[j]
+
+
+                if y_scale == 'log(x)':
+                    Rsim = np.log10(Rsim)
+                    Rdat = np.log10(Rdat)
+
+                elif y_scale == 'ln(x)':
+                    Rsim = np.log(Rsim)
+                    Rdat = np.log(Rdat)
+
+                elif  y_scale == 'qz^4':
+                    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                    Rsim = np.multiply(Rsim, np.power(qz, 4))
+                    Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+                elif y_scale == 'x':
+                    pass
+
+
+                m = 0
+                for b in range(len(xbound)):
+                    lw = xbound[b][0]
+                    up = xbound[b][1]
+                    w = weights[b]
+
+                    idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                    k = len(idx)
+                    m = m + k
+                    if len(idx) != 0:
+                        if self.objective == 'Chi-Square':
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                        elif self.objective == 'L1-Norm':
+                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        elif self.objective == 'L2-Norm':
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+                if m != 0:
+
+                    fun = fun + fun_val / m
+
+
+        self.costValue.setText(str(fun))
     def eventFilter(self, source, event):
         """
         Purpose: Allows user to remove fits directly from globalOptimization widget
@@ -7477,11 +7657,15 @@ class ReflectometryApp(QMainWindow):
         """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
         fname = self.fname.split('/')[-1]  # used to check file type
 
-        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
-            if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))  # look for form factors in directory
+        if self.fname.endswith('.h5') or self.fname.endswith('.all'):  # check for proper file extension
+            if self.fname.endswith('.h5') and self.fname != 'demo.h5':
+
+                n = len(fname)
+                f = self.fname[:-n]
+                struct_names, mag_names = mm._use_given_ff(f)  # look for form factors in directory
 
                 # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
@@ -7605,16 +7789,20 @@ class ReflectometryApp(QMainWindow):
 
     def _loadSample(self):
         """
-                Purpose: Load a new file or project workspace
-                """
+            Purpose: Load a new file or project workspace
+        """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
         fname = self.fname.split('/')[-1]  # used to check file type
 
-        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
-            if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(
-                    self.fname.strip(fname))  # look for form factors in directory
+
+        if self.fname.endswith('.h5') or self.fname.endswith('.all'):  # check for proper file extension
+            if self.fname.endswith('.h5') and self.fname != 'demo.h5':
+                n= len(fname)
+                f = self.fname[:-n]
+
+                struct_names, mag_names = mm._use_given_ff(f)  # look for form factors in directory
 
                 # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
@@ -7822,9 +8010,13 @@ class ReflectometryApp(QMainWindow):
         fname = filename.split('/')[-1]
 
         # when loading files I need to be able to scan the entire
-        if fname.endswith('.h5') or fname.endswith('.all'):
+        if filename.endswith('.h5') or filename.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
+                self._reflectivityWidget.data = self.data
+                self._reflectivityWidget.data_dict = self.data_dict
+                for scan in self.data:
+                    self._reflectivityWidget.whichScan.addItem(scan[2])
 
     def _loadReMagX(self):
         """
@@ -9210,9 +9402,9 @@ class showFormFactors(QDialog):
             if self.real.checkState() != 0 and self.im.checkState() != 0:
 
                 my_name = 'r: ' + key
-                self.structPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
+                self.magPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
                 my_name = 'i: ' + key
-                self.structPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
+                self.magPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
             elif self.real.checkState() != 0:
                 my_name = 'r: ' + key
                 self.magPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
