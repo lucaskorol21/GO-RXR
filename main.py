@@ -1,76 +1,36 @@
 import numpy as np
 import data_structure as ds
 import matplotlib.pyplot as plt
-import global_optimization as go
-from scipy.signal import *
-import copy
-from scipy import interpolate
-import material_model as mm
-import os
 
 
-from scipy.fft import fft, fftfreq, fftshift, ifft
+def createFF(directory, filename, my_dict, source, date):
+    import os
 
 
-def g(x,y):
-    return (x+y)*np.log(abs(x+y)) + abs(x-y)*np.log(abs(x-y))
+    f = os.path.join(directory, filename)
+    if not (filename.startswith('README')):
+        name = f.split('.')[0]
+        data = np.loadtxt(f)
+        my_dict[name]['Data'] = data  # stores the form factor data
+        my_dict[name]['Source'] = source  # stores the url of the source
+        my_dict[name]['Updated'] = date  # stores the date last updated
 
-def variationKK(E,E0,E2,E4):
-    """
+    return my_dict
 
-    :param E: current energy
-    :param E0: denotes Ej-2
-    :param E2: denotes Ej
-    :param E4: denotes Ej+1
-    :return:
-    """
-    t1 = g(E,E0)/(E2-E0)
-    t2 = (E4-E0)*g(E,E2)/((E2-E0)*(E4-E2))
-    t3 = g(E,E4)/(E4-E2)
+def createFFM(directory, filename, my_dict,source, date):
+    import os
+    import pickle
 
-    return (t1+t2+t3)/np.pi
+    f = os.path.join(directory, filename)
+    if not (filename.startswith('README')):
+        name = f.split('.')[0]
+        data = np.loadtxt(f)
+        my_dict[name]['Data'] = data  # stores the form factor data
+        my_dict[name]['Source'] = source  # stores the url of the source
+        my_dict[name]['Updated'] = date  # stores the date last updated
 
-def triangle_function(i,j,E):
-    """
-    :param j: current index
-    :param E: energy array
-    :return:
-    """
-    delta = np.zeros(len(E))
+    return my_dict
 
-    if E[i]>E[j] and E[i] < E[j]:
-        delta[j] = (E[j] - E[i-2])/(E[i]-E[i-2])
-    elif E[i] < E[j+2] and E[i] > E[j]:
-        delta[j] = (E[i+2] - E[j])/(E[i+2]-E[i])
-    elif E[i] == E[j]:
-        delta[j] = 1
-    else:
-        delta[i] = 0
-
-    return delta
-
-def getRoughness(layer, identifier):
-    pass
-def setRoughness(layer, identifier, sigma):
-    pass
-
-def setRatio(layer, element, identifier1,identifier2, ratio):
-    pass
-def getThickness(layer, identifier):
-    pass
-
-def setThickness(layer, identifier, d):
-    pass
-
-def setCombinedThickness(layer_start, layer_end, identifier, d):
-    # dprime = 0
-    # for i in range(layer_start, layer_end, 1):
-    #       dprime = dprime + sample[i][identifier].thickness
-
-    # for i in range(layer_start, layer_end, 1):
-    #       val = copy.deepcopy(sample[i][identifier].thickness)
-    #       sample[i][identifier].thickness = val*dprime/d
-    pass
 if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
@@ -118,7 +78,7 @@ if __name__ == '__main__':
     
     
 
-    """
+
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
@@ -145,7 +105,7 @@ if __name__ == '__main__':
     plt.xlabel('Sample (uc)')
     plt.ylabel('Magnetic Density per units cell')
     plt.show()
-    """
+
     plt.figure(2)
     for key in my_keys:
         plt.plot(thickness, density[key], c=np.random.rand(3,))
@@ -226,18 +186,39 @@ if __name__ == '__main__':
 
     #np.savetxt('Z.txt', data,fmt='%.4s')
 
+    
+    dir= "C:/Users/lsk601/PycharmProjects/MaterialReflection/Magnetic_Scattering_Factor"
+    import pickle
+    import os
 
-    dir = "C:/Users/lsk601/PycharmProjects/MaterialReflection/Scattering_Factor"
+    #with open('form_factor.pkl', 'rb') as f:
+    #    my_dict = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    #f.close()
+
     my_dict = dict()
+
+    source = 'The Center for X-ray Optics'
+    date = 'April 6, 2023'
     for filename in os.listdir(dir):
         f = os.path.join(dir, filename)
-        if not(filename.startswith('README')):
+        if not (filename.startswith('README')):
             name = filename.split('.')[0]
-            data =  np.loadtxt(f)
-            my_dict[name] = data
+            data = np.loadtxt(f)
+            my_dict[name] = dict()
+            my_dict[name]['Data'] = data  # stores the form factor data
+            my_dict[name]['Source'] = source  # stores the url of the source
+            my_dict[name]['Updated'] = date  # stores the date last updated
+
 
     import pickle
-    with open('form_factor.pkl', 'wb') as handle:
+    with open('form_factor_magnetic.pkl', 'wb') as handle:
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
+
     """
+    import pickle
+    with open('form_factor.pkl', 'rb') as f:
+        ff = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    f.close()
+
+    print(ff['Mn'])

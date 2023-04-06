@@ -35,13 +35,19 @@ import os
 # Loads the non-magnetic form factors stored in our database
 with open('form_factor.pkl', 'rb') as f:
     global ff
-    ff = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    ff = dict()
+    ff_temp = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    for key in ff_temp.keys():
+        ff[key] = ff_temp[key]['Data']
 f.close()
 
 # Loads the magnetic form factors stored in our database
 with open('form_factor_magnetic.pkl','rb') as f:
     global ffm
-    ffm = pickle.load(f)
+    ffm = dict()
+    ffm_temp = pickle.load(f)
+    for key in ffm_temp.keys():
+        ffm[key] = ffm_temp[key]['Data']
 f.close()
 
 def _use_given_ff(directory):
