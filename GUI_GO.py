@@ -542,16 +542,17 @@ class magneticWidget(QDialog):
         Purpose: change the magnetization direction for sampleWidget
         :return:
         """
-        lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
+        #lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
         mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
+        m = len(self.mainWidget.structTableInfo)
+        for i in range(m):
+            if mag == 0:
+                self.mainWidget.magDirection[i] = 'x'
+            elif mag == 1:
+                self.mainWidget.magDirection[i] = 'y'
+            elif mag == 2:
+                self.mainWidget.magDirection[i] = 'z'
 
-        # sets the magnetization direction for the current layer (lay)
-        if mag == 0:
-            self.mainWidget.magDirection[lay] = 'x'
-        elif mag == 1:
-            self.mainWidget.magDirection[lay] = 'y'
-        elif mag == 2:
-            self.mainWidget.magDirection[lay] = 'z'
 
 
 class sampleWidget(QWidget):
