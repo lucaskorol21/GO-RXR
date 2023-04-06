@@ -7196,7 +7196,7 @@ class ReflectometryApp(QMainWindow):
         self.sample.energy_shift()
 
         # set the title
-        self.setWindowTitle('Reflectometry of Quantum Materials')
+        self.setWindowTitle('GO-RXR')
 
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
@@ -8560,9 +8560,9 @@ class progressWidget(QWidget):
                         #window = 5
                         #R = go.rolling_average(Rdat, window)
                         # total variation
-                        var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
+                        #var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
                         if len(Rsmooth) != 0:
-                            val = go.total_variation(Rsmooth, Rsim[var_idx]) / len(Rsmooth)
+                            val = go.total_variation(Rsmooth, Rsim) / len(Rsmooth)
                         else:
                             val = 0
                         self.varFun[name].append(val * self.shape_weight)
@@ -8632,10 +8632,10 @@ class progressWidget(QWidget):
                         #window = 5
                         #R = go.rolling_average(Rdat, window)
 
-                        var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
+                        #var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
                         # total variation
-                        if len(Rsmooth[var_idx]) != 0:
-                            val = go.total_variation(Rsmooth[var_idx], Rsim[var_idx]) / len(Rsmooth[var_idx])
+                        if len(Rsmooth) != 0:
+                            val = go.total_variation(Rsmooth, Rsim) / len(Rsmooth)
                         else:
                             val = 0
                         self.varFun[name].append(val * self.shape_weight)

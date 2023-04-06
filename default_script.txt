@@ -42,11 +42,11 @@
 # setMagDensity(layer, element, variation, value) if not a variation element than set element=variation
 # getMagDensity(layer,element, variation)
 
-rho = getMagDensity(7, B, Mn3)
-setMagDensity(8, B,Mn3,rho)
-setMagDensity(9, B,Mn3,rho)
-setMagDensity(10, B,Mn3,rho)
-setMagDensity(11, B,Mn3,rho)
+#rho = getMagDensity(7, B, Mn3)
+#setMagDensity(8, B,Mn3,rho)
+#setMagDensity(9, B,Mn3,rho)
+#setMagDensity(10, B,Mn3,rho)
+#setMagDensity(11, B,Mn3,rho)
 
 
 
