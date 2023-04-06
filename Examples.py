@@ -1,11 +1,12 @@
+import Pythonreflectivity as pr
 import numpy as np
 import matplotlib.pyplot as plt
-import Pythonreflectivity as pr
 
 
 
 
-print("One interface")
+
+print "One interface"
 
 A=pr.Generate_structure(1)
 A[0].seteps(1.01+0.01j) # material epsilon
@@ -23,7 +24,7 @@ plt.ylabel('log(Reflectivity)')
 plt.title('One interface')
 plt.show()
 
-print("Two layers on a substrate")
+print "Two layers on a substrate"
 
 A=pr.Generate_structure(3)
 
@@ -47,7 +48,7 @@ plt.ylabel('log(Reflectivity)')
 plt.title('Two layers on a substrate')
 plt.show()
 
-print("An anisotropic layer")
+print "An anisotropic layer"
 A=pr.Generate_structure(2)
 A[0].seteps(1.01+0.01j) # material epsilon
 A[1].seteps([1.01+0.01j, 1.01+0.01j, 0.99+0.015j])
@@ -63,7 +64,7 @@ plt.ylabel('log(Reflectivity)')
 plt.title('An anisotropic layer')
 plt.show()
 
-print("A magnetic layer")
+print "A magnetic layer"
 
 A=pr.Generate_structure(2)
 A[0].seteps(1.01+0.01j) 
@@ -84,7 +85,7 @@ plt.title('A magnetic layer')
 plt.show()
 
 
-print("Polarization analysis")
+print "Polarization analysis"
 
 A=pr.Generate_structure(2)
 A[0].seteps(1.01+0.01j) 
@@ -105,7 +106,7 @@ plt.title('Polarization analysis')
 plt.show()
 
 
-print("Multilayers")
+print "Multilayers"
 
 A=pr.Generate_structure(3, "0, 4*(1,2)")
 A[0].seteps(1.01+0.01j) 
@@ -124,7 +125,7 @@ plt.ylabel('log(Reflectivity)')
 plt.title('Multilayers')
 plt.show()
 
-print("With and without multiple scattering")
+print "With and without multiple scattering"
 
 A=pr.Generate_structure(3)
 A[0].seteps(0.82+0.001)

@@ -1,1 +1,11 @@
+Full_Matrix
+Kramers_Kronig
+MOKE_longitudinal
+MOKE_polar
+MOKE_transversal
+Mathematical_Functions_Reflectivity
+Multilayer_Functions_Reflectivity
 Pythonreflectivity
+Reflectivity_Pi
+Reflectivity_Sigma
+Structural

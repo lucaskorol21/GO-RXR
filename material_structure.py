@@ -1,62 +1,78 @@
-import numpy as np
+"""
+Library: material_structure
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: March 28nd, 2023
+Python: version 3.7
+
+Purpose: This script contains all functions related to retrieving form factors and calculating the structural and
+        magnetic optical constants.
+
+Imported Libraries
+
+numpy (version 1.21.4) - used for array manipulation
+
+material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
+                               caluculate the optical constants
+
+Pythonreflectivity (version 1.0) - Software used to calculate the reflectivity spectra. Currently this software is only
+                                   compatible with python 3.7. The function generate_structure, slab.reflectivity, and
+                                   slab.energy_scan will need to be altered for newer versions.
+
+numba (version 0.55.2) - Used to speed up certain functions with long executions times and frequent use.
+
+scipy (version 1.7.1) - This python file uses the error function from the scipy library to model the roughness of a
+                        material
+
+"""
+
 import matplotlib.pyplot as plt
-import math
-from collections import OrderedDict
-from scipy.special import erf
-from scipy.integrate import simpson
-import scipy.optimize as optimize
-import warnings
-from KK_And_Merge import *
+import numpy as np
 from material_model import *
 import Pythonreflectivity as pr
-from tabulate import tabulate
-from scipy import interpolate
-import multiprocessing
-from functools import partial
-from itertools import repeat
-from time import *
-from multiprocessing.pool import ThreadPool
 from numba import *
-
-
+from collections import OrderedDict
+from scipy.special import erf
+import warnings
+import copy
 
 @njit()
-def ALS(epsilon, epsilon_mag, precision=1e-6):
+def ALS(alpha, beta, precision=1e-6):
     """
     Purpose: Perform the adaptive layer segmentation
-    :param epsilon: numpy array of real values
-    :param epsilon_mag: numpy array of real values
-    :param precision: precision for slicing
+    :param alpha: numpy array of real values
+    :param beta: numpy array of imaginary values
+    :param precision: precision value for slicing
     :return: my_slabs - contains indices for slicing
     """
-    epsilon = epsilon/np.linalg.norm(epsilon)  # normalizes epsilon
-    epsilon_mag = epsilon_mag/np.linalg.norm(epsilon)  # normalizes epsilon_mag
+    alpha = alpha /np.linalg.norm(alpha)  # normalizes epsilon
+    beta = beta /np.linalg.norm(beta)  # normalizes epsilon_mag
     idx_a = 0  # keeps track of surface of previous slab
-    n = epsilon.size
+    n = alpha.size
     my_slabs = np.zeros(n) # pre-initialize the slab array
 
-    dsSlab = 1
+    dsSlab = 1  # counts the number of slices
     for idx_b in range(1,n):
 
         # retrieves permittivity values
-        f1 = epsilon[idx_a]
-        f2 = epsilon[idx_b]
-        f1m = epsilon_mag[idx_a]
-        f2m = epsilon_mag[idx_b]
+        f1 = alpha[idx_a]
+        f2 = alpha[idx_b]
+        f1b = beta[idx_a]
+        f2b = beta[idx_b]
 
-        delta = np.absolute(f2-f1)  # varitation of epsilon
-        delta_m = np.absolute(f2m-f1m)  # variation of epsilon_mag
+        delta_a = np.absolute(f2-f1)  # varitation of epsilon
+        delta_b = np.absolute(f2b-f1b)  # variation of epsilon_mag
 
         # checks if variation is of minimum variation set by 'precision'
-        if delta>precision or delta_m>precision:
+        if delta_a>precision or delta_b>precision:
             #my_slabs = np.append(my_slabs, idx_b)  # append slice
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
-        elif idx_b == n-1:
+        elif idx_b == n-1:  # reached the end of the array
             my_slabs[dsSlab] = idx_b
             dsSlab = dsSlab + 1
-
 
     my_slabs = my_slabs[:dsSlab]
     return my_slabs
@@ -82,6 +98,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     gamma = 90  # pre-initialize magnetization direction
     phi = 90
 
+    # Recent versions of Pythonreflectivity use the susceptibility instead of the dielectric constant
     for m_i in my_slabs:
         d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
         eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
@@ -91,22 +108,23 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
         if layer == 0:
             if layer_magnetized[0]:
                 for ele in structure[layer].keys():
-                    if structure[0][ele].mag_scattering_factor != None:
+                    if len(structure[0][ele].mag_scattering_factor) != 0:
                         gamma = structure[0][ele].gamma
                         phi = structure[0][ele].phi
 
         # Determines the magnetization direction of the other layers
-        if transition[layer] <= thickness[m_j] and layer < len(transition) - 1:
+        temp_list = [transition[i][layer] for i in range(len(transition))]
+        trans = max(temp_list)
+        if trans <= thickness[m_j] and layer < len(transition[0]) - 1:
             layer = layer + 1
             if layer_magnetized[layer]:
                 for ele in structure[layer].keys():
-                    if structure[layer][ele].mag_scattering_factor != None:
+                    if len(structure[layer][ele].mag_scattering_factor) != 0:
                         gamma = structure[layer][ele].gamma
                         phi = structure[layer][ele].phi
 
         # sets the magnetization direction based on the input angles
         if layer_magnetized[layer]:
-
             if gamma == 90 and phi == 90:
                 A[idx].setmag('y')
             elif gamma == 0 and phi == 90:
@@ -129,7 +147,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
 
     return A
 
-def energy_reflectivity(A, Theta, wavelength, R, E):
+def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
     """
     Purpose: Compute the reflectivity of a specific energy for the energy scan
     :param A: Structure object as defined by pythonreflectivity
@@ -137,22 +155,25 @@ def energy_reflectivity(A, Theta, wavelength, R, E):
     :param wavelength: Wavelength of photon energy
     :param R: Pre-initialized numpy array
     :param E: Integer that defined energy location for pre-initialized reflectivity dicitonary R
+    :param backS: Float value that contains the background shift applied to the scan
+    :param scaleF: Float value that contains the scaling factor applied to the scan
     :return: Reflectivity R
     """
 
     Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
 
+    # sets the polarization reflectivity array
     if len(Rtemp) == 2:
-        R['S'][E] = Rtemp[0][0]  # s-polarized light
-        R['P'][E] = Rtemp[1][0]  # p-polarized light
-        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])  # Asymmetry linear polarized
+        R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
+        R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
+        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # Asymmetry linear polarized
     elif len(Rtemp) == 4:
-        R['S'][E] = Rtemp[0][0]
-        R['P'][E] = Rtemp[1][0]
-        R['AL'][E] = (Rtemp[0][0] - Rtemp[1][0]) / (Rtemp[0][0] + Rtemp[1][0])
-        R['LC'][E] = Rtemp[2][0]
-        R['RC'][E] = Rtemp[3][0]
-        R['AC'][E] = (Rtemp[2][0] - Rtemp[3][0]) / (Rtemp[2][0] + Rtemp[3][0])
+        R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
+        R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
+        R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # linear asymmetry
+        R['LC'][E] = Rtemp[2][0]*scaleF + backS  # left circular polarization
+        R['RC'][E] = Rtemp[3][0]*scaleF + backS  # right circular polarization
+        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0])+2*backS)  # circular asymmetry
     else:
         raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
     return R
@@ -160,7 +181,7 @@ def energy_reflectivity(A, Theta, wavelength, R, E):
 
 def get_number(string):
     """
-    Purpose: Strip successive digits from a string
+    Purpose: Strip successive digits from a string. This function is used to interpret chemical formulas
     Input:
      string - A string containing letters and digits
     Output:
@@ -196,13 +217,15 @@ def checkstring(formula):
 
     :return: Returns a list that contains the chemical formula and it's stoichiometry [symbol, stoich]
     """
-
+    # including dummy variables A and X
     # Used in error check
     symbols = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',
                'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se' , 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
                'Cs', 'Ba', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po' , 'At', 'Rn', 'Fr', 'Ra', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
                'Rg', 'Cn', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk',
-               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr']
+               'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr', 'A', 'D','E','G','J','L','M','Q','R','T','X','Z']
+
+    # The letters A, D, E, G, J, L, M, Q, R, T, X, and Z represent 'dummy variables'
 
     info = []  # list to store the element symbol and it's stoichiometry
     n = len(formula)  # Get's the number of characters in the list
@@ -330,9 +353,20 @@ def atomic_mass(atom):
     return float(mass)
 
 def error_function(t, sigma1, sigma2, offset1, offset2):
-    result1 = (erf((t-offset1)/sigma1/sqrt(2))+1)/2
-    result2 = (erf((offset2-t)/sigma2/sqrt(2))+1)/2
+    """
+    Purpose: Calculates the error function
+    :param t: thickness
+    :param sigma1: interface 1 roughness value
+    :param sigma2: interface 2 roughness value
+    :param offset1: interface 1 offset thickness value
+    :param offset2:  interface 2 offset thickness value
+    :return:
+    """
+    result1 = (erf((t-offset1)/sigma1/np.sqrt(2))+1)/2
+    result2 = (erf((offset2-t)/sigma2/np.sqrt(2))+1)/2
     result = result1*result2
+
+    # This function is not used for the error function calculation
     return result
 
 class element:
@@ -351,11 +385,11 @@ class element:
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
         self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
-        self.gamma = 90  #
-        self.phi = 90  #
+        self.gamma = 0  #
+        self.phi = 0  #
         self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
         self.scattering_factor = name  # Identifies which scattering factor to be used. This parameter will allow us to implement 'scattering functions'
-        self.mag_scattering_factor = None
+        self.mag_scattering_factor = []
         self.position = None
 
 class slab:
@@ -382,9 +416,14 @@ class slab:
         self.find_sf = [dict(), dict()]  # [structural, magnetic]
         self.transition = None
         self.layer_magnetized = [False for i in range(num_layers)]  # keeps track of layers with magnetization
+        self.eShift = dict()
+        self.mag_eShift = dict()
+        self.ff_scale = dict()  # keep track of the structural scaling factors
+        self.ffm_scale = dict()  # keep track of the magnetic scaling factors
 
 
-    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None):
+
+    def addlayer(self, num_layer, formula, thickness, density=None, roughness=0 , linked_roughness = None, sf = None):
         """
         Purpose: Add layer to sample material
         :param num_layer: Layer number (0 indicates substrate layer)
@@ -409,17 +448,21 @@ class slab:
         if len(self.structure[num_layer]) != 0:
             warnings.warn('Layer '+str(num_layer)+' already initialized')
 
-        # Thickness type check
-        if type(thickness) != int and type(thickness) != float:
-            raise TypeError('Layer ' +str(num_layer)+': Thickness must be integer or float type')
-
-         # Checks if thickness is in a reasonable range
-        if thickness < 0:
-            warnings.warn('Layer ' +str(num_layer)+': Thickness must be a positive number. The absolute value was taken as it was assumed the user meant to input a negative value.')
-            thickness = abs(thickness)
-        elif thickness == 0:
-            raise ValueError('Layer ' +str(num_layer)+': Thickness cannot be zero')
-
+        # Checks Thickness
+        if type(thickness) == int or type(thickness) == float:
+            temp_thickness = [thickness for i in range(num_elements)]
+            thickness = temp_thickness
+        if type(thickness) != list and type(thickness) != np.ndarray:
+            raise TypeError(
+                'Layer ' + str(num_layer) + ': Thickness must be of float, integer, list, or numpy.ndarray type.')
+        else:
+            for idx in range(len(thickness)):
+                if thickness[idx] < 0:
+                    thickness[idx] = abs(thickness[idx])
+                    warnings.warn('Layer ' + str(
+                        num_layer) + ': Thickness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                if thickness[idx] > 100:
+                    warnings.warn('Layer ' + str(num_layer) + ': Thickness is much larger than expected')
         # Checks Density
         if density == None:
             pass
@@ -495,17 +538,22 @@ class slab:
                 elements[key].density = density[position]
 
             #elements[key].density = density[position]*elements[key].stoichiometry/molar_mass  # sets density  (g/cm^3)
-            elements[key].thickness = thickness  # sets thickness  (Angstrom)
+            elements[key].thickness = thickness[position]  # sets thickness  (Angstrom)
             elements[key].roughness = roughness[position]  # Order of Angstrom
             elements[key].linked_roughness = linked_roughness[position]  # sets the linked roughness for each element
             elements[key].molar_mass = molar_mass  # Molar mass of perovskite material
             elements[key].position = position
-            position = position + 1
 
+            # sets scattering factors for scattering factors that are different than their element symbol
+            if sf is not None:
+                my_sf = sf[position]
+                if my_sf is not None:
+                    elements[key].scattering_factor = my_sf
+            position = position + 1
         self.structure[num_layer] = elements  # sets the layer with the appropriate slab properties
 
 
-    def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=None):
+    def polymorphous(self, lay, ele, polymorph, poly_ratio, sf=''):
         """
         Purpose: Allows the user to set polymorphous elements in their material
         :param lay: The layer the polymorphous element is found (integer value)
@@ -534,12 +582,9 @@ class slab:
             raise RuntimeError('Layer ' + str(lay) + ': Element ' + ele + ' not found in layer ' + str(lay))
 
         # Checking polymorphous type
-        if type(polymorph) != list:
+        if type(polymorph) != list and type(polymorph) != np.ndarray:
             raise TypeError('Layer ' + str(lay) + ': Input of polymorphous variable must be of type list')
 
-        # Checking poly_ratio type
-        if type(poly_ratio) != list:
-            raise TypeError('Layer ' + str(lay) + ': Input of poly_ratio must be entered as a list')
 
         # Checks that length of list is greater than 2
         if len(polymorph) < 2:
@@ -557,7 +602,10 @@ class slab:
         if len(set([type(x) for x in poly_ratio])) != 1:
             raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
 
+
         if abs(1 - sum(poly_ratio)) > 1e-3:
+            print(lay, ':', poly_ratio)
+            print(sum(poly_ratio))
             warnings.warn('Addition of all values in poly_ratio should add up to 1.')
         # ------------------------------------------------------------------------------------------------------------ #
 
@@ -569,17 +617,22 @@ class slab:
             else: # Multiple entries
                 self.poly_elements[ele] = polymorph
 
+
+
+
         # Sets polymorph values to appropriate element in the correct layer
         self.structure[lay][ele].polymorph = polymorph
         self.structure[lay][ele].poly_ratio = np.array(poly_ratio)
 
         # Sets scattering factors
-        if sf == None:
+        if sf is str:
             self.structure[lay][ele].scattering_factor = polymorph
+
         else:
             self.structure[lay][ele].scattering_factor = sf
 
     def magnetization(self, lay, identifier, density, sf, gamma=90, phi=90):
+
         """
         Purpose: Set magnetization properties
         :param lay: Layer the magnetic material is found
@@ -591,18 +644,17 @@ class slab:
         """
 
         # ---------------------------------------- Error Check ------------------------------------------------------- #
-
         # Checking that layer exists
         if lay > len(self.structure) - 1:
             raise RuntimeError('Layer ' + str(lay) + ' selected, but maximum layer is ' + str(len(self.structure) - 1))
 
         self.layer_magnetized[lay] = True
         # Checks to make sure that the variable identifier is either a list or string
-        if type(identifier) != str and type(identifier) != list:
+        if type(identifier) != str and type(identifier) != list and type(identifier) != np.ndarray:
             raise TypeError('Variable identifier must be a list or string.')
 
             # Checks to make sure that the variable identifier is either a list or string
-        if type(sf) != str and type(sf) != list:
+        if type(sf) != str and type(sf) != list and type(sf) != np.ndarray:
             raise TypeError('Variable identifier must be a list or string.')
 
         # Checks to make sure that the variable identifier is either a list or string
@@ -620,7 +672,8 @@ class slab:
 
         # Checks that all identifiers are strings
         if type(identifier) == list:
-            if type(identifier[0]) != str:
+
+            if type(identifier[0]) is not str and type(identifier[0]) is not np.str_:
                 raise TypeError('All list elements must be strings')
             if len(set([type(x) for x in identifier])) > 1:
                 raise TypeError('All list elements must be strings')
@@ -653,31 +706,40 @@ class slab:
             raise TypeError('Gamma and Phi must be of same type')
 
 
-
         # ------------------------------------------------------------------------------------------------------------ #
+        my_idx = [i for i in range(len(sf)) if sf[i] != '' and sf[i] != '0' and sf[i] != 0]
         layer = self.structure[lay]
         poly_start = True
-        if type(identifier) == list:
+        if type(identifier) == list or type(identifier) == np.ndarray:
             for key in list(layer.keys()):
                 for idx in range(len(identifier)):
                     if len(layer[key].polymorph) != 0:  # polymorph case
                         if identifier[idx] in layer[key].polymorph:  # checks if identifier in selected polymorph
                             # pre-initializing for polymorph case
+                            layer[key].polymorph = list(layer[key].polymorph)
                             poly_idx = layer[key].polymorph.index(identifier[idx])  # determine index of poly
 
                             # initialization
                             if poly_start:  # first polymorph appearance
-                                self.structure[lay][key].mag_scattering_factor = [0 for i in range(len(layer[key].polymorph))]
+                                self.structure[lay][key].mag_scattering_factor = ['' for i in range(len(layer[key].polymorph))]
                                 self.structure[lay][key].mag_density = np.zeros(len(layer[key].polymorph))
-                                self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
+                                #self.mag_elements[key] = [0 for i in range(len(layer[key].polymorph))]
+
+
+                                self.mag_elements[key] = []
                                 poly_start = False
                                 # gamma and phi entered as multiple arrays
                                 if type(gamma) == list and type(phi) == list:
                                     self.structure[lay][key].gamma = np.zeros(len(layer[key].polymorph))
                                     self.structure[lay][key].phi = np.zeros(len(layer[key].polymorph))
+                            if identifier[idx] not in self.mag_elements[key]:
+                                self.mag_elements[key].append(identifier[idx])
+
                             self.structure[lay][key].mag_scattering_factor[poly_idx] = sf[idx]
                             self.structure[lay][key].mag_density[poly_idx] = density[idx]
-                            self.mag_elements[key][poly_idx] = identifier[idx]
+
+
+
                             if type(gamma) == list and type(phi) == list:
                                 self.structure[lay][key].gamma = gamma[idx]
                                 self.structure[lay][key].phi = phi[idx]
@@ -687,6 +749,7 @@ class slab:
                     elif key == identifier[idx]:
                         self.structure[lay][identifier[idx]].mag_scattering_factor = [sf[idx]]
                         self.structure[lay][identifier[idx]].mag_density = np.array([density[idx]])
+
                         self.mag_elements[key] = [key]
                         # case where we want multiple different magnetization angles
                         # this implementation is for futur versions of code
@@ -696,7 +759,6 @@ class slab:
                         else:
                             self.structure[lay][key].gamma = gamma
                             self.structure[lay][key].phi = phi
-
 
 
 
@@ -720,9 +782,9 @@ class slab:
                 val = np.heaviside(offset-t, 1) * 2 - 1
 
         elif upward: # Upward error function
-            val = erf((t-offset)/rough/sqrt(2))
+            val = erf((t-offset)/rough/np.sqrt(2))
         else:  # Downward error function
-            val = erf((offset-t) / rough / sqrt(2))
+            val = erf((offset-t) / rough / np.sqrt(2))
 
         return val
 
@@ -733,6 +795,7 @@ class slab:
                  density - structural density array in mol/cm^3
                  mag_density - magnetic density array in mol/cm^3
         """
+
         next_density = 0  # initialization required for algorithm
         n = len(self.structure)  # number of layers
         thickness = np.array([])  # thickness array
@@ -740,31 +803,39 @@ class slab:
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
         density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
 
+
         # Pre-initialized density_poly array
         for ele in list(self.poly_elements.keys()):
             density_struct.pop(ele)
             density_poly[ele] = {k: np.array([]) for k in self.poly_elements[ele]}
 
         # Pre-initializes density_mag array
+
         for ele in list(self.mag_elements.keys()):
             density_mag[ele] = {k: np.array([]) for k in self.mag_elements[ele]}
+
+
 
         struct_keys = list(density_struct.keys()) # retrieves structure keys
         poly_keys = list(self.poly_elements.keys())  # retrieves polymorphous keys
         mag_keys = list(self.mag_elements.keys())  # retrieves magnetic keys
 
-        # Initializing thickness array
-        transition = [0]  # array that contains thickness that slab transition occurs
-        thick = 0  # contains the total film thickness
+        # for an arbitrary size of elements
+        # note that this relies that all layers in the slab definition have the same number of elements!
+        num_ele = len(list(self.structure[0].keys()))  # assumes all layers have the same number of elements
+        transition = [[0] for i in range(num_ele)]  # assumes same number elements through entire sample
+        thick_array = np.array([0.0 for i in range(len(list(self.structure[0].keys())))])
 
-        # Find all the slab transitions and computes total thickness
-        for layer in range(1, n):
-            val = transition[layer-1] + list(self.structure[layer].values())[0].thickness
-            transition.append(val)
-            thick = thick + list(self.structure[layer].values())[0].thickness
+        for layer in range(1,n):  # loop over all layers
+            for i in range(num_ele):  # loop over all elements
+                val = transition[i][layer-1] + list(self.structure[layer].values())[i].thickness
 
-        #step = 0.05  # thickness step size
-        thickness = np.arange(-50,thick+15+step, step) # Creates thickness array
+                transition[i].append(val)
+                thick_array[i] = val
+
+        thick = max(thick_array)
+
+        thickness = np.arange(-25,thick+15+step, step) # Initializes the thickness array
 
         # Loop through elements in sample
         for ele in self.myelements:
@@ -779,10 +850,19 @@ class slab:
                 next_density = 0
                 position = 0
                 sigma = 0
+                position = 0
+                offset = 0
+                offset_list = []
 
-                # Loops through all layers
                 for layer in range(n):
-                    offset = transition[layer]
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]  # offset for new implementation
+                # Loops through all layers
+
+                for layer in range(n):
+                    offset = offset_list[layer]
+                    #offset = transition[layer]
 
                     # Element is found in the current layer (ignore linked roughness)
                     if ele in list(self.structure[layer].keys()):
@@ -790,8 +870,10 @@ class slab:
                         # saves scattering factor to be used in computation
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
+                            name = self.structure[layer][ele].scattering_factor
+                            #self.eShift[name] = 0
 
-                        position = self.structure[layer][ele].position  # position of element
+
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
 
                         current_density = self.structure[layer][ele].density  # current density
@@ -817,7 +899,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
-                            if self.structure[layer+1][ele].linked_roughness:  # roughness is NOT linked to the previous site
+                            if self.structure[layer+1][ele].linked_roughness != False:  # roughness is NOT linked to the previous site
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:  # roughness is linked to the previous site
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -832,8 +914,8 @@ class slab:
                         const = (next_density-current_density)/2
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         density_struct[ele] = density_struct[ele] + const * erf_func
-                        density_struct[ele][density_struct[ele]<0] = 0
 
+                density_struct[ele][density_struct[ele] < 0] = 0
             # Polymorph element
             pn=0
             if ele in poly_keys:
@@ -858,10 +940,15 @@ class slab:
 
             # Polymorphous elements
             if ele in poly_keys:
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]
 
                 for layer in range(n): # loops through all layers
+                    offset = offset_list[layer]  # offset for new implementation
+                    #offset = transition[layer]
 
-                    offset = transition[layer]
                     # Element found in current layer
                     if ele in list(self.structure[layer].keys()):
 
@@ -890,7 +977,8 @@ class slab:
                             # saves scattering factor of polymorphs
                             if ele not in self.find_sf[0]:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
-
+                                name = self.structure[layer][ele].scattering_factor[po]
+                                #self.eShift[name] = 0
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -904,7 +992,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness:
+                            if self.structure[layer+1][ele].linked_roughness != False:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -931,6 +1019,7 @@ class slab:
 
             pm=0
             if ele in mag_keys:
+
                 # initialization of magnetization density dictionary
                 layer = 0
                 not_found = True
@@ -948,8 +1037,15 @@ class slab:
 
             # Magnetic elements
             if ele in mag_keys:
+                for layer in range(n):
+                    if ele in list(self.structure[layer].keys()):
+                        position = self.structure[layer][ele].position  # position of element
+                        offset_list = transition[position]
+
                 for layer in range(n):  # loops through all layers
-                    offset = transition[layer]
+                    #offset = transition[layer]
+                    offset = offset_list[layer]  # offset for new implementation
+
                     # Element found in current layer
                     if ele in list(self.structure[layer].keys()):
                         position = self.structure[layer][ele].position  # position of element
@@ -972,15 +1068,23 @@ class slab:
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         const = (next_density - current_density) / 2
 
-                        ma = 0
+                        #ma = 0
                         for mag in list(density_mag[ele].keys()):
-
+                            ma = list(self.structure[layer][ele].polymorph).index(mag)
                             # finds magnetic scattering factors
                             if mag not in self.find_sf[1]:
-                                self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
+                                mag_sf = self.structure[layer][ele].mag_scattering_factor[ma]
+                                my_check = ['',0,'0']
+
+                                if mag_sf not in my_check:
+                                    self.find_sf[1][mag] = self.structure[layer][ele].mag_scattering_factor[ma]
+                                    name = self.structure[layer][ele].mag_scattering_factor[ma]
+
+
                             # Density normalization
+
                             density_mag[ele][mag] = density_mag[ele][mag] + (const[ma] * erf_func + begin * current_density[ma])
-                            ma = ma + 1
+                            #ma = ma + 1
 
                     else:  # Element not found in current layer
 
@@ -989,7 +1093,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness:
+                            if self.structure[layer+1][ele].linked_roughness != False:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1006,6 +1110,7 @@ class slab:
                         # Loops through all the polymorphs of the selected element
                         ma = 0
                         for mag in list(density_mag[ele].keys()):
+
                             # Density normalization
                             density_mag[ele][mag] = density_mag[ele][mag] + const[ma] * erf_func
                             density_mag[ele][mag][density_mag[ele][mag]<0] = 0
@@ -1027,7 +1132,19 @@ class slab:
         self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
 
-    def plot_density_profile(self, fig=1):
+    def _set_form_factors(self, element, ff, mag=False):
+        """
+        Purpose: Set the form factor
+        :param element: Symbol or identifier of the form factor to be set
+        :param ff: form factor value
+        :param mag: Boolean to determine if magnetic form factor or not
+        """
+        if not mag:
+            self.find_sf[0][element] = ff
+        else:
+            self.find_sf[1][element] = ff
+
+    def plot_density_profile(self, fig=1, save=False, dir='Plot_Scans'):
         thickness, density, density_magnetic = self.density_profile()
         val = list(density.values())
         mag_val = list(density_magnetic.values())
@@ -1055,13 +1172,18 @@ class slab:
         for key in list(density_magnetic.keys()):
             my_legend.append('Mag: ' + key)
 
-        plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
+        plt.legend(my_legend)
+        #plt.legend(my_legend, loc='center left', bbox_to_anchor=(1.02, 0.5))
         plt.xlabel('Thickness (Angstrom)')
         plt.ylabel('Density (mol/cm^3)')
 
+        if save:
+            saveto = dir + '/Density_Profile.png'
+            plt.savefig(saveto)
 
 
-    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1):
+
+    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1):
 
         """
         Purpose: Computes the reflectivity
@@ -1070,12 +1192,14 @@ class slab:
         :param qf: End momentum transfer
         :param precision: Precision value
         :param s_min: Minimum step size (None indicates using default value)
+        :param bShift: float containing the background shift value
+        :param sFactor: float containing the scaling factor value
         :return:
             qz - momentum transfer
             R1 - reflectivity
 
         """
-        # initialize the reflectivity array
+
 
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
@@ -1084,59 +1208,59 @@ class slab:
         # requires angle for reflectivity computation and minimum slab thickness
         #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
         #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-
         thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
 
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
+
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            sf[e] = find_form_factor(self.find_sf[0][e], E, False)
+            dE = float(self.eShift[self.find_sf[0][e]])
+            scale = float(self.ff_scale[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            sfm[em] = find_form_factor(self.find_sf[1][em],E,True)
+            dE = float(self.mag_eShift[self.find_sf[1][em]])
+            scale = float(self.ffm_scale[self.find_sf[1][em]])
+            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
 
-
         # definition as described in Lott Dieter Thesis
-        n = 1 + np.vectorize(complex)(-delta, beta)
-        #n = 1 - delta + 1j*beta
-        #epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
+        n = 1 + np.vectorize(complex)(-delta, beta)  # index of refraction
         epsilon = n**2
-        #Q = np.vectorize(complex)(delta, beta)
+
+        # magneto-optical constant as defined in Lott Dieter Thesis
         Q = np.vectorize(complex)(beta_m, delta_m)
-        #Q = beta_m + 1j*delta_m
         epsilon_mag = Q*epsilon*2*(-1)
 
-        my_slabs = ALS(epsilon.real, epsilon_mag.real, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all numbers to integers
-
-        #plt.figure()
-        #plt.plot(thickness[my_slabs], epsilon.real[my_slabs], '.')
-        #plt.legend([len(my_slabs)-1])
-        #plt.show()
 
         my_slabs = my_slabs[1:]  # removes first element
 
 
         m = len(my_slabs)  # number of slabs
-        #m = len(epsilon)
-        A =pr.Generate_structure(m)  # creates object for reflectivity computation
+        A =pr.Generate_structure(m)  # creates Pythonreflectivity object class
+
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
         layer = 0
         gamma = 90  # pre-initialize magnetization direction
         phi = 90
 
+        # loops through each layer setting the dielectric matrix
+        # This function will need to be altered for newer version of PythonReflectivity
         for m_i in my_slabs:
 
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
             eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
+            #chi = (chi_array[m_i]+ chi_array[m_j])/2
             eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+
 
             # Determines the magnetization direction of the first layer
             if layer == 0:
@@ -1146,15 +1270,19 @@ class slab:
                             gamma = self.structure[0][ele].gamma
                             phi = self.structure[0][ele].phi
 
-
+            # Need to redo this
             # Determines the magnetization direction of the other layers
-            if self.transition[layer]<=thickness[m_j] and layer<len(self.transition)-1:
+            temp_list = [self.transition[i][layer] for i in range(len(self.transition))]
+            transition = max(temp_list)
+
+            if transition<=thickness[m_j] and layer<len(self.transition[0])-1:
                 layer = layer + 1
                 if self.layer_magnetized[layer]:
                     for ele in self.structure[layer].keys():
-                        if self.structure[layer][ele].mag_scattering_factor != None:
+                        if self.structure[layer][ele].mag_scattering_factor is not None:
                             gamma = self.structure[layer][ele].gamma
                             phi = self.structure[layer][ele].phi
+
 
             # sets the magnetization direction based on the input angles
             if self.layer_magnetized[layer]:
@@ -1168,9 +1296,12 @@ class slab:
                 else:
                     raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
 
-                A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
+                #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
+                A[idx].seteps([eps,eps,eps,eps_mag])
             else:
-                A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+
+                #A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+                A[idx].seteps([eps,eps,eps,0])
 
 
             if idx != 0:
@@ -1182,9 +1313,8 @@ class slab:
             idx = idx + 1
 
 
-        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
-
-        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+        Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
+        Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-20)  # Computes the reflectivity
         R = dict()
         """
         # Used to demonstrate how sample is being segmented
@@ -1192,25 +1322,26 @@ class slab:
         plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
         """
         if len(Rtemp) == 2:
-            R['S'] = Rtemp[0]  # s-polarized light
-            R['P'] = Rtemp[1]  # p-polarized light
-            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])  # Asymmetry linear polarized
-            R['LC'] = np.zeros(len(Rtemp[0]))  # Left circular
-            R['RC'] = np.zeros(len(Rtemp[0]))  # right circular
+            R['S'] = Rtemp[0]*sFactor + bShift  # s-polarized light
+            R['P'] = Rtemp[1]*sFactor + bShift   # p-polarized light
+            R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)  # Asymmetry linear polarized
+            R['LC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # Left circular
+            R['RC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # right circular
             R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized
-        elif len(Rtemp)==4:
-            R['S'] = Rtemp[0]
-            R['P'] = Rtemp[1]
-            R['AL'] = (Rtemp[0]-Rtemp[1])/(Rtemp[0]+Rtemp[1])
-            R['LC'] = Rtemp[2]
-            R['RC'] = Rtemp[3]
-            R['AC'] = (Rtemp[2]-Rtemp[3])/(Rtemp[2]+Rtemp[3])
+        elif len(Rtemp) == 4:
+            R['S'] = Rtemp[0]*sFactor + bShift
+            R['P'] = Rtemp[1]*sFactor + bShift
+            R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)
+            R['LC'] = Rtemp[2]*sFactor + bShift
+            R['RC'] = Rtemp[3]*sFactor + bShift
+            R['AC'] = sFactor*(Rtemp[2]-Rtemp[3])/(sFactor*(Rtemp[2]+Rtemp[3])+2*bShift)
+
         else:
             raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=1e-6,s_min = 0.1):
+    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1244,14 +1375,22 @@ class slab:
         # Magnetic Scattering Factor
         sfm = dict()
         sf = dict()
+
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            sf[e] = find_form_factor(self.find_sf[0][e], energy, False)
+            dE = float(self.eShift[self.find_sf[0][e]])
+            scale = float(self.ff_scale[self.find_sf[0][e]])
+            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
+        # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy, True)
+            dE = float(self.mag_eShift[self.find_sf[1][em]])
+            scale = float(self.ffm_scale[self.find_sf[1][em]])
+            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+
 
         d_len = len(thickness)
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+
         delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
 
 
@@ -1266,420 +1405,347 @@ class slab:
         Q = beta_m + 1j*delta_m  # magneto-optical constant
         epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
-        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].real, precision=1e-6)[1:].astype(int) for E in range(len(energy))]
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
 
         # initializes the object for reflectivity computation using list comprehension
+
         Alist = [generate_structure(thickness, self.structure, all_slabs[s], epsilon[s], epsilon_mag[s], self.layer_magnetized, self.transition) for s in range(len(all_slabs))]
         wavelength = h * c / (energy * 1e-10)
         # reflectivity computation using list comprehension
-        R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E)) for E in range(len(all_slabs))]
+
+        R = [energy_reflectivity(Alist[E],Theta, wavelength[E], R, int(E), backS=bShift, scaleF=sFactor) for E in range(len(all_slabs))]
+
 
         R = R[0]
 
         return energy, R
 
-    def energy_scan_multi(self, Theta, energy, precision=0.5,s_min = 0.1):
+    def energy_shift(self):
         """
-                        Purpose: Computes the reflectivity
-                        :param E: Energy of reflectivity scan (eV)
-                        :param qi: Starting momentum transfer
-                        :param qf: End momentum transfer
-                        :param precision: Precision value
-                        :param s_min: Minimum step size (None indicates using default value)
-                        :return:
-                            qz - momentum transfer
-                            R1 - reflectivity
+        Purpose: Initialize the energy shift and form factor scaling
+        """
 
-                        """
+        self.density_profile()
+        #self.eShift = dict()
+        #self.mag_eShift = dict()
 
-        h = 4.135667696e-15  # Plank's constant eV*s
-        c = 2.99792458e8  # speed of light m/s
+        key_delete = []
+        mag_key_delete = []
+        for e in self.find_sf[0].keys():
+            if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
+                key_delete.append(e)
+            #else:
+            #    self.eShift[self.find_sf[0][e]] = 0
+            #    self.ff_scale[self.find_sf[0][e]] = 1
 
-        # wavelength = 19.366478131833802
-        # requires angle for reflectivity computation and minimum slab thickness
-        # theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
-        # theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
+        for em in self.find_sf[1].keys():
+            if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
+                mag_key_delete.append(em)
+            #else:
+            #    self.mag_eShift[self.find_sf[1][em]] = 0
+            #    self.ffm_scale[self.find_sf[1][em]] = 1
 
-        thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
+        for key in key_delete:
+            del self.find_sf[0][key]
+        for key in mag_key_delete:
+            del  self.find_sf[1][key]
 
-        fsf = self.find_sf
-        st = self.structure
-        lm = self.layer_magnetized
-        tran = self.transition
+        for ele in self.mag_elements.keys():
+            for key in key_delete:
+                if key in self.mag_elements[ele]:
+                    self.mag_elements[ele].remove(key)
 
 
 
-        args = [thickness, density, density_magnetic, fsf, st, lm, tran, Theta, precision]
-        prod = partial(multi_energy_calc, args)
-        with multiprocessing.Pool(8) as pool:
-            #result_list = pool.starmap_async(prod, energy)
-            result_list = pool.map_async(prod, args).get()
-        print(result_list)
-        pool.join()
-        pool.close()
+    def getRoughness(self, layer, identifier):
+        """
+        Purpose: Retrieve roughness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Roughness as a float value
+        """
+        # gets the roughness of a select element
 
-        return energy, result_list
+        keys = list(self.structure[layer].keys())
+        sigma = 2
+        if identifier in keys:
+            sigma = self.structure[layer][identifier].roughness
 
-def multi_energy_calc(args , E):
-    thickness = args[0]
-    density = args[1]
-    density_magnetic = args[2]
-    find_sf = args[3]
-    structure = args[4]
-    layer_magnetized = args[5]
-    transition = args[6]
-    theta = args[7]
-    prec = args[8]
+        return sigma
 
-    h = 4.135667696e-15  # Plank's constant eV*s
-    c = 2.99792458e8  # speed of light m/s
 
-    wavelength = h * c / (E * 1e-10)  # wavelength m
-    sf = dict()  # form factors of non-magnetic components
-    sfm = dict()  # form factors of magnetic components
 
-    # Non-Magnetic Scattering Factor
-    for e in find_sf[0].keys():
-        sf[e] = find_form_factor(find_sf[0][e], E, False)
-    # Magnetic Scattering Factor
-    for em in find_sf[1].keys():
-        sfm[em] = find_form_factor(find_sf[1][em], E, True)
+    def setRoughness(self, layer, identifier, sigma):
+        """
+        Purpose: Sets roughness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param sigma: Roughness value of type float
+        """
+        # sets the roughness of a certain element in a certain layer
+        keys = list(self.structure[layer].keys())
 
-    delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
-    delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)  # calculates dielectric constant for magnetic component
+        if identifier in keys:
+            self.structure[layer][identifier].roughness = sigma
+        elif identifier.upper() == 'ALL':
+            for key in keys:
+                self.structure[layer][key].roughness = sigma
 
-    # definition as described in Lott Dieter Thesis
-    n = 1 + np.vectorize(complex)(-delta, beta)
-    # epsilon = 1 + np.vectorize(complex)(-2*delta, 2*beta)
-    epsilon = n ** 2
-    # Q = np.vectorize(complex)(delta, beta)
-    Q = np.vectorize(complex)(beta_m, delta_m)
-    epsilon_mag = Q * epsilon * 2 * (-1)
+    def getDensity(self, layer, identifier):
+        """
+        Purpose: Retrieve density of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Density as a float value
+        """
 
-    my_slabs = layer_segmentation(thickness, epsilon, epsilon_mag, prec)  # computes the layer segmentation
+        keys = list(self.structure[layer].keys())
+        density = 0.028
+        if identifier in keys:
+            density = self.structure[layer][identifier].density
 
-    m = len(my_slabs)  # number of slabs
-    A = pr.Generate_structure(m)  # creates object for reflectivity computation
-    m_j = 0  # previous slab
-    idx = 0  # keeps track of current layer
-    layer = 0
-    gamma = 90  # pre-initialize magnetization direction
-    phi = 90
+        return density
 
-    for m_i in my_slabs:
-        d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-        eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
-        eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
 
-        # Determines the magnetization direction of the first layer
-        if layer == 0:
-            if layer_magnetized[0]:
-                for ele in structure[layer].keys():
-                    if structure[0][ele].mag_scattering_factor != None:
-                        gamma = structure[0][ele].gamma
-                        phi = structure[0][ele].phi
 
-        # Determines the magnetization direction of the other layers
-        if transition[layer] <= thickness[m_j] and layer < len(transition) - 1:
-            layer = layer + 1
-            if layer_magnetized[layer]:
-                for ele in structure[layer].keys():
-                    if structure[layer][ele].mag_scattering_factor != None:
-                        gamma = structure[layer][ele].gamma
-                        phi = structure[layer][ele].phi
+    def setDensity(self, layer, identifier, density):
+        """
+        Purpose: Sets density of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param density: Density as float value
+        """
+        # sets the roughness of a certain element in a certain layer
+        keys = list(self.structure[layer].keys())
 
-        # sets the magnetization direction based on the input angles
-        if layer_magnetized[layer]:
+        if identifier in keys:
+            self.structure[layer][identifier].density = density
+        elif identifier.upper() == 'ALL':
+            for key in keys:
+                self.structure[layer][key].roughness = density
 
-            if gamma == 90 and phi == 90:
-                A[idx].setmag('y')
-            elif gamma == 0 and phi == 90:
-                A[idx].setmag('x')
-            elif gamma == 0 and phi == 0:
-                A[idx].setmag('z')
-            else:
-                raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
 
-            A[idx].seteps([eps, eps, eps, eps_mag])  # sets dielectric tensor for magnetic layer
+
+    def setVariationConstant(self, layer, symbol, identifier, val):
+        """
+        Purpose: Sets element variation of a certain layer to a constant value
+        :param layer: Layer as an interger type
+        :param symbol: Symbol of element or dummy variable
+        :param identifier: Element variation identifier
+        :param val: Constant value as float type
+        :return:
+        """
+
+        # for now this will only work for 3 element variations
+        keys = list(self.structure[layer].keys())
+
+        # loops through elements in the layer until symbol is found
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) == 3:
+                # determines the index of the polymorph that is not identifer 1 or 2
+                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier]  # indices of non-desired element variation
+                idx = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] == identifier]  # index of desired element variation
+
+                my_total = sum(list(self.structure[layer][symbol].poly_ratio[idx_no] ))  # total value of non-desired element variation values
+
+                # sets non-constant element variation ratio's appropriately
+                for i in idx_no:
+                    r = self.structure[layer][symbol].poly_ratio[i]
+                    self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
+
+                self.structure[layer][symbol].poly_ratio[idx] = val  # sets constant ratio value
+
+    def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
+        """
+        Purpose: Sets the ratio between two element variation to be constant
+        :param layer: Layer as integer type
+        :param symbol: Symbol of element or dummy variable
+        :param identifier1: Element variation identifier
+        :param identifier2: Element variation identifier
+        :param ratio: Constant ratio value as float type
+        """
+        # ratio = identifier1/identifier2
+        # for now this will only work for 3 element variations
+        keys = list(self.structure[layer].keys())
+
+        # loops through all elements in layer until symbol is found
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) == 3:
+                # determines the index of the polymorph that is not identifer 1 or 2
+                idx_no = [i for i in range(3) if self.structure[layer][symbol].polymorph[i] != identifier1 and
+                       self.structure[layer][symbol].polymorph[i] != identifier2]
+
+                val = self.structure[layer][symbol].poly_ratio[idx_no][0]
+
+                idx1 = list(self.structure[layer][symbol].polymorph).index(identifier1)
+                idx2 = list(self.structure[layer][symbol].polymorph).index(identifier2)
+
+                self.structure[layer][symbol].poly_ratio[idx1] = (1-val)/(ratio+1)
+                self.structure[layer][symbol].poly_ratio[idx2] = ratio*(1-val)/(ratio+1)
+
+
+    def getThickness(self, layer, identifier):
+        """
+        Purpose: Retrieve thickness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Thickness as a float value
+        """
+        # gets the thickness of a certain element in a certain layer
+        keys = list(self.structure[layer].keys())
+        d = 2
+        if identifier in keys:
+            d = self.structure[layer][identifier].thickness
+        elif identifier.upper() == 'ALL':
+            d = self.structure[layer][keys[0]].thickness
+
+        return d
+
+    def getTotalThickness(self,start_layer,end_layer, identifier):
+        """
+        Purpose: Retrieves total thickness from start_layer to end_layer for specified element or dummy variable
+        :param start_layer: Index of layer closest to substrate
+        :param end_layer: Index of layer furthest from substrate
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Total thickness as a float value
+        """
+        # gets the total thickness from start_layer to end_layer of a specific element (identifier)
+        d = 0
+        for i in range(start_layer, end_layer+1,1):
+            keys = list(self.structure[i].keys())
+
+            if identifier in keys:
+                d = d + self.structure[i][identifier].thickness
+            elif identifier.upper() == 'ALL':  # case where we want the total thickness of all elements
+                d = d + self.structure[i][keys[0]].thickness
+
+        return d
+
+    def setThickness(self,layer, identifier, d):
+        """
+        Purpose: Sets thickness of a specific layer and element
+        :param layer: Layer of integer value
+        :param identifier: String containing element symbol or dummy variable symbol
+        :return: Thickness as a float value
+        """
+        keys = list(self.structure[layer].keys())
+
+        if identifier in keys:
+            self.structure[layer][identifier].thickness = d
+        elif identifier.upper() == 'ALL':
+            for key in keys:
+                self.structure[layer][key].thickness = d
+
+    def setCombinedThickness(self, layer_start, layer_end, identifier, d):
+        """
+        Purpose: Sets total thickness from start_layer to end_layer for specified element or dummy variable
+        :param start_layer: Index of layer closest to substrate
+        :param end_layer: Index of layer furthest from substrate
+        :param identifier: String containing element symbol or dummy variable symbol
+        :param d: Total thickness value as float type
+        """
+        # makes sure that the combine thickness from layer_start to layer_end is constant (d)
+        import copy
+        dprime = 0
+        for i in range(layer_start, layer_end + 1, 1):
+            keys = list(self.structure[i].keys())
+            if identifier in keys:
+                dprime = dprime + self.structure[i][identifier].thickness
+            elif identifier.upper() == 'ALL':
+                dprime = dprime + self.structure[i][keys[0]].thickness
+
+
+        for i in range(layer_start, layer_end+1, 1):
+            keys = list(self.structure[i].keys())
+            if identifier in keys:
+                val = copy.deepcopy(self.structure[i][identifier].thickness)
+                self.structure[i][identifier].thickness = val*dprime/d
+            elif identifier.upper() == 'ALL':
+                val = copy.deepcopy(self.structure[i][keys[0]].thickness)
+                for key in keys:
+                    self.structure[i][key].thickness = val * d / dprime
+
+    def getMagDensity(self, layer,symbol,variation):
+        """
+        Purpose: Retrieves the magnetic density
+        :param layer: Layer of integer type
+        :param symbol: Symbol of element or dummy variable
+        :param variation: Element variation identifier, if not an element variation set this to the same as symbol
+        :return mag_density: Magnetic density as float type
+        """
+        # retrieve the magnetic density
+        # if there is no element variation just input the same variable
+
+        polymorph = self.structure[layer][symbol].polymorph
+        if len(polymorph) != 0:
+            idx = [i for i in range(len(polymorph)) if variation == polymorph[i]]
+            mag_density = self.structure[layer][symbol].mag_density[idx]
+
+            #if type(mag_density) is list or type(mag_density) is np.ndarray:
+            #    mag_density = mag_density
         else:
-            A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
+            mag_density = self.structure[layer][symbol].mag_density[0]
 
-        if idx != 0:
-            A[idx].setd(d)  # sets thickness of layer if and only if not substrate layer
+        return mag_density
 
-        # move onto the next layer
-        m_j = m_i
-        idx = idx + 1
+    def setMagDensity(self, layer, symbol, variation, density):
+        """
+        Purpose: Sets the magnetic density
+        :param layer: Layer of integer type
+        :param symbol: Symbol of element or dummy variable
+        :param variation: Element variation identifier, if not an element variation set this to the same as symbol
+        :param density: Magnetic density value of float type
+        """
+        # set the magnetic density
+        polymorph = self.structure[layer][symbol].polymorph
+        if len(polymorph) != 0:
+            idx = [i for i in range(len(polymorph)) if variation == polymorph[i]]
 
-    # Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / pi  # initial angle
+            self.structure[layer][symbol].mag_density[idx] = float(density)
 
-    R = pr.Reflectivity(A, theta, wavelength, MagneticCutoff=1e-10)  # Computes the reflectivity
+        else:
+            self.structure[layer][symbol].mag_density[0] = float(density)
 
-    return R
+
+    def getEshift(self,ffName):
+        """
+        Purpose: Retrieves the energy shift of specified non-magnetic form factor
+        :param ffName: form factor name without .ff extension
+        :return: Form factor energy shift as float type
+        """
+        # retieve the energy shift
+        return self.eShift[ffName]
+
+    def setEshift(self, ffName, dE):
+        """
+        Purpose: Set the non-magnetic form factor energy shift
+        :param ffName: Form factor name without .ff extension
+        :param dE: Energy shift as a float type
+        """
+        self.eShift[ffName] = dE
+
+    def getMagEshift(self,ffmName):
+        """
+        Purpose: Retrieves the energy shift of specified magnetic form factor
+        :param ffmName: form factor name without .ffm extension
+        :return: Magnetic form factor energy shift as float type
+        """
+        # retrieve the magnetic energy shift
+        return self.mag_eShift[ffmName]
+
+    def setMagEshift(self, ffmName, dE):
+        """
+        Purpose: Set magnetic form factor energy shift
+        :param ffmName: Magnetic form factor name without .ffm extension
+        :param dE: Energy shift as float type
+        """
+        # set the magnetic energy shift
+        self.mag_eShift[ffmName] = dE
+
 
 
 if __name__ == "__main__":
-    """
-    # Example 1: Simple sample creation
-    sample = slab(5)  # Initializing four layers
-    s = 0.1
-
-    # Substrate Layer
-    # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False,True,True])  # substrate layer
-    sample.polymorphous(0,'Ti',['Ti3+','Ti4+'], [0.25,0.75])
-
-    # First Layer
-    # Link: La-->La and O-->O
-    # * denotes optional parameter
-    sample.addlayer(1, 'LaMnO3', 25, roughness=1.5, link=[True,False,True])  # Film 1 on top of substrate
-    sample.polymorphous(1,'Mn',['Mn2+','Mn3+'], [0.9,0.1], sf=['Mn','Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [6.1,7.1], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-
-
-    sample.addlayer(2, 'LaMnO3',5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(2, 'Mn', ['Mn2+', 'Mn3+'], [0.1 , 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(2, ['Mn2+', 'Mn3+'], [1, 2], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-    sample.addlayer(3, 'LaMnO3', 5, roughness= 2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9], sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [0.5, 5], ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-    sample.addlayer(4, 'COC2', 5, roughness= 1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
-    """
-
-    """
-    # Example 2: Simple sample creation
-    sample = slab(6)  # Initializing four layers
-    s = 0.1
-
-    # Substrate Layer
-    # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, roughness=2, link=[False, True, True])  # substrate layer
-    sample.polymorphous(0, 'Ti', ['Ti3+', 'Ti4+'], [0.25, 0.75])
-
-    # First Layer
-    # Link: La-->La and O-->O
-    # * denotes optional parameter
-    sample.addlayer(1, 'LaMnO3', 25, roughness=1.5, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [0.9, 0.1],
-                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [6.1, 7.1],
-                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-    # Second Layer
-    # Link: La-->C and O-->C
-    sample.addlayer(2, 'LaAlO3', 16, density=5, roughness=2, link=[True, False, True])  # Film 2 on top film 1
-    sample.magnetization(2, 'Al', 5, 'Co')  # mag_type is preset to 'isotropic
-
-    sample.addlayer(3, 'LaMnO3', 5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9],
-                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [1, 2],
-                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-    sample.addlayer(4, 'LaMnO3', 5, roughness=2, link=[True, False, True])  # Film 1 on top of substrate
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [0.1, 0.9],
-                        sf=['Mn', 'Fe'])  # (Layer, Element, Polymorph Symbols, Ratios, Scattering Factor)
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0.5, 5],
-                         ['Ni', 'Co'])  # (Layer, Polymorph/Element, density, Scattering Factor, type*)
-
-    sample.addlayer(5, 'COC2', 5, roughness=1, density=0.5, link=[True, False, True])  # Film 1 on top of substrate
-
-    # Impurity on surface
-    # Impurity takes the form 'CCC'
-    # The exact implementation of this has not quite been determined yet
-    #sample.addlayer(3, 'CCC', 10, density=1) #  Density initialized to 5g/cm^3
-    hi
-    """
-
-
-    # Example 2: Simple sample creation
-    sample = slab(6)  # Initializing four layers
-    s = 0.1
-    mag_dense = 0.1
-    # Substrate Layer
-    # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, density = 5.120891853,roughness=2, link=[False, True, True])  # substrate layer
-    sample.addlayer(1, 'SrTiO3', 4, density=5.120891853, roughness=2, link=[False, True, True])  # substrate layer
-
-
-    sample.addlayer(2,'LaMnO3', 4, density = 6.8195658, roughness=2)
-    sample.polymorphous(2,'Mn', ['Mn2+','Mn3+'], [1,0], sf=['Mn', 'Fe'])
-    sample.magnetization(2, ['Mn2+','Mn3+'], [0,0],['Co','Ni'])
-
-    sample.addlayer(3, 'LaMnO3', 30, density = 6.8195658, roughness=2)
-    sample.polymorphous(3, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(3, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
-
-    sample.addlayer(4, 'LaMnO3', 4, density = 6.8195658, roughness=2)
-    sample.polymorphous(4, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(4, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
-
-    sample.addlayer(5, 'LaMnO3', 4, density=6.8195658, roughness=2)
-    sample.polymorphous(5, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(5, ['Mn2+', 'Mn3+'], [0, 0], ['Co', 'Ni'])
-
-    #sample.addlayer(4, 'CCC', 4, density = 0, roughness = 2)
-
-    """
-    result = sample.structure[2]
-
-    e = 'O'
-    print('STRUCTURE')
-    print('Name: ', result[e].name)
-    print('Scattering Factor: ', result[e].scattering_factor)
-    print('Stoichiometry: ',result[e].stoichiometry)
-    print('Polymorph: ',result[e].polymorph)
-    print('Polymorph Ratio : ', result[e].poly_ratio)
-    print('Link: ', sample.link)
-    print('')
-    print('MAGNETIZATION')
-    print('Scattering Factors: ', result[e].mag_scattering_factor)
-    print('Density: ', result[e].mag_density)
-    print('Phi: ', result[e].phi, ' degrees')
-    print('Theta: ', result[e].theta, ' degrees')
-    print('Position: ', result[e].position)
-
-    #  print(sample.myelements)
-    #  print(sample.poly_elements)
-    #print(sample.mag_elements)
-    
-    
-    # Example 2: Simple sample creation
-    sample = slab(2)  # Initializing four layers
-    s = 0.1
-    mag_dense = 0.1
-    # Substrate Layer
-    # Link: Ti-->Mn and O-->O
-    sample.addlayer(0, 'SrTiO3', 50, density=0, roughness=2, link=[False, True, True])  # substrate layer
-
-
-    sample.addlayer(1, 'LaMnO3', 30, density=6.8195658, roughness=2)
-    sample.polymorphous(1, 'Mn', ['Mn2+', 'Mn3+'], [1, 0], sf=['Mn', 'Fe'])
-    sample.magnetization(1, ['Mn2+', 'Mn3+'], [mag_dense, 0], ['Co', 'Ni'])
-    """
-
-    sample.plot_density_profile()
-    thickness, density, density_magnetic = sample.density_profile(step=0.1)
-
-    E = 642.2 # eV
-
-    elements = density.keys()
-
-    sf = dict()
-    elements_mag = density_magnetic.keys()
-    sfm = dict()
-
-    # Non-Magnetic Scattering Factor
-    for e in sample.find_sf[0].keys():
-        sf[e] = find_form_factor(sample.find_sf[0][e], E, False)
-    # Magnetic Scattering Factor
-    for em in sample.find_sf[1].keys():
-        sfm[em] = find_form_factor(sample.find_sf[1][em], E, True)
-
-    delta, beta = index_of_refraction(density, sf, E)
-
-    plt.figure(2)
-    plt.plot(thickness, delta, thickness, beta)
-    plt.suptitle('Optical Profile')
-    plt.xlabel('Thickness')
-    plt.ylabel('Profile')
-    plt.legend(['delta','beta'])
-
-    h = 4.1257e-15 # Plank's constant eV*s
-    c = 2.99792458e8 # speed of light m/s
-    y = h*c/(E*1e-10)  # wavelength m
-
-    F = np.loadtxt('test_example.txt')
-    qz = F[:,0]
-    p1 = 1e-5
-    p2 = 1e-6
-
-    qz, Rtemp =  sample.reflectivity(E, qz,precision=0,s_min=0.1)  # baseline
-    qz1, R1temp = sample.reflectivity(E, qz, precision = p1, s_min=0.1)
-    qz2, R2temp = sample.reflectivity(E, qz, precision=p2, s_min=0.1)
-
-    sample.reflectivity(E,qz, precision = p2, s_min=0.1)
-
-    start = time()
-    E, R = sample.energy_scan_multi(30,np.linspace(600,604,1500))
-    end= time()
-    print('Multi Energy Scan: ', end - start)
-
-    start = time()
-    E, R = sample.energy_scan(30, np.linspace(600, 604, 1500))
-    #print(R)
-    end = time()
-
-    print('Energy Scan: ', end-start)
-
-    #R = np.log10(Rtemp['LC'])
-    #R1 = np.log10(R1temp['LC'])
-    #R2 = np.log10(R2temp['LC'])
-
-    R = Rtemp['AC']
-    R1 = R1temp['AC']
-    R2 = R2temp['AC']
-
-
-    plt.figure(4)
-    plt.plot(qz, R, 'k-')
-    plt.plot(qz1, R1, 'b--')
-    plt.plot(qz2, R2, 'r--')
-    plt.legend(['baseline',str(p1), str(p2)])
-    #plt.yscale("log")
-    plt.xlabel('qz')
-    plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
-    plt.title('ReMagX vs. Python Script (800 eV)')
-
-    diff_1 = abs(R-R1)/abs(R+R1)
-    figure(5)
-    plt.plot(qz1, diff_1)
-    plt.suptitle("Difference in Spectra: " + str(p1))
-    plt.xlabel("Thickness (Angstroms)")
-    plt.ylabel("Percent Difference")
-
-    diff_2 = abs(R-R2)/abs(R+R2)
-    figure(6)
-    plt.plot(qz1, diff_2)
-    plt.suptitle("Difference in Spectra: " + str(p2))
-    plt.xlabel("Thickness (Angstrom)")
-    plt.ylabel("Percent Difference")
-
-
-    max1 = max(abs(R-R1))
-    max2 = max(abs(R-R2))
-    A1 = simpson(abs(R-R1), qz)
-    A2 = simpson(abs(R-R2), qz)
-
-    print()
-    print()
-    print(tabulate([[p1, max1, A1], [p2, max2, A2]], headers=['Precision', 'Maximum', 'Total Area']))
-
-
-
-    q = F[:,0]
-    I = F[:,1]
-    # I = np.log10(I)
-    plt.figure(55)
-    plt.plot(q,I,'k')
-    plt.plot(qz, R, 'r--')
-    plt.suptitle('Zak Formalism: Asymmetry 642.2 eV (rho=0.5) ')
-    plt.xlabel('qz')
-    plt.ylabel('Reflectivity ' + "$(log_{10}(R))$")
-    plt.legend(['ReMagX','Lucas'])
-
-    diff_3 = abs(I-R)/abs(I+R)
-    plt.figure(56)
-    plt.plot(q, diff_3, 'k')
-    plt.suptitle('Percent Difference: precision = ' + str(0))
-    plt.xlabel('qz')
-    plt.ylabel('Percent Difference')
-    plt.legend(['ReMagX', 'Lucas'])
-
-    #plt.show()
+    print('Nope')
 
 
 
