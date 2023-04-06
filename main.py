@@ -2,34 +2,111 @@ import numpy as np
 import data_structure as ds
 import matplotlib.pyplot as plt
 
+def getFF(name):
+    """
+    Purpose: Retrieve the form factor information from the database
+    :param name: Name of the form factor
+    :return: data - the data
+             source - the source of the form factor
+             updated - the date of when the form factor was last updated
+    """
+    import pickle
 
-def createFF(directory, filename, my_dict, source, date):
-    import os
+    # opens the current form factor database
+    with open('form_factor.pkl', 'rb') as f:
+        my_dict = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    my_dict.close()
+    data = ''
+    source = ''
+    updated = ''
+    if name not in my_dict.keys():
+        print(name, ' not in keys')
+    else:
+        data = my_dict[name]['Data']
+        source = my_dict[name]['Source']
+        updated = my_dict[name]['Updated']
 
+    return data, source, updated
 
-    f = os.path.join(directory, filename)
-    if not (filename.startswith('README')):
-        name = f.split('.')[0]
-        data = np.loadtxt(f)
-        my_dict[name]['Data'] = data  # stores the form factor data
-        my_dict[name]['Source'] = source  # stores the url of the source
-        my_dict[name]['Updated'] = date  # stores the date last updated
+def getFFM(name):
+    """
+    Purpose: Retrieve the form factor information from the database
+    :param name: Name of the form factor
+    :return: data - the data
+             source - the source of the form factor
+             updated - the date of when the form factor was last updated
+    """
+    import pickle
 
-    return my_dict
+    # opens the current form factor database
+    with open('form_factor_magnetic.pkl', 'rb') as f:
+        my_dict = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    my_dict.close()
 
-def createFFM(directory, filename, my_dict,source, date):
+    data = ''
+    source = ''
+    updated = ''
+    if name not in my_dict.keys():
+        print(name, ' not in keys')
+    else:
+        data = my_dict[name]['Data']
+        source = my_dict[name]['Source']
+        updated = my_dict[name]['Updated']
+
+    return data, source, updated
+
+def createFF(directory, name , source, date):
+    """
+    Purpose: Add a new or change form factor in form factor database
+    :param directory: Path to the desired form factor textfile
+    :param name: Desired name of form factor (e.g. A, Mn, Mn2+...)
+    :param source: Name of place the form factor was retrieved (e.g. The Center for X-ray Optics)
+    :param date: Date the change was made (entered as a sting)
+    """
     import os
     import pickle
 
-    f = os.path.join(directory, filename)
-    if not (filename.startswith('README')):
-        name = f.split('.')[0]
-        data = np.loadtxt(f)
-        my_dict[name]['Data'] = data  # stores the form factor data
-        my_dict[name]['Source'] = source  # stores the url of the source
-        my_dict[name]['Updated'] = date  # stores the date last updated
+    # opens the current form factor database
+    with open('form_factor.pkl', 'rb') as f:
+        my_dict = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    my_dict.close()
 
-    return my_dict
+    data = np.loadtxt(directory)
+
+    # includes the new form factor into the database
+    my_dict[name]['Data'] = data  # stores the form factor data
+    my_dict[name]['Source'] = source  # stores the url of the source
+    my_dict[name]['Updated'] = date  # stores the date last updated
+
+    with open('form_factor.pkl', 'wb') as handle:
+        pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def createFFM(directory, name ,source, date):
+    """
+        Purpose: Add a new or change form factor in form factor database
+        :param directory: Path to the desired form factor textfile
+        :param name: Desired name of form factor (e.g. A, Mn, Mn2+...)
+        :param source: Name of place the form factor was retrieved (e.g. The Center for X-ray Optics)
+        :param date: Date the change was made (entered as a sting)
+        """
+    import os
+    import pickle
+
+    # opens the current form factor database
+    with open('form_factor_magnetic.pkl', 'rb') as f:
+        my_dict = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
+    my_dict.close()
+
+    data = np.loadtxt(directory)
+
+    # includes the new form factor into the database
+    my_dict[name]['Data'] = data  # stores the form factor data
+    my_dict[name]['Source'] = source  # stores the url of the source
+    my_dict[name]['Updated'] = date  # stores the date last updated
+
+    with open('form_factor_magnetic.pkl', 'wb') as handle:
+        pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
 
