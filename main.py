@@ -1,3 +1,21 @@
+"""
+
+Library: main.py
+Version: 0.1
+Author: Lucas Korol
+Institution: University of Saskatchewan
+Last Updated: April 6, 2023
+Python: version 3.7
+
+Purpose: This script contains functions that are used to update the form factor database
+
+Imported Libraries
+
+numpy (version 1.21.4) - used for array manipulation
+
+Note - This python script is also used to test out function and analyze data
+"""
+
 import numpy as np
 import data_structure as ds
 import matplotlib.pyplot as plt
