@@ -545,6 +545,8 @@ class magneticWidget(QDialog):
         #lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
         mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
         m = len(self.mainWidget.structTableInfo)
+
+        # changes the magnetization direction for all layer
         for i in range(m):
             if mag == 0:
                 self.mainWidget.magDirection[i] = 'x'
@@ -7477,12 +7479,15 @@ class ReflectometryApp(QMainWindow):
         """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
+
         fname = self.fname.split('/')[-1]  # used to check file type
 
-        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
-            if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))  # look for form factors in directory
+        if self.fname.endswith('.h5') or self.fname.endswith('.all'):  # check for proper file extension
+            if self.fname.endswith('.h5') and self.fname != 'demo.h5':
 
+                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))  # look for form factors in directory
+        """
                 # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
                 self._sampleWidget.mag_ff = mag_names
@@ -7602,11 +7607,11 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Improper File Type")
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
-
+        """
     def _loadSample(self):
         """
-                Purpose: Load a new file or project workspace
-                """
+            Purpose: Load a new file or project workspace
+        """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
         fname = self.fname.split('/')[-1]  # used to check file type
@@ -7822,9 +7827,13 @@ class ReflectometryApp(QMainWindow):
         fname = filename.split('/')[-1]
 
         # when loading files I need to be able to scan the entire
-        if fname.endswith('.h5') or fname.endswith('.all'):
+        if filename.endswith('.h5') or filename.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
+                self._reflectivityWidget.data = self.data
+                self._reflectivityWidget.data_dict = self.data_dict
+                for scan in self.data:
+                    self._reflectivityWidget.whichScan.addItem(scan[2])
 
     def _loadReMagX(self):
         """

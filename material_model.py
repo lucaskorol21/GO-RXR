@@ -62,6 +62,7 @@ def _use_given_ff(directory):
     struct_names = []  # stores list of structural form factors
     mag_names = []  # stores list of magnetic form factors
 
+
     # loops through project directory for form factor files
     for file in os.listdir(directory):
         if file.endswith(".ff"):

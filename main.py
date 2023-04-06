@@ -15,6 +15,7 @@ numpy (version 1.21.4) - used for array manipulation
 
 Note - This python script is also used to test out function and analyze data
 """
+import os
 
 import numpy as np
 import data_structure as ds
@@ -312,9 +313,4 @@ if __name__ == '__main__':
     
 
     """
-    import pickle
-    with open('form_factor.pkl', 'rb') as f:
-        ff = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
-    f.close()
-
-    print(ff['Mn'])
+    print(os.getcwd())
