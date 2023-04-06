@@ -28,6 +28,7 @@ def getFF(name):
              source - the source of the form factor
              updated - the date of when the form factor was last updated
     """
+
     import pickle
 
     # opens the current form factor database
