@@ -4452,8 +4452,7 @@ class GlobalOptimizationWidget(QWidget):
         costButton.setFixedWidth(80)
         costButton.clicked.connect(self.calculateCost)
         self.costValue = QLineEdit('0')
-        self.costValue.setFixedWidth(50)
-        self.costValue.setFixedHeight(20)
+        self.costValue.setFixedWidth(150)
         costlayout = QHBoxLayout()
         costlayout.addWidget(costButton)
         costlayout.addWidget(self.costValue)
@@ -4887,137 +4886,129 @@ class GlobalOptimizationWidget(QWidget):
         sample = self.sample
         bounds = self.rWidget.bounds
         weights = self.rWidget.weights
-        scans = [self.selectedScans.currentText()]
+
+        scan = self.selectedScans.currentText()
+        idx = int(self.selectedScans.currentIndex())
         y_scale = self.isLogWidget.currentText()
         fun = 0
 
 
-        for i, scan in enumerate(scans):
-            name = scan
 
-            fun_val = 0
-            xbound = bounds[i]
-            weights = weights[i]
+        name = scan
 
-            background_shift = 0
-            scaling_factor = 1
-            data = self.rWidget.data_dict
-            if 'Angle' not in data[name].keys():
-                myDataScan = data[name]
-                myData = myDataScan['Data']
-                E = myDataScan['Energy']
-                pol = myDataScan['Polarization']
-                Rdat = np.array(myData[2])
+        fun_val = 0
+        xbound = bounds[idx]
+        weights = weights[idx]
 
-                qz = np.array(myData[0])
-                qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
-                Rsim = Rsim[pol]
+        background_shift = 0
+        scaling_factor = 1
+        data = self.rWidget.data_dict
+        if 'Angle' not in data[name].keys():
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            E = myDataScan['Energy']
+            pol = myDataScan['Polarization']
+            Rdat = np.array(myData[2])
 
-                j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
-                qz = qz[j]
-                if len(Rsim) != len(j):
-                    Rsim = Rsim[j]
-                if len(Rdat) != len(j):
-                    Rdat = Rdat[j]
-
-
-                if y_scale == 'log(x)':
-                    Rsim = np.log10(Rsim)
-                    Rdat = np.log10(Rdat)
-
-                elif y_scale == 'ln(x)':
-                    Rsim = np.log(Rsim)
-                    Rdat = np.log(Rdat)
-
-                elif y_scale == 'qz^4':
-                    Rsim = np.multiply(Rsim, np.power(qz, 4))
-                    Rdat = np.multiply(Rdat, np.power(qz, 4))
-
-                elif y_scale == 'x':
-                    pass
+            qz = np.array(myData[0])
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            Rsim = Rsim[pol]
 
 
 
-                m = 0
-                for b in range(len(xbound)):
-                    lw = xbound[b][0]
-                    up = xbound[b][1]
-                    w = weights[b]
 
-                    idx = [x for x in range(len(qz)) if
-                           qz[x] >= lw and qz[x] < up]  # determines index boundaries
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
 
-                    k = len(idx)
-                    m = m + k
-                    if len(idx) != 0:
-                        if self.objective == 'Chi-Square':
-                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
 
-                        elif self.objective == 'L1-Norm':
-                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
-                        elif self.objective == 'L2-Norm':
-                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+            elif y_scale == 'qz^4':
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
 
-                if m != 0:
-                    fun = fun + fun_val / m
-
-            else:
-                myDataScan = data[name]
-                myData = myDataScan['Data']
-                Theta = myDataScan['Angle']
-                Rdat = np.array(myData[2])
-                E = np.array(myData[3])
-                pol = myDataScan['Polarization']
-
-                E, Rsim = sample.energy_scan(Theta, E)
-                Rsim = Rsim[pol]
-
-                j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
-                E = E[j]
-                if len(Rsim) != len(j):
-                    Rsim = Rsim[j]
-                if len(Rdat) != len(j):
-                    Rdat = Rdat[j]
+            elif y_scale == 'x':
+                pass
 
 
-                if y_scale == 'log(x)':
-                    Rsim = np.log10(Rsim)
-                    Rdat = np.log10(Rdat)
 
-                elif y_scale == 'ln(x)':
-                    Rsim = np.log(Rsim)
-                    Rdat = np.log(Rdat)
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+                w = float(weights[b])
 
-                elif  y_scale == 'qz^4':
-                    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
-                    Rsim = np.multiply(Rsim, np.power(qz, 4))
-                    Rdat = np.multiply(Rdat, np.power(qz, 4))
+                idx = [x for x in range(len(qz)) if
+                       qz[x] >= lw and qz[x] < up]  # determines index boundaries
 
-                elif y_scale == 'x':
-                    pass
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    if self.objective == 'Chi-Square':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+
+                    elif self.objective == 'L1-Norm':
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif self.objective == 'L2-Norm':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+            if m != 0:
+                fun = fun + fun_val / m
+
+        else:
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            Theta = myDataScan['Angle']
+            Rdat = np.array(myData[2])
+            E = np.array(myData[3])
+            pol = myDataScan['Polarization']
+
+            E, Rsim = sample.energy_scan(Theta, E)
+            Rsim = Rsim[pol]
 
 
-                m = 0
-                for b in range(len(xbound)):
-                    lw = xbound[b][0]
-                    up = xbound[b][1]
-                    w = weights[b]
 
-                    idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
 
-                    k = len(idx)
-                    m = m + k
-                    if len(idx) != 0:
-                        if self.objective == 'Chi-Square':
-                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
-                        elif self.objective == 'L1-Norm':
-                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
-                        elif self.objective == 'L2-Norm':
-                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
 
-                if m != 0:
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
 
-                    fun = fun + fun_val / m
+            elif  y_scale == 'qz^4':
+                qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+            elif y_scale == 'x':
+                pass
+
+
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+                w = float(weights[b])
+
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    if self.objective == 'Chi-Square':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                    elif self.objective == 'L1-Norm':
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif self.objective == 'L2-Norm':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+            if m != 0:
+
+                fun = fun + fun_val / m
 
 
         self.costValue.setText(str(fun))
