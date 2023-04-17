@@ -7992,6 +7992,7 @@ class ReflectometryApp(QMainWindow):
         # save the sample information to the file
         ds.WriteSampleHDF5(self.fname, self.sample)
 
+
     def _importDataSet(self):
         """
         Purpose: import data from h5 filetype
