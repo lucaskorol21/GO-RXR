@@ -7983,6 +7983,7 @@ class ReflectometryApp(QMainWindow):
     def _saveSample(self):
         """
         Purpose: Save the sample information from the current project space
+
         """
         self.sample = self._sampleWidget._createSample()
         self._sampleWidget.sample = self.sample
