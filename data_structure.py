@@ -1753,6 +1753,8 @@ def ReadDataHDF5(fname):
 
     return data, data_dict, sim_dict
 
+
+
 def LoadDataHDF5(fname):
     """
     Purpose: Reads in the experimental and simulated data from hdf5 file and then plots spectrum chosen by user

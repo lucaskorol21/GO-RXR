@@ -7368,7 +7368,7 @@ class ReflectometryApp(QMainWindow):
         self.sample.energy_shift()
 
         # set the title
-        self.setWindowTitle('GO-RXR')
+        self.setWindowTitle('GO-RXR (version 0.1)')
 
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
