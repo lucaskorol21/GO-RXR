@@ -5357,7 +5357,7 @@ class GlobalOptimizationWidget(QWidget):
         self.changeFitParameters()
 
         # including scipt implementation
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         state = self.checkBox.checkState()
         use_script = False
         if not(problem) and state > 0:
@@ -5398,7 +5398,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: plot and compare the data, previous simulation, and new fit all in one graph
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script = False
         check = self.checkBox.checkState()
 
@@ -5782,7 +5782,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Run data fitting algorithms
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script = False
         if not(problem):
             use_script = True
@@ -8473,7 +8473,7 @@ class progressWidget(QWidget):
         """
 
         # script checker
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
 
         use_script=False
         if not(problem) and self.script_state:
@@ -8574,7 +8574,7 @@ class progressWidget(QWidget):
         """
         Purpose: plot the data and current iteration of the data fitting
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script=False
 
         if not(problem) and self.script_state:
@@ -8861,7 +8861,7 @@ class progressWidget(QWidget):
         """
         Purpose: plot the progress of the scans
         """
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         use_script=False
         if not(problem) and self.script_state:
             use_script=True
@@ -9147,7 +9147,7 @@ class progressWidget(QWidget):
         """
         Purpose: Data fitting update process
         """
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         use_script = False
         if not(problem):
             use_script=True
@@ -9562,11 +9562,11 @@ class scriptWidget(QDialog):
         Purpose: Checks the script and runs it if all checks passed
         """
         sample = self.sWidget._createSample()
-        my_script, problem = checkscript(sample)
+        my_script, problem, my_error = checkscript(sample)
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
-            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.setText("Error: " + my_error['Type'] + '\n' + 'Line: ' + str(my_error['Line']))
             messageBox.exec()
         else:
             sample = go.readScript(sample, my_script)
@@ -9586,11 +9586,11 @@ class scriptWidget(QDialog):
         Purpose: Checks the script
         """
 
-        my_script, problem = checkscript(self.sWidget._createSample())
+        my_script, problem, my_error = checkscript(self.sWidget._createSample())
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
-            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.setText("Error: " + my_error['Type'] + '\n' + 'Line: ' + str(my_error['Line']))
             messageBox.exec()
 
 
@@ -9672,12 +9672,18 @@ def checkbracket(myStr):
 def checkscript(sample):
     script = os.getcwd() + '/default_script.txt'
     my_script = list()
+    my_error = dict()
     with open(script, "r") as f:
+        my_line = 1
         for line in f.readlines():
             test = line.strip(' ')
             if test != "\n" and not(test.startswith('#')):
-                my_script.append(line.strip("\n").split('='))
+
+                my_script.append({'Executable': line.strip("\n").split('='), 'Line': my_line})
+                #my_script.append(line.strip("\n").split('='))
                 n = len(my_script)
+
+            my_line = my_line + 1
     f.close()
 
     my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant']
@@ -9688,17 +9694,22 @@ def checkscript(sample):
     problem = False
 
     # checks to make sure that all functions agree with what we expect
-    for line in my_script:
+    for this_line in my_script:
+
+        line = this_line['Executable']
+        my_line = this_line['Line']
         if len(line) == 1:
             function = line[0].split('(')[0].strip(' ')
 
             if not(problem):
                 problem = checkbracket(line[0])
-
+                my_error['Type'] = 'Unbalanced number of brackets'
+                my_error['Line'] = my_line
 
             if function.lower() not in my_function_1:
                 problem = True
-                print(1)
+                my_error['Type'] = 'function defined improperly'
+                my_error['Line'] = my_line
 
 
 
@@ -9713,51 +9724,65 @@ def checkscript(sample):
                 if function.lower() == 'setcombinedthickness':
                     if len(params) != 4:  # not expected number of arguments
                         problem = True
-                        print(2)
+                        my_error['Type'] = 'Unexpected number of arguments'
+                        my_error['Line'] = my_line
 
                     if not (params[0].isdigit()) and not (problem):  # first two arguments are not digits
                         problem = True
-                        print(3)
+                        my_error['Type'] = 'variable type'
+                        my_error['Line'] = my_line
 
                     else:
                         if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
                             problem = True
-                            print(4)
-
-                        start = int(params[0])
-                        end = int(params[1])
-
-                        if start > end:
-                            problem = True
-                            print(5)
-
-                        if start < 0:
-                            problem = True
-                            print(6)
-
-                        m = len(sample.structure)
+                            my_error['Type'] = 'variable type'
+                            my_error['Line'] = my_line
 
 
-                        if m - 1 < end:
-                            problem = True
-                            print(7)
 
-                        if not (problem):
+                        if not(problem):
+                            start = int(params[0])
+                            end = int(params[1])
+                            if start > end:
+                                problem = True
+                                my_error['Type'] = 'layer improperly defined'
+                                my_error['Line'] = my_line
 
-                            key = params[2].strip(' ')
+                            if start < 0:
+                                problem = True
+                                my_error['Type'] = 'start layer must be greater than 0'
+                                my_error['Line'] = my_line
 
-                            if key.lower() != 'all':
-                                for i in range(start, end + 1, 1):
-                                    if key not in list(sample.structure[i].keys()):
-                                        problem = True
+                            m = len(sample.structure)
+
+
+                            if m - 1 < end:
+                                problem = True
+                                my_error['Type'] = 'end layer larger than number of layers in sample'
+                                my_error['Line'] = my_line
+
+                            if not (problem):
+
+                                key = params[2].strip(' ')
+
+                                if key.lower() != 'all':
+                                    for i in range(start, end + 1, 1):
+                                        if key not in list(sample.structure[i].keys()):
+                                            problem = True
+                                            my_error['Type'] = key + ' not in layer ' + str(i)
+                                            my_error['Line'] = my_line
                 elif function.lower() in ['seteshift', 'setmageshift']:
                     ffName = params[0]
                     if function.lower() == 'seteshift':
                         if ffName not in list(sample.eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
                     else:
                         if ffName not in list(sample.mag_eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
 
                 elif function.lower() == 'setmagdensity':
                     m = len(sample.structure)
@@ -9765,6 +9790,8 @@ def checkscript(sample):
 
                     if not (layer.isdigit()):
                         problem = True
+                        my_error['Type'] = 'layer not entered as an integer'
+                        my_error['Line'] = my_line
                     else:
                         layer = int(layer)
 
@@ -9773,122 +9800,150 @@ def checkscript(sample):
                     if not problem:
                         if m - 1 < layer or layer < 0:
                             problem = True
+                            my_error['Type'] = 'layer improperly defined'
+                            my_error['Line'] = my_line
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
                                 problem = True
+                                my_error['Type'] = str(symbol) + ' not found in layer'
+                                my_error['Line'] = my_line
 
                             if symbol != var:
                                 if not (problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
+                                    my_error['Type'] = str(var) + ' not found in layer'
+                                    my_error['Line'] = my_line
                 elif function.lower() == 'setvariationconstant':
                     if len(params) != 4:
                         problem = True
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
 
                     m = len(sample.structure)
 
                     if int(params[0]) > m - 1 and not (problem):
                         problem = True
-                        print('31')
+                        my_error['Type'] = 'layer larger than number of defined layers'
+                        my_error['Line'] = my_line
 
                     if params[1].isdigit() or params[2].isdigit():
                         problem = True
-                        print('32')
+                        my_error['Type'] = 'values must be entered as integers'
+                        my_error['Line'] = my_line
 
                     if not (problem):
                         params[1] = params[1].strip(' ')
                         params[2] = params[2].strip(' ')
                         if params[1] not in list(sample.structure[int(params[0])].keys()):
                             problem = True
-                            print('33')
+                            my_error['Type'] = str(params[1]) + ' not in layer'
+                            my_error['Line'] = my_line
 
 
                         if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not (problem):
                             problem = True
-                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
-                            print(sample.structure[int(params[0])][params[1]].polymorph)
-                            print('34')
+                            my_error['Type'] = 'only three element variation can exist for this function'
+                            my_error['Line'] = my_line
 
                         if not (problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('35')
+                            my_error['Type'] = str(params[2]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
 
 
                 elif function.lower() == 'setratio':
                     if len(params) != 5:
                         problem = True
+                        my_error['Type'] = 'Unexpected number of parameters'
+                        my_error['Line'] = my_line
 
 
                     if not (params[0].isdigit()) and not(problem):
-                        print('30')
                         problem = True
+                        my_error['Type'] = 'variable type must be an integer'
+                        my_error['Line'] = my_line
 
                     m = len(sample.structure)
 
                     if int(params[0]) > m-1 and not(problem):
                         problem = True
-                        print('31')
+                        my_error['Type'] = 'layer is greater than total number of layers'
+                        my_error['Line'] = my_line
 
                     if params[1].isdigit() or params[2].isdigit() or params[3].isdigit():
                         problem = True
-                        print('32')
+                        my_error['Type'] = 'parameter types must be integers'
+                        my_error['Line'] = my_line
 
                     if not(problem):
 
                         if params[1] not in list(sample.structure[int(params[0])].keys()):
                             problem = True
-                            print('33')
+                            my_error['Type'] = str(params[1]) + ' not in layer'
+                            my_error['Line'] = my_line
+
                         if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not(problem):
                             problem=True
-                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
-                            print(sample.structure[int(params[0])][params[1]].polymorph)
-                            print('34')
+                            my_error['Type'] = 'this function only works with three element variations'
+                            my_error['Line'] = my_line
 
 
                         if not(problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('35')
+                            my_error['Type'] = str(params[2]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
                         if not(problem) and params[3] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('36')
+                            my_error['Type'] = str(params[3]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
 
                 else:
                     if len(params) != 3:
                         problem = True
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
 
 
 
                     if not(problem) and params[0].isdigit():
                         if '.' in params[0]:
                             problem = True
-                            print(9)
+                            my_error['Type'] = 'improper variable type'
+                            my_error['Line'] = my_line
                         layer = int(params[0])
 
                         if layer > len(sample.structure) - 1:
                             problem = True
-                            print(10)
+                            my_error['Type'] = 'layer greater than total number of layers'
+                            my_error['Line'] = my_line
 
                         if not (problem):
                             key = params[1].strip(' ')
                             if key not in list(sample.structure[layer].keys()) and key != 'all':
                                 problem = True
-                                print(11)
+                                my_error['Type'] = key + ' not found'
+                                my_error['Line'] = my_line
 
                     else:
                         problem = True
-                        print(12)
+                        my_error['Type'] = 'improper variable type'
+                        my_error['Line'] = my_line
 
 
         elif len(line) == 2:
             if not(problem):
                 problem = checkbracket(line[1])
+                my_error['Type'] = 'unbalanced brackets'
+                my_error['Line'] = my_line
 
             function = line[1].split('(')[0].strip(' ')
             if function.lower() not in my_function_2:
                 problem = True
-                print(13)
+                my_error['Type'] = 'function does not exist or spelled incorrectly'
+                my_error['Line'] = my_line
 
             if not(problem):
                 params = line[1].strip(' ').strip(function)
@@ -9901,47 +9956,59 @@ def checkscript(sample):
                 if function.lower() == 'gettotalthickness':
                     if len(params) != 3:  # not expected number of arguments
                         problem = True
-                        print(14)
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
                     if not(params[0].isdigit()) or not(params[1].isdigit()) and not(problem):  # first two arguments are not digits
                         problem = True
-                        print(15)
+                        my_error['Type'] = 'first two arguments must be digits'
+                        my_error['Line'] = my_line
                     else:
                         if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
                             problem=True
-                            print(16)
+                            my_error['Type'] = 'first two parameters cannot be floats'
+                            my_error['Line'] = my_line
 
-                        start = int(params[0])
-                        end = int(params[1])
-
-                        if start > end:
-                            problem = True
-                            print(17)
-                        if start < 0:
-                            problem = True
-                            print(18)
-
-                        m = len(sample.structure)
-
-                        if m-1 < end:
-                            problem = True
-                            print(19)
 
                         if not(problem):
-                            key = params[2].strip(' ')
-                            if key.lower() != 'all':
-                                for i in range(start,end+1,1):
-                                    if key not in list(sample.structure[i].keys()):
-                                        problem = True
-                                        print(20)
+                            start = int(params[0])
+                            end = int(params[1])
+                            if start > end:
+                                problem = True
+                                my_error['Type'] = 'start layer is larger than end layer'
+                                my_error['Line'] = my_line
+                            if start < 0:
+                                problem = True
+                                my_error['Type'] = 'start layer must be greater than 0'
+                                my_error['Line'] = my_line
+
+                            m = len(sample.structure)
+
+                            if m-1 < end:
+                                problem = True
+                                my_error['Type'] = 'end layer is too small'
+                                my_error['Line'] = my_line
+
+                            if not(problem):
+                                key = params[2].strip(' ')
+                                if key.lower() != 'all':
+                                    for i in range(start,end+1,1):
+                                        if key not in list(sample.structure[i].keys()):
+                                            problem = True
+                                            my_error['Type'] = str(key) + ' not found in layer'
+                                            my_error['Line'] = my_line
 
                 elif function.lower() in ['geteshift', 'getmageshift']:
                     ffName = params[0]
                     if function.lower() == 'geteshift':
                         if ffName not in list(sample.eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
                     else:
                         if ffName not in list(sample.mag_eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
 
                 elif function.lower() == 'getmagdensity':
                     m = len(sample.structure)
@@ -9949,7 +10016,8 @@ def checkscript(sample):
 
                     if not(layer.isdigit()):
                         problem = True
-                        print('d1')
+                        my_error['Type'] = 'layer must be an integer'
+                        my_error['Line'] = my_line
                     else:
                         layer = int(layer)
 
@@ -9958,45 +10026,55 @@ def checkscript(sample):
                     if not problem:
                         if m-1 < layer or layer < 0:
                             problem = True
-                            print('d2')
+                            my_error['Type'] = 'start and end layer improperly defined'
+                            my_error['Line'] = my_line
 
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
                                 problem = True
-                                print('d3')
+                                my_error['Type'] = str(symbol) + 'not found in layer'
+                                my_error['Line'] = my_line
 
                             if symbol != var:
                                 if not(problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
-                                    print('d4')
+                                    my_error['Type'] = str(var) + 'not found in layer'
+                                    my_error['Line'] = my_line
                 else:
                     if len(params) != 2:
                         problem = True
-                        print(21)
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
                     if not(problem) and params[0].isdigit():
                         if '.' in params[0]:
                             problem = True
-                            print(22)
+                            my_error['Type'] = 'layer must be an integer'
+                            my_error['Line'] = my_line
                         layer = int(params[0])
 
                         if layer > len(sample.structure)-1:
                             problem = True
-                            print(23)
+                            my_error['Type'] = 'layer larger than total number of layers'
+                            my_error['Line'] = my_line
 
                         if not(problem):
                             key = params[1].strip(' ')
                             if key.lower() != 'all':
                                 if key not in list(sample.structure[layer].keys()):
                                         problem = True
-                                        print(24)
+                                        my_error['Type'] = str(key) + ' not found in layer'
+                                        my_error['Line'] = my_line
                     else:
                         problem = True
-                        print(25)
+                        my_error['Type'] = 'layer must be integer type'
+                        my_error['Line'] = my_line
         else:
             problem = True
-            print(26)
+            my_error['Type'] = 'get function improperly defined'
+            my_error['Line'] = my_line
 
-    return my_script, problem
+
+    return my_script, problem, my_error
 
 def isfloat(num):
     try:
