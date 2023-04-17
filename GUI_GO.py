@@ -1,6 +1,6 @@
 """
 Library: GUI_GO
-Version: 0.1
+Version: 0.2
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -18,7 +18,7 @@ material_structure (version 0.1) - Part of the 'name' software package and is us
 
 global_optimization (version 0.1) - Part of the 'name' software package and is used to perform the global optimization
 
-data_structure (version 0.1) - Part of the 'name' software package that is used to saving and loading the workspace
+data_structure (version 0.2) - Part of the 'name' software package that is used to saving and loading the workspace
 
 numpy (version 1.21.4) - used for array manipulation
 
@@ -7358,7 +7358,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
-        self.version = '0.1'
+        self.version = '0.2'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -7369,7 +7369,8 @@ class ReflectometryApp(QMainWindow):
         self.sample.energy_shift()
 
         # set the title
-        self.setWindowTitle('GO-RXR (version 0.1)')
+        my_name = 'GO-RXR (version '+self.version +')'
+        self.setWindowTitle(my_name)
 
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
@@ -9682,7 +9683,6 @@ def checkscript(sample):
     my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant']
 
     my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness','geteshift', 'getmageshift', 'getmagdensity']
-
 
 
     problem = False

@@ -1,6 +1,6 @@
 """
 Library: data_structure
-Version: 0.1
+Version: 0.2
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -30,9 +30,13 @@ Warning: Once you've made a change to the HDF5 file format and you have made cha
 longer be able to read in older files. Be careful when working with the older files while testing as this
 may corrupt the files. I've done this a few times and lost precious work that I need to redo.
 
-Suggestion: Include a new data field called "version". This way we can keep track of the version type and then save
-and load the function appropriately without corrupting the files.
-
+Version: I've included a version attribute for the file for the HDF5 file types and automatically save the
+GO-RXR version. There is not current use for this, but there are numerous updates that will include different
+global optimization algorithms, sample definitions, and fitting parameters. This means that the loading and saving
+functions will need to change accordingly. However, there is a problem with the loading functions as a a workspace file
+that was saved using an older version of GO-RXR will not be able to load properly. So the idea behind the
+version attribute was to be able to identify which version this file was last saved so that the appropriate loading
+sequence can be done.
 """
 
 import matplotlib.pyplot as plt
@@ -1638,7 +1642,7 @@ def ReadSampleHDF5(fname):
     f = h5py.File(fname, 'r')
 
     S = f['Sample']
-    print(f.attrs['Version'])
+
     # Retieves the general information of the sample
     m = int(S.attrs['NumberLayers'])
     sample = slab(m)
