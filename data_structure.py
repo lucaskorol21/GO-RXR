@@ -413,7 +413,7 @@ def evaluate_parameters(parameters):
 
     return final_array
 
-def saveSimulationHDF5(fname, sim_dict):
+def saveSimulationHDF5(fname, sim_dict, version):
     """
     Purpose: Save the simulations
     :param fname: Filename to save the simulations to
@@ -421,7 +421,7 @@ def saveSimulationHDF5(fname, sim_dict):
     :return:
     """
     f = h5py.File(fname, 'a')  # create fname hdf5 file
-
+    f.attrs['Version'] = version
     simulated = f['Simulated_data']
 
     simR = simulated['Reflectivity_Scan']
@@ -461,10 +461,10 @@ def saveSimulationHDF5(fname, sim_dict):
             dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
             dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
 
-def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
+def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization, version):
     """
     Purpose: Save workspace information with a specfied filename
-    :param fname: filenmae
+    :param fname: filename
     :param sample: slab class
     :param data_dict: data dictionary
     :param sim_dict: simulation dictionary
@@ -489,7 +489,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
         :return:
         """
 
-    WriteSampleHDF5(fname, sample)  # save the sample information
+    WriteSampleHDF5(fname, sample, version)  # save the sample information
 
     f = h5py.File(fname, "a")
 
@@ -679,7 +679,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
 
 
 
-def saveFileHDF5(fname, sample, data_dict, fit, optimization):
+def saveFileHDF5(fname, sample, data_dict, fit, optimization, version):
     """
     Purpose: saves the GUI information to the current file
     :param fname: file path
@@ -690,7 +690,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     :return:
     """
 
-    WriteSampleHDF5(fname, sample)  # save the sample information
+    WriteSampleHDF5(fname, sample, version)  # save the sample information
 
     sfBsFitParams = fit[0]
     sfBsVal = fit[1]
@@ -807,7 +807,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
 
     f.close()
 
-def newFileHDF5(fname, sample):
+def newFileHDF5(fname, sample, version):
     """
         Purpose: Take in data and sample model and save it as an hdf5 file
         :param fname: File name with .hdf5 file extension
@@ -827,7 +827,7 @@ def newFileHDF5(fname, sample):
     if os.path.exists(fname):
         f.clear()
 
-
+    f.attrs['Version'] = version
     # creating group that will contain the sample information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
@@ -1638,7 +1638,7 @@ def ReadSampleHDF5(fname):
     f = h5py.File(fname, 'r')
 
     S = f['Sample']
-
+    print(f.attrs['Version'])
     # Retieves the general information of the sample
     m = int(S.attrs['NumberLayers'])
     sample = slab(m)
@@ -1800,7 +1800,7 @@ def LoadDataHDF5(fname):
 
     return data, data_dict, sim_dict
 
-def WriteSampleHDF5(fname, sample):
+def WriteSampleHDF5(fname, sample, version):
     """
     Purpose: Write a new sample to the hdf5 file fname
     :param fname: File name
@@ -1815,6 +1815,7 @@ def WriteSampleHDF5(fname, sample):
     f.close()
 
     f = h5py.File(fname, "a")
+    f.attrs['Version'] = version
     grp1 = f.create_group('Sample')
 
     for key in list(sample.poly_elements):

@@ -7358,6 +7358,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
+        self.version = '0.1'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -7550,7 +7551,7 @@ class ReflectometryApp(QMainWindow):
             sample.addlayer(1, 'LaMnO3', 10)
             sample.energy_shift()
 
-            ds.newFileHDF5(self.fname, sample)
+            ds.newFileHDF5(self.fname, sample, self.version)
 
             self.sample = sample
             self._sampleWidget.sample = sample
@@ -7905,7 +7906,7 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.sample = self.sample
 
             # save the sample information to the file
-            # ds.WriteSampleHDF5(self.fname, self.sample)
+            # ds.WriteSampleHDF5(self.fname, self.sample, self.version)
 
             data_dict = self.data_dict
 
@@ -7917,7 +7918,7 @@ class ReflectometryApp(QMainWindow):
 
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
-            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams)  # save the information
+            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Create New File")
@@ -7929,7 +7930,7 @@ class ReflectometryApp(QMainWindow):
         Purpose: Save project worspace to a specified name
         """
         # create a new file with the inputted
-        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+        filename, _ = QFileDialog.getOpenFileName()  # retrieves file name from user
         fname = filename.split('/')[-1]
 
         # checks to make sure filename is in the correct format
@@ -7958,7 +7959,7 @@ class ReflectometryApp(QMainWindow):
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams)  # saving
+            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
 
     def _saveSimulation(self):
         """
@@ -7978,7 +7979,7 @@ class ReflectometryApp(QMainWindow):
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
-                ds.saveSimulationHDF5(self.fname, sim_dict)
+                ds.saveSimulationHDF5(self.fname, sim_dict, self.version)
 
     def _saveSample(self):
         """
@@ -7990,7 +7991,7 @@ class ReflectometryApp(QMainWindow):
         self._reflectivityWidget.sample = self.sample
 
         # save the sample information to the file
-        ds.WriteSampleHDF5(self.fname, self.sample)
+        ds.WriteSampleHDF5(self.fname, self.sample, self.version)
 
 
     def _importDataSet(self):
