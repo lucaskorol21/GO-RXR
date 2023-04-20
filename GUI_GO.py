@@ -7931,7 +7931,7 @@ class ReflectometryApp(QMainWindow):
         Purpose: Save project worspace to a specified name
         """
         # create a new file with the inputted
-        filename, _ = QFileDialog.getOpenFileName()  # retrieves file name from user
+        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
         fname = filename.split('/')[-1]
 
         # checks to make sure filename is in the correct format
@@ -9664,6 +9664,7 @@ def checkbracket(myStr):
                 stack.pop()
             else:
                 return True
+
     if len(stack) == 0:
         return False
     else:
