@@ -16,7 +16,7 @@
   <a href="#license">License</a>
 </p>
 
-![screenshot](https://raw.githubusercontent.com/amitmerchant1990/electron-markdownify/master/app/img/markdownify.gif)
+<a href="https://imgur.com/2ucv2rp"><img src="https://i.imgur.com/2ucv2rp.png" title="source: imgur.com" /></a>
 
 ## Key Features
 
