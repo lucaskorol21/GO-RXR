@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#how-to-use">How To Use</a> •
+  <a href="#Running-in-Python">How To Use</a> •
   <a href="#download">Download</a> •
   <a href="#credits">Credits</a> •
   <a href="#related">Related</a> •
@@ -37,26 +37,41 @@
   - this is specifically used for the shape parameterization
 * Progress workspace
 
-## Running in Python
+## Running-in-Python
 
+The current version of GO-RXR only works for python 3.7 as this is required by the PythonReflectivity code. I would highly suggest downloading the stand-alone applications instead.
 
 To clone the github repostitory the following line of code can be input into the command prompt window:
 ```bash
 # Clone this repository
 $ git clone https://github.com/lucaskorol21/MaterialReflection.git
 ```
-Personally, 
-> **Note**
-> If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
+Personally, I prefer to clone the repository in the 'code' tab in github.
+
+The dependencies and libraries that need to be included are:
+ - Python 3.7
+ - Cython 0.29.24
+ - PyQt5 5.15.7
+ - h5py 2.9.0
+ - matplotlib 3.4.3
+ - numba 0.55.2
+ - numpy 1.21.4
+ - scipy 1.7.1
+ - steuptools 62.3.2
+
+After setting up your python interpreter run the following code in the python terminal.
+
+```bash
+# Installing Pythonreflectivity cython file
+$ python setup.py install
+```
+Once all of this is setup the python file GUI_GO.py can be run. This will open up the GO-RXR workspace and you can begin analyzing your data. It is important to note that GO-RXR can only load in project workspaces with the '.h5' extensions. The documentation can be found in the GO-RXR documentation in this repository, or by clicking the help tab in the application.
 
 
 ## Download
 
-You can [download](https://github.com/amitmerchant1990/electron-markdownify/releases/tag/v1.2.0) the latest installable version of Markdownify for Windows, macOS and Linux.
+Currently, there are a few updates that need to be done and a stand-alone application of GO-RXR is not currently available. The application is planned to be launched in July of 2023.
 
-## Emailware
-
-Markdownify is an [emailware](https://en.wiktionary.org/wiki/emailware). Meaning, if you liked using this app or it has helped you in any way, I'd like you send me an email at <bullredeyes@gmail.com> about anything you'd want to say about this software. I'd really appreciate it!
 
 ## Credits
 
