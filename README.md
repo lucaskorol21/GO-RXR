@@ -20,42 +20,32 @@
 
 ## Key Features
 
-* LivePreview - Make changes, See changes
-  - Instantly see what your Markdown documents look like in HTML as you create them.
-* Sync Scrolling
-  - While you type, LivePreview will automatically scroll to the current location you're editing.
-* GitHub Flavored Markdown  
-* Syntax highlighting
-* [KaTeX](https://khan.github.io/KaTeX/) Support
-* Dark/Light mode
-* Toolbar for basic Markdown formatting
-* Supports multiple cursors
-* Save the Markdown preview as PDF
-* Emoji support in preview :tada:
-* App will keep alive in tray for quick usage
-* Full screen mode
-  - Write distraction free.
-* Cross platform
-  - Windows, macOS and Linux ready.
+* Graphical User Interface
+* Sample definition as a compound-profile
+* Adaptive Layer Segmentation
+* Internal database of form factors
+  - allows for selection of form factors in project file
+* Magnetism capabilities
+* Compatibility with ReMagX
+  - able to load in dataset from ReMagX '.all' file type
+* Script functionality with built in functions
+* Customizable cost function in data fitting
+  - chi-square, L1-norm, and L2-norm regularization
+  - create unique boundaries for select data scans with weights associated to them
+  - shape parameterization using total variation
+* Data smoothing
+  - this is specifically used for the shape parameterization
+* Progress workspace
 
 ## Running in Python
 
 
-There are two ways the application can be run. The first way is by downloading and 
+To clone the github repostitory the following line of code can be input into the command prompt window:
 ```bash
 # Clone this repository
 $ git clone https://github.com/lucaskorol21/MaterialReflection.git
-
-# Go into the repository
-$ cd electron-markdownify
-
-# Install dependencies
-$ npm install
-
-# Run the app
-$ npm start
 ```
-
+Personally, 
 > **Note**
 > If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
 
