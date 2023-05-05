@@ -8214,7 +8214,10 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: demonstrate license if ever obtained
         """
-
+        license = licenseWidget()
+        license.show()
+        license.exec_()
+        license.close()
         # no current implementation
         pass
 
@@ -10079,12 +10082,46 @@ def checkscript(sample):
 
     return my_script, problem, my_error
 
+
 def isfloat(num):
     try:
         float(num)
         return True
     except ValueError:
         return False
+
+class licenseWidget(QDialog):
+    """
+    Purpose: Initialize script window to allow user to perform special operations
+    """
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Script Window')
+        self.setGeometry(180, 60, 700, 400)
+        pagelayout = QVBoxLayout()
+
+
+        # creating the script workspace
+        vbox = QVBoxLayout()
+        text = 'License'
+        self.title = QLabel(text)
+        self.title.setWordWrap(True)
+        self.title.setAlignment(Qt.AlignCenter)
+        vbox.addWidget(self.title)
+
+        self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
+        self.scrollable_text_area.setReadOnly(True)
+
+        with open('license.txt', 'r',encoding='ISO-8859-1') as f:
+            file_contents = f.read()
+            self.scrollable_text_area.setText(file_contents)
+
+        vbox.addWidget(self.scrollable_text_area)
+
+        pagelayout.addLayout(vbox)
+
+
+        self.setLayout(pagelayout)
 
 if __name__ == '__main__':
     fname = 'Pim10uc.h5'
