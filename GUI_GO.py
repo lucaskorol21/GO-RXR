@@ -8225,9 +8225,14 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: provide user document of how to use application
         """
+        from PyQt5.QtGui import QDesktopServices
+        from PyQt5.QtCore import QUrl
 
+        file_path = 'Documentation_Pythonreflectivity.pdf'
+
+        QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
         # not currently implemented
-        pass
+
 
     def activate_tab_1(self):
         # sample setup
@@ -10119,7 +10124,6 @@ class licenseWidget(QDialog):
         vbox.addWidget(self.scrollable_text_area)
 
         pagelayout.addLayout(vbox)
-
 
         self.setLayout(pagelayout)
 
