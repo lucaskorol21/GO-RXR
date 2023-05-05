@@ -12,7 +12,8 @@
   <a href="#how-to-use">how-to-use</a> •
   <a href="#download">Download</a> •
   <a href="#credits">Credits</a> •
-  <a href="#license">License</a>
+  <a href="#license">License</a> •
+  <a href="#publications">Publications</a> 
 </p>
 
 <a href="https://imgur.com/2ucv2rp"><img src="https://i.imgur.com/2ucv2rp.png" title="source: imgur.com" /></a>
@@ -78,6 +79,14 @@ Currently, there are a few updates that still need to be done before a stand-alo
 This software uses the following open source packages:
 - [Pythonreflectivity](https://github.com/malaclypseII/PyXMRTool.git)
 
+Conrtibution made by:
+ - Dr. Robert J. Green
+ - Dr. Raymond Spiteri
+ - [QMax Group](https://research-groups.usask.ca/qmax/)
+ - [Numerical Simulations Research Lab](https://simlab.usask.ca/)
+
+GO-RXR would have not been possible without the University of Saskatchewan and the funding provided by the U of S Physics and Engineering Physics Department, the NSERC-CREATE to INSPIRE fellowship, and the NSERC CGS M.
+
 ## License
 
 
@@ -88,6 +97,9 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## Publications
+
+There are currently no papers published using GO-RXR, but there are several papers in progress using GO-RXR.
 
 ## Bugs
 * Data fitting will run the script regardless if script option is selected. It is suggested to comment out every line of the script for now until this issues is resolved.
