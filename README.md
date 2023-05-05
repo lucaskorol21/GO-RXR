@@ -1,3 +1,6 @@
+<h1 align="center">
+  <a href="https://imgur.com/iM3mg3t"><img src="https://i.imgur.com/iM3mg3tm.jpg" title="source: imgur.com" /></a>
+</h1>
 
 <h1 align="center">
   <br>
@@ -16,7 +19,7 @@
   <a href="#publications">Publications</a> 
 </p>
 
-<a href="https://imgur.com/2ucv2rp"><img src="https://i.imgur.com/2ucv2rp.png" title="source: imgur.com" /></a>
+<a href="https://imgur.com/kPS6E3D"><img src="https://i.imgur.com/kPS6E3D.jpg" title="source: imgur.com" /></a>
 
 ## Key Features
 
