@@ -68,8 +68,9 @@ Once all of this is setup the python file GUI_GO.py can be run. This will open u
 
 
 ## Download
+Currently, there are a few updates that still need to be done before a stand-alone application can be downloaded. The application for GO-RXR is planned to be launched in July of 2023 and will be made accessible throught the link below.
 
-Currently, there are a few updates that need to be done and a stand-alone application of GO-RXR is not currently available. The application is planned to be launched in July of 2023.
+- [Download](https://research-groups.usask.ca/qmax/people.php)
 
 
 ## Credits
@@ -80,7 +81,12 @@ This software uses the following open source packages:
 ## License
 
 University of Saskatchewan
+QMax Group
+Numerical Simulation Research Lab
 
+## Bugs
+* Data fitting will run the script regardless if script option is selected. It is suggested to comment out every line of the script for now until this issues is resolved.
+* Issues with providing an element variation identifier with the same name as a previously defined element. If possible always provide a different element variation idenitifer name that is different than any of the element names provided in any layer.
 
 ---
 
