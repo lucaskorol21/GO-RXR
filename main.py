@@ -177,10 +177,11 @@ def ALS(alpha, beta, precision=1e-6):
 
     return my_slabs
 if __name__ == '__main__':
-    """
+
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
-    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_v3.h5"
+
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
 
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -188,7 +189,7 @@ if __name__ == '__main__':
     energy = 640.2
     qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
 
-    
+    """
     struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -221,13 +222,13 @@ if __name__ == '__main__':
 
     ds.saveSimulationHDF5(fname, sim_dict)
     
-    
+    """
 
 
     thickness, density, mag_density = sample.density_profile()
 
     my_keys = ['Sr', 'Ti', 'La', 'Mn','O']
-    my_keys = ['Mn2','Mn3']
+    my_keys = ['Ti','Mn']
 
 
     d = 37.550
@@ -244,12 +245,12 @@ if __name__ == '__main__':
     #print(total/10/4)
 
     x = [4,7,10]
-    y = [0.009153213732481595/4, 0.06715542943115324/7, 0.09526111771582044/10]
+    y = [0.011817737262843186/4, 0.06735279450392744/7, 0.10131622378913185/10]
     plt.figure(1)
     plt.bar(x,y,)
     plt.xlabel('Sample (uc)')
     plt.ylabel('Magnetic Density per units cell')
-    plt.show()
+
 
     plt.figure(2)
     for key in my_keys:
@@ -259,7 +260,7 @@ if __name__ == '__main__':
     plt.xlabel('Thickness (angstroms)')
     plt.legend(my_keys)
     plt.show()
-
+    """
     oxidation = np.zeros(len(thickness))
     total = np.zeros(len(thickness))
     for key in electron.keys():
@@ -360,7 +361,7 @@ if __name__ == '__main__':
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
 
-    """
+    
     new = np.loadtxt('833.csv')
     t = new[:,0]
 
@@ -559,7 +560,7 @@ if __name__ == '__main__':
     #plt.legend(['Segmentation', 'Original'])
     plt.show()
 
-    """
+    
 
     plt.figure(3)
     plt.plot(remagx[:,0],remagx[:,1])

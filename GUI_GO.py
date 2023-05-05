@@ -7644,6 +7644,8 @@ class ReflectometryApp(QMainWindow):
             messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
             messageBox.exec()
 
+        self.activate_tab_1()
+
     def _loadFile(self):
         """
         Purpose: Load a new file or project workspace
@@ -7779,7 +7781,7 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Improper File Type")
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
-
+        self.activate_tab_1()
     def _loadSample(self):
         """
             Purpose: Load a new file or project workspace
@@ -7893,7 +7895,7 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setText(
                     "File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
-
+        self.activate_tab_1()
     def _saveFile(self):
         """
         Purpose: Save the current project space
@@ -7925,7 +7927,7 @@ class ReflectometryApp(QMainWindow):
             messageBox.setWindowTitle("Create New File")
             messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
             messageBox.exec()
-
+        self.activate_tab_1()
     def _saveAsFile(self):
         """
         Purpose: Save project worspace to a specified name
@@ -7961,14 +7963,14 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.sample = self.sample
 
             ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
-
+        self.activate_tab_1()
     def _saveSimulation(self):
         """
         Purpose: Calculate and save the simulation to the current file
         """
         sim_dict = copy.deepcopy(self.data_dict)  # get simulation dictionary
 
-        fname = self.fname  # retrieve file name
+        fname = self.fname  # retrieve filge name
 
         if len(sim_dict) != 0:
             # initializing the loading screen
@@ -7993,7 +7995,7 @@ class ReflectometryApp(QMainWindow):
 
         # save the sample information to the file
         ds.WriteSampleHDF5(self.fname, self.sample, self.version)
-
+        self.activate_tab_1()
 
     def _importDataSet(self):
         """
@@ -8012,7 +8014,7 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.data_dict = self.data_dict
                 for scan in self.data:
                     self._reflectivityWidget.whichScan.addItem(scan[2])
-
+        self.activate_tab_1()
     def _loadReMagX(self):
         """
         Purpose: import data from a ReMagX file type
@@ -8050,7 +8052,7 @@ class ReflectometryApp(QMainWindow):
             messageBox.setWindowTitle("ReMagX File")
             messageBox.setText("Please select a file with .all extension!")
             messageBox.exec()
-
+        self.activate_tab_1()
     def _summary(self):
         """
         Purpose: save summary of project worspace as a textfile
@@ -9563,6 +9565,7 @@ class scriptWidget(QDialog):
         """
         sample = self.sWidget._createSample()
         my_script, problem, my_error = checkscript(sample)
+
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
@@ -9680,8 +9683,8 @@ def checkscript(sample):
             test = line.strip(' ')
             if test != "\n" and not(test.startswith('#')):
 
-                my_script.append({'Executable': line.strip("\n").split('='), 'Line': my_line})
-                #my_script.append(line.strip("\n").split('='))
+                #my_error.append({'Executable': line.strip("\n").split('='), 'Line': my_line})
+                my_script.append(line.strip("\n").split('='))
                 n = len(my_script)
 
             my_line = my_line + 1
@@ -9695,10 +9698,9 @@ def checkscript(sample):
     problem = False
 
     # checks to make sure that all functions agree with what we expect
-    for this_line in my_script:
+    for line in my_script:
 
-        line = this_line['Executable']
-        my_line = this_line['Line']
+
         if len(line) == 1:
             function = line[0].split('(')[0].strip(' ')
 

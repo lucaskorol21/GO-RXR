@@ -220,7 +220,6 @@ def readScript(sample, script):
     """
 
     variables = dict()  # dictionary use to store variable place holders
-
     for line in script:
         if len(line) == 2:  # setting a variable as a value
             key = line[0].strip(' ')  # retrieves the variable place holder key
