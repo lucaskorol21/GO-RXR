@@ -6,7 +6,6 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
-
 #setCombinedThickness(2,5,all,14.39360028319356)
 
 
@@ -30,11 +29,11 @@
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(2, B, Ti,0.9005050999579164)
-#setVariationConstant(3, B, Ti,0.7837314508266071)
-#setVariationConstant(4, B, Ti,0.4999997485917171)
-#setVariationConstant(5, B, Ti, 0.0422918374042055)
-#setVariationConstant(6, B, Ti,0.00036844090888239756)
+#setVariationConstant(2, B, Ti,0.5555682872249759)
+#setVariationConstant(3, B, Ti,0.42291019513138917)
+#setVariationConstant(4, B, Ti,0.16496389982727955)
+#setVariationConstant(5, B, Ti,0.0242466343076104)
+#setVariationConstant(6, B, Ti,0.0242466343076104)
 
 
 # ------------------------ Magnetic Density Workspace -------------------------#
@@ -42,9 +41,11 @@
 # setMagDensity(layer, element, variation, value) if not a variation element than set element=variation
 # getMagDensity(layer,element, variation)
 
-#rho = getMagDensity(7, B, Mn3)
-#setMagDensity(8, B,Mn3,rho)
-#setMagDensity(9, B,Mn3,rho)
+
+#rho = getMagDensity(7, B, Mn3-4)
+#setMagDensity(8, B,Mn3-4,rho)
+#setMagDensity(9, B,Mn3-4,rho)
+#setMagDensity(10, B,Mn3-4,rho)
 #setMagDensity(10, B,Mn3,rho)
 #setMagDensity(11, B,Mn3,rho)
 

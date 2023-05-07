@@ -1,6 +1,6 @@
 """
 Library: GUI_GO
-Version: 0.1
+Version: 0.2
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -18,7 +18,7 @@ material_structure (version 0.1) - Part of the 'name' software package and is us
 
 global_optimization (version 0.1) - Part of the 'name' software package and is used to perform the global optimization
 
-data_structure (version 0.1) - Part of the 'name' software package that is used to saving and loading the workspace
+data_structure (version 0.2) - Part of the 'name' software package that is used to saving and loading the workspace
 
 numpy (version 1.21.4) - used for array manipulation
 
@@ -27,6 +27,8 @@ scipy (version 1.7.1) - used for data smoothing
 PyQt5 (version 5.15.7) - This library is used to contruct the application
 
 pyqtgraph (version 0.12.4) - This library is used for the plotting widget
+
+pyinstaller (version 5.9.0) - This library is used to create a standalone executable file
 
 
 --------------------------------------------------------------------------------------------------------------------------------------
@@ -56,6 +58,26 @@ Note: There are a few immediate changes that could be implemented for future ver
 
 Warning: Any changes to the data type would need to be carefully considered.
 
+Instructions to create executable using pytinstaller:
+
+1. Install pyinstaller in the python environement.
+2. Run 'pyinstaller GUI.GO.py' in the terminal.
+3. A new file named GUI_GO.spec will appear in the project file. Open this file.
+4. In this file there is a filed called datas = []. Replace the empty array with:
+    datas = [('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
+    ('.\\material_model.py','.'), ('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
+    ('.\\form_factor_magnetic.pkl','.'), ('.\\Perovskite_Density.txt','.'), ('.\\Atomic_Mass.txt','.'),
+    ('.\\demo.h5','.')]
+5. This includes all the python files, text files, and all other data used to execute GUI_GO.py. If newer versions
+   of GO-RXR depend on more files than they must be included into this array. Follow the same naming convention as shown.
+6. Once satisfied run 'pyinstaller GUI_GO.spec' in the terminal. This will ensure that all desired data is included into
+   the data file.
+7. The executable file will be found in the 'dist' directory in the project workspace. There should now be a directory
+   in this workspace with the name GUI_GO.
+8. You can copy this file an input it into another directory. From here I would suggest creating a file zip file that
+   can be distributed.
+9. A one file that can compile the executable into a single file instead of a directory. However, this can take much longer
+   to initialize as with the one file all the libraries and files need to be unpacked before the software can be run.
 """
 
 import ast
@@ -542,16 +564,19 @@ class magneticWidget(QDialog):
         Purpose: change the magnetization direction for sampleWidget
         :return:
         """
-        lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
+        #lay = self.mainWidget.layerBox.currentIndex()  # retrieves layer
         mag = self.mainWidget.magDirBox.currentIndex()  # retrieves mag-direction index
+        m = len(self.mainWidget.structTableInfo)
 
-        # sets the magnetization direction for the current layer (lay)
-        if mag == 0:
-            self.mainWidget.magDirection[lay] = 'x'
-        elif mag == 1:
-            self.mainWidget.magDirection[lay] = 'y'
-        elif mag == 2:
-            self.mainWidget.magDirection[lay] = 'z'
+        # changes the magnetization direction for all layer
+        for i in range(m):
+            if mag == 0:
+                self.mainWidget.magDirection[i] = 'x'
+            elif mag == 1:
+                self.mainWidget.magDirection[i] = 'y'
+            elif mag == 2:
+                self.mainWidget.magDirection[i] = 'z'
+
 
 
 class sampleWidget(QWidget):
@@ -4394,8 +4419,10 @@ class GlobalOptimizationWidget(QWidget):
         algorithmLayout = QVBoxLayout()
         algorithmLabel = QLabel('Algorithm Selection')
         self.algorithmSelect = QComboBox()
+        #self.algorithmSelect.addItems(
+        #    ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares', 'direct'])
         self.algorithmSelect.addItems(
-            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares', 'direct'])
+            ['differential evolution', 'simplicial homology', 'dual annealing', 'least squares'])
         self.algorithmSelect.currentIndexChanged.connect(self.change_algorithm)
         algorithmLayout.addWidget(algorithmLabel)
         algorithmLayout.addWidget(self.algorithmSelect)
@@ -4419,14 +4446,24 @@ class GlobalOptimizationWidget(QWidget):
         self.totalVarWeight.setFixedWidth(50)
         totLayout.addWidget(totLabel)
         totLayout.addWidget(self.totalVarWeight)
-        totLayout.addStretch(1)
 
+        totLayout.addStretch(1)
+        costButton = QPushButton('Cost Value')
+        costButton.setFixedWidth(80)
+        costButton.clicked.connect(self.calculateCost)
+        self.costValue = QLineEdit('0')
+        self.costValue.setFixedWidth(150)
+        costlayout = QHBoxLayout()
+        costlayout.addWidget(costButton)
+        costlayout.addWidget(self.costValue)
+        costlayout.addStretch(1)
         vbox = QVBoxLayout()
         vbox.addWidget(objectiveFunction)
         vbox.addWidget(self.chi)
         vbox.addWidget(self.L1)
         vbox.addWidget(self.L2)
         vbox.addLayout(totLayout)
+        vbox.addLayout(costlayout)
 
         algorithmLayout.addLayout(vbox)
         algorithmWidget = QWidget()
@@ -4840,6 +4877,141 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         #self.checkscript()
 
+    def calculateCost(self):
+        """
+        Purpose: calculate the cost function of the current data fitting iteration
+        :param x_array: current iteration parameters
+        """
+
+        sample = self.sample
+        bounds = self.rWidget.bounds
+        weights = self.rWidget.weights
+
+        scan = self.selectedScans.currentText()
+        idx = int(self.selectedScans.currentIndex())
+        y_scale = self.isLogWidget.currentText()
+        fun = 0
+
+
+
+        name = scan
+
+        fun_val = 0
+        xbound = bounds[idx]
+        weights = weights[idx]
+
+        background_shift = 0
+        scaling_factor = 1
+        data = self.rWidget.data_dict
+        if 'Angle' not in data[name].keys():
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            E = myDataScan['Energy']
+            pol = myDataScan['Polarization']
+            Rdat = np.array(myData[2])
+
+            qz = np.array(myData[0])
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            Rsim = Rsim[pol]
+
+
+
+
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+
+            elif y_scale == 'qz^4':
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+            elif y_scale == 'x':
+                pass
+
+
+
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+                w = float(weights[b])
+
+                idx = [x for x in range(len(qz)) if
+                       qz[x] >= lw and qz[x] < up]  # determines index boundaries
+
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    if self.objective == 'Chi-Square':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+
+                    elif self.objective == 'L1-Norm':
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif self.objective == 'L2-Norm':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+            if m != 0:
+                fun = fun + fun_val / m
+
+        else:
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            Theta = myDataScan['Angle']
+            Rdat = np.array(myData[2])
+            E = np.array(myData[3])
+            pol = myDataScan['Polarization']
+
+            E, Rsim = sample.energy_scan(Theta, E)
+            Rsim = Rsim[pol]
+
+
+
+
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+
+            elif  y_scale == 'qz^4':
+                qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+            elif y_scale == 'x':
+                pass
+
+
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+                w = float(weights[b])
+
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    if self.objective == 'Chi-Square':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                    elif self.objective == 'L1-Norm':
+                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif self.objective == 'L2-Norm':
+                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+
+            if m != 0:
+
+                fun = fun + fun_val / m
+
+
+        self.costValue.setText(str(fun))
     def eventFilter(self, source, event):
         """
         Purpose: Allows user to remove fits directly from globalOptimization widget
@@ -5185,7 +5357,7 @@ class GlobalOptimizationWidget(QWidget):
         self.changeFitParameters()
 
         # including scipt implementation
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         state = self.checkBox.checkState()
         use_script = False
         if not(problem) and state > 0:
@@ -5226,7 +5398,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: plot and compare the data, previous simulation, and new fit all in one graph
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script = False
         check = self.checkBox.checkState()
 
@@ -5610,7 +5782,7 @@ class GlobalOptimizationWidget(QWidget):
         """
         Purpose: Run data fitting algorithms
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script = False
         if not(problem):
             use_script = True
@@ -7186,6 +7358,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
+        self.version = '0.2'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -7196,7 +7369,8 @@ class ReflectometryApp(QMainWindow):
         self.sample.energy_shift()
 
         # set the title
-        self.setWindowTitle('GO-RXR')
+        my_name = 'GO-RXR (version '+self.version +')'
+        self.setWindowTitle(my_name)
 
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
@@ -7378,7 +7552,7 @@ class ReflectometryApp(QMainWindow):
             sample.addlayer(1, 'LaMnO3', 10)
             sample.energy_shift()
 
-            ds.newFileHDF5(self.fname, sample)
+            ds.newFileHDF5(self.fname, sample, self.version)
 
             self.sample = sample
             self._sampleWidget.sample = sample
@@ -7470,17 +7644,23 @@ class ReflectometryApp(QMainWindow):
             messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
             messageBox.exec()
 
+        self.activate_tab_1()
+
     def _loadFile(self):
         """
         Purpose: Load a new file or project workspace
         """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
         fname = self.fname.split('/')[-1]  # used to check file type
 
-        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
-            if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(self.fname.strip(fname))  # look for form factors in directory
+        if self.fname.endswith('.h5') or self.fname.endswith('.all'):  # check for proper file extension
+            if self.fname.endswith('.h5') and self.fname != 'demo.h5':
+
+                n = len(fname)
+                f = self.fname[:-n]
+                struct_names, mag_names = mm._use_given_ff(f)  # look for form factors in directory
 
                 # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
@@ -7601,19 +7781,23 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Improper File Type")
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
-
+        self.activate_tab_1()
     def _loadSample(self):
         """
-                Purpose: Load a new file or project workspace
-                """
+            Purpose: Load a new file or project workspace
+        """
 
         self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
         fname = self.fname.split('/')[-1]  # used to check file type
 
-        if fname.endswith('.h5') or fname.endswith('.all'):  # check for proper file extension
-            if fname.endswith('.h5') and fname != 'demo.h5':
-                struct_names, mag_names = mm._use_given_ff(
-                    self.fname.strip(fname))  # look for form factors in directory
+
+        if self.fname.endswith('.h5') or self.fname.endswith('.all'):  # check for proper file extension
+            if self.fname.endswith('.h5') and self.fname != 'demo.h5':
+                n= len(fname)
+                f = self.fname[:-n]
+
+                struct_names, mag_names = mm._use_given_ff(f)  # look for form factors in directory
 
                 # set form factors found in file directory
                 self._sampleWidget.struct_ff = struct_names
@@ -7711,7 +7895,7 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setText(
                     "File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
-
+        self.activate_tab_1()
     def _saveFile(self):
         """
         Purpose: Save the current project space
@@ -7725,7 +7909,7 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.sample = self.sample
 
             # save the sample information to the file
-            # ds.WriteSampleHDF5(self.fname, self.sample)
+            # ds.WriteSampleHDF5(self.fname, self.sample, self.version)
 
             data_dict = self.data_dict
 
@@ -7737,13 +7921,13 @@ class ReflectometryApp(QMainWindow):
 
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
-            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams)  # save the information
+            ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Create New File")
             messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
             messageBox.exec()
-
+        self.activate_tab_1()
     def _saveAsFile(self):
         """
         Purpose: Save project worspace to a specified name
@@ -7778,15 +7962,15 @@ class ReflectometryApp(QMainWindow):
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams)  # saving
-
+            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
+        self.activate_tab_1()
     def _saveSimulation(self):
         """
         Purpose: Calculate and save the simulation to the current file
         """
         sim_dict = copy.deepcopy(self.data_dict)  # get simulation dictionary
 
-        fname = self.fname  # retrieve file name
+        fname = self.fname  # retrieve filge name
 
         if len(sim_dict) != 0:
             # initializing the loading screen
@@ -7798,18 +7982,20 @@ class ReflectometryApp(QMainWindow):
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
-                ds.saveSimulationHDF5(self.fname, sim_dict)
+                ds.saveSimulationHDF5(self.fname, sim_dict, self.version)
 
     def _saveSample(self):
         """
         Purpose: Save the sample information from the current project space
+
         """
         self.sample = self._sampleWidget._createSample()
         self._sampleWidget.sample = self.sample
         self._reflectivityWidget.sample = self.sample
 
         # save the sample information to the file
-        ds.WriteSampleHDF5(self.fname, self.sample)
+        ds.WriteSampleHDF5(self.fname, self.sample, self.version)
+        self.activate_tab_1()
 
     def _importDataSet(self):
         """
@@ -7821,10 +8007,14 @@ class ReflectometryApp(QMainWindow):
         fname = filename.split('/')[-1]
 
         # when loading files I need to be able to scan the entire
-        if fname.endswith('.h5') or fname.endswith('.all'):
+        if filename.endswith('.h5') or filename.endswith('.all'):
             if fname.endswith('.h5') and fname != 'demo.h5':
                 self.data, self.data_dict, self.sim_dict = ds.LoadDataHDF5(filename)
-
+                self._reflectivityWidget.data = self.data
+                self._reflectivityWidget.data_dict = self.data_dict
+                for scan in self.data:
+                    self._reflectivityWidget.whichScan.addItem(scan[2])
+        self.activate_tab_1()
     def _loadReMagX(self):
         """
         Purpose: import data from a ReMagX file type
@@ -7862,7 +8052,7 @@ class ReflectometryApp(QMainWindow):
             messageBox.setWindowTitle("ReMagX File")
             messageBox.setText("Please select a file with .all extension!")
             messageBox.exec()
-
+        self.activate_tab_1()
     def _summary(self):
         """
         Purpose: save summary of project worspace as a textfile
@@ -8024,7 +8214,10 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: demonstrate license if ever obtained
         """
-
+        license = licenseWidget()
+        license.show()
+        license.exec_()
+        license.close()
         # no current implementation
         pass
 
@@ -8032,9 +8225,14 @@ class ReflectometryApp(QMainWindow):
         """
         Purpose: provide user document of how to use application
         """
+        from PyQt5.QtGui import QDesktopServices
+        from PyQt5.QtCore import QUrl
 
+        file_path = 'Documentation_Pythonreflectivity.pdf'
+
+        QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
         # not currently implemented
-        pass
+
 
     def activate_tab_1(self):
         # sample setup
@@ -8285,7 +8483,7 @@ class progressWidget(QWidget):
         """
 
         # script checker
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
 
         use_script=False
         if not(problem) and self.script_state:
@@ -8386,7 +8584,7 @@ class progressWidget(QWidget):
         """
         Purpose: plot the data and current iteration of the data fitting
         """
-        script, problem = checkscript(self.sample)
+        script, problem, my_error = checkscript(self.sample)
         use_script=False
 
         if not(problem) and self.script_state:
@@ -8673,7 +8871,7 @@ class progressWidget(QWidget):
         """
         Purpose: plot the progress of the scans
         """
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         use_script=False
         if not(problem) and self.script_state:
             use_script=True
@@ -8959,7 +9157,7 @@ class progressWidget(QWidget):
         """
         Purpose: Data fitting update process
         """
-        script, problem = checkscript(self.sWidget.sample)
+        script, problem, my_error = checkscript(self.sWidget.sample)
         use_script = False
         if not(problem):
             use_script=True
@@ -9209,9 +9407,9 @@ class showFormFactors(QDialog):
             if self.real.checkState() != 0 and self.im.checkState() != 0:
 
                 my_name = 'r: ' + key
-                self.structPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
+                self.magPlot.plot(E, re, pen=pg.mkPen((idx*2, n*2+1), width=2), name=my_name)
                 my_name = 'i: ' + key
-                self.structPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
+                self.magPlot.plot(E, im, pen=pg.mkPen((idx*2+1, n*2+1), width=2), name=my_name)
             elif self.real.checkState() != 0:
                 my_name = 'r: ' + key
                 self.magPlot.plot(E, re, pen=pg.mkPen((idx, n), width=2), name=my_name)
@@ -9374,11 +9572,12 @@ class scriptWidget(QDialog):
         Purpose: Checks the script and runs it if all checks passed
         """
         sample = self.sWidget._createSample()
-        my_script, problem = checkscript(sample)
+        my_script, problem, my_error = checkscript(sample)
+
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
-            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.setText("Error: " + my_error['Type'] + '\n' + 'Line: ' + str(my_error['Line']))
             messageBox.exec()
         else:
             sample = go.readScript(sample, my_script)
@@ -9398,11 +9597,11 @@ class scriptWidget(QDialog):
         Purpose: Checks the script
         """
 
-        my_script, problem = checkscript(self.sWidget._createSample())
+        my_script, problem, my_error = checkscript(self.sWidget._createSample())
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
-            messageBox.setText("Script unable to execute. Please check script for possible errors. If unable to find error consult application documentation. Script functionality will be ignored in program.")
+            messageBox.setText("Error: " + my_error['Type'] + '\n' + 'Line: ' + str(my_error['Line']))
             messageBox.exec()
 
 
@@ -9476,6 +9675,7 @@ def checkbracket(myStr):
                 stack.pop()
             else:
                 return True
+
     if len(stack) == 0:
         return False
     else:
@@ -9484,12 +9684,18 @@ def checkbracket(myStr):
 def checkscript(sample):
     script = os.getcwd() + '/default_script.txt'
     my_script = list()
+    my_error = dict()
     with open(script, "r") as f:
+        my_line = 1
         for line in f.readlines():
             test = line.strip(' ')
             if test != "\n" and not(test.startswith('#')):
+
+                #my_error.append({'Executable': line.strip("\n").split('='), 'Line': my_line})
                 my_script.append(line.strip("\n").split('='))
                 n = len(my_script)
+
+            my_line = my_line + 1
     f.close()
 
     my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant']
@@ -9497,21 +9703,24 @@ def checkscript(sample):
     my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness','geteshift', 'getmageshift', 'getmagdensity']
 
 
-
     problem = False
 
     # checks to make sure that all functions agree with what we expect
     for line in my_script:
+
+
         if len(line) == 1:
             function = line[0].split('(')[0].strip(' ')
 
             if not(problem):
                 problem = checkbracket(line[0])
-
+                my_error['Type'] = 'Unbalanced number of brackets'
+                my_error['Line'] = my_line
 
             if function.lower() not in my_function_1:
                 problem = True
-                print(1)
+                my_error['Type'] = 'function defined improperly'
+                my_error['Line'] = my_line
 
 
 
@@ -9526,51 +9735,65 @@ def checkscript(sample):
                 if function.lower() == 'setcombinedthickness':
                     if len(params) != 4:  # not expected number of arguments
                         problem = True
-                        print(2)
+                        my_error['Type'] = 'Unexpected number of arguments'
+                        my_error['Line'] = my_line
 
                     if not (params[0].isdigit()) and not (problem):  # first two arguments are not digits
                         problem = True
-                        print(3)
+                        my_error['Type'] = 'variable type'
+                        my_error['Line'] = my_line
 
                     else:
                         if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
                             problem = True
-                            print(4)
-
-                        start = int(params[0])
-                        end = int(params[1])
-
-                        if start > end:
-                            problem = True
-                            print(5)
-
-                        if start < 0:
-                            problem = True
-                            print(6)
-
-                        m = len(sample.structure)
+                            my_error['Type'] = 'variable type'
+                            my_error['Line'] = my_line
 
 
-                        if m - 1 < end:
-                            problem = True
-                            print(7)
 
-                        if not (problem):
+                        if not(problem):
+                            start = int(params[0])
+                            end = int(params[1])
+                            if start > end:
+                                problem = True
+                                my_error['Type'] = 'layer improperly defined'
+                                my_error['Line'] = my_line
 
-                            key = params[2].strip(' ')
+                            if start < 0:
+                                problem = True
+                                my_error['Type'] = 'start layer must be greater than 0'
+                                my_error['Line'] = my_line
 
-                            if key.lower() != 'all':
-                                for i in range(start, end + 1, 1):
-                                    if key not in list(sample.structure[i].keys()):
-                                        problem = True
+                            m = len(sample.structure)
+
+
+                            if m - 1 < end:
+                                problem = True
+                                my_error['Type'] = 'end layer larger than number of layers in sample'
+                                my_error['Line'] = my_line
+
+                            if not (problem):
+
+                                key = params[2].strip(' ')
+
+                                if key.lower() != 'all':
+                                    for i in range(start, end + 1, 1):
+                                        if key not in list(sample.structure[i].keys()):
+                                            problem = True
+                                            my_error['Type'] = key + ' not in layer ' + str(i)
+                                            my_error['Line'] = my_line
                 elif function.lower() in ['seteshift', 'setmageshift']:
                     ffName = params[0]
                     if function.lower() == 'seteshift':
                         if ffName not in list(sample.eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
                     else:
                         if ffName not in list(sample.mag_eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
 
                 elif function.lower() == 'setmagdensity':
                     m = len(sample.structure)
@@ -9578,6 +9801,8 @@ def checkscript(sample):
 
                     if not (layer.isdigit()):
                         problem = True
+                        my_error['Type'] = 'layer not entered as an integer'
+                        my_error['Line'] = my_line
                     else:
                         layer = int(layer)
 
@@ -9586,122 +9811,150 @@ def checkscript(sample):
                     if not problem:
                         if m - 1 < layer or layer < 0:
                             problem = True
+                            my_error['Type'] = 'layer improperly defined'
+                            my_error['Line'] = my_line
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
                                 problem = True
+                                my_error['Type'] = str(symbol) + ' not found in layer'
+                                my_error['Line'] = my_line
 
                             if symbol != var:
                                 if not (problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
+                                    my_error['Type'] = str(var) + ' not found in layer'
+                                    my_error['Line'] = my_line
                 elif function.lower() == 'setvariationconstant':
                     if len(params) != 4:
                         problem = True
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
 
                     m = len(sample.structure)
 
                     if int(params[0]) > m - 1 and not (problem):
                         problem = True
-                        print('31')
+                        my_error['Type'] = 'layer larger than number of defined layers'
+                        my_error['Line'] = my_line
 
                     if params[1].isdigit() or params[2].isdigit():
                         problem = True
-                        print('32')
+                        my_error['Type'] = 'values must be entered as integers'
+                        my_error['Line'] = my_line
 
                     if not (problem):
                         params[1] = params[1].strip(' ')
                         params[2] = params[2].strip(' ')
                         if params[1] not in list(sample.structure[int(params[0])].keys()):
                             problem = True
-                            print('33')
+                            my_error['Type'] = str(params[1]) + ' not in layer'
+                            my_error['Line'] = my_line
 
 
                         if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not (problem):
                             problem = True
-                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
-                            print(sample.structure[int(params[0])][params[1]].polymorph)
-                            print('34')
+                            my_error['Type'] = 'only three element variation can exist for this function'
+                            my_error['Line'] = my_line
 
                         if not (problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('35')
+                            my_error['Type'] = str(params[2]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
 
 
                 elif function.lower() == 'setratio':
                     if len(params) != 5:
                         problem = True
+                        my_error['Type'] = 'Unexpected number of parameters'
+                        my_error['Line'] = my_line
 
 
                     if not (params[0].isdigit()) and not(problem):
-                        print('30')
                         problem = True
+                        my_error['Type'] = 'variable type must be an integer'
+                        my_error['Line'] = my_line
 
                     m = len(sample.structure)
 
                     if int(params[0]) > m-1 and not(problem):
                         problem = True
-                        print('31')
+                        my_error['Type'] = 'layer is greater than total number of layers'
+                        my_error['Line'] = my_line
 
                     if params[1].isdigit() or params[2].isdigit() or params[3].isdigit():
                         problem = True
-                        print('32')
+                        my_error['Type'] = 'parameter types must be integers'
+                        my_error['Line'] = my_line
 
                     if not(problem):
 
                         if params[1] not in list(sample.structure[int(params[0])].keys()):
                             problem = True
-                            print('33')
+                            my_error['Type'] = str(params[1]) + ' not in layer'
+                            my_error['Line'] = my_line
+
                         if len(sample.structure[int(params[0])][params[1]].polymorph) != 3 and not(problem):
                             problem=True
-                            print(len(sample.structure[int(params[0])][params[1]].polymorph))
-                            print(sample.structure[int(params[0])][params[1]].polymorph)
-                            print('34')
+                            my_error['Type'] = 'this function only works with three element variations'
+                            my_error['Line'] = my_line
 
 
                         if not(problem) and params[2] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('35')
+                            my_error['Type'] = str(params[2]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
                         if not(problem) and params[3] not in sample.structure[int(params[0])][params[1]].polymorph:
                             problem = True
-                            print('36')
+                            my_error['Type'] = str(params[3]) + ' not found in layer'
+                            my_error['Line'] = my_line
 
 
                 else:
                     if len(params) != 3:
                         problem = True
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
 
 
 
                     if not(problem) and params[0].isdigit():
                         if '.' in params[0]:
                             problem = True
-                            print(9)
+                            my_error['Type'] = 'improper variable type'
+                            my_error['Line'] = my_line
                         layer = int(params[0])
 
                         if layer > len(sample.structure) - 1:
                             problem = True
-                            print(10)
+                            my_error['Type'] = 'layer greater than total number of layers'
+                            my_error['Line'] = my_line
 
                         if not (problem):
                             key = params[1].strip(' ')
                             if key not in list(sample.structure[layer].keys()) and key != 'all':
                                 problem = True
-                                print(11)
+                                my_error['Type'] = key + ' not found'
+                                my_error['Line'] = my_line
 
                     else:
                         problem = True
-                        print(12)
+                        my_error['Type'] = 'improper variable type'
+                        my_error['Line'] = my_line
 
 
         elif len(line) == 2:
             if not(problem):
                 problem = checkbracket(line[1])
+                my_error['Type'] = 'unbalanced brackets'
+                my_error['Line'] = my_line
 
             function = line[1].split('(')[0].strip(' ')
             if function.lower() not in my_function_2:
                 problem = True
-                print(13)
+                my_error['Type'] = 'function does not exist or spelled incorrectly'
+                my_error['Line'] = my_line
 
             if not(problem):
                 params = line[1].strip(' ').strip(function)
@@ -9714,47 +9967,59 @@ def checkscript(sample):
                 if function.lower() == 'gettotalthickness':
                     if len(params) != 3:  # not expected number of arguments
                         problem = True
-                        print(14)
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
                     if not(params[0].isdigit()) or not(params[1].isdigit()) and not(problem):  # first two arguments are not digits
                         problem = True
-                        print(15)
+                        my_error['Type'] = 'first two arguments must be digits'
+                        my_error['Line'] = my_line
                     else:
                         if '.' in params[0] or '.' in params[1]:  # first two arguments cannot be floats
                             problem=True
-                            print(16)
+                            my_error['Type'] = 'first two parameters cannot be floats'
+                            my_error['Line'] = my_line
 
-                        start = int(params[0])
-                        end = int(params[1])
-
-                        if start > end:
-                            problem = True
-                            print(17)
-                        if start < 0:
-                            problem = True
-                            print(18)
-
-                        m = len(sample.structure)
-
-                        if m-1 < end:
-                            problem = True
-                            print(19)
 
                         if not(problem):
-                            key = params[2].strip(' ')
-                            if key.lower() != 'all':
-                                for i in range(start,end+1,1):
-                                    if key not in list(sample.structure[i].keys()):
-                                        problem = True
-                                        print(20)
+                            start = int(params[0])
+                            end = int(params[1])
+                            if start > end:
+                                problem = True
+                                my_error['Type'] = 'start layer is larger than end layer'
+                                my_error['Line'] = my_line
+                            if start < 0:
+                                problem = True
+                                my_error['Type'] = 'start layer must be greater than 0'
+                                my_error['Line'] = my_line
+
+                            m = len(sample.structure)
+
+                            if m-1 < end:
+                                problem = True
+                                my_error['Type'] = 'end layer is too small'
+                                my_error['Line'] = my_line
+
+                            if not(problem):
+                                key = params[2].strip(' ')
+                                if key.lower() != 'all':
+                                    for i in range(start,end+1,1):
+                                        if key not in list(sample.structure[i].keys()):
+                                            problem = True
+                                            my_error['Type'] = str(key) + ' not found in layer'
+                                            my_error['Line'] = my_line
 
                 elif function.lower() in ['geteshift', 'getmageshift']:
                     ffName = params[0]
                     if function.lower() == 'geteshift':
                         if ffName not in list(sample.eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
                     else:
                         if ffName not in list(sample.mag_eShift.keys()):
                             problem = True
+                            my_error['Type'] = ffName + ' form factor not found'
+                            my_error['Line'] = my_line
 
                 elif function.lower() == 'getmagdensity':
                     m = len(sample.structure)
@@ -9762,7 +10027,8 @@ def checkscript(sample):
 
                     if not(layer.isdigit()):
                         problem = True
-                        print('d1')
+                        my_error['Type'] = 'layer must be an integer'
+                        my_error['Line'] = my_line
                     else:
                         layer = int(layer)
 
@@ -9771,45 +10037,56 @@ def checkscript(sample):
                     if not problem:
                         if m-1 < layer or layer < 0:
                             problem = True
-                            print('d2')
+                            my_error['Type'] = 'start and end layer improperly defined'
+                            my_error['Line'] = my_line
 
                         if not problem:
                             if symbol not in list(sample.structure[layer].keys()):
                                 problem = True
-                                print('d3')
+                                my_error['Type'] = str(symbol) + 'not found in layer'
+                                my_error['Line'] = my_line
 
                             if symbol != var:
                                 if not(problem) and var not in sample.structure[layer][symbol].polymorph:
                                     problem = True
-                                    print('d4')
+                                    my_error['Type'] = str(var) + 'not found in layer'
+                                    my_error['Line'] = my_line
                 else:
                     if len(params) != 2:
                         problem = True
-                        print(21)
+                        my_error['Type'] = 'unexpected number of parameters'
+                        my_error['Line'] = my_line
                     if not(problem) and params[0].isdigit():
                         if '.' in params[0]:
                             problem = True
-                            print(22)
+                            my_error['Type'] = 'layer must be an integer'
+                            my_error['Line'] = my_line
                         layer = int(params[0])
 
                         if layer > len(sample.structure)-1:
                             problem = True
-                            print(23)
+                            my_error['Type'] = 'layer larger than total number of layers'
+                            my_error['Line'] = my_line
 
                         if not(problem):
                             key = params[1].strip(' ')
                             if key.lower() != 'all':
                                 if key not in list(sample.structure[layer].keys()):
                                         problem = True
-                                        print(24)
+                                        my_error['Type'] = str(key) + ' not found in layer'
+                                        my_error['Line'] = my_line
                     else:
                         problem = True
-                        print(25)
+                        my_error['Type'] = 'layer must be integer type'
+                        my_error['Line'] = my_line
         else:
             problem = True
-            print(26)
+            my_error['Type'] = 'get function improperly defined'
+            my_error['Line'] = my_line
 
-    return my_script, problem
+
+    return my_script, problem, my_error
+
 
 def isfloat(num):
     try:
@@ -9817,6 +10094,38 @@ def isfloat(num):
         return True
     except ValueError:
         return False
+
+class licenseWidget(QDialog):
+    """
+    Purpose: Initialize script window to allow user to perform special operations
+    """
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Script Window')
+        self.setGeometry(180, 60, 700, 400)
+        pagelayout = QVBoxLayout()
+
+
+        # creating the script workspace
+        vbox = QVBoxLayout()
+        text = 'License'
+        self.title = QLabel(text)
+        self.title.setWordWrap(True)
+        self.title.setAlignment(Qt.AlignCenter)
+        vbox.addWidget(self.title)
+
+        self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
+        self.scrollable_text_area.setReadOnly(True)
+
+        with open('license.txt', 'r',encoding='ISO-8859-1') as f:
+            file_contents = f.read()
+            self.scrollable_text_area.setText(file_contents)
+
+        vbox.addWidget(self.scrollable_text_area)
+
+        pagelayout.addLayout(vbox)
+
+        self.setLayout(pagelayout)
 
 if __name__ == '__main__':
     fname = 'Pim10uc.h5'

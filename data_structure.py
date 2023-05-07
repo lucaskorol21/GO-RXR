@@ -1,6 +1,6 @@
 """
 Library: data_structure
-Version: 0.1
+Version: 0.2
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -30,9 +30,13 @@ Warning: Once you've made a change to the HDF5 file format and you have made cha
 longer be able to read in older files. Be careful when working with the older files while testing as this
 may corrupt the files. I've done this a few times and lost precious work that I need to redo.
 
-Suggestion: Include a new data field called "version". This way we can keep track of the version type and then save
-and load the function appropriately without corrupting the files.
-
+Version: I've included a version attribute for the file for the HDF5 file types and automatically save the
+GO-RXR version. There is not current use for this, but there are numerous updates that will include different
+global optimization algorithms, sample definitions, and fitting parameters. This means that the loading and saving
+functions will need to change accordingly. However, there is a problem with the loading functions as a a workspace file
+that was saved using an older version of GO-RXR will not be able to load properly. So the idea behind the
+version attribute was to be able to identify which version this file was last saved so that the appropriate loading
+sequence can be done.
 """
 
 import matplotlib.pyplot as plt
@@ -413,7 +417,7 @@ def evaluate_parameters(parameters):
 
     return final_array
 
-def saveSimulationHDF5(fname, sim_dict):
+def saveSimulationHDF5(fname, sim_dict, version):
     """
     Purpose: Save the simulations
     :param fname: Filename to save the simulations to
@@ -421,7 +425,7 @@ def saveSimulationHDF5(fname, sim_dict):
     :return:
     """
     f = h5py.File(fname, 'a')  # create fname hdf5 file
-
+    f.attrs['Version'] = version
     simulated = f['Simulated_data']
 
     simR = simulated['Reflectivity_Scan']
@@ -448,7 +452,7 @@ def saveSimulationHDF5(fname, sim_dict):
             dset = simR[name]
             n = len(sim_dict[name]['Data'][0])
             m = np.shape(np.array(sim_dict[name]['Data']))
-            print(m)
+
 
             dset.resize(m)
             dset[...] = np.array(sim_dict[name]['Data'])
@@ -461,10 +465,10 @@ def saveSimulationHDF5(fname, sim_dict):
             dset.attrs['Background Shift'] = sim_dict[name]['Background Shift']
             dset.attrs['Scaling Factor'] = sim_dict[name]['Scaling Factor']
 
-def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
+def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization, version):
     """
     Purpose: Save workspace information with a specfied filename
-    :param fname: filenmae
+    :param fname: filename
     :param sample: slab class
     :param data_dict: data dictionary
     :param sim_dict: simulation dictionary
@@ -489,7 +493,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
         :return:
         """
 
-    WriteSampleHDF5(fname, sample)  # save the sample information
+    WriteSampleHDF5(fname, sample, version)  # save the sample information
 
     f = h5py.File(fname, "a")
 
@@ -679,7 +683,7 @@ def saveAsFileHDF5(fname, sample, data_dict, sim_dict, fit, optimization):
 
 
 
-def saveFileHDF5(fname, sample, data_dict, fit, optimization):
+def saveFileHDF5(fname, sample, data_dict, fit, optimization, version):
     """
     Purpose: saves the GUI information to the current file
     :param fname: file path
@@ -690,7 +694,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
     :return:
     """
 
-    WriteSampleHDF5(fname, sample)  # save the sample information
+    WriteSampleHDF5(fname, sample, version)  # save the sample information
 
     sfBsFitParams = fit[0]
     sfBsVal = fit[1]
@@ -807,7 +811,7 @@ def saveFileHDF5(fname, sample, data_dict, fit, optimization):
 
     f.close()
 
-def newFileHDF5(fname, sample):
+def newFileHDF5(fname, sample, version):
     """
         Purpose: Take in data and sample model and save it as an hdf5 file
         :param fname: File name with .hdf5 file extension
@@ -827,7 +831,7 @@ def newFileHDF5(fname, sample):
     if os.path.exists(fname):
         f.clear()
 
-
+    f.attrs['Version'] = version
     # creating group that will contain the sample information
     grp1 = f.create_group("Sample")
     m = len(sample.structure)
@@ -1658,7 +1662,7 @@ def ReadSampleHDF5(fname):
     sample.layer_magnetized = S.attrs['LayerMagnetized']
     sample.eShift = ast.literal_eval(S.attrs['FormFactors'])
     sample.mag_eShift = ast.literal_eval(S.attrs['MagFormFactors'])
-    print(S.attrs['ffmScale'])
+
     sample.ff_scale = ast.literal_eval(S.attrs['ffScale'])
     sample.ffm_scale = ast.literal_eval(S.attrs['ffmScale'])
     sample.find_sf = ast.literal_eval(S.attrs['findFF'])
@@ -1700,8 +1704,7 @@ def ReadSampleHDF5(fname):
                 sample.structure[lay_num][ele_key].scattering_factor = element.attrs['ScatteringFactor']
             sample.structure[lay_num][ele_key].position = element.attrs['Position']
 
-    #print(sample.ff_scale)
-    #print(sample.eShift)
+
     return sample
 
 def ReadDataHDF5(fname):
@@ -1754,6 +1757,8 @@ def ReadDataHDF5(fname):
 
     return data, data_dict, sim_dict
 
+
+
 def LoadDataHDF5(fname):
     """
     Purpose: Reads in the experimental and simulated data from hdf5 file and then plots spectrum chosen by user
@@ -1799,7 +1804,7 @@ def LoadDataHDF5(fname):
 
     return data, data_dict, sim_dict
 
-def WriteSampleHDF5(fname, sample):
+def WriteSampleHDF5(fname, sample, version):
     """
     Purpose: Write a new sample to the hdf5 file fname
     :param fname: File name
@@ -1814,6 +1819,7 @@ def WriteSampleHDF5(fname, sample):
     f.close()
 
     f = h5py.File(fname, "a")
+    f.attrs['Version'] = version
     grp1 = f.create_group('Sample')
 
     for key in list(sample.poly_elements):

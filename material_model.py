@@ -62,6 +62,7 @@ def _use_given_ff(directory):
     struct_names = []  # stores list of structural form factors
     mag_names = []  # stores list of magnetic form factors
 
+
     # loops through project directory for form factor files
     for file in os.listdir(directory):
         if file.endswith(".ff"):
@@ -283,16 +284,6 @@ if __name__ == "__main__":
     wavelength = (h*c)/E  # Wavelength (same unit as roughness) (Angstroms or nm)
     test = np.loadtxt('test_example.txt')  # Data from ReMagX
 
-    sample = slab(2)
 
-
-    sample.addlayer(0, 'SrTiO3', 50, density=1.56366)
-    sample.addlayer(1, 'LaMnO3', 38, density=1.56366)
-    sample.energy_shift()
-
-
-    qz = (0.001013546247)*E*np.sin(Theta*np.pi/180)
-
-    sample.reflectivity(E,qz)
 
 
