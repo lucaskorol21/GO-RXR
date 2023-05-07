@@ -130,7 +130,6 @@ def createFFM(directory, name ,source, date):
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    print()
 if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
