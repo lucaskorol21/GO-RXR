@@ -8231,7 +8231,6 @@ class ReflectometryApp(QMainWindow):
         file_path = 'Documentation_Pythonreflectivity.pdf'
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
-        # not currently implemented
 
 
     def activate_tab_1(self):
