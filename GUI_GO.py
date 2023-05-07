@@ -8228,7 +8228,7 @@ class ReflectometryApp(QMainWindow):
         from PyQt5.QtGui import QDesktopServices
         from PyQt5.QtCore import QUrl
 
-        file_path = 'Documentation_Pythonreflectivity.pdf'
+        file_path = 'User_Guide_v0.3.pdf'
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 
