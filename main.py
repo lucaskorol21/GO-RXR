@@ -130,52 +130,7 @@ def createFFM(directory, name ,source, date):
         pickle.dump(my_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-@njit()
-def ALS(alpha, beta, precision=1e-6):
-    """
-    Purpose: Perform the adaptive layer segmentation
-    :param alpha: numpy array of real values
-    :param beta: numpy array of imaginary values
-    :param precision: precision value for slicing
-    :return: my_slabs - contains indices for slicing
-    """
 
-    precision = 1e-5
-    alpha = alpha / np.linalg.norm(alpha)  # normalizes epsilon
-    beta = beta / np.linalg.norm(beta)  # normalizes epsilon_mag
-    idx_a = 0  # keeps track of surface of previous slab
-    n = alpha.size
-    my_slabs = np.zeros(n)  # pre-initialize the slab array
-
-    dsSlab = 1  # counts the number of slices
-
-    for idx_b in range(1, n):
-        if idx_b > 0:
-            # retrieves permittivity values
-            f1 = alpha[idx_a]
-            f2 = alpha[idx_b]
-            f1b = beta[idx_a]
-            f2b = beta[idx_b]
-
-            delta_a = np.absolute(f2 - f1)  # varitation of epsilon
-            delta_b = np.absolute(f2b - f1b)  # variation of epsilon_mag
-
-            # checks if variation is of minimum variation set by 'precision'
-            if delta_a > precision or delta_b > precision:
-                # my_slabs = np.append(my_slabs, idx_b)  # append slice
-                my_slabs[dsSlab] = idx_b
-                idx_a = idx_b  # change previous slice location
-                dsSlab = dsSlab + 1
-            elif idx_b == n - 1:  # reached the end of the array
-                my_slabs[dsSlab] = idx_b
-                dsSlab = dsSlab + 1
-        else:
-            idx_a = idx_b
-            my_slabs[dsSlab] = idx_b
-            dsSlab = dsSlab + 1
-    my_slabs = my_slabs[:dsSlab]
-
-    return my_slabs
 if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
