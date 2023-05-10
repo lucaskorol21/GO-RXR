@@ -5783,9 +5783,11 @@ class GlobalOptimizationWidget(QWidget):
         Purpose: Run data fitting algorithms
         """
         script, problem, my_error = checkscript(self.sample)
+        check = self.checkBox.checkState()
         use_script = False
-        if not(problem):
+        if not(problem) and check>0:
             use_script = True
+
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
