@@ -14,7 +14,7 @@ Imported Libraries
 numpy (version 1.21.4) - used for array manipulation
 
 material_model (version 0.1) - Part of the 'name' software package and is used to retrieve the form factors and
-                               caluculate the optical constants
+                               calculate the optical constants
 
 Pythonreflectivity (version 1.0) - Software used to calculate the reflectivity spectra. Currently this software is only
                                    compatible with python 3.7. The function generate_structure, slab.reflectivity, and
@@ -40,17 +40,20 @@ import copy
 @njit()
 def ALS(alpha, beta, precision=1e-6):
     """
-    Purpose: Perform the adaptive layer segmentation
-    :param alpha: numpy array of real values
-    :param beta: numpy array of imaginary values
-    :param precision: precision value for slicing
+    Purpose: Return the indices for the adaptive layer segmentation
+    :param alpha: numpy array of refractive form factor values
+    :param beta: numpy array of absorptive form factor values
+    :param precision: precision value used in slicing
     :return: my_slabs - contains indices for slicing
     """
-    alpha = alpha /np.linalg.norm(alpha)  # normalizes epsilon
-    beta = beta /np.linalg.norm(beta)  # normalizes epsilon_mag
+
+    alpha = alpha /np.linalg.norm(alpha)  # normalize the refractive component
+    beta = beta /np.linalg.norm(beta)  # normalize the absorptive component
+
     idx_a = 0  # keeps track of surface of previous slab
+
     n = alpha.size
-    my_slabs = np.zeros(n) # pre-initialize the slab array
+    my_slabs = np.zeros(n) # pre-initialize the slab array to the maximum number of slabs possible
 
     dsSlab = 1  # counts the number of slices
     for idx_b in range(1,n):
@@ -61,12 +64,11 @@ def ALS(alpha, beta, precision=1e-6):
         f1b = beta[idx_a]
         f2b = beta[idx_b]
 
-        delta_a = np.absolute(f2-f1)  # varitation of epsilon
-        delta_b = np.absolute(f2b-f1b)  # variation of epsilon_mag
+        delta_a = np.absolute(f2-f1)  # varitation of refractive component
+        delta_b = np.absolute(f2b-f1b)  # variation of absorptive component
 
-        # checks if variation is of minimum variation set by 'precision'
+        # checks if variation meets precision value if not check next value
         if delta_a>precision or delta_b>precision:
-            #my_slabs = np.append(my_slabs, idx_b)  # append slice
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
@@ -126,6 +128,7 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
                         phi = structure[layer][ele].phi
 
         # sets the magnetization direction based on the input angles
+        #  - in future versions we will be able to set the magnetization direction based on phi and theta
         if layer_magnetized[layer]:
             if gamma == 90 and phi == 90:
                 A[idx].setmag('y')
@@ -375,7 +378,7 @@ def error_function(t, sigma1, sigma2, offset1, offset2):
 class element:
     def __init__(self, name, stoichiometry):
         """
-        Purpose: Used in class slab. Used to keep track of elemental properties of each layer
+        Purpose: Used in class slab. Used to keep track of element properties for each layer
         :param name: Element Symbol
         :param stoichiometry: The stoichiometric relation of the chemical formula as input into the class slab
         """
@@ -387,7 +390,7 @@ class element:
         self.linked_roughness = None
         self.stoichiometry = stoichiometry  # Stoichiometry of the element
         self.poly_ratio = 1  # List that keeps track of polymorphous density ratio
-        self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. ions)
+        self.polymorph = []  # A list that contains the 'names' of various forms of the element (e.g. oxidation states)
         self.gamma = 0  #
         self.phi = 0  #
         self.mag_density = []  # The scalling factor we want to multiply our scattering factor by (density is not the correct description)
@@ -1189,51 +1192,49 @@ class slab:
     def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1):
 
         """
-        Purpose: Computes the reflectivity
+        Purpose: Takes the model of the material and computes the reflection
         :param E: Energy of reflectivity scan (eV)
-        :param qi: Starting momentum transfer
-        :param qf: End momentum transfer
-        :param precision: Precision value
+        :param qi: Starting momentum transfer (A^{-1}) and related to small grazing angle
+        :param qf: Ending momentum transfer (A^{-1}) and related to large grazing angle
+        :param precision: Precision value for adaptive layer segmentation
         :param s_min: Minimum step size (None indicates using default value)
         :param bShift: float containing the background shift value
         :param sFactor: float containing the scaling factor value
         :return:
             qz - momentum transfer
-            R1 - reflectivity
+            R - dictionary for simulated reflectivity for the different types of x-ray polarizations
 
         """
 
 
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
-        wavelength = h * c / (E * 1e-10)  # wavelength
-        #wavelength = 19.366478131833802
-        # requires angle for reflectivity computation and minimum slab thickness
-        #theta_i = arcsin(qi / E / (0.001013546247)) * 180 / pi  # initial angle
-        #theta_f = arcsin(qf / E / (0.001013546247)) * 180 / pi  # final angle in interval
-        thickness, density, density_magnetic = self.density_profile(step=0.1)  # Computes the density profile
+        wavelength = h * c / (E * 1e-10)  # wavelength of incoming x-ray
 
-        sf = dict()  # form factors of non-magnetic components
-        sfm = dict()  # form factors of magnetic components
+        # computes density profile based on the defined model (depth-dependent concentration)
+        thickness, density, density_magnetic = self.density_profile(step=0.1)
+
+        sf = dict()  # scattering factors of non-magnetic components
+        sfm = dict()  # scattering factors of magnetic components
 
 
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
-            dE = float(self.eShift[self.find_sf[0][e]])
-            scale = float(self.ff_scale[self.find_sf[0][e]])
-            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale
+            dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+            scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
         # Magnetic Scattering Factor
         for em in self.find_sf[1].keys():
             dE = float(self.mag_eShift[self.find_sf[1][em]])
             scale = float(self.ffm_scale[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
 
-        delta, beta = index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
-        delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates dielectric constant for magnetic component
+        delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
+        delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates depth-dependent magnetic components
 
-        # definition as described in Lott Dieter Thesis
-        n = 1 + np.vectorize(complex)(-delta, beta)  # index of refraction
-        epsilon = n**2
+        # definition of magneto-optical constant as described in Lott Dieter Thesis
+        n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
+        epsilon = n**2  # dielectric constant computation
 
         # magneto-optical constant as defined in Lott Dieter Thesis
         Q = np.vectorize(complex)(beta_m, delta_m)
@@ -1241,13 +1242,13 @@ class slab:
 
         my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
 
-        my_slabs = my_slabs.astype(int)  # sets all numbers to integers
+        my_slabs = my_slabs.astype(int)  # sets all values in my_slab to integers
 
-        my_slabs = my_slabs[1:]  # removes first element
+        my_slabs = my_slabs[1:]  # removes first element as it is not needed for structure generation
 
 
         m = len(my_slabs)  # number of slabs
-        A =pr.Generate_structure(m)  # creates Pythonreflectivity object class
+        A =pr.Generate_structure(m)  # initializes Pythonreflectivity object class
 
         m_j=0  # previous slab
         idx = 0  # keeps track of current layer
@@ -1255,19 +1256,15 @@ class slab:
         gamma = 90  # pre-initialize magnetization direction
         phi = 90
 
-        # loops through each layer setting the dielectric matrix
-        # This function will need to be altered for newer version of PythonReflectivity
-        for m_i in my_slabs:
-            # right now I am adding an additional layer of 4 angstroms!!! Please check this!
 
+        # This section will need to be altered for newer version of PythonReflectivity as the newer version uses
+        # the definition of chi instead of epsilon
+        for m_i in my_slabs:
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
 
-            #eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
-            eps = epsilon[m_j]
-            #chi = (chi_array[m_i]+ chi_array[m_j])/2
-            #eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
-            eps_mag = epsilon_mag[m_j] # computes the magnetic dielectric constant
+            eps = epsilon[m_j]  # non-magnetic dielectric constant
 
+            eps_mag = epsilon_mag[m_j]  # magnetic dielectric constant
 
             # Determines the magnetization direction of the first layer
             if layer == 0:
@@ -1277,11 +1274,12 @@ class slab:
                             gamma = self.structure[0][ele].gamma
                             phi = self.structure[0][ele].phi
 
-            # Need to redo this
+
             # Determines the magnetization direction of the other layers
             temp_list = [self.transition[i][layer] for i in range(len(self.transition))]
             transition = max(temp_list)
 
+            # makes sure we are properly defining the magnetization direction as desired
             if transition<=thickness[m_j] and layer<len(self.transition[0])-1:
                 layer = layer + 1
                 if self.layer_magnetized[layer]:
@@ -1293,7 +1291,6 @@ class slab:
 
             # sets the magnetization direction based on the input angles
             if self.layer_magnetized[layer]:
-
                 if gamma == 90 and phi == 90:
                     A[idx].setmag('y')
                 elif gamma == 0 and phi == 90:
@@ -1303,12 +1300,9 @@ class slab:
                 else:
                     raise ValueError('Values of Gamma and Phi can only be (90,90), (0,90), and (0,0)')
 
-                #A[idx].seteps([eps,eps,eps,eps_mag])  # sets dielectric tensor for magnetic layer
-                A[idx].seteps([eps,eps,eps,eps_mag])
+                A[idx].seteps([eps,eps,eps,eps_mag])   # sets the components of the dielectric tensor
             else:
-
-                #A[idx].seteps(eps)  # sets dielectric tensor for non-magnetic layer
-                A[idx].seteps([eps,eps,eps,0])
+                A[idx].seteps([eps,eps,eps,0])  # non-magnetic case
 
 
             if idx != 0:
@@ -1323,18 +1317,15 @@ class slab:
         Theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi  # initial angle
         Rtemp = pr.Reflectivity(A, Theta, wavelength, MagneticCutoff=1e-20)  # Computes the reflectivity
         R = dict()
-        """
-        # Used to demonstrate how sample is being segmented
-        plot_t = np.insert(thickness[my_slabs],0,thickness[0], axis=0)
-        plot_e = np.insert(real(epsilon[my_slabs]),0, real(epsilon[0]), axis=0)
-        """
+
+        # creates the reflectivity dictionary applying the defined scaling factors and background shifts
         if len(Rtemp) == 2:
             R['S'] = Rtemp[0]*sFactor + bShift  # s-polarized light
             R['P'] = Rtemp[1]*sFactor + bShift   # p-polarized light
             R['AL'] = sFactor*(Rtemp[0]-Rtemp[1])/(sFactor*(Rtemp[0]+Rtemp[1])+2*bShift)  # Asymmetry linear polarized
-            R['LC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # Left circular
-            R['RC'] = Rtemp[0]*sFactor + bShift  # s-polarized light  # right circular
-            R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized
+            R['LC'] = Rtemp[0]*sFactor + bShift  # Left circular
+            R['RC'] = Rtemp[0]*sFactor + bShift  #  right circular
+            R['AC'] = np.zeros(len(Rtemp[0]))  # Asymmetry circular polarized (XMCD)
         elif len(Rtemp) == 4:
             R['S'] = Rtemp[0]*sFactor + bShift
             R['P'] = Rtemp[1]*sFactor + bShift
@@ -1401,12 +1392,7 @@ class slab:
         delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
 
 
-        #n = 1 + np.vectorize(complex)(-delta, beta)  # refractive index
-        #n = 1 - delta + 1j*beta
-        #epsilon = n ** 2  # permittivity
-        epsilon = 1 - 2*delta + 1j*beta*2  # permittivity
-        #epsilon = np.add((1-2*delta), 1j*beta*2)
-        #Q = np.vectorize(complex)(beta_m, delta_m)  # magneto-optical constant
+        epsilon = 1 - 2*delta + 1j*beta*2  # dielectric constant
 
         # definition as described in Lott Dieter Thesis
         Q = beta_m + 1j*delta_m  # magneto-optical constant
@@ -1429,7 +1415,7 @@ class slab:
 
     def energy_shift(self):
         """
-        Purpose: Initialize the energy shift and form factor scaling
+        Purpose: Initialize the energy shift and form factor scaling for the GUI
         """
 
         self.density_profile()
@@ -1448,9 +1434,6 @@ class slab:
         for em in self.find_sf[1].keys():
             if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
                 mag_key_delete.append(em)
-            #else:
-            #    self.mag_eShift[self.find_sf[1][em]] = 0
-            #    self.ffm_scale[self.find_sf[1][em]] = 1
 
         for key in key_delete:
             del self.find_sf[0][key]
