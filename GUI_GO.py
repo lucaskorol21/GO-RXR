@@ -67,7 +67,7 @@ Instructions to create executable using pytinstaller:
     datas = [('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
     ('.\\material_model.py','.'), ('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
     ('.\\form_factor_magnetic.pkl','.'), ('.\\Perovskite_Density.txt','.'), ('.\\Atomic_Mass.txt','.'),
-    ('.\\demo.h5','.')]
+    ('.\\demo.h5','.'), ('.\\User_Guide_v0.3.pdf,'.'), ('.\\license.txt,'.')]
 5. This includes all the python files, text files, and all other data used to execute GUI_GO.py. If newer versions
    of GO-RXR depend on more files than they must be included into this array. Follow the same naming convention as shown.
 6. Once satisfied run 'pyinstaller GUI_GO.spec' in the terminal. This will ensure that all desired data is included into
@@ -5783,9 +5783,11 @@ class GlobalOptimizationWidget(QWidget):
         Purpose: Run data fitting algorithms
         """
         script, problem, my_error = checkscript(self.sample)
+        check = self.checkBox.checkState()
         use_script = False
-        if not(problem):
+        if not(problem) and check>0:
             use_script = True
+
         # getting the scans and putting them in their proper format
         # putting the parameters and their boundaries in the proper format!
         parameters = copy.deepcopy(self.sWidget.parameterFit)
@@ -7358,7 +7360,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
-        self.version = '0.2'
+        self.version = '0.3'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -7371,6 +7373,9 @@ class ReflectometryApp(QMainWindow):
         # set the title
         my_name = 'GO-RXR (version '+self.version +')'
         self.setWindowTitle(my_name)
+
+        icon = QtGui.QIcon('logo.png')
+        self.setWindowIcon(icon)
 
         # set the geometry of the window
         self.setGeometry(180, 60, 1400, 800)
@@ -8228,7 +8233,7 @@ class ReflectometryApp(QMainWindow):
         from PyQt5.QtGui import QDesktopServices
         from PyQt5.QtCore import QUrl
 
-        file_path = 'User_Guide_v0.3.pdf'
+        file_path = 'GO-RXR_UserGuide_v0.3.pdf'
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 

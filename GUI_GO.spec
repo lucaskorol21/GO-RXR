@@ -11,7 +11,7 @@ a = Analysis(
     datas=[('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
     ('.\\material_model.py','.'), ('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
     ('.\\form_factor_magnetic.pkl','.'), ('.\\Perovskite_Density.txt','.'), ('.\\Atomic_Mass.txt','.'),
-    ('.\\demo.h5','.')],
+    ('.\\demo.h5','.'), ('.\\User_Guide_v0.3.pdf','.'), ('.\\license.txt','.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -101,8 +101,10 @@ def generate_structure(thickness, structure, my_slabs, epsilon, epsilon_mag, lay
     # Recent versions of Pythonreflectivity use the susceptibility instead of the dielectric constant
     for m_i in my_slabs:
         d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-        eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
-        eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2  # computes the magnetic dielectric constant
+        #eps = (epsilon[m_i] + epsilon[m_j]) / 2  # computes the dielectric constant value to use
+        eps = epsilon[m_j]  # computes the dielectric constant value to use
+        #eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j]) / 2
+        eps_mag = epsilon_mag[m_j]  # computes the magnetic dielectric constant
 
         # Determines the magnetization direction of the first layer
         if layer == 0:
@@ -168,12 +170,13 @@ def energy_reflectivity(A, Theta, wavelength, R, E, backS=0, scaleF=1):
         R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
         R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # Asymmetry linear polarized
     elif len(Rtemp) == 4:
+        delta_e = 1e-6
         R['S'][E] = Rtemp[0][0]*scaleF + backS  # s-polarized light
         R['P'][E] = Rtemp[1][0]*scaleF + backS  # p-polarized light
         R['AL'][E] = scaleF*(Rtemp[0][0] - Rtemp[1][0]) / (scaleF*(Rtemp[0][0] + Rtemp[1][0])+backS*2)  # linear asymmetry
         R['LC'][E] = Rtemp[2][0]*scaleF + backS  # left circular polarization
         R['RC'][E] = Rtemp[3][0]*scaleF + backS  # right circular polarization
-        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0])+2*backS)  # circular asymmetry
+        R['AC'][E] = scaleF*(Rtemp[2][0] - Rtemp[3][0]) / (scaleF*(Rtemp[2][0] + Rtemp[3][0]))+2*backS   # circular asymmetry
     else:
         raise TypeError('Error in reflectivity computation. Reflection array not expected size.')
     return R
@@ -1255,11 +1258,15 @@ class slab:
         # loops through each layer setting the dielectric matrix
         # This function will need to be altered for newer version of PythonReflectivity
         for m_i in my_slabs:
+            # right now I am adding an additional layer of 4 angstroms!!! Please check this!
 
             d = thickness[m_i] - thickness[m_j]  # computes thickness of slab
-            eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
+
+            #eps = (epsilon[m_i] + epsilon[m_j])/2  # computes the dielectric constant value to use
+            eps = epsilon[m_j]
             #chi = (chi_array[m_i]+ chi_array[m_j])/2
-            eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+            #eps_mag = (epsilon_mag[m_i] + epsilon_mag[m_j])/2  # computes the magnetic dielectric constant
+            eps_mag = epsilon_mag[m_j] # computes the magnetic dielectric constant
 
 
             # Determines the magnetization direction of the first layer
