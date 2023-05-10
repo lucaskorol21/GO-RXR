@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://imgur.com/iM3mg3t"><img src="https://i.imgur.com/iM3mg3tm.jpg" title="source: imgur.com" /></a>
+  <a href="https://imgur.com/vgBVhve"><img src="https://i.imgur.com/vgBVhve.png" title="source: imgur.com" /></a>
 </h1>
 
 <h1 align="center">
