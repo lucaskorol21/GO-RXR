@@ -877,7 +877,9 @@ class slab:
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
                             name = self.structure[layer][ele].scattering_factor
-                            #self.eShift[name] = 0
+                            if name not in self.eShift.keys():
+                                self.eShift[name] = 0
+                                self.ff_scale[name] = 1
 
 
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
@@ -984,7 +986,9 @@ class slab:
                             if ele not in self.find_sf[0]:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
                                 name = self.structure[layer][ele].scattering_factor[po]
-                                #self.eShift[name] = 0
+                                if name not in self.eShift.keys():
+                                    self.eShift[name] = 0
+                                    self.ff_scale[name] = 1
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1201,7 +1205,7 @@ class slab:
         :param bShift: float containing the background shift value
         :param sFactor: float containing the scaling factor value
         :return:
-            qz - momentum transfer
+            qz - numpy array containing the momentum transfer
             R - dictionary for simulated reflectivity for the different types of x-ray polarizations
 
         """
@@ -1212,7 +1216,7 @@ class slab:
         wavelength = h * c / (E * 1e-10)  # wavelength of incoming x-ray
 
         # computes density profile based on the defined model (depth-dependent concentration)
-        thickness, density, density_magnetic = self.density_profile(step=0.1)
+        thickness, density, density_magnetic = self.density_profile(step=s_min)
 
         sf = dict()  # scattering factors of non-magnetic components
         sfm = dict()  # scattering factors of magnetic components
@@ -1228,6 +1232,7 @@ class slab:
             dE = float(self.mag_eShift[self.find_sf[1][em]])
             scale = float(self.ffm_scale[self.find_sf[1][em]])
             sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates depth-dependent magnetic components
@@ -1248,6 +1253,7 @@ class slab:
 
 
         m = len(my_slabs)  # number of slabs
+
         A =pr.Generate_structure(m)  # initializes Pythonreflectivity object class
 
         m_j=0  # previous slab

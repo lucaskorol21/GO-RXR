@@ -638,6 +638,29 @@ class sampleWidget(QWidget):
         step_size_layout.addWidget(step_size_label)
         step_size_layout.addWidget(self.step_size)
 
+        self._precision = '1e-6'
+        self.precisionWidget = QLineEdit()
+        self.precisionWidget.textChanged.connect(self.changePrecision)
+        self.precisionWidget.setText(self._precision)
+        self.precisionWidget.setMaximumWidth(100)
+        precision_label = QLabel('Precision (qz):')
+        precision_label.setMaximumWidth(65)
+        precision_layout = QHBoxLayout()
+        precision_layout.addWidget(precision_label)
+        precision_layout.addWidget(self.precisionWidget)
+
+        self._Eprecision = '1e-11'
+        self.Eprecision = QLineEdit()
+        self.Eprecision.textChanged.connect(self.changeEPrecision)
+        self.Eprecision.setText(self._Eprecision)
+        self.Eprecision.setMaximumWidth(100)
+        Eprecision_label = QLabel('Precision (E):')
+        Eprecision_label.setMaximumWidth(65)
+        Eprecision_layout = QHBoxLayout()
+        Eprecision_layout.addWidget(Eprecision_label)
+        Eprecision_layout.addWidget(self.Eprecision)
+
+
         pagelayout = QHBoxLayout()  # page layout
 
         cblayout = QVBoxLayout()  # combobox and button layout
@@ -676,6 +699,8 @@ class sampleWidget(QWidget):
         cblayout.addWidget(deletelayerButton)
         cblayout.addSpacing(50)
         cblayout.addLayout(step_size_layout)
+        cblayout.addLayout(precision_layout)
+        cblayout.addLayout(Eprecision_layout)
 
         # layer combo box
         cblayout.addWidget(self.layerBox)
@@ -1903,6 +1928,18 @@ class sampleWidget(QWidget):
         """
         self._step_size = self.step_size.text()
 
+    def changePrecision(self):
+        """
+        Purpose: Change the precision value
+        """
+        self._precision = self.precisionWidget.text()
+
+    def changeEPrecision(self):
+        """
+        Purpose: Change the precision value
+        """
+        self._Eprecision = self.Eprecision.text()
+
     def _setVarMagFromSample(self, sample):
         """
         Purpose: Retrieve element variation and magnetic data from slab class
@@ -2825,6 +2862,10 @@ class sampleWidget(QWidget):
             elif gamma == 0 and phi == 0:
                 self.magDirection[j] = 'z'
 
+    @property
+    def precision(self):
+        return self._precision
+
 
 class reflectivityWidget(QWidget):
     """
@@ -2994,6 +3035,14 @@ class reflectivityWidget(QWidget):
         axis_label = QLabel('Reflectivity Axis: ')
         hbox = QHBoxLayout()
 
+        self.showLayers = QCheckBox()
+        self.showLayers.setChecked(1)
+        showLabel = QLabel('Show ALS: ')
+        showLayout = QHBoxLayout()
+        showLayout.addWidget(showLabel)
+        showLayout.addWidget(self.showLayers)
+        showLayout.addSpacing(200)
+
         self.rButton = QPushButton('Reflectometry')
         self.rButton.setStyleSheet('background: cyan')
         self.rButton.clicked.connect(self.rPlot)
@@ -3014,6 +3063,28 @@ class reflectivityWidget(QWidget):
         stepLayout = QHBoxLayout()
         stepLayout.addWidget(stepLabel)
         stepLayout.addWidget(self.stepWidget)
+
+        # precision layout
+        self.precisionWidget = QLineEdit()
+        self.precisionWidget.textChanged.connect(self.changePrecision)
+        self.precisionWidget.setText(self.sWidget._precision)
+        self.precisionWidget.setMaximumWidth(175)
+        precisionLabel = QLabel('Precision (qz):')
+        precisionLabel.setMaximumWidth(65)
+        precisionLayout = QHBoxLayout()
+        precisionLayout.addWidget(precisionLabel)
+        precisionLayout.addWidget(self.precisionWidget)
+
+        # precision layout
+        self.EprecisionWidget = QLineEdit()
+        self.EprecisionWidget.textChanged.connect(self.changeEPrecision)
+        self.EprecisionWidget.setText(self.sWidget._Eprecision)
+        self.EprecisionWidget.setMaximumWidth(175)
+        EprecisionLabel = QLabel('Precision (E):')
+        EprecisionLabel.setMaximumWidth(65)
+        EprecisionLayout = QHBoxLayout()
+        EprecisionLayout.addWidget(EprecisionLabel)
+        EprecisionLayout.addWidget(self.EprecisionWidget)
 
         hbox.addWidget(axis_label)
         hbox.addWidget(self.qz)
@@ -3073,6 +3144,10 @@ class reflectivityWidget(QWidget):
 
         scanSelectionLayout.addLayout(hbox)
         scanSelectionLayout.addLayout(stepLayout)
+        scanSelectionLayout.addLayout(precisionLayout)
+        scanSelectionLayout.addLayout(EprecisionLayout)
+        scanSelectionLayout.addLayout(showLayout)
+
 
         scanSelectionLayout.addSpacing(20)
         scanSelectionLayout.addWidget(line3)
@@ -3219,6 +3294,10 @@ class reflectivityWidget(QWidget):
         self.spectrumWidget.clear()
         pol = self.polarBox.currentText()
         step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
+
+        
         polName = 'S'
         if pol == 's-polarized':
             polName = 'S'
@@ -3239,7 +3318,7 @@ class reflectivityWidget(QWidget):
         if self.scanType:
             Theta = np.linspace(0.1, 89.1, num=n)
             qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
-            qz, R = self.sample.reflectivity(energy, qz, s_min=step_size)
+            qz, R = self.sample.reflectivity(energy, qz, s_min=step_size, precision=prec)
             R = R[polName]
             if self.axis_state:  # momentum transfer
                 self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 1), width=2), name='Simulation')
@@ -3259,7 +3338,7 @@ class reflectivityWidget(QWidget):
             lw = float(self.simLowEnergy.text())
             up = float(self.simUpEnergy.text())
             E = np.linspace(lw, up, num=n)
-            E, R = self.sample.energy_scan(angle, E, s_min=step_size)
+            E, R = self.sample.energy_scan(angle, E, s_min=step_size, precision=Eprec)
             R = R[polName]
 
             self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 1), width=2), name='Simulation')
@@ -3304,8 +3383,22 @@ class reflectivityWidget(QWidget):
 
         delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
 
+        my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+        my_thickness = []
+        my_value = []
+
+        # my_thickness = my_thickness + [0]
+        for s in my_slabs:
+            x = thickness[int(s)]
+            d = delta[int(s)]
+
+            my_thickness.extend([x, x, x])
+            my_value.extend([0, d, 0])
+
         self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
         self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
+        if self.showLayers.checkState():
+            self.spectrumWidget.plot(my_thickness, my_value)
         self.spectrumWidget.setLabel('left', "Reflectivity, R")
         self.spectrumWidget.setLabel('bottom', "Thickness, Å")
         self.spectrumWidget.setLogMode(False, False)
@@ -3329,6 +3422,8 @@ class reflectivityWidget(QWidget):
         step_size = float(self.sWidget._step_size)
         thickness, density, density_magnetic = self.sample.density_profile(step=step_size)
 
+        # Non-Magnetic Scattering Factor
+
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
@@ -3337,15 +3432,30 @@ class reflectivityWidget(QWidget):
             name = 'ff-' + self.sample.find_sf[0][e]
             dE = float(self.sWidget.eShift[name])
             scale = float(self.sWidget.ffScale[name])
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
+            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
         # Magnetic Scattering Factor
         for em in self.sample.find_sf[1].keys():
             name = 'ffm-' + self.sample.find_sf[1][em]
             dE = float(self.sWidget.eShift[name])
             scale = float(self.sWidget.ffScale[name])
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
+            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
 
-        delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)
+        delta, beta = ms.magnetic_optical_constant(density, sf,
+                                                   E)  # calculates dielectric constant for magnetic component
+        delta_m, beta_m = ms.index_of_refraction(density_magnetic, sfm,
+                                                 E)  # calculates dielectric constant for magnetic component
+
+        my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+        my_thickness = []
+        my_value = []
+
+        # my_thickness = my_thickness + [0]
+        for s in my_slabs:
+            x = thickness[int(s)]
+            d = delta_m[int(s)]
+
+            my_thickness.extend([x, x, x])
+            my_value.extend([0, d, 0])
 
         if len(density_magnetic) == 0:
             self.spectrumWidget.plot(thickness, np.zeros(len(thickness)), pen=pg.mkPen((0, 2), width=2), name='delta_m')
@@ -3353,6 +3463,8 @@ class reflectivityWidget(QWidget):
         else:
             self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
             self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
+            if self.showLayers.checkState():
+                self.spectrumWidget.plot(my_thickness, my_value)
 
         self.spectrumWidget.setLabel('left', "Reflectivity, R")
         self.spectrumWidget.setLabel('bottom', "Thickness, Å")
@@ -3639,6 +3751,18 @@ class reflectivityWidget(QWidget):
         """
         self.sWidget._step_size = self.stepWidget.text()
 
+    def changePrecision(self):
+        """
+        Purpose: Change the precision value
+        """
+        self.sWidget._precision = self.precisionWidget.text()
+
+    def changeEPrecision(self):
+        """
+        Purpose: Change the precision value
+        """
+        self.sWidget._Eprecision = self.EprecisionWidget.text()
+
     def mySimPlotting(self):
         """
         Purpose: determine to plot reflectometry, optical profile, or magnetic optical profile for simulation
@@ -3744,8 +3868,26 @@ class reflectivityWidget(QWidget):
             delta, beta = ms.index_of_refraction(density, sf,
                                                  E)  # calculates dielectric constant for structural component
 
+            my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+            my_thickness = []
+            my_value = []
+
+            #my_thickness = my_thickness + [0]
+            for s in my_slabs:
+
+                x = thickness[int(s)]
+                d = delta[int(s)]
+
+                my_thickness.extend([x,x,x])
+                my_value.extend([0,d,0])
+
+
+
             self.spectrumWidget.plot(thickness, delta, pen=pg.mkPen((0, 2), width=2), name='delta')
             self.spectrumWidget.plot(thickness, beta, pen=pg.mkPen((1, 2), width=2), name='beta')
+            if self.showLayers.checkState():
+                self.spectrumWidget.plot(my_thickness, my_value)
+
             self.spectrumWidget.setLabel('left', "Reflectivity, R")
             self.spectrumWidget.setLabel('bottom', "Thickness, Å")
             self.spectrumWidget.setLogMode(False, False)
@@ -3780,18 +3922,46 @@ class reflectivityWidget(QWidget):
             thickness, density, density_magnetic = self.sample.density_profile(
                 step=step_size)  # Computes the density profile
 
+
+            # Non-Magnetic Scattering Factor
+
             sf = dict()  # form factors of non-magnetic components
             sfm = dict()  # form factors of magnetic components
 
             # Non-Magnetic Scattering Factor
-
+            for e in self.sample.find_sf[0].keys():
+                name = 'ff-' + self.sample.find_sf[0][e]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
+            # Magnetic Scattering Factor
             for em in self.sample.find_sf[1].keys():
-                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E, True)
+                name = 'ffm-' + self.sample.find_sf[1][em]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
 
-            delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm,
+            delta, beta = ms.magnetic_optical_constant(density, sf,
                                                            E)  # calculates dielectric constant for magnetic component
+            delta_m, beta_m = ms.index_of_refraction(density_magnetic, sfm,
+                                                           E)  # calculates dielectric constant for magnetic component
+
+            my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+            my_thickness = []
+            my_value = []
+
+            # my_thickness = my_thickness + [0]
+            for s in my_slabs:
+                x = thickness[int(s)]
+                d = delta_m[int(s)]
+
+                my_thickness.extend([x, x, x])
+                my_value.extend([0, d, 0])
+
             self.spectrumWidget.plot(thickness, delta_m, pen=pg.mkPen((0, 2), width=2), name='delta_m')
             self.spectrumWidget.plot(thickness, beta_m, pen=pg.mkPen((1, 2), width=2), name='beta_m')
+            if self.showLayers.checkState():
+                self.spectrumWidget.plot(my_thickness, my_value)
             self.spectrumWidget.setLabel('left', "Reflectivity, R")
             self.spectrumWidget.setLabel('bottom', "Thickness, Å")
             self.spectrumWidget.setLogMode(False, False)
@@ -4065,6 +4235,8 @@ class reflectivityWidget(QWidget):
                 pol = self.data_dict[name]['Polarization']
                 scan_type = self.data[idx][1]
                 step_size = float(self.sWidget._step_size)
+                prec = float(self.sWidget._precision)
+                Eprec = float(self.sWidget._Eprecision)
 
                 if scan_type == 'Reflectivity':
                     qz = dat[0]
@@ -4074,7 +4246,7 @@ class reflectivityWidget(QWidget):
                     E = self.data_dict[name]['Energy']
 
                     qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                        sFactor=scaling_factor)
+                                                        sFactor=scaling_factor, precision=prec)
                     Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
                     Rsim = Rsim[pol]
                     n = len(qz)
@@ -4114,7 +4286,7 @@ class reflectivityWidget(QWidget):
                     R = dat[2]
                     Theta = self.data_dict[name]['Angle']
                     E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                                      sFactor=scaling_factor)
+                                                      sFactor=scaling_factor, precision=Eprec)
                     Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
                     self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
@@ -4128,6 +4300,8 @@ class reflectivityWidget(QWidget):
         Purpose: Plot scan from selectedScans
         """
         step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
         self.sample = self.sWidget._createSample()
         self.spectrumWidget.clear()
         name = self.selectedScans.currentText()
@@ -4157,7 +4331,7 @@ class reflectivityWidget(QWidget):
                 R = dat[2]
                 E = self.data_dict[name]['Energy']
                 qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                    sFactor=scaling_factor)
+                                                    sFactor=scaling_factor, precision=prec)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -4196,7 +4370,7 @@ class reflectivityWidget(QWidget):
                 R = dat[2]
                 Theta = self.data_dict[name]['Angle']
                 E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                                  sFactor=scaling_factor)
+                                                  sFactor=scaling_factor, precision=Eprec)
                 Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
                 self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
@@ -4892,7 +5066,9 @@ class GlobalOptimizationWidget(QWidget):
         y_scale = self.isLogWidget.currentText()
         fun = 0
 
-
+        step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
 
         name = scan
 
@@ -4911,7 +5087,7 @@ class GlobalOptimizationWidget(QWidget):
             Rdat = np.array(myData[2])
 
             qz = np.array(myData[0])
-            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            qz, Rsim = sample.reflectivity(E, qz,bShift=background_shift, sFactor=scaling_factor, precision=prec, s_min=step_size)
             Rsim = Rsim[pol]
 
 
@@ -4965,7 +5141,7 @@ class GlobalOptimizationWidget(QWidget):
             E = np.array(myData[3])
             pol = myDataScan['Polarization']
 
-            E, Rsim = sample.energy_scan(Theta, E)
+            E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, precision=Eprec, s_min=step_size)
             Rsim = Rsim[pol]
 
 
@@ -5426,6 +5602,8 @@ class GlobalOptimizationWidget(QWidget):
 
 
             step_size = float(self.sWidget._step_size)
+            prec = float(self.sWidget._precision)
+            Eprec = float(self.sWidget._Eprecision)
 
             sample1 = copy.deepcopy(self.sample)
             sample2 = self.sample  # just to make python happy
@@ -5450,7 +5628,7 @@ class GlobalOptimizationWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor_old,
-                                                bShift=background_shift_old)
+                                                bShift=background_shift_old, precision=prec)
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
                 Rsim = Rsim[pol]
@@ -5462,7 +5640,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift)
+                                                           bShift=background_shift, precision=prec)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -5472,7 +5650,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift)
+                                                           bShift=background_shift, precision=prec)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -5486,7 +5664,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                           sFactor=scaling_factor)
+                                                           sFactor=scaling_factor, precision=prec)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Optimized')
@@ -5496,7 +5674,7 @@ class GlobalOptimizationWidget(QWidget):
                                              name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift)
+                                                           bShift=background_shift, precision=prec)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Optimized')
@@ -5510,10 +5688,10 @@ class GlobalOptimizationWidget(QWidget):
                 Theta = self.rWidget.data_dict[name]['Angle']
 
                 E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor_old,
-                                              bShift=background_shift_old)
+                                              bShift=background_shift_old, precision=Eprec)
                 if isGO:
                     qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
-                                                  bShift=background_shift)
+                                                  bShift=background_shift, precision=Eprec)
                     Rgo = Rgo[pol]
 
                 Rsim = Rsim[pol]
@@ -5522,7 +5700,7 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                 if isGO:
                     qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
-                                                  bShift=background_shift)
+                                                  bShift=background_shift, precision=Eprec)
                     Rgo = Rgo[pol]
                     self.plotWidget.plot(E, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -7969,6 +8147,7 @@ class ReflectometryApp(QMainWindow):
 
             ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
         self.activate_tab_1()
+
     def _saveSimulation(self):
         """
         Purpose: Calculate and save the simulation to the current file
@@ -7979,7 +8158,12 @@ class ReflectometryApp(QMainWindow):
 
         if len(sim_dict) != 0:
             # initializing the loading screen
-            loadingApp = LoadingScreen(self.sample, sim_dict)
+
+            s_min = float(self._sampleWidget._step_size)
+            precision = float(self._sampleWidget._precision)
+            Eprecision = float(self._sampleWidget._Eprecision)
+
+            loadingApp = LoadingScreen(self.sample, sim_dict, self._reflectivityWidget, s_min, precision, Eprecision)
             loadingApp.show()
             loadingApp.exec_()
             sim_dict = loadingApp.sim_dict
@@ -8245,6 +8429,8 @@ class ReflectometryApp(QMainWindow):
         self._goWidget.sample = self.sample
         self._goWidget.clearTableFit()
         self._sampleWidget.step_size.setText(self._sampleWidget._step_size)
+        self._sampleWidget.precisionWidget.setText(self._sampleWidget._precision)
+        self._sampleWidget.Eprecision.setText(self._sampleWidget._Eprecision)
         self.sampleButton.setStyleSheet("background-color : magenta")
         self.reflButton.setStyleSheet("background-color : pink")
         self.smoothButton.setStyleSheet("background-color : pink")
@@ -8263,6 +8449,8 @@ class ReflectometryApp(QMainWindow):
             self._goWidget.clearTableFit()
             self._reflectivityWidget.myPlotting()
             self._reflectivityWidget.stepWidget.setText(self._sampleWidget._step_size)
+            self._reflectivityWidget.precisionWidget.setText(self._sampleWidget._precision)
+            self._reflectivityWidget.EprecisionWidget.setText(self._sampleWidget._Eprecision)
             self.sampleButton.setStyleSheet("background-color : pink")
             self.reflButton.setStyleSheet("background-color : magenta")
             self.smoothButton.setStyleSheet("background-color : pink")
@@ -8506,6 +8694,8 @@ class progressWidget(QWidget):
         self.plotWidget.clear()
 
         step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
         name = self.scanBox.currentText()
         b_idx = self.scanBox.currentIndex()
 
@@ -8537,7 +8727,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                               sFactor=scaling_factor)
+                                               sFactor=scaling_factor, precision=prec)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -8576,7 +8766,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
                 E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                             sFactor=scaling_factor)
+                                             sFactor=scaling_factor, precision=Eprec)
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
@@ -8605,6 +8795,8 @@ class progressWidget(QWidget):
         self.plotWidget.clear()
 
         step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
         name = self.allScans.currentText()
 
         sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
@@ -8633,7 +8825,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                               sFactor=scaling_factor)
+                                               sFactor=scaling_factor, precision=prec)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -8670,7 +8862,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
                 E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                             sFactor=scaling_factor)
+                                             sFactor=scaling_factor, precision=Eprec)
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
@@ -8701,7 +8893,10 @@ class progressWidget(QWidget):
         Purpose: calculate the cost function of the current data fitting iteration
         :param x_array: current iteration parameters
         """
-
+        
+        step_size = float(self.sWidget._set_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
         smooth_dict = self.nWidget.smoothScans  # retrieve the smoothed data
 
         if len(x_array) != 0:
@@ -8732,7 +8927,7 @@ class progressWidget(QWidget):
                         Rdat = np.array(myData[2])
 
                         qz = np.array(myData[0])
-                        qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+                        qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=prec)
                         Rsim = Rsim[pol]
 
                         j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
@@ -8803,7 +8998,7 @@ class progressWidget(QWidget):
                         E = np.array(myData[3])
                         pol = myDataScan['Polarization']
 
-                        E, Rsim = sample.energy_scan(Theta, E)
+                        E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=Eprec)
                         Rsim = Rsim[pol]
 
                         j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
@@ -9613,11 +9808,15 @@ class LoadingScreen(QDialog):
     """
     Purpose: Provides progress of saving simulation
     """
-    def __init__(self, sample, sim_dict):
+    def __init__(self, sample, sim_dict, rWidget, s_min, precision, Eprecision):
         super().__init__()
         self.setWindowTitle('Saving Simulation')
         self.sample = sample
         self.sim_dict = []
+        self.rWidget = rWidget
+        self.s_min = s_min
+        self.my_precision = precision
+        self.Eprecision = Eprecision
         self.temp_sim = sim_dict
         self.n = len(list(self.temp_sim.keys()))
         layout = QHBoxLayout()
@@ -9646,16 +9845,19 @@ class LoadingScreen(QDialog):
                 key = my_keys[idx]
                 pol = self.temp_sim[key]['Polarization']
 
+                bShift = self.rWidget.data_dict[key]['Background Shift']
+                sFactor = self.rWidget.data_dict[key]['Scaling Factor']
+
                 if 'Angle' in self.temp_sim[key].keys():  # energy scan
                     E = self.temp_sim[key]['Data'][3]  # get energy axis
                     Theta = self.temp_sim[key]['Angle']  # get angle
-                    E, R = self.sample.energy_scan(Theta, E)  # calculate energy scan
+                    E, R = self.sample.energy_scan(Theta, E, bShift=bShift, sFactor=sFactor, s_min=self.s_min, precision=self.Eprecision)  # calculate energy scan
                     R = R[pol]  # polarization
                     self.temp_sim[key]['Data'][2] = list(R)
                 else:  # reflectivity scan
                     qz = self.temp_sim[key]['Data'][0]
                     energy = self.temp_sim[key]['Energy']
-                    qz, R = self.sample.reflectivity(energy, qz)
+                    qz, R = self.sample.reflectivity(energy, qz, bShift=bShift, sFactor=sFactor, s_min=self.s_min, precision=self.my_precision)
                     R = R[pol]
                     self.temp_sim[key]['Data'][2] = list(R)
 

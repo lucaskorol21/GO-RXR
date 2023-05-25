@@ -150,13 +150,13 @@ def MOC(rho, sfm, E, n):
     constant = 2 * np.pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
 
-
+    print(sfm.keys())
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
 
     delta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
     beta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
     # Computes the dispersive and absorptive components of the magnetic-optical constant using list comprehensions
-    for element in elements:
+    for element in sfm.keys():
         delta_m = delta_m + np.array(
             [constant[x] * sfm[element][x, 0] * rho[element] for x in range(len(sfm[element][:, 0]))])
         beta_m = beta_m + np.array(

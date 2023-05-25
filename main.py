@@ -18,6 +18,8 @@ Note - This python script is also used to test out function and analyze data
 import os
 
 import numpy as np
+import scipy.interpolate
+
 import data_structure as ds
 import matplotlib.pyplot as plt
 from numba import *
@@ -134,18 +136,186 @@ if __name__ == '__main__':
 
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
+    import material_model as mm
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    #fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
 
-    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
+    #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
 
+    # Global Minimum Example
+
+
+
+    # Jesus Data
     sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+
+    E = 460.76  # energy
+
+    name = '35_460.76_S'
+    #name = '31_635.99_S'
+
+    qz_min = data_dict[name]['Data'][0][0]
+    qz_max = data_dict[name]['Data'][0][-1]
+    qz = np.linspace(qz_min, qz_max, 2000)
+
+    qz, R = sample.reflectivity(E, qz)
+    R = R['S']
+
+    my_data = np.array([qz, R])
+
+    np.savetxt('E1_460.76_best.txt', my_data.transpose())
+    """
+    name2 = '27_E600.18_Th20.0_S'
+
+    E2 = data_dict[name2]['Data'][3]
+    R2 = data_dict[name2]['Data'][2]
+
+
+    E, Rs = sample.energy_scan(20.0, E2)
+    Rs = Rs['S']
+
+    sample.eShift['Mn2'] = 1.1
+    sample.eShift['Mn3'] = 1.1
+    Ed, Rs2 = sample.energy_scan(20.0, E2)
+    Rs2 = Rs2['S']
+
+
+
+    plt.figure()
+    plt.plot(E2, R2)
+    plt.plot(E2, Rs2)
+    plt.yticks([])
+    plt.ylabel('Reflectivity (a.u.)')
+    plt.xlabel('Energy (eV)')
+    plt.legend(['Experiment','Simulation'])
+    plt.show()
+    
+    sample1 = ms.slab(2)
+    sample1.addlayer(0,'SrTiO3',10, roughness=0)
+    sample1.addlayer(1,'LaMnO3',80, roughness=0)
+    sample1.energy_shift()
+
+    sample2 = ms.slab(2)
+    sample2.addlayer(0, 'SrTiO3', 10, roughness=0)
+    sample2.addlayer(1, 'LaMnO3', 80, roughness = 3)
+    sample2.energy_shift()
+
+    sample3 = ms.slab(2)
+    sample3.addlayer(0, 'SrTiO3', 10, roughness=0)
+    sample3.addlayer(1, 'LaMnO3', 80, roughness=6)
+    sample3.energy_shift()
+
+
+    E = 833
+    Theta = np.arange(0.1,90,0.1)
+    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+
+    qz1, R1 = sample1.reflectivity(E, qz)
+    qz2, R2 = sample2.reflectivity(E, qz)
+    qz3, R3 = sample3.reflectivity(E, qz)
+
+    plt.figure()
+    plt.plot(qz, np.log10(R1['S'])+6)
+    plt.plot(qz, np.log10(R2['S'])+3)
+    plt.plot(qz, np.log10(R3['S'])+0)
+
+    plt.yticks([])
+    plt.xlabel(r'Momentum Transfer, $q_z$ $\left( Å^{-1} \right)$')
+    plt.ylabel('log(R) (a.u.)')
+    plt.show()
+    
+    hello = np.loadtxt("//cabinet/work$/lsk601/Downloads/SrTiO3_attenuation.txt")
+    E = hello[:,0]
+    attenuation = hello[:,1]
+
+    plt.figure()
+    plt.plot(E, attenuation)
+    plt.xlabel('X-Ray Energy (eV)')
+    plt.ylabel(r'Attenuation length ($\times 10^{-6}$ meters) ')
+    plt.grid(True)
+    plt.show()
+    
+    sample = ds.ReadSampleHDF5(fname)
+
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')  # look for form factors in directory
     sample.energy_shift()
     Theta = 15
     energy = 640.2
+
+    data = []
+    Theta = np.arange(1,50.5,0.5)
     qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
+    my_qz = []
+    energy = np.arange(455,470+1,1)
+    my_energy = []
+    qz_use = []
+    for angle in Theta:
+        E, R = sample.energy_scan(angle, energy)
+        qz = np.sin(angle *np.pi/180) *((energy * 0.001013546143))
+        my_qz.append(qz)
+        my_energy.append(energy)
+        R = R['S']*np.power(qz, 4)
+        data.append(R)
+        qz_use.append(np.sin(angle * np.pi / 180) * (energy * 0.001013546143))
+        print(angle)
 
-    """
-    struct_names, mag_names = mm._use_given_ff(os.getcwd())  # look for form factors in directory
 
+    data = np.array(data)
+    my_qz = np.array(my_qz)
+    my_energy = np.array(my_energy)
+
+
+
+
+
+    from scipy import interpolate
+
+    interp_func = scipy.interpolate.interp2d(Theta, energy, data.transpose(), kind='linear')
+
+    Theta_new = np.arange(0.1,50.1,0.01)
+    E_new = np.arange(455,470+0.01,0.01)
+
+    data_new = interp_func(Theta_new, E_new)
+
+    X, Y = np.meshgrid(Theta_new, E_new)
+    qz_use = np.array(qz_use)
+
+    import matplotlib.pyplot as plt
+
+    from matplotlib.ticker import FormatStrFormatter
+    from mpl_toolkits.mplot3d import Axes3D
+
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    from matplotlib.colors import ListedColormap
+    cmap = ListedColormap(plt.cm.jet(np.linspace(0, 1, 256)**0.65))
+    # plot surface
+    ax.plot_surface(X, Y, data_new, cmap=cmap, alpha=1)
+    ax.grid(False)
+    # hide z-axis and turn off mesh
+    ax.set_zticks([])
+
+    # Set the formatter for the x-axis
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+
+    # Set the formatter for the y-axis
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+
+    # Set labels
+    ax.set_xlabel(r'Grazing Angle,  $\theta_g$ $(degrees)$')
+    ax.set_ylabel('Energy (eV)')
+
+
+    # Show plot
+    plt.show()
+
+   
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
     keys = ['26_452.77_S' ,'35_460.76_S','19_500.71_S', '31_635.99_S','22_640.99_S','24_644.02_S','33_834.59_S',
@@ -176,7 +346,7 @@ if __name__ == '__main__':
 
     ds.saveSimulationHDF5(fname, sim_dict)
     
-    """
+    
 
 
     thickness, density, mag_density = sample.density_profile()
@@ -214,7 +384,7 @@ if __name__ == '__main__':
     plt.xlabel('Thickness (angstroms)')
     plt.legend(my_keys)
     plt.show()
-    """
+    
     oxidation = np.zeros(len(thickness))
     total = np.zeros(len(thickness))
     for key in electron.keys():
