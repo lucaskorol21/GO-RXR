@@ -38,7 +38,7 @@ import warnings
 import copy
 
 @njit()
-def ALS(alpha, beta, precision=1e-6):
+def ALS(alpha, beta, alpha_m, beta_m, precision=1e-6):
     """
     Purpose: Return the indices for the adaptive layer segmentation
     :param alpha: numpy array of refractive form factor values
@@ -49,6 +49,8 @@ def ALS(alpha, beta, precision=1e-6):
 
     alpha = alpha /np.linalg.norm(alpha)  # normalize the refractive component
     beta = beta /np.linalg.norm(beta)  # normalize the absorptive component
+    alpha_m = alpha_m/np.linalg.norm(alpha_m)
+    beta_m = beta_m / np.linalg.norm(beta_m)
 
     idx_a = 0  # keeps track of surface of previous slab
 
@@ -64,11 +66,18 @@ def ALS(alpha, beta, precision=1e-6):
         f1b = beta[idx_a]
         f2b = beta[idx_b]
 
+        f1m = alpha_m[idx_a]
+        f2m = alpha_m[idx_b]
+        f1bm = beta_m[idx_a]
+        f2bm = beta_m[idx_b]
+
         delta_a = np.absolute(f2-f1)  # varitation of refractive component
         delta_b = np.absolute(f2b-f1b)  # variation of absorptive component
+        delta_am = np.absolute(f2m - f1m)  # varitation of refractive component
+        delta_bm = np.absolute(f2bm - f1bm)  # variation of absorptive component
 
         # checks if variation meets precision value if not check next value
-        if delta_a>precision or delta_b>precision:
+        if delta_a>precision or delta_b>precision or delta_am>precision or delta_bm>precision:
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
@@ -1248,7 +1257,7 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m)
         epsilon_mag = Q*epsilon*2*(-1)
 
-        my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = ALS(epsilon.real, epsilon.imag, Q.real, Q.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all values in my_slab to integers
 
@@ -1407,7 +1416,7 @@ class slab:
         Q = beta_m + 1j*delta_m  # magneto-optical constant
         epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
-        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, Q[E].real, Q[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
 
         # initializes the object for reflectivity computation using list comprehension
 

@@ -3385,8 +3385,9 @@ class reflectivityWidget(QWidget):
             sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
 
         delta, beta = ms.index_of_refraction(density, sf, E)  # calculates dielectric constant for structural component
+        delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic,sfm,E)
 
-        my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+        my_slabs = ms.ALS(delta, beta, delta_m, beta_m, precision=float(self.sWidget._precision))
         my_thickness = []
         my_value = []
 
@@ -3448,7 +3449,7 @@ class reflectivityWidget(QWidget):
         delta_m, beta_m = ms.index_of_refraction(density_magnetic, sfm,
                                                  E)  # calculates dielectric constant for magnetic component
 
-        my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+        my_slabs = ms.ALS(delta, beta, delta_m, beta_m, precision=float(self.sWidget._precision))
         my_thickness = []
         my_value = []
 
@@ -3870,8 +3871,9 @@ class reflectivityWidget(QWidget):
 
             delta, beta = ms.index_of_refraction(density, sf,
                                                  E)  # calculates dielectric constant for structural component
+            delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)
 
-            my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+            my_slabs = ms.ALS(delta, beta, delta_m, beta_m, precision=float(self.sWidget._precision))
             my_thickness = []
             my_value = []
 
@@ -3949,7 +3951,7 @@ class reflectivityWidget(QWidget):
             delta_m, beta_m = ms.index_of_refraction(density_magnetic, sfm,
                                                            E)  # calculates dielectric constant for magnetic component
 
-            my_slabs = ms.ALS(delta, beta, precision=float(self.sWidget._precision))
+            my_slabs = ms.ALS(delta, beta, delta_m, beta_m, precision=float(self.sWidget._precision))
             my_thickness = []
             my_value = []
 

@@ -148,11 +148,107 @@ if __name__ == '__main__':
     sample = ds.ReadSampleHDF5(fname)
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample.energy_shift()
+    name = '70_E814.75_Th25.0_S'
+    energy = data_dict[name]['Data'][3]
+
+    bShift = 0
+    sFactor = 1
+
+    Elen = len(energy)
+    R = {'S': np.zeros(Elen),
+         'P': np.zeros(Elen),
+         'AL': np.zeros(Elen),
+         'LC': np.zeros(Elen),
+         'RC': np.zeros(Elen),
+         'AC': np.zeros(Elen)}
+
+    thickness, density, density_magnetic = sample.density_profile(step=0.1)  # Computes the density profile
+    # Magnetic Scattering Factor
+    sfm = dict()
+    sf = dict()
+
+    # Non-Magnetic Scattering Factor
+    for e in sample.find_sf[0].keys():
+        dE = float(sample.eShift[sample.find_sf[0][e]])
+        scale = float(sample.ff_scale[sample.find_sf[0][e]])
+        sf[e] = mm.find_form_factor(sample.find_sf[0][e], energy + dE, False) * scale
+    # Magnetic Scattering Factor
+    for em in sample.find_sf[1].keys():
+        dE = float(sample.mag_eShift[sample.find_sf[1][em]])
+        scale = float(sample.ffm_scale[sample.find_sf[1][em]])
+        sfm[em] = mm.find_form_factor(sample.find_sf[1][em], energy + dE, True) * scale
+
+    d_len = len(thickness)
+    delta, beta = mm.IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+
+    delta_m, beta_m = mm.MOC(density_magnetic, sfm, energy,
+                          d_len)  # absorptive and dispersive components for magnetic components
+
+    epsilon = 1 - 2 * delta + 1j * beta * 2  # dielectric constant
+
+    # definition as described in Lott Dieter Thesis
+    Q = beta_m + 1j * delta_m  # magneto-optical constant
+    epsilon_mag = Q * epsilon * (-2)  # magneto-optical permittivity
+    # retrieves the slabs at each energy using list comprehension
+
+    number_slabs = [1,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,30,60,90,120,150,300,900]
+    my_slabs = []
+
+    my_time = np.zeros(len(number_slabs))
+
+    num = 10
+    Theta = 25.0
+    for i in range(num):
+        for idx, n in enumerate(number_slabs):
+            R = {'S': np.zeros(Elen),
+                 'P': np.zeros(Elen),
+                 'AL': np.zeros(Elen),
+                 'LC': np.zeros(Elen),
+                 'RC': np.zeros(Elen),
+                 'AC': np.zeros(Elen)}
+
+            all_slabs = [np.arange(0, len(thickness), n, dtype=int) for E in range(len(energy))]
+
+
+            # initializes the object for reflectivity computation using list comprehension
+
+
+            Alist = [
+                ms.generate_structure(thickness, sample.structure, all_slabs[s], epsilon[s], epsilon_mag[s], sample.layer_magnetized,
+                                   sample.transition) for s in range(len(all_slabs))]
+
+            h = 4.135667696e-15  # Plank's Constant [eV s]
+            c = 2.99792450e10  # Speed of light in vacuum [cm/s]
+
+            wavelength = h * c / (energy * 1e-10)
+
+            # reflectivity computation using list comprehension
+
+            start = time.time_ns()
+            R = [ms.energy_reflectivity(Alist[int(E)], Theta, wavelength[int(E)], R, int(E), backS=bShift, scaleF=sFactor) for E in
+                 range(len(all_slabs))]
+            end = time.time_ns()
+
+            my_time[idx] = my_time[idx] + (end-start)
+
+            if i == 0:
+                my_slabs.append(len(all_slabs[0]))
+        print(i)
+
+    my_time = my_time[1:]/num/1e6
+
+    plt.figure()
+    plt.plot(my_slabs[1:], my_time, 'o')
+    plt.show()
+
+"""
     name = '64_836.04_S'
 
     E = 836.04
     qz = data_dict[name]['Data'][0]
-
+    
+   
+    
     thickness, density, density_magnetic = sample.density_profile(step=0.1)
     sf = dict()  # scattering factors of non-magnetic components
     sfm = dict()  # scattering factors of magnetic components
@@ -224,7 +320,7 @@ if __name__ == '__main__':
     plt.yscale('log')
     plt.show()
 
-    """
+    
     precision_array = [1e-2,1e-2,5e-3,1e-3,2e-4,5e-4,1e-4,2e-5,5e-5,1e-5,2e-6, 5e-6,1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
     time_array = np.zeros(len(precision_array))
     slab_array = []
@@ -290,7 +386,6 @@ if __name__ == '__main__':
     plt.ylabel(r'Density ($mol/cm^{3}$)')
     plt.show()
 
-    
     # Jesus Data
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
