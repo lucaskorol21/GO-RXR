@@ -2326,14 +2326,17 @@ class sampleWidget(QWidget):
 
         my_elements = []
 
+        no_error = True
 
         # initializing the element variation and magnetic data
-        if len(userinput) != len(self.structTableInfo[0]):  # checks to make sure number of elements is consistent
-            messageBox = QMessageBox()
-            messageBox.setWindowTitle("Invalid Entry")
-            messageBox.setText('Each layer must have the same number of structural elements. If you would like to define a different number of structural elements in a layer then a dummy variable can be used (e.g. A, D, E, G, J, L, M, Q, R, T, X, Z). The corresponding form factors and atomic mass of these variables are 0, respectively.')
-            messageBox.exec()
-        elif len(userinput) != 0:  # checks if user exit the coumpoundInput widget
+        if len(self.structTableInfo) != 0:
+            if len(userinput) != len(self.structTableInfo[0]):  # checks to make sure number of elements is consistent
+                messageBox = QMessageBox()
+                messageBox.setWindowTitle("Invalid Entry")
+                messageBox.setText('Each layer must have the same number of structural elements. If you would like to define a different number of structural elements in a layer then a dummy variable can be used (e.g. A, D, E, G, J, L, M, Q, R, T, X, Z). The corresponding form factors and atomic mass of these variables are 0, respectively.')
+                messageBox.exec()
+                no_error = False
+        if len(userinput) != 0 and no_error:  # checks if user exit the coumpoundInput widget
             for i in range(len(userinput)):
                 # includes new scattering factors into the energy shift
                 if userinput[i][5] not in self.sample.eShift.keys():
@@ -8894,7 +8897,7 @@ class progressWidget(QWidget):
         :param x_array: current iteration parameters
         """
         
-        step_size = float(self.sWidget._set_size)
+        step_size = float(self.sWidget._step_size)
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
         smooth_dict = self.nWidget.smoothScans  # retrieve the smoothed data

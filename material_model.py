@@ -150,7 +150,7 @@ def MOC(rho, sfm, E, n):
     constant = 2 * np.pi * re * (avocado) / (k0 ** 2)  # constant for density sum
 
 
-    print(sfm.keys())
+
     elements = list(rho.keys())  # retrieves all the magnetic elements in the layer
 
     delta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization

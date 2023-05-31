@@ -133,20 +133,164 @@ def createFFM(directory, name ,source, date):
 
 
 if __name__ == '__main__':
-
+    import time as time
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
     import material_model as mm
-    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
-    #fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
+    #fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
 
-    #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
-    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
+    #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
 
     # Global Minimum Example
 
+    sample = ds.ReadSampleHDF5(fname)
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    sample.energy_shift()
+    name = '64_836.04_S'
+
+    E = 836.04
+    qz = data_dict[name]['Data'][0]
+
+    thickness, density, density_magnetic = sample.density_profile(step=0.1)
+    sf = dict()  # scattering factors of non-magnetic components
+    sfm = dict()  # scattering factors of magnetic components
+
+    # print(self.find_sf[1])
+
+    # Non-Magnetic Scattering Factor
+    for e in sample.find_sf[0].keys():
+        dE = float(sample.eShift[sample.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+        scale = float(sample.ff_scale[sample.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+        sf[e] = mm.find_form_factor(sample.find_sf[0][e], E + dE,
+                                    False) * scale  # find the scattering factor at energy E + dE
+    # Magnetic Scattering Factor
+    for em in sample.find_sf[1].keys():
+        dE = float(sample.mag_eShift[sample.find_sf[1][em]])
+        scale = float(sample.ffm_scale[sample.find_sf[1][em]])
+        sfm[em] = mm.find_form_factor(sample.find_sf[1][em], E + dE, True) * scale
+
+    delta, beta = mm.index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
+    delta_m, beta_m = mm.magnetic_optical_constant(density_magnetic, sfm,
+                                                   E)  # calculates depth-dependent magnetic components
+
+    # definition of magneto-optical constant as described in Lott Dieter Thesis
+    n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
+    epsilon = n ** 2  # dielectric constant computation
+
+    # magneto-optical constant as defined in Lott Dieter Thesis
+    Q = np.vectorize(complex)(beta_m, delta_m)
+    epsilon_mag = Q * epsilon * 2 * (-1)
+
+    my_slabs = ms.ALS(epsilon.real, epsilon.imag, 1e-20)  # performs the adaptive layer segmentation using Numba
+
+    my_thickness = []
+    my_epsilon = []
+    for idx in my_slabs:
+        idx = int(idx)
+        my_thickness.append(thickness[idx])
+        my_thickness.append(thickness[idx])
+        my_thickness.append(thickness[idx])
+
+        my_epsilon.append(0)
+        my_epsilon.append(delta[idx])
+        my_epsilon.append(0)
+
+    plt.figure()
+    plt.plot(my_thickness, my_epsilon)
+    plt.plot(thickness, delta)
+    plt.xlabel(r'Depth ($\AA$)')
+    plt.ylabel(r'$\mathrm{\delta \left(E \right)}$')
+
+    plt.xlim([30,45])
+    plt.show()
 
 
+    qz,R = sample.reflectivity(E,qz, precision = 1e-2, s_min=0.1)
+    qz, R1 = sample.reflectivity(E, qz, precision = 1e-3, s_min=0.1)
+    qz, R2 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
+    R = R['S']
+    R1 = R1['S']
+    R2 = R2['S']
+
+    plt.figure()
+    plt.plot(qz, R)
+    plt.plot(qz, R1)
+    plt.plot(qz, R2, '--')
+    plt.legend(['precision=0.01','precision=0.001','precision=1e-20'])
+    plt.ylabel('Reflectivity , R (arb. units)')
+    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
+    plt.yscale('log')
+    plt.show()
+
+    """
+    precision_array = [1e-2,1e-2,5e-3,1e-3,2e-4,5e-4,1e-4,2e-5,5e-5,1e-5,2e-6, 5e-6,1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
+    time_array = np.zeros(len(precision_array))
+    slab_array = []
+    print(len(qz))
+    for i in range(100):
+        print(i)
+        for idx, prec in enumerate(precision_array):
+
+            start = time.time_ns()
+            sample.reflectivity(E, qz, precision=prec)
+            end = time.time_ns()
+            time_array[idx] = time_array[idx] + (end-start)
+
+            thickness, density, density_magnetic = sample.density_profile()
+            sf = dict()  # scattering factors of non-magnetic components
+            sfm = dict()  # scattering factors of magnetic components
+
+            # print(self.find_sf[1])
+
+            # Non-Magnetic Scattering Factor
+            for e in sample.find_sf[0].keys():
+                dE = float(sample.eShift[sample.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(sample.ff_scale[sample.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = mm.find_form_factor(sample.find_sf[0][e], E + dE,
+                                         False) * scale  # find the scattering factor at energy E + dE
+            # Magnetic Scattering Factor
+            for em in sample.find_sf[1].keys():
+                dE = float(sample.mag_eShift[sample.find_sf[1][em]])
+                scale = float(sample.ffm_scale[sample.find_sf[1][em]])
+                sfm[em] = mm.find_form_factor(sample.find_sf[1][em], E + dE, True) * scale
+
+            delta, beta = mm.index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
+            delta_m, beta_m = mm.magnetic_optical_constant(density_magnetic, sfm,
+                                                        E)  # calculates depth-dependent magnetic components
+
+            # definition of magneto-optical constant as described in Lott Dieter Thesis
+            n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
+            epsilon = n ** 2  # dielectric constant computation
+
+            # magneto-optical constant as defined in Lott Dieter Thesis
+            Q = np.vectorize(complex)(beta_m, delta_m)
+            epsilon_mag = Q * epsilon * 2 * (-1)
+
+            my_slabs = ms.ALS(epsilon.real, epsilon.imag, prec)  # performs the adaptive layer segmentation using Numba
+            if i == 0:
+                slab_array.append(len(my_slabs))
+            #thickness, density, density_mag = sample.density_profile()
+
+    time_array = time_array/100/1e6
+    plt.figure()
+    plt.plot(slab_array[1:], time_array[1:] ,'o')
+    plt.xlabel('Number of Slabs')
+    plt.ylabel('Average Execution Time (ms)')
+    plt.show()
+    
+    thickness, density, mag_density = sample.density_profile(step=0.01)
+    idx = [i for i in range(len(thickness)) if thickness[i] <= 60]
+    plt.figure()
+    plt.plot(thickness[idx], density['Sr'][idx])
+    plt.plot(thickness[idx],density['La'][idx],'--')
+    plt.legend(['Sr','La'])
+    plt.xlabel(r'Depth ($\AA$)')
+    plt.ylabel(r'Density ($mol/cm^{3}$)')
+    plt.show()
+
+    
     # Jesus Data
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -167,8 +311,14 @@ if __name__ == '__main__':
 
     my_data = np.array([qz, R])
 
+    z = np.linspace(0,20,100)
+
+    val =sample.error_function(z, 0,10, True)
+    plt.figure()
+    plt.plot(z,val)
+    plt.show()
     np.savetxt('E1_460.76_best.txt', my_data.transpose())
-    """
+    
     name2 = '27_E600.18_Th20.0_S'
 
     E2 = data_dict[name2]['Data'][3]

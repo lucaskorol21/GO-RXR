@@ -807,8 +807,8 @@ class slab:
         thickness = np.array([])  # thickness array
         density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
-        density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
-
+        #density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
+        density_mag = {k: dict() for k in list(self.find_sf[1].keys())}
 
         # Pre-initialized density_poly array
         for ele in list(self.poly_elements.keys()):
@@ -1135,9 +1135,11 @@ class slab:
 
         # Create magnetic dictionary
         density_magnetic = dict()
+
         for ele in list(density_mag.keys()):
             for mag in list(density_mag[ele].keys()):
-                density_magnetic[mag] = density_mag[ele][mag]
+                if mag in list(self.find_sf[1].keys()):
+                    density_magnetic[mag] = density_mag[ele][mag]
 
         self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
@@ -1221,6 +1223,7 @@ class slab:
         sf = dict()  # scattering factors of non-magnetic components
         sfm = dict()  # scattering factors of magnetic components
 
+        #print(self.find_sf[1])
 
         # Non-Magnetic Scattering Factor
         for e in self.find_sf[0].keys():
@@ -1276,7 +1279,7 @@ class slab:
             if layer == 0:
                 if self.layer_magnetized[0]:
                     for ele in self.structure[layer].keys():
-                        if self.structure[0][ele].mag_scattering_factor != None:
+                        if len(self.structure[0][ele].mag_scattering_factor) != 0:
                             gamma = self.structure[0][ele].gamma
                             phi = self.structure[0][ele].phi
 

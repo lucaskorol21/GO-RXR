@@ -29,10 +29,10 @@
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(2, B, Ti,0.5555682872249759)
-#setVariationConstant(3, B, Ti,0.42291019513138917)
-#setVariationConstant(4, B, Ti,0.16496389982727955)
-#setVariationConstant(5, B, Ti,0.0242466343076104)
+setVariationConstant(2, B, Ti,0.9520812719660537)
+setVariationConstant(3, B, Ti,0.9153546478504088)
+setVariationConstant(4, B, Ti,0.2963391181991839)
+setVariationConstant(5, B, Ti,0.1484035408984079)
 #setVariationConstant(6, B, Ti,0.0242466343076104)
 
 
