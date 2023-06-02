@@ -519,7 +519,8 @@ def scanCompute(x, *args):
                         fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
                         fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
-
+                    elif objective == 'Arctan':
+                        fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
             fun = fun + fun_val/m  # updates cost function
 
             # calculates total variation over entire boundary
@@ -586,6 +587,8 @@ def scanCompute(x, *args):
                         fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
                         fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+                    elif objective == 'Arctan':
+                        fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
 
             fun = fun + fun_val/m  # calculates cost function
 

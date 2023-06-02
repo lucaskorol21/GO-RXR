@@ -8,7 +8,9 @@
 
 #setCombinedThickness(2,5,all,14.39360028319356)
 
-
+d = getThickness(4, all)
+setThickness(5, all, d)
+setThickness(6, all, d)
 
 
 #-------------- Roughness Workspace---------------#
@@ -29,10 +31,10 @@
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-setVariationConstant(2, B, Ti,0.9520812719660537)
-setVariationConstant(3, B, Ti,0.9153546478504088)
-setVariationConstant(4, B, Ti,0.2963391181991839)
-setVariationConstant(5, B, Ti,0.1484035408984079)
+#setVariationConstant(2, B, Ti,0.9520812719660537)
+#setVariationConstant(3, B, Ti,0.9153546478504088)
+#setVariationConstant(4, B, Ti,0.2963391181991839)
+#setVariationConstant(5, B, Ti,0.1484035408984079)
 #setVariationConstant(6, B, Ti,0.0242466343076104)
 
 

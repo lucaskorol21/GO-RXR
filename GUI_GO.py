@@ -4616,6 +4616,8 @@ class GlobalOptimizationWidget(QWidget):
         self.L1.toggled.connect(self._changeObjectiveFunction)
         self.L2 = QRadioButton('L2-Norm', self)
         self.L2.toggled.connect(self._changeObjectiveFunction)
+        self.atan = QRadioButton('Arctan', self)
+        self.atan.toggled.connect(self._changeObjectiveFunction)
 
         totLabel = QLabel('Total Variation: ')
         totLabel.setFixedWidth(80)
@@ -4636,13 +4638,26 @@ class GlobalOptimizationWidget(QWidget):
         costlayout.addWidget(costButton)
         costlayout.addWidget(self.costValue)
         costlayout.addStretch(1)
+
+        sigmaButton = QPushButton('Maximum Deviation')
+        sigmaButton.setFixedWidth(80)
+        sigmaButton.clicked.connect(self.calculateSigma)
+        self.sigmaValue = QLineEdit('0')
+        self.sigmaValue.setFixedWidth(150)
+        sigmalayout = QHBoxLayout()
+        sigmalayout.addWidget(sigmaButton)
+        sigmalayout.addWidget(self.sigmaValue)
+        sigmalayout.addStretch(1)
+
         vbox = QVBoxLayout()
         vbox.addWidget(objectiveFunction)
         vbox.addWidget(self.chi)
         vbox.addWidget(self.L1)
         vbox.addWidget(self.L2)
+        vbox.addWidget(self.atan)
         vbox.addLayout(totLayout)
         vbox.addLayout(costlayout)
+        vbox.addLayout(sigmalayout)
 
         algorithmLayout.addLayout(vbox)
         algorithmWidget = QWidget()
@@ -5056,6 +5071,130 @@ class GlobalOptimizationWidget(QWidget):
         self.setTableFit()
         #self.checkscript()
 
+    def calculateSigma(self):
+        """
+                Purpose: calculate the cost function of the current data fitting iteration
+                :param x_array: current iteration parameters
+                """
+
+        sample = self.sample
+        bounds = self.rWidget.bounds
+        weights = self.rWidget.weights
+
+        scan = self.selectedScans.currentText()
+        idx = int(self.selectedScans.currentIndex())
+        y_scale = self.isLogWidget.currentText()
+        fun = 0
+
+        step_size = float(self.sWidget._step_size)
+        prec = float(self.sWidget._precision)
+        Eprec = float(self.sWidget._Eprecision)
+
+        name = scan
+
+        my_sigma = []
+        fun_val = 0
+        xbound = bounds[idx]
+        weights = weights[idx]
+
+        background_shift = 0
+        scaling_factor = 1
+        data = self.rWidget.data_dict
+
+        if 'Angle' not in data[name].keys():
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            E = myDataScan['Energy']
+            pol = myDataScan['Polarization']
+            Rdat = np.array(myData[2])
+
+            qz = np.array(myData[0])
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, precision=prec,
+                                           s_min=step_size)
+            Rsim = Rsim[pol]
+
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+
+            elif y_scale == 'qz^4':
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+            elif y_scale == 'x':
+                pass
+
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+
+
+                idx = [x for x in range(len(qz)) if
+                       qz[x] >= lw and qz[x] < up]  # determines index boundaries
+
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    temp = Rsim[idx]-Rdat[idx]
+                    temp = temp.tolist()
+                    my_sigma = my_sigma + temp
+
+
+        else:
+            myDataScan = data[name]
+            myData = myDataScan['Data']
+            Theta = myDataScan['Angle']
+            Rdat = np.array(myData[2])
+            E = np.array(myData[3])
+            pol = myDataScan['Polarization']
+
+            E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, precision=Eprec,
+                                         s_min=step_size)
+            Rsim = Rsim[pol]
+
+            if y_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+
+            elif y_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+
+            elif y_scale == 'qz^4':
+                qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+
+            elif y_scale == 'x':
+                pass
+
+            m = 0
+            for b in range(len(xbound)):
+                lw = float(xbound[b][0])
+                up = float(xbound[b][1])
+
+
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                k = len(idx)
+                m = m + k
+                if len(idx) != 0:
+                    temp = Rsim[idx] - Rdat[idx]
+                    temp = temp.tolist()
+                    my_sigma = my_sigma + temp
+
+        sdv = np.sqrt(sum(np.power(my_sigma,2))/len(my_sigma))
+        my_sigma = [abs(g) for g in my_sigma]
+
+        self.sigmaValue.setText(str(min(my_sigma/sdv)))
+
+
+
     def calculateCost(self):
         """
         Purpose: calculate the cost function of the current data fitting iteration
@@ -5193,6 +5332,7 @@ class GlobalOptimizationWidget(QWidget):
 
 
         self.costValue.setText(str(fun))
+
     def eventFilter(self, source, event):
         """
         Purpose: Allows user to remove fits directly from globalOptimization widget
@@ -8989,6 +9129,8 @@ class progressWidget(QWidget):
                                     fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                                 elif self.objective == 'L2-Norm':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                elif self.objective == 'Arctan':
+                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
 
                         if m != 0:
                             self.costFun[name].append(fun_val / m)
@@ -9060,6 +9202,8 @@ class progressWidget(QWidget):
                                     fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                                 elif self.objective == 'L2-Norm':
                                     fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                elif self.objective == 'Arctan':
+                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
 
                         if m != 0:
                             self.costFun[name].append(fun_val / m)

@@ -73,8 +73,8 @@ def ALS(alpha, beta, alpha_m, beta_m, precision=1e-6):
 
         delta_a = np.absolute(f2-f1)  # varitation of refractive component
         delta_b = np.absolute(f2b-f1b)  # variation of absorptive component
-        delta_am = np.absolute(f2m - f1m)  # varitation of refractive component
-        delta_bm = np.absolute(f2bm - f1bm)  # variation of absorptive component
+        delta_am = np.absolute(f2m - f1m)  # varitation of the magnetic refractive component
+        delta_bm = np.absolute(f2bm - f1bm)  # variation of magnetic absorptive component
 
         # checks if variation meets precision value if not check next value
         if delta_a>precision or delta_b>precision or delta_am>precision or delta_bm>precision:
