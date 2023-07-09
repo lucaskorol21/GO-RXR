@@ -8,9 +8,16 @@
 
 #setCombinedThickness(2,5,all,14.39360028319356)
 
-d = getThickness(4, all)
-setThickness(5, all, d)
-setThickness(6, all, d)
+#d = getThickness(4, all)
+#setThickness(5, all, d)
+#setThickness(6, all, d)
+#setThickness(7, all, d)
+#setThickness(8, all, d)
+#setThickness(9, all, d)
+#setThickness(10, all, d)
+#setThickness(11, all, d)
+#setThickness(12, all, d)
+#setThickness(13, all, d)
 
 
 #-------------- Roughness Workspace---------------#
@@ -44,12 +51,13 @@ setThickness(6, all, d)
 # getMagDensity(layer,element, variation)
 
 
-#rho = getMagDensity(7, B, Mn3-4)
-#setMagDensity(8, B,Mn3-4,rho)
-#setMagDensity(9, B,Mn3-4,rho)
-#setMagDensity(10, B,Mn3-4,rho)
-#setMagDensity(10, B,Mn3,rho)
-#setMagDensity(11, B,Mn3,rho)
+rho = getMagDensity(6, B, Mn3)
+setMagDensity(7, B,Mn3,rho)
+setMagDensity(8, B,Mn3,rho)
+setMagDensity(9, B,Mn3,rho)
+setMagDensity(10, B,Mn3,rho)
+setMagDensity(10, B,Mn3,rho)
+setMagDensity(11, B,Mn3,rho)
 
 
 

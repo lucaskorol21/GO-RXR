@@ -6185,10 +6185,13 @@ class GlobalOptimizationWidget(QWidget):
                                            self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
             elif idx == 3:
                 bounds = (lw, up)
+
                 x, fun = go.least_squares(x0, sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
                                           self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script)
+
+
             """
             elif idx == 4:
                 bounds = (lw,up)
@@ -6880,12 +6883,12 @@ class dataSmoothingWidget(QWidget):
             # running average
             #ynew = np.convolve(np.real(ynew), np.ones(5)/5, mode='same')
 
-        last1 = np.real(ynew)[-1]
-        last2 = np.real(ynew)[-2]
-        ynew = np.convolve(np.real(ynew), np.ones(5)/5, mode='same')
-        ynew[-1] = last1
-        ynew[-2] = last2
-        return ynew
+        #last1 = np.real(ynew)[-1]
+        #last2 = np.real(ynew)[-2]
+        #ynew = np.convolve(np.real(ynew), np.ones(5)/5, mode='same')
+        #ynew[-1] = last1
+        #ynew[-2] = last2
+        return np.real(ynew)
 
     def _plot_spline(self):
         scan = self.scanBox.currentText()
@@ -8299,6 +8302,7 @@ class ReflectometryApp(QMainWindow):
         """
         sim_dict = copy.deepcopy(self.data_dict)  # get simulation dictionary
 
+
         fname = self.fname  # retrieve filge name
 
         if len(sim_dict) != 0:
@@ -8313,6 +8317,8 @@ class ReflectometryApp(QMainWindow):
             loadingApp.exec_()
             sim_dict = loadingApp.sim_dict
             loadingApp.close()
+
+
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
@@ -9123,14 +9129,14 @@ class progressWidget(QWidget):
                             m = m + k
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx]))
 
                                 elif self.objective == 'L1-Norm':
-                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx]))
                                 elif self.objective == 'L2-Norm':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2)
                                 elif self.objective == 'Arctan':
-                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
+                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2))
 
                         if m != 0:
                             self.costFun[name].append(fun_val / m)
@@ -9197,13 +9203,13 @@ class progressWidget(QWidget):
                             m = m + k
                             if len(idx) != 0:
                                 if self.objective == 'Chi-Square':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx]))
                                 elif self.objective == 'L1-Norm':
-                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx]))
                                 elif self.objective == 'L2-Norm':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2)
                                 elif self.objective == 'Arctan':
-                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
+                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2))
 
                         if m != 0:
                             self.costFun[name].append(fun_val / m)
@@ -9982,7 +9988,7 @@ class LoadingScreen(QDialog):
         """
         Purpose: calculate the simulations from current sample model
         """
-
+        import matplotlib.pyplot as plt
         my_keys = list(self.temp_sim.keys())
         n = self.n
         if n != 0:
@@ -10002,6 +10008,7 @@ class LoadingScreen(QDialog):
                     Theta = self.temp_sim[key]['Angle']  # get angle
                     E, R = self.sample.energy_scan(Theta, E, bShift=bShift, sFactor=sFactor, s_min=self.s_min, precision=self.Eprecision)  # calculate energy scan
                     R = R[pol]  # polarization
+
                     self.temp_sim[key]['Data'][2] = list(R)
                 else:  # reflectivity scan
                     qz = self.temp_sim[key]['Data'][0]
@@ -10010,7 +10017,8 @@ class LoadingScreen(QDialog):
                     R = R[pol]
                     self.temp_sim[key]['Data'][2] = list(R)
 
-            self.sim_dict = copy.deepcopy(self.temp_sim)
+
+        self.sim_dict = copy.deepcopy(self.temp_sim)
 
         self.accept()
 

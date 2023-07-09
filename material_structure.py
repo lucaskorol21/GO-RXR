@@ -38,46 +38,47 @@ import warnings
 import copy
 
 @njit()
-def ALS(alpha, beta, alpha_m, beta_m, precision=1e-6):
+def ALS(beta, delta, beta_m, delta_m, precision=1e-6):
     """
-    Purpose: Return the indices for the adaptive layer segmentation
-    :param alpha: numpy array of refractive form factor values
+    Purpose: Return a list of the indices for the adaptive layer segmentation
+    :param alpha: numpy array of refractive component
     :param beta: numpy array of absorptive form factor values
     :param precision: precision value used in slicing
     :return: my_slabs - contains indices for slicing
     """
 
-    alpha = alpha /np.linalg.norm(alpha)  # normalize the refractive component
-    beta = beta /np.linalg.norm(beta)  # normalize the absorptive component
-    alpha_m = alpha_m/np.linalg.norm(alpha_m)
-    beta_m = beta_m / np.linalg.norm(beta_m)
+    beta = beta /np.linalg.norm(beta)  # normalize the refractive component
+    delta = delta /np.linalg.norm(delta)  # normalize the absorptive component
+    beta_m = beta_m/np.linalg.norm(beta_m)
+    delta_m = delta_m / np.linalg.norm(delta_m)
 
     idx_a = 0  # keeps track of surface of previous slab
 
-    n = alpha.size
+    n = beta.size
     my_slabs = np.zeros(n) # pre-initialize the slab array to the maximum number of slabs possible
 
     dsSlab = 1  # counts the number of slices
     for idx_b in range(1,n):
 
-        # retrieves permittivity values
-        f1 = alpha[idx_a]
-        f2 = alpha[idx_b]
-        f1b = beta[idx_a]
-        f2b = beta[idx_b]
+        # retrieves optical values
+        f1 = beta[idx_a]
+        f2 = beta[idx_b]
+        f1d = delta[idx_a]
+        f2d = delta[idx_b]
 
-        f1m = alpha_m[idx_a]
-        f2m = alpha_m[idx_b]
-        f1bm = beta_m[idx_a]
-        f2bm = beta_m[idx_b]
+        # retrieved magneto-optical values
+        f1m = beta_m[idx_a]
+        f2m = beta_m[idx_b]
+        f1dm = delta_m[idx_a]
+        f2dm = delta_m[idx_b]
 
-        delta_a = np.absolute(f2-f1)  # varitation of refractive component
-        delta_b = np.absolute(f2b-f1b)  # variation of absorptive component
-        delta_am = np.absolute(f2m - f1m)  # varitation of the magnetic refractive component
-        delta_bm = np.absolute(f2bm - f1bm)  # variation of magnetic absorptive component
+        var_b = np.absolute(f2-f1)  # varitation of refractive component
+        var_d = np.absolute(f2d-f1d)  # variation of absorptive component
+        var_bm = np.absolute(f2m - f1m)  # varitation of the magnetic refractive component
+        var_dm = np.absolute(f2dm - f1dm)  # variation of magnetic absorptive component
 
         # checks if variation meets precision value if not check next value
-        if delta_a>precision or delta_b>precision or delta_am>precision or delta_bm>precision:
+        if var_b>precision or var_d>precision or var_bm>precision or var_dm>precision:
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
@@ -1248,6 +1249,14 @@ class slab:
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates depth-dependent magnetic components
+        if type(delta_m) != list and type(delta_m) != np.ndarray:
+            delta_m = np.zeros(len(delta))
+        if type(beta_m) != list and type(beta_m) != np.ndarray:
+            beta_m = np.zeros(len(beta))
+
+        #if type(delta_m) != list and type(beta_m) != list:
+        #    delta_m = delta
+        #    beta_m = beta
 
         # definition of magneto-optical constant as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
@@ -1408,7 +1417,6 @@ class slab:
         delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
 
         delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
-
 
         epsilon = 1 - 2*delta + 1j*beta*2  # dielectric constant
 

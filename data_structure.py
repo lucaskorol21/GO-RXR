@@ -1768,10 +1768,13 @@ def LoadDataHDF5(fname):
 
     f = h5py.File(fname, 'r')
     experiment = f['Experimental_data']
+    simulation = f['Simulated_data']
 
     RS = experiment['Reflectivity_Scan']
     ES = experiment['Energy_Scan']
 
+    RSim = simulation['Reflectivity_Scan']
+    ESim = simulation['Energy_Scan']
     # Collects data information to print to terminal
     data = list()
     data_dict = dict()
@@ -1780,14 +1783,14 @@ def LoadDataHDF5(fname):
     for Rkey in RS.keys():
         mydata = RS[Rkey]
         data_dict[Rkey] = RS[Rkey]
-        sim_dict[Rkey] = RS[Rkey]
+        sim_dict[Rkey] = RSim[Rkey]
         Rdat = [int(mydata.attrs['DatasetNumber']),'Reflectivity', Rkey]
         data.append(Rdat)
 
     for Ekey in ES.keys():
         mydata = ES[Ekey]
         data_dict[Ekey] = ES[Ekey]
-        sim_dict[Ekey] = ES[Ekey]
+        sim_dict[Ekey] = ESim[Ekey]
         Edat = [int(mydata.attrs['DatasetNumber']),'Energy', Ekey]
         data.append(Edat)
 

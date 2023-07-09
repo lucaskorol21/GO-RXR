@@ -144,7 +144,7 @@ if __name__ == '__main__':
     #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
 
     # Global Minimum Example
-
+    """
     sample = ds.ReadSampleHDF5(fname)
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample.energy_shift()
@@ -240,8 +240,11 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(my_slabs[1:], my_time, 'o')
     plt.show()
+    """
+    """
 
-"""
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    sample = ds.ReadSampleHDF5(fname)
     name = '64_836.04_S'
 
     E = 836.04
@@ -279,27 +282,94 @@ if __name__ == '__main__':
     Q = np.vectorize(complex)(beta_m, delta_m)
     epsilon_mag = Q * epsilon * 2 * (-1)
 
-    my_slabs = ms.ALS(epsilon.real, epsilon.imag, 1e-20)  # performs the adaptive layer segmentation using Numba
+    my_slabs = ms.ALS(epsilon.real, epsilon.imag, epsilon_mag.real, epsilon_mag.imag, 0.01)  # performs the adaptive layer segmentation using Numba
 
-    my_thickness = []
-    my_epsilon = []
+    my_thickness1 = []
+    my_epsilon1 = []
     for idx in my_slabs:
         idx = int(idx)
-        my_thickness.append(thickness[idx])
-        my_thickness.append(thickness[idx])
-        my_thickness.append(thickness[idx])
+        my_thickness1.append(thickness[idx])
+        my_thickness1.append(thickness[idx])
+        my_thickness1.append(thickness[idx])
 
-        my_epsilon.append(0)
-        my_epsilon.append(delta[idx])
-        my_epsilon.append(0)
+        my_epsilon1.append(0)
+        my_epsilon1.append(delta[idx])
+        my_epsilon1.append(0)
 
-    plt.figure()
-    plt.plot(my_thickness, my_epsilon)
+    my_slabs = ms.ALS(epsilon.real, epsilon.imag, epsilon_mag.real, epsilon_mag.imag,
+                      1e-20)  # performs the adaptive layer segmentation using Numba
+
+    my_thickness2 = []
+    my_epsilon2 = []
+    for idx in my_slabs:
+        idx = int(idx)
+        my_thickness2.append(thickness[idx])
+        my_thickness2.append(thickness[idx])
+        my_thickness2.append(thickness[idx])
+
+        my_epsilon2.append(0)
+        my_epsilon2.append(delta[idx])
+        my_epsilon2.append(0)
+
+    my_slabs = ms.ALS(epsilon.real, epsilon.imag, epsilon_mag.real, epsilon_mag.imag,
+                      0.001)  # performs the adaptive layer segmentation using Numba
+
+    my_thickness3 = []
+    my_epsilon3 = []
+    for idx in my_slabs:
+        idx = int(idx)
+        my_thickness3.append(thickness[idx])
+        my_thickness3.append(thickness[idx])
+        my_thickness3.append(thickness[idx])
+
+        my_epsilon3.append(0)
+        my_epsilon3.append(delta[idx])
+        my_epsilon3.append(0)
+
+    fig, axes = plt.subplots(1,2)
+
+    from matplotlib import ticker
+    # Plot the data on the top-left subplot
+    axes[0].plot(my_thickness1, my_epsilon1)
+    axes[0].plot(thickness, delta)
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    #axes[0].tick_params(axis='y', labelleft=False)
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].legend(frameon=False)
+    axes[0].set_ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=16)
+
+
+    # Plot the data on the top-right subplot
+    axes[1].plot(my_thickness3, my_epsilon3)
+    axes[1].plot(thickness, delta)
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend(frameon=False)
+
+    axes[0].set_xlim(30,45)
+    axes[1].set_xlim(30, 45)
+    # Adjust the layout
+    plt.tight_layout()
+
+    # Display the figure
+
+
+
+    plt.figure(3)
+    plt.plot(my_thickness2, my_epsilon2)
     plt.plot(thickness, delta)
-    plt.xlabel(r'Depth ($\AA$)')
-    plt.ylabel(r'$\mathrm{\delta \left(E \right)}$')
+    plt.xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=12)
+    plt.ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=16)
 
     plt.xlim([30,45])
+    # Set minor ticks
+    plt.minorticks_on()
+
+    # Set tick parameters
+    plt.tick_params(which='both', direction='in', top=True, right=True)
     plt.show()
 
 
@@ -311,16 +381,29 @@ if __name__ == '__main__':
     R2 = R2['S']
 
     plt.figure()
-    plt.plot(qz, R)
-    plt.plot(qz, R1)
-    plt.plot(qz, R2, '--')
-    plt.legend(['precision=0.01','precision=0.001','precision=1e-20'])
-    plt.ylabel('Reflectivity , R (arb. units)')
-    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
-    plt.yscale('log')
+    plt.plot(qz, np.log10(R))
+    plt.plot(qz, np.log10(R1))
+    plt.plot(qz, np.log10(R2), '--')
+    plt.legend(['precision=0.01','precision=0.001','precision=1e-20'], frameon=False)
+    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    # Set minor ticks
+    plt.minorticks_on()
+    # Set tick parameters
+    plt.tick_params(which='both', direction='in', top=True, right=True)
+    plt.tick_params(axis='y', labelleft=False)
     plt.show()
+    """
+    """
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
 
-    
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    sample = ds.ReadSampleHDF5(fname)
+    name = '64_836.04_S'
+
+    E = 836.04
+    qz = data_dict[name]['Data'][0]
+
     precision_array = [1e-2,1e-2,5e-3,1e-3,2e-4,5e-4,1e-4,2e-5,5e-5,1e-5,2e-6, 5e-6,1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
     time_array = np.zeros(len(precision_array))
     slab_array = []
@@ -364,7 +447,7 @@ if __name__ == '__main__':
             Q = np.vectorize(complex)(beta_m, delta_m)
             epsilon_mag = Q * epsilon * 2 * (-1)
 
-            my_slabs = ms.ALS(epsilon.real, epsilon.imag, prec)  # performs the adaptive layer segmentation using Numba
+            my_slabs = ms.ALS(epsilon.real, epsilon.imag, epsilon_mag.real, epsilon_mag.imag, prec)  # performs the adaptive layer segmentation using Numba
             if i == 0:
                 slab_array.append(len(my_slabs))
             #thickness, density, density_mag = sample.density_profile()
@@ -372,10 +455,13 @@ if __name__ == '__main__':
     time_array = time_array/100/1e6
     plt.figure()
     plt.plot(slab_array[1:], time_array[1:] ,'o')
-    plt.xlabel('Number of Slabs')
-    plt.ylabel('Average Execution Time (ms)')
+    plt.xlabel('Number of Slabs', fontsize=12)
+    plt.ylabel('Average Execution Time (ms)', fontsize=12)
+    plt.minorticks_on()
+    plt.tick_params(which='both', direction='in', top=True, right=True)
     plt.show()
-    
+    """
+    """
     thickness, density, mag_density = sample.density_profile(step=0.01)
     idx = [i for i in range(len(thickness)) if thickness[i] <= 60]
     plt.figure()
@@ -385,7 +471,8 @@ if __name__ == '__main__':
     plt.xlabel(r'Depth ($\AA$)')
     plt.ylabel(r'Density ($mol/cm^{3}$)')
     plt.show()
-
+    """
+    """
     # Jesus Data
     sample = ds.ReadSampleHDF5(fname)
     sample.energy_shift()
@@ -413,40 +500,140 @@ if __name__ == '__main__':
     plt.plot(z,val)
     plt.show()
     np.savetxt('E1_460.76_best.txt', my_data.transpose())
-    
-    name2 = '27_E600.18_Th20.0_S'
+    """
+    """
+    from matplotlib import ticker
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    name1 = '47_E429.58_Th10.0_S'
+
+    E = data_dict[name1]['Data'][3]
+    R = data_dict[name1]['Data'][2]
+    plt.figure()
+    plt.plot(E, R)
+    plt.xlabel('Energy, E (eV)', fontsize=12)
+    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    plt.tick_params(axis='y', labelleft=False)
+    plt.minorticks_on()
+    plt.show()
+
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+    name2 = '49_E600.18_Th10.0_S'
 
     E2 = data_dict[name2]['Data'][3]
     R2 = data_dict[name2]['Data'][2]
 
 
-    E, Rs = sample.energy_scan(20.0, E2)
-    Rs = Rs['S']
+    Eb, Rsb = sample.energy_scan(10.0, E2)
+    Rsb = Rsb['S']
 
     sample.eShift['Mn2'] = 1.1
     sample.eShift['Mn3'] = 1.1
-    Ed, Rs2 = sample.energy_scan(20.0, E2)
+    Ed, Rs2 = sample.energy_scan(10.0, E2)
     Rs2 = Rs2['S']
 
 
+    fig, axes = plt.subplots(1,2)
+    axes[1].plot(E2, R2, label=r'Exp ($\sigma$)')
+    axes[1].plot(Eb, Rsb, label=r'Calc ($\sigma$)')
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[1].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend(frameon=False)
 
-    plt.figure()
-    plt.plot(E2, R2)
-    plt.plot(E2, Rs2)
-    plt.yticks([])
-    plt.ylabel('Reflectivity (a.u.)')
-    plt.xlabel('Energy (eV)')
-    plt.legend(['Experiment','Simulation'])
+    axes[0].plot(E2, R2, label=r'Exp ($\sigma$)')
+    axes[0].plot(Eb, Rs2, label=r'Calc ($\sigma$)')
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[0].tick_params(axis='y', labelleft=False)
+    axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].legend(frameon=False)
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+
+    plt.tight_layout()
     plt.show()
-    
+    """
+    """
+    E = 833
+
+    Theta = np.arange(0.1, 90, 0.1)
+    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+
+    # thickness variation
+    sample_t1 = ms.slab(2)
+    sample_t1.addlayer(0, 'SrTiO3', 50, roughness=0)
+    sample_t1.addlayer(1, 'LaMnO3', 5, roughness=0)
+    sample_t1.energy_shift()
+
+    sample_t2 = ms.slab(2)
+    sample_t2.addlayer(0, 'SrTiO3', 50, roughness=0)
+    sample_t2.addlayer(1, 'LaMnO3', 20, roughness=0)
+    sample_t2.energy_shift()
+
+    sample_t3 = ms.slab(2)
+    sample_t3.addlayer(0, 'SrTiO3', 50, roughness=0)
+    sample_t3.addlayer(1, 'LaMnO3', 40, roughness=0)
+    sample_t3.energy_shift()
+
+    qz1, R1 = sample_t1.reflectivity(E, qz)
+    qz2, R2 = sample_t2.reflectivity(E, qz)
+    qz3, R3 = sample_t3.reflectivity(E, qz)
+
+    plt.figure(1)
+    plt.plot(qz1, np.log10(R1['S'])+6)
+    plt.plot(qz1, np.log10(R2['S'])+3)
+    plt.plot(qz1, np.log10(R3['S']))
+    plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    plt.tick_params(axis='y', labelleft=False)
+    plt.minorticks_on()
+    plt.legend([r'5 $\mathrm{\AA}$', r'20 $\mathrm{\AA}$', r'40 $\mathrm{\AA}$'], frameon=False, fontsize=10)
+    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    plt.show()
+
+
+
     sample1 = ms.slab(2)
     sample1.addlayer(0,'SrTiO3',10, roughness=0)
     sample1.addlayer(1,'LaMnO3',80, roughness=0)
     sample1.energy_shift()
 
     sample2 = ms.slab(2)
+    sample2.addlayer(0, 'SrTiO3', 10, roughness=3)
+    sample2.addlayer(1, 'LaMnO3', 80, roughness = 0)
+    sample2.energy_shift()
+
+    sample3 = ms.slab(2)
+    sample3.addlayer(0, 'SrTiO3', 10, roughness=6)
+    sample3.addlayer(1, 'LaMnO3', 80, roughness=0)
+    sample3.energy_shift()
+
+    qz1, R1i = sample1.reflectivity(E, qz)
+    qz2, R2i = sample2.reflectivity(E, qz)
+    qz3, R3i = sample3.reflectivity(E, qz)
+
+    sample1 = ms.slab(2)
+    sample1.addlayer(0, 'SrTiO3', 10, roughness=0)
+    sample1.addlayer(1, 'LaMnO3', 80, roughness=0)
+    sample1.energy_shift()
+
+    sample2 = ms.slab(2)
     sample2.addlayer(0, 'SrTiO3', 10, roughness=0)
-    sample2.addlayer(1, 'LaMnO3', 80, roughness = 3)
+    sample2.addlayer(1, 'LaMnO3', 80, roughness=3)
     sample2.energy_shift()
 
     sample3 = ms.slab(2)
@@ -454,36 +641,59 @@ if __name__ == '__main__':
     sample3.addlayer(1, 'LaMnO3', 80, roughness=6)
     sample3.energy_shift()
 
+    from matplotlib import ticker
+    qz1, R1s = sample1.reflectivity(E, qz)
+    qz2, R2s = sample2.reflectivity(E, qz)
+    qz3, R3s = sample3.reflectivity(E, qz)
 
-    E = 833
-    Theta = np.arange(0.1,90,0.1)
-    qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+    fig, axes = plt.subplots(1,2)
+    axes[0].plot(qz1, np.log10(R1i['S'])+6, label=r'$\sigma_{i}$=0 $\mathrm{\AA}$')
+    axes[0].plot(qz1, np.log10(R2i['S'])+3, label=r'$\sigma_{i}$=3 $\mathrm{\AA}$')
+    axes[0].plot(qz1, np.log10(R3i['S']), label=r'$\sigma_{i}$=6 $\mathrm{\AA}$')
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[0].tick_params(axis='y', labelleft=False)
+    axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].legend(frameon=False)
 
-    qz1, R1 = sample1.reflectivity(E, qz)
-    qz2, R2 = sample2.reflectivity(E, qz)
-    qz3, R3 = sample3.reflectivity(E, qz)
+    axes[1].plot(qz1, np.log10(R1s['S']) + 6, label=r'$\sigma_{s}$=0 $\mathrm{\AA}$')
+    axes[1].plot(qz1, np.log10(R2s['S']) + 3, label=r'$\sigma_{s}$=3 $\mathrm{\AA}$')
+    axes[1].plot(qz1, np.log10(R3s['S']), label=r'$\sigma_{s}$=6 $\mathrm{\AA}$')
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[1].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend(frameon=False)
 
-    plt.figure()
-    plt.plot(qz, np.log10(R1['S'])+6)
-    plt.plot(qz, np.log10(R2['S'])+3)
-    plt.plot(qz, np.log10(R3['S'])+0)
 
-    plt.yticks([])
-    plt.xlabel(r'Momentum Transfer, $q_z$ $\left( Å^{-1} \right)$')
-    plt.ylabel('log(R) (a.u.)')
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+
+    plt.tight_layout()
     plt.show()
-    
+
     hello = np.loadtxt("//cabinet/work$/lsk601/Downloads/SrTiO3_attenuation.txt")
     E = hello[:,0]
     attenuation = hello[:,1]
 
     plt.figure()
     plt.plot(E, attenuation)
-    plt.xlabel('X-Ray Energy (eV)')
-    plt.ylabel(r'Attenuation length ($\times 10^{-6}$ meters) ')
+    plt.xlabel('X-Ray Energy (eV)', fontsize=12)
+    plt.ylabel(r'Attenuation length ($\times 10^{-6}$ meters)', fontsize=12)
     plt.grid(True)
     plt.show()
-    
+    """
+    """
     sample = ds.ReadSampleHDF5(fname)
 
     struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')  # look for form factors in directory
@@ -559,7 +769,7 @@ if __name__ == '__main__':
 
     # Show plot
     plt.show()
-
+    
    
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
 
