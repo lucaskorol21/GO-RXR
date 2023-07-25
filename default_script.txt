@@ -51,13 +51,12 @@
 # getMagDensity(layer,element, variation)
 
 
-rho = getMagDensity(6, B, Mn3)
-setMagDensity(7, B,Mn3,rho)
-setMagDensity(8, B,Mn3,rho)
-setMagDensity(9, B,Mn3,rho)
-setMagDensity(10, B,Mn3,rho)
-setMagDensity(10, B,Mn3,rho)
-setMagDensity(11, B,Mn3,rho)
+#rho = getMagDensity(6, B, Mn3)
+#setMagDensity(7, B,Mn3,rho)
+#setMagDensity(8, B,Mn3,rho)
+#setMagDensity(9, B,Mn3,rho)
+#setMagDensity(10, B,Mn3,rho)
+#setMagDensity(11, B,Mn3,rho)
 
 
 

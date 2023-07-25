@@ -191,7 +191,11 @@ def Read_ReMagX(fname):
                             # do something else
                         elif line[0] == 'dataset_qz':
                             qz = float(line[2])
-                            theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi
+                            try:
+                                theta = np.arcsin(qz / E / (0.001013546247)) * 180 / np.pi
+                            except RuntimeWarning:
+                                theta=0
+
 
                             qz_list.append(qz)
                             theta_list.append(theta)

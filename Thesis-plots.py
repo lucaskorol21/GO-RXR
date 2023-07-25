@@ -124,7 +124,8 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
             axes[my_idx].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 1.9])
+            #axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 1.9])
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 0.8])
 
 
     elif type == 'E':
@@ -273,13 +274,63 @@ if __name__ == "__main__":
     #data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
     #sample = ds.ReadSampleHDF5(fname)
     #sample.energy_shift()
-
-    # [qz_data,R_data,qz_sim,R_sim, random_points, predictions]
     """
+
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
+    sample4 = ds.ReadSampleHDF5(fname)
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
+    sample7 = ds.ReadSampleHDF5(fname)
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
+    sample10 = ds.ReadSampleHDF5(fname)
+
+    Total_Mn2_4 = 0
+    vals = [0.00252081, 0.00067035, 0.00916918,0.00252081]
+    error = 0
+    idx = 0
+    for i in range(2,6):
+        Total_Mn2_4 = Total_Mn2_4 + sample4.structure[i]['B'].poly_ratio[1]*sample4.structure[i]['B'].thickness*1e-8
+        error = error + (sample4.structure[i]['B'].poly_ratio[1]*0.1*0.028*1e-8)**2 + (sample4.structure[i]['B'].thickness*vals[idx]*0.028*1e-8)**2
+        idx = idx + 1
+
+    Total_Mn2_4 = Total_Mn2_4*(1e-8)**2*(3.905)**2*6.02214076e23
+    error = np.sqrt(error)*(1e-8)**2*(3.905)**2*6.02214076e23
+    print('4uc: ' + str(Total_Mn2_4*0.028) + ' +- ' + str(error))
+
+    Total_Mn2_7 = 0
+    vals = [0.00614008, 0.00344086, 0.04148664, 0.01746246, 0.02394579]
+    error = 0
+    idx = 0
+
+    for i in range(2, 7):
+        Total_Mn2_7 = Total_Mn2_7 + sample7.structure[i]['B'].poly_ratio[1] * sample7.structure[i]['B'].thickness*1e-8
+        error = error + (sample7.structure[i]['B'].poly_ratio[1] * 0.1 * 0.028*1e-8) ** 2 + (
+                    sample7.structure[i]['B'].thickness * vals[idx] * 0.028*1e-8) ** 2
+        idx = idx + 1
+
+    Total_Mn2_7 = Total_Mn2_7 * (1e-8) ** 2 * (3.905) ** 2 * 6.02214076e23
+    error = np.sqrt(error) * (1e-8) ** 2 * (3.905) ** 2 * 6.02214076e23
+    print('7uc: ' + str(Total_Mn2_7 * 0.028)+' +- ' + str(error))
+
+    Total_Mn2_10 = 0
+    vals = [0.00345445, 0.00229006, 0.01244586, 0.02939831, 0.02136382]
+    error = 0
+    idx = 0
+
+    for i in range(2, 7):
+        Total_Mn2_10 = Total_Mn2_10 + sample10.structure[i]['B'].poly_ratio[1] * sample10.structure[i]['B'].thickness*1e-8
+        error = error + (sample7.structure[i]['B'].poly_ratio[1] * 0.1 * 0.028 * 1e-8) ** 2 + (
+                sample7.structure[i]['B'].thickness * vals[idx] * 0.028 * 1e-8) ** 2
+        idx = idx + 1
+
+    Total_Mn2_10 = Total_Mn2_10 * (1e-8) ** 2 * (3.905) ** 2 * 6.02214076e23
+    error = np.sqrt(error) * (1e-8) ** 2 * (3.905) ** 2 * 6.02214076e23
+    print('10uc: ' + str(Total_Mn2_10 * 0.028)+' +- ' + str(error))
+    """
+    """
+    # [qz_data,R_data,qz_sim,R_sim, random_points, predictions]
+
     # ---------------------------------- MAGNETIC ERROR
-
-    # 4uc Sample
-
+    
     rho = np.array([0.0001502703621304594, 0.0018479773003216926, 0.00712558371573116, 0.0176497168459156, 0.003261994045717825])/10  # scaled by 10 in GUI
     d = [3.905, 3.94, 3.97, 3.97, 3.97]
 
@@ -289,10 +340,11 @@ if __name__ == "__main__":
     D = 0
     E = 0
     for i in range(len(rho)):
-        D = D + rho[i]*d[i]
-        E = E + (delta_rho[i]*d[i])**2 + (rho[i]*delta_d[i])**2
+        D = D + rho[i]*d[i]*1e-8
+        E = E + (delta_rho[i]*d[i]*1e-8)**2 + (rho[i]*delta_d[i]*1e-8)**2
 
-    E = np.sqrt(E)
+    E = np.sqrt(E)* (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
+    D = D* (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
     print('Total Magnetism (4uc) = ' + str(D) + ' +- ' + str(E))
 
@@ -300,53 +352,173 @@ if __name__ == "__main__":
                     0.00010936761100236586]) / 10  # scaled by 10 in GUI
     d = [3.905, 3.94, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97]
 
+    #delta_rho = np.array([3.38396732e-05, 3.75170965e-05, 5.94321782e-04, 9.17391043e-04,
+    #                      1.42100443e-03, 1.70273803e-03, 2.55402673e-03, 3.23024690e-03,
+    #                      4.57742480e-04]) / 10
     delta_rho = np.array([3.38396732e-05, 3.75170965e-05, 5.94321782e-04, 9.17391043e-04,
                           1.42100443e-03, 1.70273803e-03, 2.55402673e-03, 3.23024690e-03,
                           4.57742480e-04]) / 10
-    delta_d = [0.03658601, 0.0367616, 0.00074576, 0.00074576, 0.00074576, 0.00074576, 0.00074576, 0.00074576, 0.00074576]
+    delta_d = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
-    D = 0
-    E = 0
+    D1 = 0
+    E1 = 0
     for i in range(len(rho)):
-        D = D + rho[i] * d[i]
-        E = E + (delta_rho[i] * d[i]) ** 2 + (rho[i] * delta_d[i]) ** 2
+        D1 = D1 + rho[i] * d[i]*1e-8
+        E1 = E1 + (delta_rho[i] * d[i]*1e-8) ** 2 + (rho[i] * delta_d[i]*1e-8) ** 2
 
-    E = np.sqrt(E)
+    E1 = np.sqrt(E1) * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
+    D1 = D1 * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
-    print('Total Magnetism (7uc) = ' + str(D) + ' +- ' + str(E))
+    print('Total Magnetism (7uc) = ' + str(D1) + ' +- ' + str(E1))
 
     rho = np.array([0.00019341730101137163, 0.000186586051446197, 0.014676919509906398, 0.027492584861078195,
                     0.031889765641913245, 0.031889765641913245, 0.031889765641913245, 0.031889765641913245,
                     0.031889765641913245, 0.031889765641913245, 0.012130795599578477, 0.009068991034701678]) / 10  # scaled by 10 in GUI
     d = [3.905, 3.94, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97]
 
-    delta_rho = np.array([1.57522896e-05, 2.99918237e-05, 1.50814088e-04, 1.84629166e-04,
-                          1.30548200e-04, 1.30548200e-04, 1.30548200e-04, 1.30548200e-04,
-                          1.30548200e-04, 1.30548200e-04, 1.41695916e-04, 7.17511398e-05]) / 10
-    delta_d = [0.01160294, 0.0116032, 0.01160258, 0.01160258, 0.01160258, 0.01160258, 0.01160258,
-               0.01160258, 0.01160258, 0.01160258, 0.01160258, 0.01160258]
+    #delta_rho = np.array([1.49852433e-05, 2.14513851e-05, 1.43998028e-04, 1.15682387e-04,
+    #                      1.30548200e-04, 1.30548200e-04, 1.30548200e-04, 1.30548200e-04,
+    #                      1.30548200e-04, 1.30548200e-04, 1.42232126e-04, 7.19818715e-05]) / 10
 
-    D = 0
-    E = 0
+    delta_rho = np.array([5.97088115e-05, 1.38820454e-04, 1.09198799e-04, 1.06191995e-04,
+                          0.0022852, 0.0032757, 0.0067792, 0.0061167,
+                          0.0036589, 0.0018909, 1.22843358e-04, 4.96285155e-05])/10
+
+    delta_d = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+               0.1, 0.1, 0.1, 0.1, 0.1]
+
+    D2 = 0
+    E2 = 0
     for i in range(len(rho)):
-        D = D + rho[i] * d[i]
-        E = E + (delta_rho[i] * d[i]) ** 2 + (rho[i] * delta_d[i]) ** 2
+        D2 = D2 + rho[i] * d[i]*1e-8
+        E2 = E2 + (delta_rho[i] * d[i]*1e-8) ** 2 + (rho[i] * delta_d[i]*1e-8) ** 2
 
-    E = np.sqrt(E)
+    E2 = np.sqrt(E2) * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
+    D2 = D2 * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
     print('Total Magnetism (10uc) = ' + str(D) + ' +- ' + str(E))
     x = [4, 7, 10]
-    y = np.array([0.0119/4,0.0674/7,0.101/10])
-    dy = [0.0012/4,0.0019/7,0.0002/10]
+    y = np.array([D/4,D1/7,D2/10])
+    dy = [E/4,E1/7,E2/10]
     plt.figure()
     plt.errorbar(x, y, yerr=dy, fmt='o', capsize=3, linestyle='')
     plt.tick_params(which='both', direction='in', top=True, right=True)
     plt.minorticks_on()
     plt.grid(True)
-    plt.xlabel(r'Film Thickness (uc)', fontsize=12)
-    plt.ylabel(r'Average magnetic contribution per film  (arb. units)', fontsize=10)
+    #plt.ticklabel_format(axis='y', style='sci', scilimits=(-10, -10))
+    plt.xlabel(r'Film Thickness (uc)', fontsize=13)
+    plt.ylabel(r'Average magnetic contribution per unit cell  (arb. units)', fontsize=13)
+    plt.ylim([0,0.125])
     plt.show()
-    
+    """
+
+    """
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+
+    thickness, density, density_mag = sample.density_profile()
+
+    bounds = [[5.1822, 7.716215188017522], [7.716215188017522, 9.250230376035044], [9.250230376035044, 11.250230376035044],
+              [11.250230376035044,17.066530376035044], [17.066530376035044, 22.882830376035044],
+              [22.882830376035044,28.699130376035044], [28.699130376035044,7.82253]]
+    value = np.array([2.47328055e-03, 1.05487732e-03, 1.49386942e-03, 1.25021663e-04,7.39237444e-05, 6.07739396e-05, 1.51467795e-05])/10
+
+    tot_mag = sum(density_mag['Mn3+']/10)*0.1
+
+    # find the error
+    my_error = 0
+    for i, bound in enumerate(bounds):
+
+        if i == 0:
+            idx = [j for j in range(len(thickness)) if thickness[j]<bound[1]]
+            my_error = my_error + np.square(len(idx)*0.1*value[i])
+        elif i == len(bounds)-1:
+            idx = [j for j in range(len(thickness)) if thickness[j]>=bound[0]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+        else:
+            idx = [j for j in range(len(thickness)) if thickness[j]>=bound[0] and thickness[j]<bound[1]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+
+    my_error = np.sqrt(my_error)
+    print('10uc LSMO at 150K: ' + str(tot_mag/48.78) + ' +- ' + str(my_error/48.78))
+
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
+
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+
+    thickness, density, density_mag = sample.density_profile()
+
+    bounds = [[4.694941599778237, 7.88732020707415], [7.88732020707415, 9.093009125691446],
+              [9.093009125691446,11.9407550580210903], [11.9407550580210903, 34.2809656880210903],
+              [34.2809656880210903, 39.8660183460210903], [39.8660183460210903,47.5445163369150563]]
+    value = np.array([3.28764707e-04, 3.65348818e-04, 9.56763350e-05, 5.22253313e-05,
+                      4.86677504e-05, 1.02973070e-05]) / 10
+
+    tot_mag = sum(density_mag['Mn3+'] / 10) * 0.1
+
+    # find the error
+    my_error = 0
+    for i, bound in enumerate(bounds):
+
+        if i == 0:
+            idx = [j for j in range(len(thickness)) if thickness[j] < bound[1]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+        elif i == len(bounds) - 1:
+            idx = [j for j in range(len(thickness)) if thickness[j] >= bound[0]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+        else:
+            idx = [j for j in range(len(thickness)) if thickness[j] >= bound[0] and thickness[j] < bound[1]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+
+    my_error = np.sqrt(my_error)
+    print('13uc LSMO at 150K: ' + str(tot_mag/48.78) + ' +- ' + str(my_error/48.78))
+
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_complete.h5"
+
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
+
+    thickness, density, density_mag = sample.density_profile()
+
+    bounds = [[4.694941599778237,7.88732020707415], [7.88732020707415, 9.093009125691445], [9.093009125691445,11.94075505802109],
+              [11.94075505802109,24.28096568802109], [24.28096568802109,34.28096568802109], [34.28096568802109,39.86601834602109],
+              [39.86601834602109,47.54451633691506]]
+    value = np.array([4.26828299e-04, 4.86196647e-04, 1.35640551e-04, 5.84756968e-05, 6.12784553e-05,
+                      5.40956013e-05, 1.08271152e-05]) / 10
+
+    tot_mag = sum(density_mag['Mn3+'] / 10) * 0.1
+
+    # find the error
+    my_error = 0
+    for i, bound in enumerate(bounds):
+
+        if i == 0:
+            idx = [j for j in range(len(thickness)) if thickness[j] < bound[1]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+        elif i == len(bounds) - 1:
+            idx = [j for j in range(len(thickness)) if thickness[j] >= bound[0]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+        else:
+            idx = [j for j in range(len(thickness)) if thickness[j] >= bound[0] and thickness[j] < bound[1]]
+            my_error = my_error + np.square(len(idx) * 0.1 * value[i])
+
+    my_error = np.sqrt(my_error)
+    print('13uc LSMO at 300K: ' + str(tot_mag/48.78) + ' +- ' + str(my_error/48.78))
+    """
+    """
+    my_d = [0,0,0,0,0,0,0,0]
+    for i in range(1,9):
+        idx = i - 1
+        d = sample.getThickness(i,'all')
+        if idx == 0:
+            my_d[idx] = d
+        else:
+            my_d[idx] = my_d[idx-1] + d
+
+    print(my_d)
     """
     """
     # --------------- ERROR FUNCTION FIT
@@ -496,9 +668,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     """
-
-
     """
+
+
     fig, axes = plt.subplots(2,3)
     offset = -4.694941599778237
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
@@ -705,7 +877,22 @@ if __name__ == "__main__":
 
     plt.show()
     """
+    dq_10 = 2.12
+
+    dEz2 = 0.6*dq_10
+    dEx2y2 = 0.6*dq_10
+    dExzyz = -0.4*dq_10
+    dExy = -0.4*dq_10
+    import pickle
+    orbitals = {'Ti4': [dExy,dExzyz,dEx2y2,dEz2]}
+
+    #with open('Ti_orbitals.pkl', 'wb') as handle:
+    #    pickle.dump(orbitals, handle)
+    with open('Ti_orbitals.pkl', 'rb') as handle:
+        b = pickle.load(handle)
+    print(b)
     """
+
     fig, axes = plt.subplots(2,3)
     # -------------------------------------------------- Atomic Slice Density Profile - 10uc
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
@@ -724,7 +911,7 @@ if __name__ == "__main__":
 
 
 
-    xlim = [-30, 65]
+    xlim = [-30, 75]
 
     slice_width = [3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.94, 3.97, 3.97, 3.97, 3.97,3.97, 3.97, 3.97, 3.97,
                    3.97, 3.97]
@@ -770,6 +957,7 @@ if __name__ == "__main__":
     axes[1,2].set_ylim(axes[1,2].set_ylim()[0], 1.95)
     axes[1, 2].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 2].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1, 2].set_yticklabels([])
     axes[1,2].legend(frameon=False)
     # Asites
     Sr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]
@@ -787,8 +975,8 @@ if __name__ == "__main__":
 
     axes[0,2].bar(np.array(my_thickness) + offset, Sr, color='cyan', edgecolor='black', width=bar_width, label='Sr')
     axes[0,2].bar(np.array(my_thickness) + offset, La, color='blue', edgecolor='black', width=bar_width, label='La')
-    axes[0,2].plot(thickness + offset, O, 'r', label='O')
-    axes[0,2].plot(thickness + offset, C, color='orange', label='C')
+    axes[0,2].plot(thickness + offset+1.985+3.97, O, 'r', label='O')
+    axes[0,2].plot(thickness + offset+1.985+3.97, C, color='orange', label='C')
     axes[0,2].axhline(0, color='black', linestyle='--')
     axes[0,2].set_xlim(xlim)
 
@@ -798,6 +986,7 @@ if __name__ == "__main__":
     axes[0, 2].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 2].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 2].set_xticklabels([])
+    axes[0, 2].set_yticklabels([])
     axes[0,2].legend(frameon=False)
     # plt.gca().invert_xaxis()
 
@@ -816,7 +1005,7 @@ if __name__ == "__main__":
     # thickness = thickness + thickness_shift
 
 
-    xlim = [-30, 50]
+    xlim = [-30, 60]
 
     slice_width = [3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.94, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97, 3.97]
     start = -15.62
@@ -854,6 +1043,7 @@ if __name__ == "__main__":
 
     #plt.gca().invert_xaxis()
     axes[1,1].set_xlim(xlim)
+    axes[1, 1].set_yticklabels([])
     axes[1,1].set_ylim(axes[1,1].get_ylim()[0], 1.95)
     axes[1, 1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -873,8 +1063,8 @@ if __name__ == "__main__":
 
     axes[0,1].bar(np.array(my_thickness) + offset, Sr, color='cyan', edgecolor='black', width=bar_width, label='Sr')
     axes[0,1].bar(np.array(my_thickness) + offset, La, color='blue', edgecolor='black', width=bar_width, label='La')
-    axes[0,1].plot(thickness + offset, O, 'r', label='O')
-    axes[0,1].plot(thickness + offset, C, color='orange', label='C')
+    axes[0,1].plot(thickness + offset +1.985+3.97, O, 'r', label='O')
+    axes[0,1].plot(thickness + offset +1.985+3.97, C, color='orange', label='C')
     axes[0,1].axhline(0, color='black', linestyle='--')
     axes[0,1].set_xlim(xlim)
 
@@ -884,6 +1074,7 @@ if __name__ == "__main__":
     axes[0, 1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 1].set_xticklabels([])
+    axes[0, 1].set_yticklabels([])
     axes[0,1].legend(frameon=False)
     # plt.gca().invert_xaxis()
 
@@ -904,7 +1095,7 @@ if __name__ == "__main__":
 
     zero = np.zeros(len(thickness))
 
-    xlim = [-30,40]
+    xlim = [-30,45]
 
     slice_width = [3.905,3.905,3.905,3.905,3.905,3.905,3.905, 3.94, 3.97, 3.97,3.97,1.985]
     start = -15.62
@@ -958,8 +1149,8 @@ if __name__ == "__main__":
 
     axes[0,0].bar(np.array(my_thickness) +offset, Sr, color='cyan', edgecolor='black', width=bar_width, label='Sr')
     axes[0,0].bar(np.array(my_thickness) +offset, La, color='blue', edgecolor='black', width=bar_width, label='La')
-    axes[0,0].plot(thickness + offset, O, 'r', label='O')
-    axes[0,0].plot(thickness + offset, C, color='orange', label='C')
+    axes[0,0].plot(thickness+offset+1.985+3.97, O, 'r', label='O')
+    axes[0,0].plot(thickness+offset+1.985+3.97, C, color='orange', label='C')
     axes[0,0].axhline(0, color='black', linestyle='--')
     axes[0,0].set_xlim(xlim)
 
@@ -971,10 +1162,10 @@ if __name__ == "__main__":
 
     axes[0,0].legend(frameon=False)
     axes[0,0].set_xticklabels([])
-    axes[1,1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=12)
+    axes[1,1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=20)
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel('Fractional Site Occupation', fontsize=12)
+    shared_y.set_ylabel('Fractional Site Occupation', fontsize=20)
 
     axes[0, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[0, 1].set_ylabel('')  # Remove existing x-axis label for this subplot
@@ -982,8 +1173,11 @@ if __name__ == "__main__":
     axes[0, 1].get_shared_y_axes().join(axes[1, 0], shared_y)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0)
+    #axes[0,0].grid(True)
     #plt.gca().invert_xaxis()
     plt.show()
+
+    """
     """
 
 
@@ -1110,8 +1304,8 @@ if __name__ == "__main__":
     #axes[1,1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
     #axes[0,0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
     axes[1,1].set_xlabel(r'Energy, E (eV)', fontsize=12)
-    axes[0,0].set_ylabel(r'Normalized Reflected Intensity (arb. units)')
-    axes[1,0].set_ylabel(r'Circular Polarization Asymmetry (arb. units)')
+    axes[0,0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=12)
+    axes[1,0].set_ylabel(r'Circular Polarization Asymmetry (arb. units)', fontsize=12)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     #plt.subplots_adjust(hspace=0.08)
@@ -1232,7 +1426,8 @@ if __name__ == "__main__":
     shared_y.yaxis.set_label_coords(-0.02, 0.5)
     plt.tight_layout()
     plt.show()
-    """
+    
+    
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v10.h5"
     #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
     data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
@@ -1415,9 +1610,9 @@ if __name__ == "__main__":
     #axes[0, 1].get_shared_x_axes().join(axes[0, 1], shared_x)
     #axes[0, 1].get_shared_x_axes().join(axes[0, 2], shared_x)
 
-    axes[0,0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
-    axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
-    axes[1,1].set_xlabel('Energy, E (eV)', fontsize=12)
+    axes[0,0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=13)
+    axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=13)
+    axes[1,1].set_xlabel('Energy, E (eV)', fontsize=16)
     #shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.075)
@@ -1432,8 +1627,8 @@ if __name__ == "__main__":
     plotting_scans(data_dict_10, sim_dict_10, Mn_R_asymm_10, axes, (0, 2), offset=0, step=0.5, xmin=0.01,
                    type='RA', reverse=True, top=-0.25)
 
-    axes[0].set_ylabel('Circular Polarized Asymmetry (arb. units)', fontsize=12)
-    axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    axes[0].set_ylabel('Circular Polarized Asymmetry (arb. units)', fontsize=14)
+    axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=14)
     plt.tight_layout()
     plt.show()
 
@@ -1441,7 +1636,7 @@ if __name__ == "__main__":
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
 
     my_data = data_dict_7['38_455.73_S']['Data']
     my_idx = [int(i) for i in range(len(my_data[0])) if my_data[0][i] < 0.37]
@@ -1471,7 +1666,7 @@ if __name__ == "__main__":
 
     #axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
     #axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
-    axes[1, 1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    axes[1, 1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.075)
@@ -1482,7 +1677,7 @@ if __name__ == "__main__":
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
 
     plotting_scans(data_dict_4, sim_dict_4, Ti_resonance_4, axes, (0, 0), offset=0, step=1, xmin=455, xmax=470,
                    type='E', reverse=True, size=1, top=1.25)
@@ -1504,7 +1699,7 @@ if __name__ == "__main__":
 
     # axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
     # axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
-    axes[1, 1].set_xlabel('Energy, E (eV)', fontsize=12)
+    axes[1, 1].set_xlabel('Energy, E (eV)', fontsize=16)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.075)

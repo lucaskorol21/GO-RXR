@@ -39,6 +39,7 @@ with open('form_factor.pkl', 'rb') as f:
     ff_temp = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
     for key in ff_temp.keys():
         ff[key] = ff_temp[key]['Data']
+
 f.close()
 
 # Loads the magnetic form factors stored in our database
@@ -49,6 +50,9 @@ with open('form_factor_magnetic.pkl','rb') as f:
     for key in ffm_temp.keys():
         ffm[key] = ffm_temp[key]['Data']
 f.close()
+
+def change_ff(ffname, value):
+    ff[ffname] = value
 
 def _use_given_ff(directory):
     """
@@ -276,14 +280,7 @@ def index_of_refraction(rho, sf, E):
 if __name__ == "__main__":
 
 
-    E = 800 # Xray Energy
-    h = 4.135667696e-15  # Plank's Constant [eV s]
-    c = 2.99792450e18  # Speed of light in vacuum [A/s]
-
-    Theta = np.linspace(0.1, 89.9, 899)  # Angles
-    wavelength = (h*c)/E  # Wavelength (same unit as roughness) (Angstroms or nm)
-    test = np.loadtxt('test_example.txt')  # Data from ReMagX
-
+    print('Hello World!')
 
 
 

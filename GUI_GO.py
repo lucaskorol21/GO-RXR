@@ -91,6 +91,7 @@ import numpy as np
 import time
 import sys
 import material_structure as ms
+from material_model import change_ff
 import os
 import pyqtgraph as pg
 import data_structure as ds
@@ -104,6 +105,7 @@ import multiprocessing as mp
 import pickle
 from scipy.interpolate import interp1d, UnivariateSpline
 from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
+from Ti34_XAS_Python import GetTiFormFactor
 
 
 global stop
@@ -597,6 +599,7 @@ class sampleWidget(QWidget):
         self.eShift = dict()  # keep track of the energy shift
         self.ffScale = dict()  # keeps track of the form factor scaling information
         self.currentVal = []  # keep track of the fitting parameter values
+        self.orbitals = dict()
         self.change_eShift = True  # boolean used to determine if eShift is changed
         self.varTable = QTableWidget()  # element variation table
         self.elementBox = QComboBox()  # used to select which element to change element variation
@@ -727,10 +730,15 @@ class sampleWidget(QWidget):
 
         # initializing energy shift table (include ff scaling later)
         self.energyShiftTable = QTableWidget()
-        self.energyShiftTable.setColumnCount(2)
-        #self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
-        self.energyShiftTable.setVerticalHeaderLabels(['Energy Shift (eV)', 'Scale'])
 
+        #self.energyShiftTable.setHorizontalHeaderLabels(['Energy Shift (eV)'])
+        if len(self.orbitals) == 0:
+            self.energyShiftTable.setColumnCount(2)
+            self.energyShiftTable.setVerticalHeaderLabels(['Energy Shift (eV)', 'Scale'])
+        else:
+            self.energyShiftTable.setColumnCount(6)
+            self.energyShiftTable.setVerticalHeaderLabels(
+                ['Energy Shift (eV)', 'Scale', 'dExy', 'dExzyz', 'dEx2y2', 'dEzz'])
         self.energyShiftTable.verticalHeader().setFont(afont)
         self.energyShiftTable.horizontalHeader().setFont(afont)
 
@@ -808,6 +816,7 @@ class sampleWidget(QWidget):
 
         mylayout.addWidget(self.densityWidget)
 
+
         # change parameters when clicked
         self.structTable.itemChanged.connect(self.changeStructValues)
         self.varTable.itemChanged.connect(self.changeVarValues)
@@ -859,35 +868,94 @@ class sampleWidget(QWidget):
 
         # set the energy shift form factor names and their values
         self.energyShiftTable.setColumnCount(len(keys))
-        self.energyShiftTable.setRowCount(2)
+
         self.energyShiftTable.setHorizontalHeaderLabels(keys)
-        self.energyShiftTable.setVerticalHeaderLabels(['E (eV)','Scale'])
+        if len(self.orbitals) == 0:
+            self.energyShiftTable.setRowCount(2)
+            self.energyShiftTable.setVerticalHeaderLabels(['Energy Shift (eV)', 'Scale'])
+        else:
+            self.energyShiftTable.setRowCount(6)
+            self.energyShiftTable.setVerticalHeaderLabels(
+                ['Energy Shift (eV)', 'Scale', 'dExy', 'dExzyz', 'dEx2y2', 'dEzz'])
+
+            for column, key in enumerate(keys):  # setting energy shift
+                my_key = key.split('-')[1]
+                if my_key in list(self.orbitals.keys()):
+                    item1 = QTableWidgetItem(str(self.orbitals[my_key][0]))
+                    item2 = QTableWidgetItem(str(self.orbitals[my_key][1]))
+                    item3 = QTableWidgetItem(str(self.orbitals[my_key][2]))
+                    item4 = QTableWidgetItem(str(self.orbitals[my_key][3]))
+
+                    self.energyShiftTable.setItem(2, column, item1)
+                    self.energyShiftTable.setItem(3, column, item2)
+                    self.energyShiftTable.setItem(4, column, item3)
+                    self.energyShiftTable.setItem(5, column, item4)
+                else:
+                    item1 = QTableWidgetItem('False')
+                    item2 = QTableWidgetItem('False')
+                    item3 = QTableWidgetItem('False')
+                    item4 = QTableWidgetItem('False')
+
+                    self.energyShiftTable.setItem(2, column, item1)
+                    self.energyShiftTable.setItem(3, column, item2)
+                    self.energyShiftTable.setItem(4, column, item3)
+                    self.energyShiftTable.setItem(5, column, item4)
+
+
         for column, key in enumerate(keys):  # setting energy shift
             item = QTableWidgetItem(str(self.eShift[key]))
             self.energyShiftTable.setItem(0, column, item)
+
         for column, key in enumerate(keys):  # setting scaling factor
             item = QTableWidgetItem(str(self.ffScale[key]))
             self.energyShiftTable.setItem(1, column, item)
 
         # set the parameter fit colors
         copy_of_list = copy.deepcopy(self.parameterFit)
+
         my_fits = []
+        my_rows = []
         for fit in copy_of_list:
             for column, key in enumerate(keys):
                 if len(fit) == 3:
-                    if key[:3] == 'ff-':
-                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and fit[2] == key[3:]:
-                            my_fits.append(column)
-                        else:
-                            self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
-                    elif key[:3] == 'ffm':
-                        if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == key[4:]:
-                            my_fits.append(column)
-                        else:
-                            self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+                    if fit[0] == 'SCATTERING FACTOR':
+                        if key[:3] == 'ff-':
+                            if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'STRUCTURAL' and fit[2] == key[3:]:
+                                my_fits.append(column)
+                                my_rows.append(0)
+                            else:
+                                self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+                    elif fit[0] == 'ORBITAL':
 
-        for col in my_fits:
-            self.energyShiftTable.item(0, col).setBackground(QtGui.QColor(0, 255, 0))
+                        test_key = ''
+                        if key[:3] == 'ff-':
+                            test_key = key[3:]
+                        if key[:3] == 'ffm':
+                            test_key = key[4:]
+                        if test_key == fit[2]:
+                            my_fits.append(column)
+                            if fit[1] == 'DEXY':
+                                my_rows.append(2)
+                            elif fit[1] == 'DEXZYZ':
+                                my_rows.append(3)
+                            elif fit[1] == 'DEX2Y2':
+                                my_rows.append(4)
+                            elif fit[1] == 'DEZZ':
+                                my_rows.append(5)
+                        else:
+                            self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+                    else:
+                        self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+                elif key[:3] == 'ffm':
+                    if fit[0] == 'SCATTERING FACTOR' and fit[1] == 'MAGNETIC' and fit[2] == key[4:]:
+                        my_fits.append(column)
+                        my_rows.append(0)
+                    else:
+                        self.energyShiftTable.item(0, column).setBackground(QtGui.QColor(255, 255, 255))
+
+
+        for i,col in enumerate(my_fits):
+            self.energyShiftTable.item(my_rows[i], col).setBackground(QtGui.QColor(0, 255, 0))
 
         # checks to see if user has any form factors in the current working directory
         # - sets form factors in directory to blue
@@ -903,6 +971,7 @@ class sampleWidget(QWidget):
                     self.energyShiftTable.horizontalHeaderItem(col).setForeground(QtGui.QColor(0, 0, 255))
 
         self.energyShiftTable.blockSignals(False)
+        #self.changeEShiftValues()
     def eShiftFromSample(self, sample):
         """
         Purpose: Sets the energy shift from the input sample. This function is mostly used for the loading functions.
@@ -927,11 +996,23 @@ class sampleWidget(QWidget):
         row = self.energyShiftTable.currentRow()  # retrieves current row
         key = self.energyShiftTable.horizontalHeaderItem(column).text()  # retrieves the key
         value = self.energyShiftTable.item(row, column).text()  # retrieves the value
-
+        my_keys = key.split('-')[1]
         if row == 0:  # energy shift case
             self.eShift[key] = float(value)  # change the value in memory
         elif row == 1: # ff scaling
             self.ffScale[key] = float(value)
+        elif row == 2:
+            if my_keys in list(self.orbitals.keys()):
+                self.orbitals[my_keys][0] = value
+        elif row == 3:
+            if my_keys in list(self.orbitals.keys()):
+                self.orbitals[my_keys][1] = value
+        elif row == 4:
+            if my_keys in list(self.orbitals.keys()):
+                self.orbitals[my_keys][2] = value
+        elif row == 5:
+            if my_keys in list(self.orbitals.keys()):
+                self.orbitals[my_keys][3] = value
 
         if row == 0:
             # make changes to the sample
@@ -1339,48 +1420,107 @@ class sampleWidget(QWidget):
 
         my_items = self.energyShiftTable.selectedIndexes()
         Disable = False
+
         for i in my_items:
             if i.row() == 1:
                 Disable = True
 
+        for i in my_items:
+            my_header = self.energyShiftTable.horizontalHeaderItem(i.column()).text()
+            if my_header[:3] == 'ff-':
+                my_name = my_header[3:]
+            else:
+                my_name = my_header[4:]
+
+            if my_name not in list(self.orbitals.keys()) and i.row() in [2,3,4,5]:
+                _fit.setDisabled(True)
+                _remove_fit.setDisabled(True)
 
         if row == 1 or Disable:  # disable fitting capability for the form factor scaling (no longer implemented)
             _fit.setDisabled(True)
             _remove_fit.setDisabled(True)
 
+
         action = menu.exec_(QtGui.QCursor.pos())  # initialize action to be taken
         for i in my_items:
             column = i.column()
+            row = i.row()
             name = self.energyShiftTable.horizontalHeaderItem(column).text()
             if action == _fit:
-                # add energy shift to the fitting parameters
-                self.resetX = True
-                fit = []
-                if name[:3] == 'ff-':
-                    fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
-                elif name[:3] == 'ffm':
-                    fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+                if row == 0:
+                    # add energy shift to the fitting parameters
+                    self.resetX = True
+                    fit = []
+                    if name[:3] == 'ff-':
+                        fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
 
-                if fit != [] and fit not in self.parameterFit:  # set the boundaries
-                    self.parameterFit.append(fit)
-                    lower = str(float(val) - 0.5)
-                    upper = str(float(val) + 0.5)
-                    self.currentVal.append([val, [lower, upper]])
+                elif row == 2:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEXY', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEXY', name[4:]]
+                elif row == 3:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEXZYZ', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEXZYZ', name[4:]]
+                elif row == 4:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEX2Y2', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEX2Y2', name[4:]]
+                elif row == 5:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEZZ', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEZZ', name[4:]]
+
+                if row in [0,2,3,4,5]:
+                    if fit != [] and fit not in self.parameterFit and val != 'False':  # set the boundaries
+                        self.parameterFit.append(fit)
+                        lower = str(float(val) - 0.5)
+                        upper = str(float(val) + 0.5)
+                        self.currentVal.append([val, [lower, upper]])
 
             elif action == _remove_fit:
                 # remove the parameter from the fit (if found in parameterFit list)
                 self.resetX = True
                 fit = []
-                if name[:3] == 'ff-':
-                    fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
-                elif name[:3] == 'ffm':
-                    fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+                if row == 0:
 
-                # remove the fit
+                    if name[:3] == 'ff-':
+                        fit = ['SCATTERING FACTOR', 'STRUCTURAL', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['SCATTERING FACTOR', 'MAGNETIC', name[4:]]
+                elif row == 2:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEXY', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEXY', name[4:]]
+                elif row == 3:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEXZYZ', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEXZYZ', name[4:]]
+                elif row == 4:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEX2Y2', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEX2Y2', name[4:]]
+                elif row == 5:
+                    if name[:3] == 'ff-':
+                        fit = ['ORBITAL', 'DEZZ', name[3:]]
+                    elif name[:3] == 'ffm':
+                        fit = ['ORBITAL', 'DEZZ', name[4:]]
+
+                    # remove the fit
                 if fit in self.parameterFit:
                     idx = self.parameterFit.index(fit)
                     self.parameterFit.remove(fit)
                     self.currentVal.pop(idx)
+
 
         # reset the tables
         self.setTableEShift()
@@ -4476,6 +4616,7 @@ class GlobalOptimizationWidget(QWidget):
         self.sampleBounds = []  # sample boundaries
         self.sfBounds = []  # scattering factor boundaries
         self.otherBounds = []  # other boundaries
+        self.orbitals = dict()
 
         self.x = []  # parameters fitting values
         self.fun = 0  # cost function
@@ -5655,6 +5796,14 @@ class GlobalOptimizationWidget(QWidget):
                 if lower < 0:
                     lower = 0
                 self.sWidget.currentVal[idx][1] = [str(lower), str(upper)]
+            elif fit[0] == "SCATTERING FACTOR":
+                lower = str(self.x[row] - 0.5)
+                upper = str(self.x[row] + 0.5)
+                self.sWidget.currentVal[idx][1] = [lower, upper]
+            elif fit[0] == "ORBITAL":
+                lower = str(self.x[row]-0.5)
+                upper = str(self.x[row]+0.5)
+                self.sWidget.currentVal[idx][1] = [lower, upper]
 
             row = row + 1
 
@@ -5669,13 +5818,19 @@ class GlobalOptimizationWidget(QWidget):
                 lower = str(self.x[row] - 0.2)
                 upper = str(self.x[row] + 0.2)
                 self.rWidget.currentVal[idx][1] = [lower, upper]
-            elif fit[0] == "SCATTERING FACTOR":
-                lower = str(self.x[row] - 0.5)
-                upper = str(self.x[row] + 0.5)
-                self.rWidget.currentVal[idx][1] = [lower, upper]
+            #elif fit[0] == "SCATTERING FACTOR":
+            #    lower = str(self.x[row] - 0.5)
+            #    upper = str(self.x[row] + 0.5)
+            #    self.rWidget.currentVal[idx][1] = [lower, upper]
+            #elif fit[0] == "ORBITAL":
+            #    lower = str(self.x[row]-0.5)
+            #    upper = str(self.x[row]+0.5)
+            #    self.rWidget.currentVal[idx][1] = [lower, upper]
+
             row = row + 1
 
         self.changeFitParameters()
+
 
         # including scipt implementation
         script, problem, my_error = checkscript(self.sWidget.sample)
@@ -5684,13 +5839,18 @@ class GlobalOptimizationWidget(QWidget):
         if not(problem) and state > 0:
             use_script = True
 
-        self.sWidget.sample, self.rWidget.bs, self.rWidget.sf = go.changeSampleParams(self.x, self.parameters,
+        self.sWidget.sample, self.rWidget.bs, self.rWidget.sf, self.sWidget.orbitals = go.changeSampleParams(self.x, self.parameters,
                                                                                       copy.deepcopy(self.sWidget.sample),
-                                                                                      self.rWidget.bs, self.rWidget.sf, script, use_script=use_script)
-
+                                                                                      self.rWidget.bs, self.rWidget.sf, script, self.orbitals, use_script=use_script)
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]), float(self.sWidget.orbitals[okey][1]),
+                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
         # updates all the sample information across all the different Widgets
         self.rWidget.sample = copy.deepcopy(self.sWidget.sample)
         self.sample = copy.deepcopy(self.sWidget.sample)
+        self.orbitals = copy.copy(self.sWidget.orbitals)
 
         # update the background shift and scaling factors
         name = self.rWidget.selectedScans.currentText()
@@ -5756,11 +5916,18 @@ class GlobalOptimizationWidget(QWidget):
 
             backS = copy.deepcopy(self.rWidget.bs)
             scaleF = copy.deepcopy(self.rWidget.sf)
+            orbitals = copy.deepcopy(self.sWidget.orbitals)
             if len(self.x) != 0:
-                sample2, backS, scaleS = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample2), backS,
-                                                               scaleF, script, use_script=use_script)
+                sample2, backS, scaleS, orbitals = go.changeSampleParams(self.x, self.parameters, copy.deepcopy(sample2), backS,
+                                                               scaleF, script, orbitals, use_script=use_script)
                 isGO = True
 
+            for okey in list(orbitals.keys()):
+                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                       float(orbitals[okey][1]),
+                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
+                change_ff(okey, my_data)
+            
             scaling_factor_old = float(self.rWidget.sf[name])
             background_shift_old = float(self.rWidget.bs[name])
 
@@ -5853,6 +6020,12 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
+                                   float(self.sWidget.orbitals[okey][1]),
+                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
     def run_first(self):
         """
         Purpose: Run this first before a data fitting process begins. Performs the appropriate initialization
@@ -5913,6 +6086,8 @@ class GlobalOptimizationWidget(QWidget):
         scaleF = copy.deepcopy(self.rWidget.sf)
 
         idx = self.algorithmSelect.currentIndex()
+
+        self.orbitals = self.sWidget.orbitals
 
 
         if len(parameters) != 0 and len(scans) != 0:
@@ -6167,13 +6342,15 @@ class GlobalOptimizationWidget(QWidget):
 
         r_scale = self.isLogWidget.currentText()  # determines what scale to use in the global optimization
 
+        orbitals = self.sWidget.orbitals
+
         # run the selected data fitting algorithm
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:
                 x, fun = go.differential_evolution(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['differential evolution'], self.callback,
-                                                   self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
+                                                   self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals,use_script=use_script)
             elif idx == 1:
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
@@ -6575,6 +6752,7 @@ class GlobalOptimizationWidget(QWidget):
         :param p: the parameter
         :return: a sting that demonstrates the parameter in an efficient way
         """
+
         name = ''
         n = len(p)
         shift = 0
@@ -6641,6 +6819,9 @@ class GlobalOptimizationWidget(QWidget):
                     name = 'sFactor-All'
                 else:
                     name = 'sFactor-' + p[1]
+            elif p[0] == 'ORBITAL':
+
+                name = p[2] + '-' + p[1]
 
         return name
 
@@ -7691,6 +7872,7 @@ class ReflectometryApp(QMainWindow):
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
         self.sim_dict = dict()  # dictionary that contains simulation
+        self.orbitals = {}
 
         self.sample = ms.slab(1)  # app is initialized and no project is selected
         self.sample.addlayer(0, 'SrTiO3', 50)
@@ -7789,6 +7971,11 @@ class ReflectometryApp(QMainWindow):
         self.loadSample= QAction("&Load Sample", self)
         self.loadSample.triggered.connect(self._loadSample)
         fileMenu.addAction(self.loadSample)
+
+        # load a file
+        self.loadOrbitals = QAction("&Load Orbitals", self)
+        self.loadOrbitals.triggered.connect(self._loadOrbitals)
+        fileMenu.addAction(self.loadOrbitals)
         fileMenu.addSeparator()
 
         # save current working file
@@ -7805,6 +7992,10 @@ class ReflectometryApp(QMainWindow):
         self.saveSampleFile = QAction("&Save Sample", self)
         self.saveSampleFile.triggered.connect(self._saveSample)
         fileMenu.addAction(self.saveSampleFile)
+
+        self.saveOrbitals = QAction("&Save Orbitals", self)
+        self.saveOrbitals.triggered.connect(self._saveOrbitals)
+        fileMenu.addAction(self.saveOrbitals)
 
         # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
@@ -7852,6 +8043,53 @@ class ReflectometryApp(QMainWindow):
         helpMenu.addAction(self.about)
 
 
+    def _loadOrbitals(self):
+        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+
+        fname = self.fname  # used to check file type
+
+        if self.fname.endswith('.pkl'):
+            import pickle
+
+            # Load the pickled dictionary from the file
+            with open(fname, 'rb') as file:
+                self._sampleWidget.orbitals = pickle.load(file)
+
+        else:
+            messageBox = QMessageBox()
+            messageBox.setWindowTitle("Invalid file name")
+            messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
+            messageBox.exec()
+
+        for okey in list(self._sampleWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.1, float(self._sampleWidget.orbitals[okey][0]), float(self._sampleWidget.orbitals[okey][1]),
+                                   float(self._sampleWidget.orbitals[okey][2]), float(self._sampleWidget.orbitals[okey][3]))
+            change_ff(okey, my_data)
+        self.activate_tab_1()
+
+    def _saveOrbitals(self):
+        # create a new file with the inputted
+        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+        fname = filename.split('/')[-1]
+
+        # checks to make sure filename is in the correct format
+        cont = True
+        if filename == '' or fname == '':
+            cont = False
+        elif fname.endswith('.pkl'):
+            filename = filename  # change the file name that we will be using
+        elif '.' not in fname:
+            filename = filename + '.pkl'
+        else:
+            cont = False
+
+        import pickle
+        if cont:
+            with open(filename, 'wb') as file:
+                pickle.dump(self._sampleWidget.orbitals, file)
+
+        self.activate_tab_1()
+        
 
     def _newFile(self):
         """
@@ -7967,6 +8205,7 @@ class ReflectometryApp(QMainWindow):
             for param in self._reflectivityWidget.sfBsFitParams:
                 self._goWidget.parameters.append(param)
 
+            self._sampleWidget.orbitals = dict()
             # reset all of the tables!!!
             # - otherwise we have everything for the load function
         else:
@@ -8100,6 +8339,8 @@ class ReflectometryApp(QMainWindow):
                 for param in self._reflectivityWidget.sfBsFitParams:
                     self._goWidget.parameters.append(param)
 
+                self._sampleWidget.orbitals = dict()
+
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
                 self._noiseWidget._resetVariables(self.data_dict, selectedScans, boundaries)
             elif fname.endswith('.all'):
@@ -8113,6 +8354,7 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
         self.activate_tab_1()
+
     def _loadSample(self):
         """
             Purpose: Load a new file or project workspace
@@ -8212,6 +8454,7 @@ class ReflectometryApp(QMainWindow):
                 self._sampleWidget.parameterFit = []
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
+                self._sampleWidget.orbitals = dict()
                 #self._noiseWidget._resetVariables(self.data_dict, [], [])
 
             elif fname.endswith('.all'):
@@ -8258,6 +8501,8 @@ class ReflectometryApp(QMainWindow):
             messageBox.setWindowTitle("Create New File")
             messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
             messageBox.exec()
+
+
         self.activate_tab_1()
     def _saveAsFile(self):
         """
@@ -8594,6 +8839,14 @@ class ReflectometryApp(QMainWindow):
 
         not_empty, equal_elements = self._sampleWidget.check_element_number()
         if not_empty and equal_elements:
+            for okey in list(self._sampleWidget.orbitals.keys()):
+                my_data = GetTiFormFactor(1, 300, 2.1, float(self._sampleWidget.orbitals[okey][0]),
+                                       float(self._sampleWidget.orbitals[okey][1]),
+                                       float(self._sampleWidget.orbitals[okey][2]),
+                                       float(self._sampleWidget.orbitals[okey][3]))
+
+                change_ff(okey, my_data)
+
             self.sample = copy.deepcopy(self._sampleWidget._createSample())
             self._reflectivityWidget.sample = copy.deepcopy(self.sample)
             self._goWidget.sample = copy.deepcopy(self.sample)
@@ -8847,14 +9100,19 @@ class progressWidget(QWidget):
         step_size = float(self.sWidget._step_size)
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
+        orbitals = copy.copy(self.sWidget.orbitals)
         name = self.scanBox.currentText()
         b_idx = self.scanBox.currentIndex()
 
-        sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
-                                                      self.backS, self.scaleF, script, use_script=use_script)
+        sample, backS, scaleF, orbitals = go.changeSampleParams(x[-1], self.parameters, self.sample,
+                                                      self.backS, self.scaleF, script, orbitals,use_script=use_script)
         background_shift = float(backS[name])
         scaling_factor = float(scaleF[name])
-
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]),
+                                   float(orbitals[okey][2]), float(orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
         if name != '':
             bound = self.rWidget.bounds[b_idx]
             lower = float(bound[0][0])
@@ -8924,7 +9182,13 @@ class progressWidget(QWidget):
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
-
+        
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
+                                   float(self.sWidget.orbitals[okey][1]),
+                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
     def plot_scans_all(self):
         """
         Purpose: plot the data and current iteration of the data fitting
@@ -8946,12 +9210,19 @@ class progressWidget(QWidget):
         self.plotWidget.clear()
 
         step_size = float(self.sWidget._step_size)
+        orbitals = copy.copy(self.sWidget.orbitals)
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
         name = self.allScans.currentText()
 
-        sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, self.sample,
-                                                      self.backS, self.scaleF,script,use_script=use_script)
+        sample, backS, scaleF, orbitals = go.changeSampleParams(x[-1], self.parameters, self.sample,
+                                                      self.backS, self.scaleF,script,orbitals,use_script=use_script)
+        
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]),
+                                   float(orbitals[okey][2]), float(orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
         background_shift = 0
         scaling_factor = 1
 
@@ -9020,7 +9291,13 @@ class progressWidget(QWidget):
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
-
+        
+        for okey in list(self.sWidget.orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
+                                   float(self.sWidget.orbitals[okey][1]),
+                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
+            change_ff(okey, my_data)
+            
     def reset_fit_scans(self):
         """
         Purpose: reset the scans in scanBox
@@ -9046,6 +9323,7 @@ class progressWidget(QWidget):
         """
         
         step_size = float(self.sWidget._step_size)
+        orbitals = copy.copy(self.sWidget.orbitals)
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
         smooth_dict = self.nWidget.smoothScans  # retrieve the smoothed data
@@ -9055,8 +9333,14 @@ class progressWidget(QWidget):
             n = len(self.objFun['total'])
 
             for x in x_array[n:]:
-                sample, backS, scaleF = go.changeSampleParams(x, self.parameters, self.sample,
-                                                              self.backS, self.scaleF,script,use_script=use_script)
+                sample, backS, scaleF, orbitals = go.changeSampleParams(x, self.parameters, self.sample,
+                                                              self.backS, self.scaleF,script, orbitals,use_script=use_script)
+
+                #for okey in list(self.sWidget.orbitals.keys()):
+                #    my_data = GetTiFormFactor(1, 300, 2.1, float(orbitals[okey][0]), float(orbitals[okey][1]),
+                #                           float(orbitals[okey][2]), float(orbitals[okey][3]))
+                #    change_ff(okey, my_data)
+                    
                 gamma = 0
                 fun = 0
 
@@ -9226,6 +9510,7 @@ class progressWidget(QWidget):
         Purpose: plot the progress of the scans
         """
         script, problem, my_error = checkscript(self.sWidget.sample)
+        orbitals = copy.copy(self.sWidget.orbitals)
         use_script=False
         if not(problem) and self.script_state:
             use_script=True
@@ -9276,8 +9561,9 @@ class progressWidget(QWidget):
                     self.plotWidget.plot(iterations, x_values, pen=pg.mkPen((i, m), width=2), name=self.par[i])
             elif idx == 4:  # plot the density profile
                 sample = copy.deepcopy(self.sample)
-                sample, backS, scaleF = go.changeSampleParams(x[-1], self.parameters, sample,
-                                                              self.backS, self.scaleF, script, use_script=True)
+                sample, backS, scaleF, orbitals = go.changeSampleParams(x[-1], self.parameters, sample,
+                                                              self.backS, self.scaleF, script, orbitals, use_script=True)
+
 
                 thickness, density, density_magnetic = sample.density_profile()
 
@@ -9315,6 +9601,7 @@ class progressWidget(QWidget):
         :param p: list containing parameter info
         :return: string
         """
+
         name = ''
         n = len(p)
         shift = 0
@@ -9381,6 +9668,9 @@ class progressWidget(QWidget):
                     name = 'sFactor-All'
                 else:
                     name = 'sFactor-' + p[1]
+
+            elif p[0] == 'ORBITAL':
+                name = p[2] + '-' + p[1]
 
         return name
 

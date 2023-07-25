@@ -31,13 +31,14 @@ from data_structure import *
 import time
 from material_model import *
 import copy
+from Ti34_XAS_Python import GetTiFormFactor
 #import pygmo as pg
 
 global x_vars
 x_vars = []
 
 
-def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=False):
+def changeSampleParams(x, parameters, sample, backS, scaleF, script, orbitals, use_script=False):
     """
     Purpose: Change the parameters for the input sample for x-values
     :param x: A list that contains the new parameters values
@@ -53,6 +54,16 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
+        if params[0] == 'ORBITAL':
+            ffname = params[2]
+            if params[1] == 'DEXY':
+                orbitals[ffname][0] = x[p]
+            elif params[1] == 'DEXZYZ':
+                orbitals[ffname][1] = x[p]
+            elif params[1] == 'DEX2Y2':
+                orbitals[ffname][2] = x[p]
+            elif params[1] == 'DEZZ':
+                orbitals[ffname][3] = x[p]
 
         if params[0] == "SCALING FACTOR":  # scale the reflectivity spectra
             name = params[1]
@@ -198,7 +209,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     if use_script:
         sample = readScript(sample,script)
     # include th script functionality here
-    return sample, backS, scaleF
+    return sample, backS, scaleF, orbitals
 
 def isfloat(num):
     """
@@ -472,13 +483,20 @@ def scanCompute(x, *args):
     smooth_dict = args[12]  # dictionary of already smoothed out data
     script = args[13]
     use_script = args[14]
+    orbitals = args[15]
+
+
 
     # determines if saving will be done in callback function
     if optimizeSave:
         x_vars.append(x)
 
     # change the sample parameters
-    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF,script, use_script=use_script)
+    sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
+
+    for okey in list(orbitals.keys()):
+        my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+        change_ff(okey, my_data)
 
 
     i = 0 # keeps track of which boundary to use
@@ -633,6 +651,7 @@ def scanCompute(x, *args):
     fun = fun + gamma*shape_weight  # adds the total variation to the cost function
 
     return fun
+
 def residuals(x, *args):
     """
     Purpose: Calculate the cost function for the data fitting algorithms
@@ -827,7 +846,7 @@ def residuals(x, *args):
 Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
 evolution wrapper. 
 """
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals,use_script=False):
     """
     Purpose: wrapper used to setup and run the scipy differential evolution algorithm
     :param sample: slab class
@@ -862,7 +881,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals]  # required format for function scanCompute
 
 
     p=True
@@ -989,7 +1008,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     print('Fitting parameters: ', x)
     cov_matrix = np.linalg.inv(result.jac.T @ result.jac)
     std_devs = np.sqrt(np.diag(cov_matrix))
-    correlation_matrix = cov_matrix / np.outer(std_devs, std_devs)
+    #correlation_matrix = cov_matrix / np.outer(std_devs, std_devs)
     print(np.diag(cov_matrix))
 
     f.close()
