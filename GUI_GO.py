@@ -91,7 +91,7 @@ import numpy as np
 import time
 import sys
 import material_structure as ms
-from material_model import change_ff
+from material_model import change_ff, retrieve_ff
 import os
 import pyqtgraph as pg
 import data_structure as ds
@@ -115,6 +115,11 @@ stop = False
 global x_vars
 x_vars = []
 
+
+
+def change_internal_ff(element, ff_dict, my_data):
+    ff_dict[element] = my_data
+    return ff_dict
 
 def stringcheck(string):
     """
@@ -627,7 +632,7 @@ class sampleWidget(QWidget):
         self.previousLayer = 0  # what was the previous layer
         self.changeLayer = False  # no longer in use
         self.firstStruct = True # no longer in use
-
+        self.sf_dict = {}
         # ------------------------------- Widget Layout -------------------------------------#
         # setting up step size
         self._step_size = '0.1'
@@ -1446,6 +1451,7 @@ class sampleWidget(QWidget):
             column = i.column()
             row = i.row()
             name = self.energyShiftTable.horizontalHeaderItem(column).text()
+            value = self.energyShiftTable.item(row, column).text()
             if action == _fit:
                 if row == 0:
                     # add energy shift to the fitting parameters
@@ -1478,11 +1484,11 @@ class sampleWidget(QWidget):
                         fit = ['ORBITAL', 'DEZZ', name[4:]]
 
                 if row in [0,2,3,4,5]:
-                    if fit != [] and fit not in self.parameterFit and val != 'False':  # set the boundaries
+                    if fit != [] and fit not in self.parameterFit and value != 'False':  # set the boundaries
                         self.parameterFit.append(fit)
-                        lower = str(float(val) - 0.5)
-                        upper = str(float(val) + 0.5)
-                        self.currentVal.append([val, [lower, upper]])
+                        lower = str(float(value) - 0.5)
+                        upper = str(float(value) + 0.5)
+                        self.currentVal.append([value, [lower, upper]])
 
             elif action == _remove_fit:
                 # remove the parameter from the fit (if found in parameterFit list)
@@ -3440,6 +3446,15 @@ class reflectivityWidget(QWidget):
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
 
+        orbitals = self.sWidget.orbitals
+        sf_dict = copy.copy(self.sWidget.sf_dict)
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+            sf_dict[okey] = my_data
+
         
         polName = 'S'
         if pol == 's-polarized':
@@ -3461,7 +3476,7 @@ class reflectivityWidget(QWidget):
         if self.scanType:
             Theta = np.linspace(0.1, 89.1, num=n)
             qz = np.sin(Theta * np.pi / 180) * (energy * 0.001013546143)
-            qz, R = self.sample.reflectivity(energy, qz, s_min=step_size, precision=prec)
+            qz, R = self.sample.reflectivity(energy, qz, s_min=step_size, precision=prec, sf_dict=sf_dict)
             R = R[polName]
             if self.axis_state:  # momentum transfer
                 self.spectrumWidget.plot(qz, R, pen=pg.mkPen((0, 1), width=2), name='Simulation')
@@ -3481,7 +3496,7 @@ class reflectivityWidget(QWidget):
             lw = float(self.simLowEnergy.text())
             up = float(self.simUpEnergy.text())
             E = np.linspace(lw, up, num=n)
-            E, R = self.sample.energy_scan(angle, E, s_min=step_size, precision=Eprec)
+            E, R = self.sample.energy_scan(angle, E, s_min=step_size, precision=Eprec, sf_dict=sf_dict)
             R = R[polName]
 
             self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 1), width=2), name='Simulation')
@@ -3571,18 +3586,41 @@ class reflectivityWidget(QWidget):
         sf = dict()  # form factors of non-magnetic components
         sfm = dict()  # form factors of magnetic components
 
-        # Non-Magnetic Scattering Factor
-        for e in self.sample.find_sf[0].keys():
-            name = 'ff-' + self.sample.find_sf[0][e]
-            dE = float(self.sWidget.eShift[name])
-            scale = float(self.sWidget.ffScale[name])
-            sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
-        # Magnetic Scattering Factor
-        for em in self.sample.find_sf[1].keys():
-            name = 'ffm-' + self.sample.find_sf[1][em]
-            dE = float(self.sWidget.eShift[name])
-            scale = float(self.sWidget.ffScale[name])
-            sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
+        orbitals = self.sWidget.orbitals
+        sf_dict = copy.copy(self.sWidget.sf_dict)
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+            sf_dict[okey] = my_data
+
+        if len(orbitals) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.sample.find_sf[0].keys():
+                name = 'ff-' + self.sample.find_sf[0][e]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
+            # Magnetic Scattering Factor
+            for em in self.sample.find_sf[1].keys():
+                name = 'ffm-' + self.sample.find_sf[1][em]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
+        else:
+            # Non-Magnetic Scattering Factor
+            for e in self.sample.find_sf[0].keys():
+                name = 'ff-' + self.sample.find_sf[0][e]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sf[e] = ms.find_ff(self.sample.find_sf[0][e], E+dE, sf_dict)
+            # Magnetic Scattering Factor
+            for em in self.sample.find_sf[1].keys():
+                name = 'ffm-' + self.sample.find_sf[1][em]
+                dE = float(self.sWidget.eShift[name])
+                scale = float(self.sWidget.ffScale[name])
+                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
 
         delta, beta = ms.magnetic_optical_constant(density, sf,
                                                    E)  # calculates dielectric constant for magnetic component
@@ -3979,6 +4017,15 @@ class reflectivityWidget(QWidget):
         self.opButtonSim.setStyleSheet('background: grey')
         self.opmButtonSim.setStyleSheet('background: grey')
 
+        orbitals = self.sWidget.orbitals
+        sf_dict = copy.copy(self.sWidget.sf_dict)
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+            sf_dict[okey] = my_data
+
         name = ''
         self.spectrumWidget.clear()
 
@@ -3997,17 +4044,30 @@ class reflectivityWidget(QWidget):
             sfm = dict()  # form factors of magnetic components
 
             # Non-Magnetic Scattering Factor
-            for e in self.sample.find_sf[0].keys():
-                name = 'ff-' + self.sample.find_sf[0][e]
-                dE = float(self.sWidget.eShift[name])
-                scale = float(self.sWidget.ffScale[name])
-                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
-            # Magnetic Scattering Factor
-            for em in self.sample.find_sf[1].keys():
-                name = 'ffm-' + self.sample.find_sf[1][em]
-                dE = float(self.sWidget.eShift[name])
-                scale = float(self.sWidget.ffScale[name])
-                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
+            if len(orbitals) == 0:
+                for e in self.sample.find_sf[0].keys():
+                    name = 'ff-' + self.sample.find_sf[0][e]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False)*scale
+                # Magnetic Scattering Factor
+                for em in self.sample.find_sf[1].keys():
+                    name = 'ffm-' + self.sample.find_sf[1][em]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True)*scale
+            else:
+                for e in self.sample.find_sf[0].keys():
+                    name = 'ff-' + self.sample.find_sf[0][e]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sf[e] = ms.find_ff(self.sample.find_sf[0][e], E + dE, sf_dict)
+                # Magnetic Scattering Factor
+                for em in self.sample.find_sf[1].keys():
+                    name = 'ffm-' + self.sample.find_sf[1][em]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
 
             delta, beta = ms.index_of_refraction(density, sf,
                                                  E)  # calculates dielectric constant for structural component
@@ -4060,6 +4120,16 @@ class reflectivityWidget(QWidget):
         else:  # from selected scans
             name = self.selectedScans.currentText()
 
+        orbitals = self.sWidget.orbitals
+
+        sf_dict = copy.copy(self.sWidget.sf_dict)
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+            sf_dict[okey] = my_data
+
         if name != '':
             E = self.data_dict[name]['Energy']  # energy of scan
 
@@ -4074,17 +4144,30 @@ class reflectivityWidget(QWidget):
             sfm = dict()  # form factors of magnetic components
 
             # Non-Magnetic Scattering Factor
-            for e in self.sample.find_sf[0].keys():
-                name = 'ff-' + self.sample.find_sf[0][e]
-                dE = float(self.sWidget.eShift[name])
-                scale = float(self.sWidget.ffScale[name])
-                sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
-            # Magnetic Scattering Factor
-            for em in self.sample.find_sf[1].keys():
-                name = 'ffm-' + self.sample.find_sf[1][em]
-                dE = float(self.sWidget.eShift[name])
-                scale = float(self.sWidget.ffScale[name])
-                sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
+            if len(orbitals) == 0:
+                for e in self.sample.find_sf[0].keys():
+                    name = 'ff-' + self.sample.find_sf[0][e]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sf[e] = ms.find_form_factor(self.sample.find_sf[0][e], E + dE, False) * scale
+                # Magnetic Scattering Factor
+                for em in self.sample.find_sf[1].keys():
+                    name = 'ffm-' + self.sample.find_sf[1][em]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
+            else:
+                for e in self.sample.find_sf[0].keys():
+                    name = 'ff-' + self.sample.find_sf[0][e]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sf[e] = ms.find_ff(self.sample.find_sf[0][e], E+dE, sf_dict)
+                # Magnetic Scattering Factor
+                for em in self.sample.find_sf[1].keys():
+                    name = 'ffm-' + self.sample.find_sf[1][em]
+                    dE = float(self.sWidget.eShift[name])
+                    scale = float(self.sWidget.ffScale[name])
+                    sfm[em] = ms.find_form_factor(self.sample.find_sf[1][em], E + dE, True) * scale
 
             delta, beta = ms.magnetic_optical_constant(density, sf,
                                                            E)  # calculates dielectric constant for magnetic component
@@ -4368,6 +4451,14 @@ class reflectivityWidget(QWidget):
         self.spectrumWidget.clear()
         if len(self.data) != 0:
             # self.sample = self.sWidget.sample
+            orbitals = self.sWidget.orbitals
+            sf_dict = copy.copy(self.sWidget.sf_dict)
+            for okey in list(orbitals.keys()):
+                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                          float(orbitals[okey][1]),
+                                          float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+                sf_dict[okey] = my_data
 
             self.spectrumWidget.clear()
             idx = self.whichScan.currentIndex()
@@ -4391,7 +4482,7 @@ class reflectivityWidget(QWidget):
                     E = self.data_dict[name]['Energy']
 
                     qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                        sFactor=scaling_factor, precision=prec)
+                                                        sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                     Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
                     Rsim = Rsim[pol]
                     n = len(qz)
@@ -4431,7 +4522,7 @@ class reflectivityWidget(QWidget):
                     R = dat[2]
                     Theta = self.data_dict[name]['Angle']
                     E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                                      sFactor=scaling_factor, precision=Eprec)
+                                                      sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                     Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
                     self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
@@ -4459,6 +4550,16 @@ class reflectivityWidget(QWidget):
             background_shift = self.data_dict[name]['Background Shift']
             scaling_factor = self.data_dict[name]['Scaling Factor']
 
+            orbitals = self.sWidget.orbitals
+            sf_dict = copy.copy(self.sWidget.sf_dict)
+
+            for okey in list(orbitals.keys()):
+                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                                          float(orbitals[okey][1]),
+                                          float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+                sf_dict[okey] = my_data
+
             idx = 0
             notDone = True
             while notDone and idx == len(self.data) - 1:
@@ -4476,7 +4577,7 @@ class reflectivityWidget(QWidget):
                 R = dat[2]
                 E = self.data_dict[name]['Energy']
                 qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                    sFactor=scaling_factor, precision=prec)
+                                                    sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -4515,7 +4616,7 @@ class reflectivityWidget(QWidget):
                 R = dat[2]
                 Theta = self.data_dict[name]['Angle']
                 E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                                  sFactor=scaling_factor, precision=Eprec)
+                                                  sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
                 self.spectrumWidget.plot(E, R, pen=pg.mkPen((0, 3), width=2), name='Data')
@@ -5842,10 +5943,6 @@ class GlobalOptimizationWidget(QWidget):
         self.sWidget.sample, self.rWidget.bs, self.rWidget.sf, self.sWidget.orbitals = go.changeSampleParams(self.x, self.parameters,
                                                                                       copy.deepcopy(self.sWidget.sample),
                                                                                       self.rWidget.bs, self.rWidget.sf, script, self.orbitals, use_script=use_script)
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]), float(self.sWidget.orbitals[okey][1]),
-                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
-            change_ff(okey, my_data)
             
         # updates all the sample information across all the different Widgets
         self.rWidget.sample = copy.deepcopy(self.sWidget.sample)
@@ -5922,11 +6019,14 @@ class GlobalOptimizationWidget(QWidget):
                                                                scaleF, script, orbitals, use_script=use_script)
                 isGO = True
 
+            sf_dict1 = copy.copy(self.sWidget.sf_dict)
+            sf_dict2 = copy.copy(self.sWidget.sf_dict)
             for okey in list(orbitals.keys()):
                 my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
                                        float(orbitals[okey][1]),
                                        float(orbitals[okey][2]), float(orbitals[okey][3]))
-                change_ff(okey, my_data)
+
+                sf_dict2[okey] = my_data
             
             scaling_factor_old = float(self.rWidget.sf[name])
             background_shift_old = float(self.rWidget.bs[name])
@@ -5940,7 +6040,7 @@ class GlobalOptimizationWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor_old,
-                                                bShift=background_shift_old, precision=prec)
+                                                bShift=background_shift_old, precision=prec, sf_dict=sf_dict1)
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
                 Rsim = Rsim[pol]
@@ -5952,7 +6052,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift, precision=prec)
+                                                           bShift=background_shift, precision=prec, sf_dict=sf_dict2)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -5962,7 +6062,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(Theta, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift, precision=prec)
+                                                           bShift=background_shift, precision=prec, sf_dict=sf_dict2)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -5976,7 +6076,7 @@ class GlobalOptimizationWidget(QWidget):
                         self.plotWidget.plot(qz[rm_idx], Rsim[rm_idx], pen=pg.mkPen((1, 3), width=2), name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                                           sFactor=scaling_factor, precision=prec)
+                                                           sFactor=scaling_factor, precision=prec, sf_dict=sf_dict2)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Optimized')
@@ -5986,7 +6086,7 @@ class GlobalOptimizationWidget(QWidget):
                                              name='Simulation')
                         if isGO:
                             qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor,
-                                                           bShift=background_shift, precision=prec)
+                                                           bShift=background_shift, precision=prec, sf_dict=sf_dict2)
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
                                                  name='Optimized')
@@ -6000,10 +6100,10 @@ class GlobalOptimizationWidget(QWidget):
                 Theta = self.rWidget.data_dict[name]['Angle']
 
                 E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor_old,
-                                              bShift=background_shift_old, precision=Eprec)
+                                              bShift=background_shift_old, precision=Eprec, sf_dict=sf_dict1)
                 if isGO:
                     qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
-                                                  bShift=background_shift, precision=Eprec)
+                                                  bShift=background_shift, precision=Eprec, sf_dict=sf_dict2)
                     Rgo = Rgo[pol]
 
                 Rsim = Rsim[pol]
@@ -6012,7 +6112,7 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 3), width=2), name='Simulation')
                 if isGO:
                     qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
-                                                  bShift=background_shift, precision=Eprec)
+                                                  bShift=background_shift, precision=Eprec,sf_dict=sf_dict2)
                     Rgo = Rgo[pol]
                     self.plotWidget.plot(E, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
 
@@ -6020,11 +6120,6 @@ class GlobalOptimizationWidget(QWidget):
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
 
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
-                                   float(self.sWidget.orbitals[okey][1]),
-                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
-            change_ff(okey, my_data)
             
     def run_first(self):
         """
@@ -6343,6 +6438,7 @@ class GlobalOptimizationWidget(QWidget):
         r_scale = self.isLogWidget.currentText()  # determines what scale to use in the global optimization
 
         orbitals = self.sWidget.orbitals
+        sf_dict = self.sWidget.sf_dict
 
         # run the selected data fitting algorithm
         if len(parameters) != 0 and len(scans) != 0:
@@ -6350,7 +6446,7 @@ class GlobalOptimizationWidget(QWidget):
                 x, fun = go.differential_evolution(sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                                    sBounds, sWeights,
                                                    self.goParameters['differential evolution'], self.callback,
-                                                   self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals,use_script=use_script)
+                                                   self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,use_script=use_script)
             elif idx == 1:
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
@@ -8044,11 +8140,12 @@ class ReflectometryApp(QMainWindow):
 
 
     def _loadOrbitals(self):
-        self.fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
 
-        fname = self.fname  # used to check file type
+        #fname = self.fname  # used to check file type
+        self._sampleWidget.sf_dict = copy.deepcopy(mm.retrieve_ff())
 
-        if self.fname.endswith('.pkl'):
+        if fname.endswith('.pkl'):
             import pickle
 
             # Load the pickled dictionary from the file
@@ -8061,10 +8158,7 @@ class ReflectometryApp(QMainWindow):
             messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
             messageBox.exec()
 
-        for okey in list(self._sampleWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.1, float(self._sampleWidget.orbitals[okey][0]), float(self._sampleWidget.orbitals[okey][1]),
-                                   float(self._sampleWidget.orbitals[okey][2]), float(self._sampleWidget.orbitals[okey][3]))
-            change_ff(okey, my_data)
+
         self.activate_tab_1()
 
     def _saveOrbitals(self):
@@ -8327,8 +8421,19 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.weights = []
 
                 # self._reflectivityWidget.setTable()
-                self._sampleWidget.parameterFit = fitParams[2]
-                self._sampleWidget.currentVal = fitParams[3]
+                fitParams[2] = np.array(fitParams[2])
+                fitParams[3] = fitParams[3]
+
+                idx = [i for i in range(len(fitParams[2][:,0])) if fitParams[2][i,0] != 'ORBITAL']
+
+                if len(idx) == 0:
+                    self._sampleWidget.parameterFit = []
+                    self._sampleWidget.currentVal = []
+                else:
+                    self._sampleWidget.parameterFit = fitParams[2][idx].tolist()
+                    self._sampleWidget.currentVal = fitParams[3][idx].tolist()
+
+
 
                 self._goWidget.x = fitParams[7]
                 self._goWidget.fun = fitParams[8]
@@ -8839,13 +8944,7 @@ class ReflectometryApp(QMainWindow):
 
         not_empty, equal_elements = self._sampleWidget.check_element_number()
         if not_empty and equal_elements:
-            for okey in list(self._sampleWidget.orbitals.keys()):
-                my_data = GetTiFormFactor(1, 300, 2.1, float(self._sampleWidget.orbitals[okey][0]),
-                                       float(self._sampleWidget.orbitals[okey][1]),
-                                       float(self._sampleWidget.orbitals[okey][2]),
-                                       float(self._sampleWidget.orbitals[okey][3]))
 
-                change_ff(okey, my_data)
 
             self.sample = copy.deepcopy(self._sampleWidget._createSample())
             self._reflectivityWidget.sample = copy.deepcopy(self.sample)
@@ -8930,11 +9029,12 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Invalid Sample Definition")
                 messageBox.setText("Each layer must have the same number of elements defined in each layer. A dummy variable can be used to meet these requirements (A,D,E,G,J,L,M,Q,R,T,X,Z). ")
                 messageBox.exec()
+
     def activate_tab_5(self):
         # optimization
         not_empty, equal_elements = self._sampleWidget.check_element_number()
         if not_empty and equal_elements:
-            self.sample = copy.deepcopy(self._sampleWidget._createSample())
+            self.sample = copy.copy(self._sampleWidget._createSample())
             self._reflectivityWidget.sample = self.sample
             self._goWidget.sample = self.sample
             self._progressWidget.reset_fit_scans()  # resets the scans in the fit
@@ -8951,6 +9051,12 @@ class ReflectometryApp(QMainWindow):
             self.progressButton.setStyleSheet("background-color: magenta")
 
             self.stackedlayout.setCurrentIndex(4)
+
+            self._progressWidget.orbitals = self._sampleWidget.orbitals
+            orbitals = self._sampleWidget.orbitals
+
+            self._progressWidget.sf_dict = copy.copy(self._sampleWidget.sf_dict)
+
 
         else:
             if not(not_empty):
@@ -8975,6 +9081,8 @@ class progressWidget(QWidget):
         self.sWidget = sWidget
         self.rWidget = rWidget
         self.nWidget = nWidget
+        self.orbitals = {}
+        self.sf_dict = {}
         self.y_scale = 'log(x)'
         self.whichPlot = [True, False, False, False, False]
         # parameters required for calculations
@@ -9108,10 +9216,14 @@ class progressWidget(QWidget):
                                                       self.backS, self.scaleF, script, orbitals,use_script=use_script)
         background_shift = float(backS[name])
         scaling_factor = float(scaleF[name])
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]),
-                                   float(orbitals[okey][2]), float(orbitals[okey][3]))
-            change_ff(okey, my_data)
+
+        sf_dict = self.sf_dict
+
+        #for okey in list(orbitals.keys()):
+        #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+        #                              float(orbitals[okey][1]),
+        #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
+        #    sf_dict[okey] = my_data
             
         if name != '':
             bound = self.rWidget.bounds[b_idx]
@@ -9136,7 +9248,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                               sFactor=scaling_factor, precision=prec)
+                                               sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -9175,19 +9287,14 @@ class progressWidget(QWidget):
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
                 E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                             sFactor=scaling_factor, precision=Eprec)
+                                             sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
-        
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
-                                   float(self.sWidget.orbitals[okey][1]),
-                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
-            change_ff(okey, my_data)
+
             
     def plot_scans_all(self):
         """
@@ -9217,11 +9324,13 @@ class progressWidget(QWidget):
 
         sample, backS, scaleF, orbitals = go.changeSampleParams(x[-1], self.parameters, self.sample,
                                                       self.backS, self.scaleF,script,orbitals,use_script=use_script)
-        
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]),
-                                   float(orbitals[okey][2]), float(orbitals[okey][3]))
-            change_ff(okey, my_data)
+
+        sf_dict = self.sf_dict
+        #for okey in list(orbitals.keys()):
+        #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+        #                              float(orbitals[okey][1]),
+        #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
+        #    sf_dict[okey] = my_data
             
         background_shift = 0
         scaling_factor = 1
@@ -9247,7 +9356,7 @@ class progressWidget(QWidget):
                 R = dat[2]
                 E = self.rWidget.data_dict[name]['Energy']
                 qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
-                                               sFactor=scaling_factor, precision=prec)
+                                               sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
                 Rsim = Rsim[pol]
@@ -9284,19 +9393,14 @@ class progressWidget(QWidget):
                 R = dat[2]
                 Theta = self.rWidget.data_dict[name]['Angle']
                 E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
-                                             sFactor=scaling_factor, precision=Eprec)
+                                             sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
                 self.plotWidget.plot(E, R, pen=pg.mkPen((0, 2), width=2), name='Data')
                 self.plotWidget.plot(E, Rsim, pen=pg.mkPen((1, 2), width=2), name='Simulation')
                 self.plotWidget.setLabel('left', "Reflectivity, R")
                 self.plotWidget.setLabel('bottom', "Energy, E (eV)")
-        
-        for okey in list(self.sWidget.orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(self.sWidget.orbitals[okey][0]),
-                                   float(self.sWidget.orbitals[okey][1]),
-                                   float(self.sWidget.orbitals[okey][2]), float(self.sWidget.orbitals[okey][3]))
-            change_ff(okey, my_data)
+
             
     def reset_fit_scans(self):
         """
@@ -9336,10 +9440,14 @@ class progressWidget(QWidget):
                 sample, backS, scaleF, orbitals = go.changeSampleParams(x, self.parameters, self.sample,
                                                               self.backS, self.scaleF,script, orbitals,use_script=use_script)
 
-                #for okey in list(self.sWidget.orbitals.keys()):
-                #    my_data = GetTiFormFactor(1, 300, 2.1, float(orbitals[okey][0]), float(orbitals[okey][1]),
-                #                           float(orbitals[okey][2]), float(orbitals[okey][3]))
-                #    change_ff(okey, my_data)
+
+                sf_dict = self.sf_dict
+                #for okey in list(orbitals.keys()):
+                #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                #                              float(orbitals[okey][1]),
+                #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
+
+                #    sf_dict[okey] = my_data
                     
                 gamma = 0
                 fun = 0
@@ -9362,7 +9470,7 @@ class progressWidget(QWidget):
                         Rdat = np.array(myData[2])
 
                         qz = np.array(myData[0])
-                        qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=prec)
+                        qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=prec, sf_dict=sf_dict)
                         Rsim = Rsim[pol]
 
                         j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
@@ -9435,7 +9543,7 @@ class progressWidget(QWidget):
                         E = np.array(myData[3])
                         pol = myDataScan['Polarization']
 
-                        E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=Eprec)
+                        E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=Eprec, sf_dict=sf_dict)
                         Rsim = Rsim[pol]
 
                         j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]

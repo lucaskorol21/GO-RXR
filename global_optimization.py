@@ -484,8 +484,7 @@ def scanCompute(x, *args):
     script = args[13]
     use_script = args[14]
     orbitals = args[15]
-
-
+    sf_dict = args[16]
 
     # determines if saving will be done in callback function
     if optimizeSave:
@@ -494,9 +493,10 @@ def scanCompute(x, *args):
     # change the sample parameters
     sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
 
-    for okey in list(orbitals.keys()):
-        my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
-        change_ff(okey, my_data)
+    if 'ORBITAL' in np.array(parameters)[:,0]:
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
 
 
     i = 0 # keeps track of which boundary to use
@@ -524,7 +524,7 @@ def scanCompute(x, *args):
 
             qz = np.array(myData[0])  # retrieves momentum transfer
             # calculate simulation
-            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
@@ -591,7 +591,7 @@ def scanCompute(x, *args):
             n = len(Rdat)
 
             # calculates simulation
-            E, Rsim = sample.energy_scan(Theta, E)
+            E, Rsim = sample.energy_scan(Theta, E, sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
@@ -846,7 +846,7 @@ def residuals(x, *args):
 Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
 evolution wrapper. 
 """
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals,use_script=False):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,use_script=False):
     """
     Purpose: wrapper used to setup and run the scipy differential evolution algorithm
     :param sample: slab class
@@ -881,7 +881,8 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals]  # required format for function scanCompute
+
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict]  # required format for function scanCompute
 
 
     p=True

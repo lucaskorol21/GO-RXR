@@ -15,6 +15,12 @@ from Broaden_Spectrum import GetBroadeningList, BroadenGamma, BroadenSigma
 import matplotlib.pyplot as plt
 from time import perf_counter
 from KK_And_Merge import *
+import copy
+
+global OpsTi
+
+with open("Ti34OpsPython" + '.pkl', 'rb') as f:
+    OpsTi = pickle.load(f)
 
 
 def Lanczos(HS, v=None, m=100):
@@ -493,8 +499,12 @@ def GetTiFormFactor(nd,T,tenDq,dExy,dExzyz,dEx2y2,dEz2):
 
 #prepath = "ff/"
 #OrbE = np.loadtxt(prepath + "OrbitalEnergies.txt")
-
-  Ops = load_obj("Ti34OpsPython")
+  dExy = float(dExy)
+  dExzyz = float(dExzyz)
+  dEx2y2 = float(dEx2y2)
+  dEz2 = float(dEz2)
+  #Ops = load_obj("Ti34OpsPython")
+  Ops = copy.deepcopy(OpsTi)
   
   KelvinToeV = 8.61735E-5
   T = T * KelvinToeV
@@ -719,5 +729,6 @@ def GetTiFormFactor(nd,T,tenDq,dExy,dExzyz,dEx2y2,dEz2):
   
   
 #Example call
-#GetTiFormFactor(1,300,2.1,0.1,-0.1,0.1,-0.14,"Ti4.ff")
+
+#GetTiFormFactor(1,300,2.1,0.1,-0.1,0.1,-0.14)
 

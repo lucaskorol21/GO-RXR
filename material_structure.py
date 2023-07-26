@@ -37,6 +37,10 @@ from scipy.special import erf
 import warnings
 import copy
 
+def find_ff(element,E, ff_dict):
+    F = form_factor(ff_dict[element], E)
+    return F
+
 @njit()
 def ALS(beta, delta, beta_m, delta_m, precision=1e-6):
     """
@@ -1205,7 +1209,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1):
+    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1, sf_dict={}):
 
         """
         Purpose: Takes the model of the material and computes the reflection
@@ -1222,7 +1226,6 @@ class slab:
 
         """
 
-
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
         wavelength = h * c / (E * 1e-10)  # wavelength of incoming x-ray
@@ -1234,17 +1237,29 @@ class slab:
         sfm = dict()  # scattering factors of magnetic components
 
         #print(self.find_sf[1])
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+        else:
+            # Non-Magnetic Scattering Factor - no need to access original
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_ff(self.find_sf[0][e],E+dE,sf_dict)
 
-        # Non-Magnetic Scattering Factor
-        for e in self.find_sf[0].keys():
-            dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
-            scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
-            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
-        # Magnetic Scattering Factor
-        for em in self.find_sf[1].keys():
-            dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], E + dE, True) * scale
 
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
@@ -1366,7 +1381,7 @@ class slab:
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1):
+    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1, sf_dict={}):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1401,16 +1416,28 @@ class slab:
         sfm = dict()
         sf = dict()
 
-        # Non-Magnetic Scattering Factor
-        for e in self.find_sf[0].keys():
-            dE = float(self.eShift[self.find_sf[0][e]])
-            scale = float(self.ff_scale[self.find_sf[0][e]])
-            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
-        # Magnetic Scattering Factor
-        for em in self.find_sf[1].keys():
-            dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+        else:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_ff(self.find_sf[0][e], energy + dE, sf_dict)
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True) * scale
 
 
         d_len = len(thickness)

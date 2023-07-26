@@ -31,8 +31,8 @@
 # getDensity(layer, element)
 
 
-#rho = getDensity(6,A)
-#setDensity(5,A,rho)
+rho = getDensity(1,Ti)
+setDensity(2,Ti,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2

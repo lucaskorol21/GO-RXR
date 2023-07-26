@@ -124,8 +124,8 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
             axes[my_idx].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-            #axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 1.9])
-            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 0.8])
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 1.9])
+            #axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 0.8])
 
 
     elif type == 'E':
@@ -274,6 +274,151 @@ if __name__ == "__main__":
     #data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
     #sample = ds.ReadSampleHDF5(fname)
     #sample.energy_shift()
+
+    # ---------------------------------- Saving for Emma --------------------------------------------------------------
+
+    fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_complete.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
+    fname3 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_complete.h5"
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+    data3, data_dict3, sim_dict3 = ds.LoadDataHDF5(fname3)
+
+    # EM1 150
+    R_num = ['35', '22', '24', '33']
+    nR_num = ['26', '19', '31']
+    Ti_num = ['29', '30', '32']
+    Mn_num = ['8', '15', '18', '23', '25']
+    La_num = ['34']
+    R_asymm_num = ['9-10', '13-14', '16-17']
+    E_asymm_num = ['11-12', '20-21', '27-28']
+
+    # non_resonant = ['9_399.39_S','14_499.93_S','19_600.18_S','24_700.14_S','29_799.82_S','34_899.22_S']
+    resonant1 = return_name_from_scanNum(data1, R_num)
+    non_resonant1 = return_name_from_scanNum(data1, nR_num)
+    Ti_resonance1 = return_name_from_scanNum(data1, Ti_num)
+    Mn_resonance1 = return_name_from_scanNum(data1, Mn_num)
+    La_resonance1 = return_name_from_scanNum(data1, La_num)
+    Mn_R_asymm1 = return_name_from_scanNum(data1, R_asymm_num)
+    Mn_E_asymm1 = return_name_from_scanNum(data1, E_asymm_num)
+
+    # EM2 - 150
+    # nR_num = ['64', '57', '69', '71', '73']
+    nR_num2 = ['64', '57', '71']
+    R_num2 = ['79', '60', '62', '75']
+    # R_num = ['77', '79', '60', '62', '75']
+    # Ti_num = ['68', '70', '72', '74']
+    Ti_num2 = ['68', '72', '74']
+    Mn_num2 = ['46', '53', '56', '61', '63']
+    # La_num = ['78', '80']
+    La_num2 = ['78']
+    R_asymm_num2 = ['47-48', '51-52', '54-55']
+    E_asymm_num2 = ['49-50', '58-59', '65-66']
+
+    # non_resonant = ['9_399.39_S','14_499.93_S','19_600.18_S','24_700.14_S','29_799.82_S','34_899.22_S']
+    non_resonant2 = return_name_from_scanNum(data2, nR_num2)
+    resonant2 = return_name_from_scanNum(data2, R_num2)
+    Ti_resonance2 = return_name_from_scanNum(data2, Ti_num2)
+    Mn_resonance2 = return_name_from_scanNum(data2, Mn_num2)
+    La_resonance2 = return_name_from_scanNum(data2, La_num2)
+    Mn_R_asymm2 = return_name_from_scanNum(data2, R_asymm_num2)
+    Mn_E_asymm2 = return_name_from_scanNum(data2, E_asymm_num2)
+
+    # EM2 -300
+    # nR_num = ['26', '29', '31', '33', '35']
+    nR_num3 = ['26', '29', '33']
+    # R_num = ['39', '41', '22', '24', '37']
+    R_num3 = ['41', '22', '24', '37']
+    # Ti_num = ['30', '32', '34', '36']
+    Ti_num3 = ['30', '34', '36']
+    Mn_num3 = ['8', '15', '18', '23', '25']
+    # La_num = ['40', '42']
+    La_num3 = ['40']
+    R_asymm_num3 = ['9-10', '13-14', '16-17']
+    E_asymm_num3 = ['11-12', '20-21', '27-28']
+
+    # non_resonant = ['9_399.39_S','14_499.93_S','19_600.18_S','24_700.14_S','29_799.82_S','34_899.22_S']
+    non_resonant3 = return_name_from_scanNum(data3, nR_num3)
+    resonant3 = return_name_from_scanNum(data3, R_num3)
+    Ti_resonance3 = return_name_from_scanNum(data3, Ti_num3)
+    Mn_resonance3 = return_name_from_scanNum(data3, Mn_num3)
+    La_resonance3 = return_name_from_scanNum(data3, La_num3)
+    Mn_R_asymm3 = return_name_from_scanNum(data3, R_asymm_num3)
+    Mn_E_asymm3 = return_name_from_scanNum(data3, E_asymm_num3)
+
+    # find the names of the data used and then save it as a csv file
+    import csv
+    E1_150 = Mn_E_asymm1
+    my_data_1 = list()
+    for name in E1_150:
+        #E = data_dict1[name]['Energy']
+        Theta = data_dict1[name]['Angle']
+        n1 = ['qz - ' + str(Theta)]
+        n2 = ['Rexp - ' + str(Theta)]
+        n3 = ['Rsim - ' +str(Theta)]
+
+        test1 = n1 + data_dict1[name]['Data'][3].tolist()
+        test2 = n2 + data_dict1[name]['Data'][2].tolist()
+        test3 = n3 + sim_dict1[name]['Data'][2].tolist()
+
+        my_data_1.append(test1)
+        my_data_1.append(test2)
+        my_data_1.append(test2)
+
+    my_data_1 = np.array(my_data_1).transpose()
+
+    with open("LSMO-E1-150-Mn-E-asymm.csv", "w", newline='') as my_csv:
+        csvWriter = csv.writer(my_csv, delimiter=',')
+        csvWriter.writerows(my_data_1)
+
+    E2_150 = Mn_E_asymm2
+    my_data_2 = list()
+    for name in E2_150:
+        #E = data_dict2[name]['Energy']
+        Theta = data_dict2[name]['Angle']
+
+        n1 = ['qz - ' + str(Theta)]
+        n2 = ['Rexp - ' + str(Theta)]
+        n3 = ['Rsim - ' + str(Theta)]
+
+        test1 = n1 + data_dict2[name]['Data'][3].tolist()
+        test2 = n2 + data_dict2[name]['Data'][2].tolist()
+        test3 = n3 + sim_dict2[name]['Data'][2].tolist()
+
+        my_data_2.append(test1)
+        my_data_2.append(test2)
+        my_data_2.append(test2)
+
+    my_data_2 = np.array(my_data_2).transpose()
+    with open("LSMO-E2-150-Mn-E-Asymm.csv", "w", newline='') as my_csv:
+        csvWriter = csv.writer(my_csv, delimiter=',')
+        csvWriter.writerows(my_data_2)
+
+    E2_300 = Mn_E_asymm3
+    my_data_3 = list()
+    for name in E2_300:
+        #E = data_dict3[name]['Energy']
+        Theta = data_dict3[name]['Angle']
+
+        n1 = ['qz - ' + str(Theta)]
+        n2 = ['Rexp - ' + str(Theta)]
+        n3 = ['Rsim - ' + str(Theta)]
+
+        test1 = n1 + data_dict3[name]['Data'][3].tolist()
+        test2 = n2 + data_dict3[name]['Data'][2].tolist()
+        test3 = n3 + sim_dict3[name]['Data'][2].tolist()
+
+        my_data_3.append(test1)
+        my_data_3.append(test2)
+        my_data_3.append(test2)
+
+    my_data_3 = np.array(my_data_3).transpose()
+
+    with open("LSMO-E2-300-Mn-E-asymm.csv", "w", newline='') as my_csv:
+        csvWriter = csv.writer(my_csv, delimiter=',')
+        csvWriter.writerows(my_data_3)
+
     """
 
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
@@ -668,9 +813,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     """
+
+
     """
-
-
     fig, axes = plt.subplots(2,3)
     offset = -4.694941599778237
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
@@ -798,8 +943,8 @@ if __name__ == "__main__":
 
     #plt.tight_layout()
     #plt.subplots_adjust(hspace=0)
-
-    
+    """
+    """
 
     offset = -4.694941599778237
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v10.h5"
@@ -855,7 +1000,7 @@ if __name__ == "__main__":
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel(r'Density, $\mathrm{\rho}$ ($\mathrm{mol/cm^{3}}$)', fontsize=12)
+    shared_y.set_ylabel(r'Density, $\mathrm{\rho}$ ($\mathrm{mol/cm^{3}}$)', fontsize=16)
 
     axes[0,0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[1,0].set_ylabel('')  # Remove existing x-axis label for this subplot
@@ -871,11 +1016,12 @@ if __name__ == "__main__":
     #axes[0].get_shared_x_axes().join(axes[0], shared_x)
     #axes[1].get_shared_x_axes().join(axes[1], shared_x)
 
-    axes[1,1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=12)
+    axes[1,1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=16)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0)
 
     plt.show()
+    """
     """
     dq_10 = 2.12
 
@@ -891,6 +1037,7 @@ if __name__ == "__main__":
     with open('Ti_orbitals.pkl', 'rb') as handle:
         b = pickle.load(handle)
     print(b)
+    """
     """
 
     fig, axes = plt.subplots(2,3)
@@ -1178,8 +1325,8 @@ if __name__ == "__main__":
     plt.show()
 
     """
-    """
 
+    """
 
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_complete.h5"
 
@@ -1303,9 +1450,9 @@ if __name__ == "__main__":
     #axes[1, 0].set_xlabel('Energy, E (eV)', fontsize=12)
     #axes[1,1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
     #axes[0,0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
-    axes[1,1].set_xlabel(r'Energy, E (eV)', fontsize=12)
-    axes[0,0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=12)
-    axes[1,0].set_ylabel(r'Circular Polarization Asymmetry (arb. units)', fontsize=12)
+    axes[1,1].set_xlabel(r'Energy, E (eV)', fontsize=16)
+    axes[0,0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=13)
+    axes[1,0].set_ylabel(r'Circular Polarization Asymmetry (arb. units)', fontsize=13)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     #plt.subplots_adjust(hspace=0.08)
@@ -1337,8 +1484,8 @@ if __name__ == "__main__":
 
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
 
-    axes[1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=12)
-    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=12)
+    axes[1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=16)
+    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.08)
     plt.show()
@@ -1360,7 +1507,7 @@ if __name__ == "__main__":
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
 
     axes[0, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[0, 1].set_ylabel('')  # Remove existing x-axis label for this subplot
@@ -1376,7 +1523,7 @@ if __name__ == "__main__":
     #axes[0, 1].get_shared_x_axes().join(axes[0, 1], shared_x)
     #axes[1, 1].get_shared_x_axes().join(axes[1, 0], shared_x)
 
-    axes[1, 1].set_xlabel(r'Energy, E (eV)', fontsize=12)
+    axes[1, 1].set_xlabel(r'Energy, E (eV)', fontsize=16)
     # axes[0,0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
 
     #x_label = axes[1,2].xaxis.get_label()
@@ -1415,14 +1562,14 @@ if __name__ == "__main__":
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
 
     axes[0, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[1, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[0, 0].get_shared_y_axes().join(axes[0, 0], shared_y)
     axes[1, 0].get_shared_y_axes().join(axes[1, 0], shared_y)
 
-    axes[1,1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=12)
+    axes[1,1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=16)
     shared_y.yaxis.set_label_coords(-0.02, 0.5)
     plt.tight_layout()
     plt.show()

@@ -54,6 +54,9 @@ f.close()
 def change_ff(ffname, value):
     ff[ffname] = value
 
+def retrieve_ff():
+    return ff
+
 def _use_given_ff(directory):
     """
     Purpose: Scan cwd for form factors files and return their names (with .ff and .ffm stripped)
@@ -111,6 +114,9 @@ def form_factor(f,E):
         F = np.array([fr(E), fi(E)]) if E>f[0,0] and E<f[-1,0] else np.array([0,0])
 
     return F
+
+
+
 
 def find_form_factor(element, E, mag):
     """
