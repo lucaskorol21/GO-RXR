@@ -274,9 +274,593 @@ if __name__ == "__main__":
     #data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
     #sample = ds.ReadSampleHDF5(fname)
     #sample.energy_shift()
+    # Unit Cell Model - 13uc 150K
+    fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v2.h5"
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+    # nR_num = ['64', '57', '69', '71', '73']
+    nR_num = ['64', '57', '71']
+    R_num = ['79', '60', '62', '75']
+    # R_num = ['77', '79', '60', '62', '75']
+    # Ti_num = ['68', '70', '72', '74']
+    Ti_num = ['68', '72', '74']
+    #Mn_num = ['46', '53', '56', '61', '63']
+    Mn_num = [ '53', '56', '61', '63']
+    # La_num = ['78', '80']
+    La_num = ['78']
+    R_asymm_num = ['47-48', '51-52', '54-55']
+    E_asymm_num = ['49-50', '58-59', '65-66']
+
+    # non_resonant = ['9_399.39_S','14_499.93_S','19_600.18_S','24_700.14_S','29_799.82_S','34_899.22_S']
+    non_resonant2 = return_name_from_scanNum(data2, nR_num)
+    resonant2 = return_name_from_scanNum(data2, R_num)
+    Ti_resonance2 = return_name_from_scanNum(data2, Ti_num)
+    Mn_resonance2 = return_name_from_scanNum(data2, Mn_num)
+    La_resonance2 = return_name_from_scanNum(data2, La_num)
+    Mn_R_asymm2 = return_name_from_scanNum(data2, R_asymm_num)
+    Mn_E_asymm2 = return_name_from_scanNum(data2, E_asymm_num)
+
+    fig, axes = plt.subplots(1, 2)
+    plotting_scans(data_dict1, sim_dict1, Mn_resonance2, axes, (0, 0), offset=0, step=1, xmin=635, xmax=660,
+                   type='E', reverse=True, size=0, top=1.25)
+    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0, 1), offset=0, step=1, xmin=635, xmax=660,
+                   type='E', reverse=True, size=0, top=1.25)
+    #plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=3, xmin=635,
+    #               type='EA', reverse=True, size=0, top=0.75)
+
+    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+    axes[1].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+
+    axes[0].set_xlabel(r'Energy, E (eV)', fontsize=16)
+    axes[1].set_xlabel(r'Energy, E (eV)', fontsize=16)
+    # shared_x.yaxis.set_label_coords(-0.02, 0.5)
+    plt.tight_layout()
+
+    fig, axes = plt.subplots(1, 2)
+    plotting_scans(data_dict1, sim_dict1, resonant2, axes, (0, 0), offset=0, step=3, xmin=0.03,
+                   type='R', reverse=True, size=0, top=0.5)
+    plotting_scans(data_dict2, sim_dict2, resonant2, axes, (0, 1), offset=0, step=3,  xmin=0.03,
+                   type='R', reverse=True, size=0, top=0.5)
+    # plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=3, xmin=635,
+    #               type='EA', reverse=True, size=0, top=0.75)
+
+    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+    axes[1].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+
+    axes[0].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA}$)', fontsize=16)
+    axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA}$)', fontsize=16)
+    # shared_x.yaxis.set_label_coords(-0.02, 0.5)
+    plt.tight_layout()
+
+    fig, axes = plt.subplots(1, 2)
+    plotting_scans(data_dict1, sim_dict1, Mn_R_asymm2, axes, (0, 0), offset=0, step=0.75, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+    plotting_scans(data_dict2, sim_dict2, Mn_R_asymm2, axes, (0, 1), offset=0, step=0.75, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+    # plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=3, xmin=635,
+    #               type='EA', reverse=True, size=0, top=0.75)
+
+    axes[0].set_ylabel(r'Circular Polarized Asymmetry (arb. units)', fontsize=16)
+    axes[1].set_ylabel(r'Circular Polarized Asymmetry (arb. units)', fontsize=16)
+
+    axes[0].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA}$)', fontsize=16)
+    axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA}$)', fontsize=16)
+    # shared_x.yaxis.set_label_coords(-0.02, 0.5)
+    plt.tight_layout()
+    plt.show()
+    """
+    fig, axes = plt.subplots(2, 1)
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
+
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+    # struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+
+    sample = ds.ReadSampleHDF5(fname)
+
+    thickness, density, density_mag = sample.density_profile()
+
+    # thickness_shift = -11.75
+    # thickness = thickness + thickness_shift
+
+    zero = np.zeros(len(thickness))
+
+    xlim = [-20, 75]
+
+    slice_width = [3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.8915, 3.878, 3.878, 3.878, 3.878, 3.878,
+                   3.878,
+                   3.878, 3.878, 3.878, 3.878, 3.878, 3.878, 1.939]
+    start = -11.715
+    offset = -15.75
+    bar_width = np.array(slice_width) - 0.3
+
+    # properly create the half thickness array
+    my_thickness = bar_graph_slice(start, slice_width)
+
+    Ti = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    Mn2 = [0, 0, 0, 0, 0, 0, 0, 0.06314187353650001, 0.11028773825175128, 0.02275647285959691, 0.3701310880359007,
+           0, 0, 0, 0, 0, 0, 0, 0, 0.030718436673865812, 0.19552804020068865, 0.29622505384943193]
+    Mn3 = [0, 0, 0, 0, 0, 0, 0, 6.054978809009333e-28, 0.01843395509529002, 0.3974431333219987, 0.5284835745428983,
+           0.8096132735726913, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7339447327644624, 0.8044719526546098, 0.703774946150568]
+    Mn4 = [0, 0, 0, 0, 0, 0, 0, 1.148911588089163e-07, 0.03322193763257628, 1.8224808898128161e-07, 0.09486627140683755,
+           0.19038672642730867, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.23533683056167182, 7.144701336509033e-09, 0]
+    mag = [0, 0, 0, 0, 0, 0, 0, 0.0004003354023059758, 0.001816557185740252, 0.00658896207089925, 0.012848764938116344,
+           0.016830257935419913, 0.016830257935419913, 0.016830257935419913, 0.016830257935419913, 0.016830257935419913,
+           0.016830257935419913, 0.016830257935419913, 0.016830257935419913, 0.01070931743712782, 0.005858933727020148,
+           0]
+
+    mag = -np.array(mag) / max(mag)
+
+    Arho = [0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028,
+            0.028, 0.028,
+            0.028, 0.028, 0.028, 0.028, 0.03319719939671565]
+    Mn3 = np.array(Mn2) + np.array(Mn3)
+    Mn4 = np.array(Mn3) + np.array(Mn4)
+
+    Ti = np.array(Ti) * np.array(Arho) / 0.028
+    Mn2 = np.array(Mn2) * np.array(Arho) / 0.028
+    Mn3 = np.array(Mn3) * np.array(Arho) / 0.028
+    Mn4 = np.array(Mn4) * np.array(Arho) / 0.028
+
+    axes[1].bar(np.array(my_thickness) + offset, Ti, color='yellow', edgecolor='black', width=bar_width, label='Ti')
+    axes[1].bar(np.array(my_thickness) + offset, Mn4, color='purple', edgecolor='black', width=bar_width,
+                label=r'$\mathrm{Mn^{4+}}$')
+    axes[1].bar(np.array(my_thickness) + offset, Mn3, color='grey', edgecolor='black', width=bar_width,
+                label=r'$\mathrm{Mn^{3+}}$')
+    axes[1].bar(np.array(my_thickness) + offset, Mn2, color='green', edgecolor='black', width=bar_width,
+                label=r'$\mathrm{Mn^{2+}}$')
+
+    axes[1].bar(np.array(my_thickness) + offset, mag, color='magenta', edgecolor='black', width=bar_width,
+                label='Mag')
+    axes[1].axhline(0, color='black', linestyle='--')
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+
+    # plt.gca().invert_xaxis()
+    axes[1].set_xlim(xlim)
+    axes[1].set_ylim(axes[1].get_ylim()[0], 1.95)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend(frameon=False)
+
+    # Asites
+    Sr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    La = [0, 0, 0, 0, 0, 0, 0.08081520235245354, 0.31540659890843226, 0.6020890684884148, 0.7591457496086605,
+          0.6916283063660732, 0.6524714534498322,
+          0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.3709629905970221, 0.033554501863506725, 0]
+
+    Brho = [0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028,
+            0.028,
+            0.028, 0.028, 0.028, 0.028, 0.02517789271095681, 0]
+
+    Sr = np.array(Sr) * np.array(Brho) / 0.028
+    La = np.array(La) * np.array(Brho) / 0.028
+    O = density['O'] / 0.028
+    C = density['C2'] / 0.028
+
+    axes[0].bar(np.array(my_thickness) + offset, Sr, color='cyan', edgecolor='black', width=bar_width, label='Sr')
+    axes[0].bar(np.array(my_thickness) + offset, La, color='blue', edgecolor='black', width=bar_width, label='La')
+    axes[0].plot(thickness + offset + 3.878 + 1.939 * 2, O, 'r', label='O')
+    axes[0].plot(thickness + offset + 3.878 + 1.939 * 2, C, color='orange', label='C')
+    axes[0].axhline(0, color='black', linestyle='--')
+    axes[0].set_xlim(xlim)
+
+    # axes[2,0].gca().set_xticklabels([])
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[0].set_ylim(-0.1, axes[0].get_ylim()[1])
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].legend(frameon=False)
+    axes[0].set_xticklabels([])
+    axes[1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=20)
+    shared_y = fig.add_subplot(111, frame_on=False)
+    shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_y.set_ylabel('Fractional Site Occupation', fontsize=20)
+
+    axes[0].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[0].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_y_axes().join(axes[0], shared_y)
+    axes[0].get_shared_y_axes().join(axes[1], shared_y)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0)
+    # axes[0,0].grid(True)
+    # plt.gca().invert_xaxis()
+    plt.show()
+    """
+    """
+
+    # Unit Cell Model - 13uc 150K
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
+
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname)
+    # nR_num = ['64', '57', '69', '71', '73']
+    nR_num = ['64', '57', '71']
+    R_num = ['79', '60', '62', '75']
+    # R_num = ['77', '79', '60', '62', '75']
+    # Ti_num = ['68', '70', '72', '74']
+    Ti_num = ['68', '72', '74']
+    Mn_num = ['46', '53', '56', '61', '63']
+    # La_num = ['78', '80']
+    La_num = ['78']
+    R_asymm_num = ['47-48', '51-52', '54-55']
+    E_asymm_num = ['49-50', '58-59', '65-66']
+
+    # non_resonant = ['9_399.39_S','14_499.93_S','19_600.18_S','24_700.14_S','29_799.82_S','34_899.22_S']
+    non_resonant2 = return_name_from_scanNum(data2, nR_num)
+    resonant2 = return_name_from_scanNum(data2, R_num)
+    Ti_resonance2 = return_name_from_scanNum(data2, Ti_num)
+    Mn_resonance2 = return_name_from_scanNum(data2, Mn_num)
+    La_resonance2 = return_name_from_scanNum(data2, La_num)
+    Mn_R_asymm2 = return_name_from_scanNum(data2, R_asymm_num)
+    Mn_E_asymm2 = return_name_from_scanNum(data2, E_asymm_num)
+
+    fig, axes = plt.subplots(1,2)
+    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0,0), offset=0, step=1.5, xmin=635, xmax=660,
+                   type='E', reverse=True, size=0, top=1.5)
+    plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=3, xmin=635,
+                   type='EA', reverse=True, size=0, top=0.75)
+
+
+
+    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+    axes[1].set_ylabel(r'Circular Polarized Asymmetry (arb. units)', fontsize=16)
+
+    axes[0].set_xlabel(r'Energy, E (eV)', fontsize=16)
+    axes[1].set_xlabel(r'Energy, E (eV)', fontsize=16)
+    #shared_x.yaxis.set_label_coords(-0.02, 0.5)
+    plt.tight_layout()
+    plt.show()
+    """
+    """
+    #   -------------------- Mn2+ removed comparison!!  --------------------------------------- #
+    fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1_interface.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1_surface.h5"
+    fname3 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1_Mn3.h5"
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+    data3, data_dict3, sim_dict3 = ds.LoadDataHDF5(fname3)
+
+    my_scans = ['53','61']
+    keys = return_name_from_scanNum(data2, my_scans)
+
+    fig, axes = plt.subplots(1, 3)
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel('Energy, E (eV)', fontsize=16)
+
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0,0), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+    plotting_scans(data_dict3, sim_dict3, keys, axes, (0, 2), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    axes[2].get_shared_x_axes().join(axes[1], shared_x)
+
+    # axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    # axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+    # shared_ax.xaxis.set_label_coords(0.35, -0.075)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.075)
+    #shared_x.yaxis.set_label_coords(-0.01, 0.5)
+
+    fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete_interface.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete_surface.h5"
+    fname3 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete_Mn3.h5"
+
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+    data3, data_dict3, sim_dict3 = ds.LoadDataHDF5(fname3)
+
+
+    my_scans = ['37', '43']
+    keys = return_name_from_scanNum(data2, my_scans)
+
+    fig, axes = plt.subplots(1, 3)
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel('Energy, E (eV)', fontsize=16)
+
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+    plotting_scans(data_dict3, sim_dict3, keys, axes, (0, 2), offset=0, step=1, xmin=632, xmax=662,
+                   type='E', reverse=True, size=0, top=1.25)
+
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[2].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    axes[2].get_shared_x_axes().join(axes[2], shared_x)
+
+
+    # axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    # axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+    # shared_ax.xaxis.set_label_coords(0.35, -0.075)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.075)
+    # shared_x.yaxis.set_label_coords(-0.01, 0.5)
+
+    fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1_mag.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+
+    my_scans = ['47-48', '51-52', '54-55']
+    keys = return_name_from_scanNum(data2, my_scans)
+
+    fig, axes = plt.subplots(1, 2)
+
+    #shared_x = fig.add_subplot(111, frame_on=False)
+    #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    #shared_x.set_xlabel(r'Momentum Transfer,$\mathrm{qz}$ ($\mathrm{\AA}$)', fontsize=16)
+
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=0.75, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=0.75, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+
+    #axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    #axes[1].get_shared_x_axes().join(axes[1], shared_x)
+
+    #axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=16)
+    axes[0].set_xlabel('Momentum Transfer,$\mathrm{qz}$ ($\mathrm{\AA}$)', fontsize=16)
+    #axes[0].set_ylabel('Circular Polarized Asymmetry (arb. units)', fontsize=16)
+    # shared_ax.xaxis.set_label_coords(0.35, -0.075)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.075)
+    # shared_x.yaxis.set_label_coords(-0.01, 0.5)
+
+    fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete_mag.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
+
+    data1, data_dict1, sim_dict1 = ds.LoadDataHDF5(fname1)
+    data2, data_dict2, sim_dict2 = ds.LoadDataHDF5(fname2)
+
+    my_scans = ['111-112', '117-118']
+    keys = return_name_from_scanNum(data2, my_scans)
+
+    fig, axes = plt.subplots(1, 2)
+
+    #shared_x = fig.add_subplot(111, frame_on=False)
+    #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    #shared_x.set_xlabel(r'Momentum Transfer,$\mathrm{qz}$ ($\mathrm{\AA}$)', fontsize=16)
+
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=0.5, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=0.5, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1)
+
+    #axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    #axes[1].get_shared_x_axes().join(axes[1], shared_x)
+
+    # axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    # axes[1, 0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Circular Polarized Asymmetry (arb. units)', fontsize=16)
+    axes[0].set_xlabel(r'Momentum Transfer,$\mathrm{qz}$ ($\mathrm{\AA}$)', fontsize=16)
+    # shared_ax.xaxis.set_label_coords(0.35, -0.075)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.075)
+    # shared_x.yaxis.set_label_coords(-0.01, 0.5)
+    plt.show()
+    
+    """
+    """
+    #  ------------------ Remove the magnetic dead layer
+    
+    fig, axes = plt.subplots(2,1)
+    fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
+
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+    # struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+
+    sample = ds.ReadSampleHDF5(fname)
+
+    thickness, density, density_mag = sample.density_profile()
+
+    # thickness_shift = -11.75
+    # thickness = thickness + thickness_shift
+
+    zero = np.zeros(len(thickness))
+
+    xlim = [-20, 75]
+
+    slice_width = [3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.905, 3.8915, 3.878, 3.878, 3.878, 3.878, 3.878, 3.878,
+                   3.878, 3.878, 3.878, 3.878, 3.878, 3.878, 1.939]
+    start = -11.715
+    offset = -15.75
+    bar_width = np.array(slice_width) - 0.3
+
+    # properly create the half thickness array
+    my_thickness = bar_graph_slice(start, slice_width)
+
+    Ti = [1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    Mn2 = [0,0, 0, 0, 0, 0, 0, 0.06314187353650001, 0.11028773825175128, 0.02275647285959691, 0.3701310880359007,
+           0,0,0,0,0,0,0,0,0.030718436673865812,0.19552804020068865,0.29622505384943193]
+    Mn3 = [0,0, 0, 0, 0, 0, 0, 1.1489115883284551e-07, 0.05165589272786634, 0.3974433155700877, 0.6233498459497357,
+           1, 1,1,1,1,1,1,1,0.9692815633261342,0.8044719597993113,0.703774946150568]
+    mag = [0,0, 0, 0, 0, 0, 0, 0.0004003354023059758, 0.001816557185740252, 0.00658896207089925, 0.012848764938116344,
+           0.016830257935419913, 0.016830257935419913,0.016830257935419913,0.016830257935419913,0.016830257935419913,
+           0.016830257935419913,0.016830257935419913,0.016830257935419913,0.01070931743712782,0.005858933727020148,
+           0]
+
+    mag = -np.array(mag) / max(mag)
+
+    Arho = [0.028,0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028,0.028,0.028,0.028,0.028,0.028,
+            0.028,0.028,0.028,0.028,0.03319719939671565]
+    Mn3 = np.array(Mn2) + np.array(Mn3)
+
+    Ti = np.array(Ti) * np.array(Arho) / 0.028
+    Mn2 = np.array(Mn2) * np.array(Arho) / 0.028
+    Mn3 = np.array(Mn3) * np.array(Arho) / 0.028
+
+    axes[1].bar(np.array(my_thickness) + offset, Ti, color='yellow', edgecolor='black', width=bar_width, label='Ti')
+    axes[1].bar(np.array(my_thickness) + offset, Mn3, color='grey', edgecolor='black', width=bar_width,
+                   label=r'$\mathrm{Mn^{3.3+}}$')
+    axes[1].bar(np.array(my_thickness) + offset, Mn2, color='green', edgecolor='black', width=bar_width,
+                   label=r'$\mathrm{Mn^{2+}}$')
+    axes[1].bar(np.array(my_thickness) + offset, mag, color='magenta', edgecolor='black', width=bar_width,
+                   label='Mag')
+    axes[1].axhline(0, color='black', linestyle='--')
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+
+    # plt.gca().invert_xaxis()
+    axes[1].set_xlim(xlim)
+    axes[1].set_ylim(axes[1].get_ylim()[0], 1.95)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend(frameon=False)
+
+    # Asites
+    Sr = [1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    La = [0,0, 0, 0, 0, 0, 0.08081520235245354,0.31540659890843226,0.6020890684884148,0.7591457496086605, 0.6916283063660732,0.6524714534498322,
+          0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.3709629905970221,0.033554501863506725,0]
+
+    Brho = [0.028,0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028, 0.028,0.028,0.028,0.028,0.028,
+            0.028,0.028,0.028,0.028,0.02517789271095681,0]
+
+    Sr = np.array(Sr) * np.array(Brho) / 0.028
+    La = np.array(La) * np.array(Brho) / 0.028
+    O = density['O'] / 0.028
+    C = density['C2'] / 0.028
+
+    axes[0].bar(np.array(my_thickness) + offset, Sr, color='cyan', edgecolor='black', width=bar_width, label='Sr')
+    axes[0].bar(np.array(my_thickness) + offset, La, color='blue', edgecolor='black', width=bar_width, label='La')
+    axes[0].plot(thickness + offset +3.878 +1.939*2, O, 'r', label='O')
+    axes[0].plot(thickness + offset+3.878 +1.939*2, C, color='orange', label='C')
+    axes[0].axhline(0, color='black', linestyle='--')
+    axes[0].set_xlim(xlim)
+
+    # axes[2,0].gca().set_xticklabels([])
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[0].set_ylim(-0.1, axes[0].get_ylim()[1])
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].legend(frameon=False)
+    axes[0].set_xticklabels([])
+    axes[1].set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=20)
+    shared_y = fig.add_subplot(111, frame_on=False)
+    shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_y.set_ylabel('Fractional Site Occupation', fontsize=20)
+
+    axes[0].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[0].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_y_axes().join(axes[0], shared_y)
+    axes[0].get_shared_y_axes().join(axes[1], shared_y)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0)
+    # axes[0,0].grid(True)
+    # plt.gca().invert_xaxis()
+    plt.show()
+    
+
+    """
+    """
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
+
+    data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
+
+    name1 = "38_455.73_S"
+    name2 = "42_459.75_S"
+
+    dat1 = data_dict[name1]['Data']
+    dat2 = data_dict[name2]['Data']
+
+    fig, axes = plt.subplots(1,2)
+    axes[0].plot(dat1[0], np.log10(dat1[2]))
+    axes[1].plot(dat2[0], np.log10(dat2[2]))
+
+    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].tick_params(axis='y', labelleft=False)
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA}$)', fontsize=16)
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    plt.tight_layout()
+    plt.show()
+    """
+    """
+    # ---------------------------------- Demonstrate continuous and uc model ----------------------------------------
+    fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
+    fname2 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
+
+    sample1 = ds.ReadSampleHDF5(fname1)
+    sample2 = ds.ReadSampleHDF5(fname2)
+
+    thickness1, density1, temp = sample1.density_profile()
+    thickness2, density2, temp2 = sample2.density_profile()
+
+    Sr1 = density1['Sr']
+    La1 = density1['La']
+    Sr2 = density2['Sr']
+    La2 = density2['La']
+
+    fig, axes = plt.subplots(1,2)
+
+    axes[0].plot(thickness1, Sr1,label='Sr')
+    axes[0].plot(thickness1, La1,'--' , label='La')
+    axes[1].plot(thickness2, Sr2, label='Sr')
+    axes[1].plot(thickness2, La2,'--' , label='La')
+    axes[0].set_ylabel(r'Density, $\rho$ ($\mathrm{mol/cm^{3}}$)', fontsize=16)
+
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[0].legend(frameon=False)
+    axes[1].legend(frameon=False)
+
+    shared_x = fig.add_subplot(111, frame_on=False)
+    shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_x.set_xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=16)
+
+    axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    axes[1].get_shared_x_axes().join(axes[1], shared_x)
+
+    plt.tight_layout()
+    plt.show()
+    """
 
     # ---------------------------------- Saving for Emma --------------------------------------------------------------
-
+    """
     fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_complete.h5"
     fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
     fname3 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_complete.h5"
@@ -349,76 +933,76 @@ if __name__ == "__main__":
 
     # find the names of the data used and then save it as a csv file
     import csv
-    E1_150 = Mn_E_asymm1
+    E1_150 = non_resonant1
     my_data_1 = list()
     for name in E1_150:
-        #E = data_dict1[name]['Energy']
-        Theta = data_dict1[name]['Angle']
-        n1 = ['qz - ' + str(Theta)]
-        n2 = ['Rexp - ' + str(Theta)]
-        n3 = ['Rsim - ' +str(Theta)]
+        E = data_dict1[name]['Energy']
+        #Theta = data_dict1[name]['Angle']
+        n1 = ['qz - ' + str(E)]
+        n2 = ['Rexp - ' + str(E)]
+        n3 = ['Rsim - ' +str(E)]
 
-        test1 = n1 + data_dict1[name]['Data'][3].tolist()
+        test1 = n1 + data_dict1[name]['Data'][0].tolist()
         test2 = n2 + data_dict1[name]['Data'][2].tolist()
         test3 = n3 + sim_dict1[name]['Data'][2].tolist()
 
         my_data_1.append(test1)
         my_data_1.append(test2)
-        my_data_1.append(test2)
+        my_data_1.append(test3)
 
     my_data_1 = np.array(my_data_1).transpose()
 
-    with open("LSMO-E1-150-Mn-E-asymm.csv", "w", newline='') as my_csv:
+    with open("LSMO-E1-150-nonresonant.csv", "w", newline='') as my_csv:
         csvWriter = csv.writer(my_csv, delimiter=',')
         csvWriter.writerows(my_data_1)
 
-    E2_150 = Mn_E_asymm2
+    E2_150 = non_resonant2
     my_data_2 = list()
     for name in E2_150:
-        #E = data_dict2[name]['Energy']
-        Theta = data_dict2[name]['Angle']
+        E = data_dict2[name]['Energy']
+        #Theta = data_dict2[name]['Angle']
 
-        n1 = ['qz - ' + str(Theta)]
-        n2 = ['Rexp - ' + str(Theta)]
-        n3 = ['Rsim - ' + str(Theta)]
+        n1 = ['qz - ' + str(E)]
+        n2 = ['Rexp - ' + str(E)]
+        n3 = ['Rsim - ' + str(E)]
 
-        test1 = n1 + data_dict2[name]['Data'][3].tolist()
+        test1 = n1 + data_dict2[name]['Data'][0].tolist()
         test2 = n2 + data_dict2[name]['Data'][2].tolist()
         test3 = n3 + sim_dict2[name]['Data'][2].tolist()
 
         my_data_2.append(test1)
         my_data_2.append(test2)
-        my_data_2.append(test2)
+        my_data_2.append(test3)
 
     my_data_2 = np.array(my_data_2).transpose()
-    with open("LSMO-E2-150-Mn-E-Asymm.csv", "w", newline='') as my_csv:
+    with open("LSMO-E2-150-nonresonant.csv", "w", newline='') as my_csv:
         csvWriter = csv.writer(my_csv, delimiter=',')
         csvWriter.writerows(my_data_2)
 
-    E2_300 = Mn_E_asymm3
+    E2_300 = non_resonant3
     my_data_3 = list()
     for name in E2_300:
-        #E = data_dict3[name]['Energy']
-        Theta = data_dict3[name]['Angle']
+        E = data_dict3[name]['Energy']
+        #Theta = data_dict3[name]['Angle']
 
-        n1 = ['qz - ' + str(Theta)]
-        n2 = ['Rexp - ' + str(Theta)]
-        n3 = ['Rsim - ' + str(Theta)]
+        n1 = ['qz - ' + str(E)]
+        n2 = ['Rexp - ' + str(E)]
+        n3 = ['Rsim - ' + str(E)]
 
-        test1 = n1 + data_dict3[name]['Data'][3].tolist()
+        test1 = n1 + data_dict3[name]['Data'][0].tolist()
         test2 = n2 + data_dict3[name]['Data'][2].tolist()
         test3 = n3 + sim_dict3[name]['Data'][2].tolist()
 
         my_data_3.append(test1)
         my_data_3.append(test2)
-        my_data_3.append(test2)
+        my_data_3.append(test3)
 
     my_data_3 = np.array(my_data_3).transpose()
 
-    with open("LSMO-E2-300-Mn-E-asymm.csv", "w", newline='') as my_csv:
+    with open("LSMO-E2-300-nonresonant.csv", "w", newline='') as my_csv:
         csvWriter = csv.writer(my_csv, delimiter=',')
         csvWriter.writerows(my_data_3)
-
+    """
     """
 
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
@@ -805,10 +1389,10 @@ if __name__ == "__main__":
     axes[1, 2].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 2].set_xlim([axes[0, 0].get_xlim()[0], up])
 
-    axes[1,1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    axes[1,1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
 
-    axes[0,0].set_ylabel(r'log $\left(\frac{R}{R_{0}} \right)$', fontsize=16)
-    axes[1,0].set_ylabel(r'$\frac{d}{d q_{z}} \left[ \frac{R(q_{z})}{R_{0}(q_{z})}  \right]$', fontsize=16)
+    axes[0,0].set_ylabel(r'log $\left(\frac{R}{R_{0}} \right)$', fontsize=20)
+    axes[1,0].set_ylabel(r'$\frac{d}{d q_{z}} \left[ \frac{R(q_{z})}{R_{0}(q_{z})}  \right]$', fontsize=20)
 
     plt.tight_layout()
     plt.show()
@@ -1900,6 +2484,7 @@ if __name__ == "__main__":
     plt.show()
     """
     """
+
     # Total Variation
 
     fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_test1-0.h5"
@@ -1912,35 +2497,75 @@ if __name__ == "__main__":
 
     keys = ["64_836.04_S", "63_833.85_S"]
     #keys = ["63_833.85_S"]
-    plt.figure(1)
+    fig, axes = plt.subplots(1,2)
 
     for i, key in enumerate(keys):
-        E = data_dict3[key]['Energy']
-        qz = data_dict3[key]['Data'][0]
-        R = np.log10(data_dict3[key]['Data'][2])
+        E = data_dict1[key]['Energy']
+        qz = data_dict1[key]['Data'][0]
+        R = np.log10(data_dict1[key]['Data'][2])
 
-        Rs = np.log10(sim_dict3[key]['Data'][2])
+        Rs = np.log10(sim_dict1[key]['Data'][2])
 
         l1_norm = sum(np.abs(R - Rs)) / len(R)
         tv = total_variation(R, Rs)
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
 
-        plt.plot(qz[idx], R[idx] + i * 2, 'b')
-        plt.plot(qz[idx], Rs[idx] + i * 2, 'r')
+        axes[0].plot(qz[idx], R[idx] + i * 2, 'b')
+        axes[0].plot(qz[idx], Rs[idx] + i * 2, 'r')
 
         print('E=' + str(E) + ': ' + str(l1_norm))
 
-    plt.legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], loc='upper right', frameon=False)
-    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=12)
-    plt.minorticks_on()
-    plt.tick_params(which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
-    #plt.xlim([0.01,0.1])
-    #plt.ylim([-1.96,-0.24])
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
-    #plt.yticks([])
-    #plt.xticks([])
+    for i, key in enumerate(keys):
+        E = data_dict2[key]['Energy']
+        qz = data_dict2[key]['Data'][0]
+        R = np.log10(data_dict2[key]['Data'][2])
 
+        Rs = np.log10(sim_dict2[key]['Data'][2])
+
+        l1_norm = sum(np.abs(R - Rs)) / len(R)
+        tv = total_variation(R, Rs)
+        idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
+
+        axes[1].plot(qz[idx], R[idx] + i * 2, 'b')
+        axes[1].plot(qz[idx], Rs[idx] + i * 2, 'r')
+
+        print('E=' + str(E) + ': ' + str(l1_norm))
+
+    #axes[0].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False, loc='lower left')
+
+    #axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[1].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False, loc='lower left')
+    #axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    #axes[1].tick_params(axis='y', labelleft=False)
+    #axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+
+    #shared_x = fig.add_subplot(111, frame_on=False)
+    #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    #shared_x.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=16)
+
+    #axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
+    #axes[0].get_shared_x_axes().join(axes[0], shared_x)
+    #axes[1].get_shared_x_axes().join(axes[1], shared_x)
+    # lt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
+    #shared_x.yaxis.set_label_coords(-0.01, 0.5)
+    axes[0].set_xlim([0.01,0.1])
+    axes[1].set_xlim([0.01, 0.1])
+    axes[0].set_ylim([0, 1.60])
+    axes[1].set_ylim([0, 1.60])
+
+    axes[0].tick_params(axis='both', which='both', direction='in', bottom=False, left=True)
+    axes[0].tick_params(axis='y', labelleft=False, left=False)
+    axes[0].tick_params(axis='x', labelbottom=False, bottom=False)
+    axes[1].tick_params(axis='y', labelleft=False, left=False)
+    axes[1].tick_params(axis='x', labelbottom=False, bottom=False)
+    plt.tight_layout()
+    plt.show()
+    """
+    """
     example1 = np.loadtxt("//cabinet/work$/lsk601/My Documents\Master-data/test2-data.csv", skiprows=1)
     example2 = np.loadtxt("//cabinet/work$/lsk601/My Documents\Master-data/test3-data.csv", skiprows=1)
 
@@ -1971,7 +2596,8 @@ if __name__ == "__main__":
 
 
     keys = ["29_799.82_S", "24_700.14_S", "19_600.18_S", "14_499.93_S"]
-    plt.figure(1)
+
+    fig, axes = plt.subplots(2,1)
 
     for i, key in enumerate(keys):
 
@@ -1985,16 +2611,52 @@ if __name__ == "__main__":
 
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01 ]
 
-        plt.plot(qz[idx], R[idx]+i*2.5+8, 'b')
-        plt.plot(qz[idx], Rs[idx]+i*2.5+8, 'r')
+        axes[0].plot(qz[idx], R[idx]+i*2.5+8, 'b')
+        axes[0].plot(qz[idx], Rs[idx]+i*2.5+8, 'r')
 
 
         print('E=' + str(E) + ': ' + str(l1_norm))
 
+    for i, key in enumerate(keys):
+        E = data_dict2[key]['Energy']
+        qz = data_dict2[key]['Data'][0]
+        R = np.log10(data_dict2[key]['Data'][2])
 
-    plt.legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'])
-    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
-    plt.ylabel('Normalized Reflected Intensity (arb. units)')
+        Rs = np.log10(sim_dict2[key]['Data'][2])
+
+        l1_norm = sum(np.abs(R - Rs)) / len(R)
+
+        idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
+
+        axes[1].plot(qz[idx], R[idx] + i * 2.5 + 8, 'b')
+        axes[1].plot(qz[idx], Rs[idx] + i * 2.5 + 8, 'r')
+
+        print('E=' + str(E) + ': ' + str(l1_norm))
+
+    axes[0].legend([r'Exp ($\sigma$)',r'Calc ($\sigma$)'],frameon=False)
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[0].tick_params(axis='y', labelleft=False)
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].legend([r'Exp ($\sigma$)',r'Calc ($\sigma$)'],frameon=False)
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    axes[1].tick_params(axis='y', labelleft=False)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=16)
+
+    shared_y = fig.add_subplot(111, frame_on=False)
+    shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    shared_y.set_ylabel(r'Normalized Reflected Intensity (arb.units)', fontsize=16)
+
+    axes[0].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[1].set_ylabel('')  # Remove existing x-axis label for this subplot
+    axes[0].get_shared_y_axes().join(axes[0], shared_y)
+    axes[1].get_shared_y_axes().join(axes[1], shared_y)
+    #lt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
+    shared_y.yaxis.set_label_coords(-0.01, 0.5)
+    plt.tight_layout()
+
     #plt.yticks([])
 
 
@@ -2010,9 +2672,12 @@ if __name__ == "__main__":
     #plt.yticks([0,0.2,0.4,0.6,0.8])
     #plt.ylim([0.1,0.9])
     #plt.gca().xaxis.grid(True)
+    plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    plt.tick_params(axis='y', labelleft=False)
+    plt.minorticks_on()
     plt.legend(['Case (a)', 'Case (b)'])
-    plt.xlabel('Differential Evolution Iteration')
-    plt.ylabel('Cost Function (arb. units)')
+    plt.xlabel('Differential Evolution Iteration', fontsize=16)
+    plt.ylabel('Cost Function (arb. units)', fontsize=16)
 
 
 

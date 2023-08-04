@@ -340,6 +340,16 @@ def readScript(sample, script):
                 else:  # key case
                     sample.setVariationConstant(layer, symbol, identifier,  variables[key])
 
+            elif function.lower() == 'setmultivarconstant':
+                import ast
+                layer = int(params[0])  # gets layer index
+                symbol = params[1].strip(' ')  # gets element symbol
+                identifier = ast.literal_eval(params[2].replace(" ",","))  # gets element variation identifier
+                key = ast.literal_eval(params[3].replace(" ",","))  # gets value or key
+
+                sample.setMultiVarConstant(layer, symbol, identifier,  key)
+
+
             elif function.lower() == 'setratio':
                 layer = int(params[0])  # gets layer index
                 symbol = params[1].strip(' ')  # get element symbol
@@ -493,9 +503,11 @@ def scanCompute(x, *args):
     # change the sample parameters
     sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
 
-    if 'ORBITAL' in np.array(parameters)[:,0]:
+    my_list = [L[0] for L in parameters]
+
+    if 'ORBITAL' in my_list:
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
             sf_dict[okey] = my_data
 
 
@@ -633,14 +645,28 @@ def scanCompute(x, *args):
 
                 # determines which objective function to use
                 if len(idx) != 0:
+                    Rnew = (Rdat - min(Rdat)) / (max(Rdat) - min(Rdat))
+                    Rnew_s = (Rsim - min(Rdat)) / (max(Rdat) - min(Rdat))
                     if objective == 'Chi-Square':
-                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx])) * w
+                        else:
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                     elif objective == 'L1-Norm':
-                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum(np.abs(Rnew[idx] - Rnew_s[idx])) * w
+                        else:
+                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
-                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx])**2) * w
+                        else:
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
                     elif objective == 'Arctan':
-                        fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum(np.arctan((Rnew[idx] - Rnew_s[idx]) ** 2)) * w
+                        else:
+                            fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
 
             fun = fun + fun_val/m  # calculates cost function
 
@@ -678,13 +704,22 @@ def residuals(x, *args):
     smooth_dict = args[12]  # dictionary of already smoothed out data
     script = args[13]
     use_script = args[14]
+    orbitals = args[15]
+    sf_dict = args[16]
 
     # determines if saving will be done in callback function
     if optimizeSave:
         x_vars.append(x)
 
     # change the sample parameters
-    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF,script, use_script=use_script)
+    sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
+
+    my_list = [L[0] for L in parameters]
+
+    if 'ORBITAL' in my_list:
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
 
 
     i = 0 # keeps track of which boundary to use
@@ -712,7 +747,7 @@ def residuals(x, *args):
 
             qz = np.array(myData[0])  # retrieves momentum transfer
             # calculate simulation
-            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor,sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
@@ -782,7 +817,7 @@ def residuals(x, *args):
             n = len(Rdat)
 
             # calculates simulation
-            E, Rsim = sample.energy_scan(Theta, E)
+            E, Rsim = sample.energy_scan(Theta, E,sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
@@ -905,7 +940,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -915,7 +950,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -933,7 +968,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -942,7 +977,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script, orbitals, sf_dict]
 
     p = True
     if goParam[6] == 'True':
@@ -963,7 +998,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
-def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -972,7 +1007,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]
 
     diff = goParam[8]
     _max = goParam[9]
@@ -1015,7 +1050,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     f.close()
     return x, fun
 
-def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -1025,7 +1060,7 @@ def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBound
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]  # required format for function scanCompute
 
     # checking if locally biased
     p=True

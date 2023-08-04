@@ -6,7 +6,7 @@
 # getThickness(layer, Element)
 # getCombinedThickness(start,end,element)
 
-#setCombinedThickness(2,5,all,14.39360028319356)
+#setCombinedThickness(1,2,all,3.905)
 
 #d = getThickness(4, all)
 #setThickness(5, all, d)
@@ -27,23 +27,38 @@
 
 
 # ------------------- Density Workspace ---------------------#
+#rho1 = getDensity(1,Ti)
+#rho2 = getDensity(1,O)
+#setDensity(2,Ti,rho1)
+#setDensity(2,O,rho2)
+
 # setDensity(layer, element, value)
 # getDensity(layer, element)
 
-
-rho = getDensity(1,Ti)
-setDensity(2,Ti,rho)
 
 # ------------------ Element Variation Ratio Workspace ---------------------#
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(2, B, Ti,0.9520812719660537)
-#setVariationConstant(3, B, Ti,0.9153546478504088)
-#setVariationConstant(4, B, Ti,0.2963391181991839)
-#setVariationConstant(5, B, Ti,0.1484035408984079)
+#setVariationConstant(2, B, Ti,0.9368580115723412)
+#setVariationConstant(3, B, Ti,0.8380563690203824)
+#setVariationConstant(4, B, Ti,0.5798002115703154)
+#setVariationConstant(5, B, Ti,0.006519066014363431)
 #setVariationConstant(6, B, Ti,0.0242466343076104)
+#setVariationConstant(14,B,Mn2+,0.030718436673865812)
+#setVariationConstant(15,B,Mn2+,0.19552804020068865)
+#setVariationConstant(14,B,Mn2+,0.29622505384943193)
 
+# Multiple constant variations
+#setMultiVarConstant(2,B,["Ti" "Mn2+"],[0.9368580115723412 0.06314187353650001])
+#setMultiVarConstant(3,B,["Ti" "Mn2+"],[0.8380563690203824 0.11028773825175128])
+#setMultiVarConstant(4,B,["Ti" "Mn2+"],[0.5798002115703154 0.02275647285959691])
+#setMultiVarConstant(5,B,["Ti" "Mn2+"],[0.006519066014363431 0.3701310880359007])
+#setMultiVarConstant(6,B,["Ti" "Mn2+"],[0 0])
+
+#setMultiVarConstant(14,B,["Ti" "Mn2+"],[0 0.030718436673865812])
+#setMultiVarConstant(15,B,["Ti" "Mn2+"],[0 0.19552804020068865])
+#setMultiVarConstant(16,B,["Ti" "Mn2+"],[0 0.29622505384943193])
 
 # ------------------------ Magnetic Density Workspace -------------------------#
 
@@ -51,12 +66,18 @@ setDensity(2,Ti,rho)
 # getMagDensity(layer,element, variation)
 
 
-#rho = getMagDensity(6, B, Mn3)
-#setMagDensity(7, B,Mn3,rho)
-#setMagDensity(8, B,Mn3,rho)
-#setMagDensity(9, B,Mn3,rho)
-#setMagDensity(10, B,Mn3,rho)
-#setMagDensity(11, B,Mn3,rho)
+rho = getMagDensity(7, B, Mn3+)
+#setMagDensity(7, B,Mn3+,rho)
+setMagDensity(8, B,Mn3+,rho)
+setMagDensity(9, B,Mn3+,rho)
+setMagDensity(10, B,Mn3+,rho)
+setMagDensity(11, B,Mn3+,rho)
+setMagDensity(12, B,Mn3+,rho)
+setMagDensity(13, B,Mn3+,rho)
+#setMagDensity(14, B,Mn3-4,rho)
+#setMagDensity(15, B,Mn3-4,rho)
+#setMagDensity(16, B,Mn3-4,rho)
+
 
 
 

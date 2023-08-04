@@ -52,9 +52,12 @@ with open('form_factor_magnetic.pkl','rb') as f:
 f.close()
 
 def change_ff(ffname, value):
+    # changes the value of a form factor
     ff[ffname] = value
 
 def retrieve_ff():
+    # retrieve the form factor dictionary
+    # This is mainly used when retrieving the dictionary in a different python script
     return ff
 
 def _use_given_ff(directory):

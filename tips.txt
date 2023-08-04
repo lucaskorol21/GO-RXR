@@ -1,0 +1,4 @@
+Data Analysis Tips
+
+Refer to my thesis! Add link!
+ - Read Chapter 5: Global Optimization of Resonant X-ray Reflectometry

@@ -98,7 +98,7 @@ def Lanczos(HS, v=None, m=100):
     T[m-1, m-1] = alpha
     V[m-1, :] = w/np.linalg.norm(w)
 
-    # A check to determine if the imaginary component is to large and cannot be considered zero
+    # A check to determine if the imaginary component is too large and cannot be considered zero
     if abs(beta.real - beta.imag) < beta.real - 1e-7 or abs(alpha.real - alpha.imag) < alpha.real - 1e-7:
         successful = False
 
@@ -108,7 +108,7 @@ def Lanczos(HS, v=None, m=100):
 
     return np.real(T), V
 
-def CreateXAS(v, E, Hf, Tmat, NIter=100, Sticks=True, Gamma=0.2, Sigma=0):
+def CreateXAS(v, E, Hf, Tmat, NIter=100, Sticks=True, Gamma=0.2, Sigma=0.0):
     """
     Purpose: Return a range of spectrums
         :param v: A list of initial state eigenvectors
@@ -417,8 +417,6 @@ def WriteOpsToPickle():
 
 
 
-
-
 def MergeWithOffRes(inSpec,EShift,S1,S2,m,b,E1,w1,E2,w2,offresFile,element,c1,c2,fi1,fi2,ff1,ff2):
 
   mySpec = {}
@@ -495,7 +493,7 @@ def MergeWithOffRes(inSpec,EShift,S1,S2,m,b,E1,w1,E2,w2,offresFile,element,c1,c2
 
 
 
-def GetTiFormFactor(nd,T,tenDq,dExy,dExzyz,dEx2y2,dEz2):
+def GetTiFormFactor(dExy,dExzyz,dEx2y2,dEz2, nd=1,T=300,tenDq=2.12):
 
 #prepath = "ff/"
 #OrbE = np.loadtxt(prepath + "OrbitalEnergies.txt")

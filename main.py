@@ -142,7 +142,17 @@ if __name__ == '__main__':
 
     struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
     #struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/')
+    import ast
+    x = '[0.22,"0.65"]'
+    try:
+        result = ast.literal_eval(x)
+        # Do something with the result
+    except (ValueError, SyntaxError) as e:
+        # Handle the exception (e.g., invalid input)
+        print("Error:", e)
 
+    for val in result:
+        print(isinstance(val, str))
     # Global Minimum Example
     """
     sample = ds.ReadSampleHDF5(fname)
@@ -337,7 +347,7 @@ if __name__ == '__main__':
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].legend(frameon=False)
-    axes[0].set_ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=16)
+    axes[0].set_ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=20)
 
 
     # Plot the data on the top-right subplot
@@ -361,8 +371,8 @@ if __name__ == '__main__':
     plt.figure(3)
     plt.plot(my_thickness2, my_epsilon2)
     plt.plot(thickness, delta)
-    plt.xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=12)
-    plt.ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=16)
+    plt.xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=16)
+    plt.ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=20)
 
     plt.xlim([30,45])
     # Set minor ticks
@@ -385,8 +395,8 @@ if __name__ == '__main__':
     plt.plot(qz, np.log10(R1))
     plt.plot(qz, np.log10(R2), '--')
     plt.legend(['precision=0.01','precision=0.001','precision=1e-20'], frameon=False)
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
-    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
+    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+    plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     # Set minor ticks
     plt.minorticks_on()
     # Set tick parameters

@@ -1572,7 +1572,7 @@ class slab:
     def setVariationConstant(self, layer, symbol, identifier, val):
         """
         Purpose: Sets element variation of a certain layer to a constant value
-        :param layer: Layer as an interger type
+        :param layer: Layer as an integer type
         :param symbol: Symbol of element or dummy variable
         :param identifier: Element variation identifier
         :param val: Constant value as float type
@@ -1597,6 +1597,45 @@ class slab:
                     self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
 
                 self.structure[layer][symbol].poly_ratio[idx] = val  # sets constant ratio value
+
+    def setMultiVarConstant(self, layer, symbol, identifier, value):
+        """
+        Purpose: Sets multiple element variation ratios constant. This is ideal when optimizing an element with more than four variations.
+                 It should be noted that this function only works when only two element variations are allowed to vary.
+        :param layer: integer type that signals the layer
+        :param symbol: Symbol of the element or dummy variable
+        :param identifier: List of identifiers to hold constant
+        :param value: List of the ratio values
+        :return:
+        """
+
+        gamma = 1-sum(value)  # value of remaining element variations ratio sum
+        keys = list(self.structure[layer].keys())  # finds all the elements in the selected layer
+
+        # loops through elements in the layer until symbol is found
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) - len(identifier) == 2:
+                # determines the index for the variations to hold constant
+
+                idx = [i for i in range(len(self.structure[layer][symbol].polymorph)) if self.structure[layer][symbol].polymorph[i] not in identifier]
+
+
+                beta = sum(self.structure[layer][symbol].poly_ratio[idx])  # sum of the polymorphs
+
+                # sets non-constant element variation ratio's appropriately
+                for i in idx:
+                    r = self.structure[layer][symbol].poly_ratio[i]
+                    self.structure[layer][symbol].poly_ratio[i] = gamma * r / beta
+
+                # sets the constant values
+                my_i = 0
+                # loops through each keys in the polymorphs
+                for i,key in enumerate(self.structure[layer][symbol].polymorph):
+                    if key in identifier:  # if the key is in the identifiers than set the appropriate value
+                        self.structure[layer][symbol].poly_ratio[i] = value[my_i]
+                        my_i = my_i + 1
+
+
 
     def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
         """

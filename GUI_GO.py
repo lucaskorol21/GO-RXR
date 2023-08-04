@@ -3449,7 +3449,7 @@ class reflectivityWidget(QWidget):
         orbitals = self.sWidget.orbitals
         sf_dict = copy.copy(self.sWidget.sf_dict)
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -3589,7 +3589,7 @@ class reflectivityWidget(QWidget):
         orbitals = self.sWidget.orbitals
         sf_dict = copy.copy(self.sWidget.sf_dict)
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -4020,7 +4020,7 @@ class reflectivityWidget(QWidget):
         orbitals = self.sWidget.orbitals
         sf_dict = copy.copy(self.sWidget.sf_dict)
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -4073,6 +4073,11 @@ class reflectivityWidget(QWidget):
                                                  E)  # calculates dielectric constant for structural component
             delta_m, beta_m = ms.magnetic_optical_constant(density_magnetic, sfm, E)
 
+            if type(delta_m) != list and type(delta_m) != np.ndarray:
+                delta_m = np.zeros(len(delta))
+            if type(beta_m) != list and type(beta_m) != np.ndarray:
+                beta_m = np.zeros(len(beta))
+
             my_slabs = ms.ALS(delta, beta, delta_m, beta_m, precision=float(self.sWidget._precision))
             my_thickness = []
             my_value = []
@@ -4124,7 +4129,7 @@ class reflectivityWidget(QWidget):
 
         sf_dict = copy.copy(self.sWidget.sf_dict)
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -4454,7 +4459,7 @@ class reflectivityWidget(QWidget):
             orbitals = self.sWidget.orbitals
             sf_dict = copy.copy(self.sWidget.sf_dict)
             for okey in list(orbitals.keys()):
-                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                           float(orbitals[okey][1]),
                                           float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -4554,7 +4559,7 @@ class reflectivityWidget(QWidget):
             sf_dict = copy.copy(self.sWidget.sf_dict)
 
             for okey in list(orbitals.keys()):
-                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                           float(orbitals[okey][1]),
                                           float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -6022,7 +6027,7 @@ class GlobalOptimizationWidget(QWidget):
             sf_dict1 = copy.copy(self.sWidget.sf_dict)
             sf_dict2 = copy.copy(self.sWidget.sf_dict)
             for okey in list(orbitals.keys()):
-                my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
+                my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                        float(orbitals[okey][1]),
                                        float(orbitals[okey][2]), float(orbitals[okey][3]))
 
@@ -6450,19 +6455,19 @@ class GlobalOptimizationWidget(QWidget):
             elif idx == 1:
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
-                                 self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
+                                 self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,use_script=use_script)
             elif idx == 2:
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds,
                                            sWeights,
                                            self.goParameters['dual annealing'], self.callback,
-                                           self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script=use_script)
+                                           self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,use_script=use_script)
             elif idx == 3:
                 bounds = (lw, up)
 
                 x, fun = go.least_squares(x0, sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
-                                          self.objective, self.shape_weight, r_scale, smooth_dict, script, use_script)
+                                          self.objective, self.shape_weight, r_scale, smooth_dict, script,orbitals, sf_dict, use_script)
 
 
             """
@@ -8138,6 +8143,10 @@ class ReflectometryApp(QMainWindow):
         self.about.triggered.connect(self._help)
         helpMenu.addAction(self.about)
 
+        self.tips = QAction('Tips', self)
+        self.tips.triggered.connect(self._tips)
+        helpMenu.addAction(self.tips)
+
 
     def _loadOrbitals(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
@@ -8424,7 +8433,10 @@ class ReflectometryApp(QMainWindow):
                 fitParams[2] = np.array(fitParams[2])
                 fitParams[3] = fitParams[3]
 
-                idx = [i for i in range(len(fitParams[2][:,0])) if fitParams[2][i,0] != 'ORBITAL']
+                if len(fitParams[2]) != 0:
+                    idx = [i for i in range(len(fitParams[2][:,0])) if fitParams[2][i,0] != 'ORBITAL']
+                else:
+                    idx = []
 
                 if len(idx) == 0:
                     self._sampleWidget.parameterFit = []
@@ -8909,7 +8921,14 @@ class ReflectometryApp(QMainWindow):
         license.exec_()
         license.close()
         # no current implementation
-        pass
+
+
+    def _tips(self):
+        license = tipsWidget()
+        license.show()
+        license.exec_()
+        license.close()
+        # no current implementation
 
     def _help(self):
         """
@@ -9219,11 +9238,11 @@ class progressWidget(QWidget):
 
         sf_dict = self.sf_dict
 
-        #for okey in list(orbitals.keys()):
-        #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
-        #                              float(orbitals[okey][1]),
-        #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
-        #    sf_dict[okey] = my_data
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
             
         if name != '':
             bound = self.rWidget.bounds[b_idx]
@@ -9326,11 +9345,11 @@ class progressWidget(QWidget):
                                                       self.backS, self.scaleF,script,orbitals,use_script=use_script)
 
         sf_dict = self.sf_dict
-        #for okey in list(orbitals.keys()):
-        #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
-        #                              float(orbitals[okey][1]),
-        #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
-        #    sf_dict[okey] = my_data
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(float(orbitals[okey][0]),
+                                      float(orbitals[okey][1]),
+                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
             
         background_shift = 0
         scaling_factor = 1
@@ -9442,12 +9461,12 @@ class progressWidget(QWidget):
 
 
                 sf_dict = self.sf_dict
-                #for okey in list(orbitals.keys()):
-                #    my_data = GetTiFormFactor(1, 300, 2.12, float(orbitals[okey][0]),
-                #                              float(orbitals[okey][1]),
-                #                              float(orbitals[okey][2]), float(orbitals[okey][3]))
+                for okey in list(orbitals.keys()):
+                    my_data = GetTiFormFactor(float(orbitals[okey][0]),
+                                              float(orbitals[okey][1]),
+                                              float(orbitals[okey][2]), float(orbitals[okey][3]))
 
-                #    sf_dict[okey] = my_data
+                    sf_dict[okey] = my_data
                     
                 gamma = 0
                 fun = 0
@@ -9594,14 +9613,28 @@ class progressWidget(QWidget):
                             k = len(idx)
                             m = m + k
                             if len(idx) != 0:
+                                Rnew = (Rdat - min(Rdat)) / (max(Rdat) - min(Rdat))
+                                Rnew_s = (Rsim - min(Rdat)) / (max(Rdat) - min(Rdat))
                                 if self.objective == 'Chi-Square':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx]))
+                                    if self.y_scale == 'x':
+                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx])) * w
+                                    else:
+                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
                                 elif self.objective == 'L1-Norm':
-                                    fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx]))
+                                    if self.y_scale == 'x':
+                                        fun_val = fun_val + sum(np.abs(Rnew[idx] - Rnew_s[idx])) * w
+                                    else:
+                                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                                 elif self.objective == 'L2-Norm':
-                                    fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2)
+                                    if self.y_scale == 'x':
+                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2) * w
+                                    else:
+                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
                                 elif self.objective == 'Arctan':
-                                    fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2))
+                                    if self.y_scale == 'x':
+                                        fun_val = fun_val + sum(np.arctan((Rnew[idx] - Rnew_s[idx]) ** 2)) * w
+                                    else:
+                                        fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
 
                         if m != 0:
                             self.costFun[name].append(fun_val / m)
@@ -10239,9 +10272,9 @@ class scriptWidget(QDialog):
     def __init__(self, sWidget):
         super().__init__()
 
-        cwd = os.getcwd()
+        self.cwd = os.getcwd()
 
-        self.fname = cwd + '/default_script.txt'  # obtain current script
+        self.fname = self.cwd + '/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
         self.sWidget = sWidget
@@ -10296,12 +10329,18 @@ class scriptWidget(QDialog):
         """
         Purpose: Open a new script file
         """
+
         fname, filter_type = QFileDialog.getOpenFileName(self, "Open new file", "", "All files (*)")
-        if self.fname.endswith('.txt'):
+        if fname.endswith('.txt'):
             with open(fname, "r") as f:
                 file_contents = f.read()
                 self.title.setText(fname)
                 self.scrollable_text_area.setText(file_contents)
+
+            # saves to the default script to run throughout the program.
+            with open(self.fname, 'w') as f:
+                f.write(self.cwd + '/default_script.txt')
+            f.close()
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Invalid file")
@@ -10329,7 +10368,7 @@ class scriptWidget(QDialog):
         if problem:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("Script unable to execute")
-            messageBox.setText("Error: " + my_error['Type'] + '\n' + 'Line: ' + str(my_error['Line']))
+            messageBox.setText("Error: " + str(my_error['Type']) + '\n' + 'Line: ' + str(my_error['Line']))
             messageBox.exec()
         else:
             sample = go.readScript(sample, my_script)
@@ -10444,6 +10483,7 @@ def checkbracket(myStr):
 
 def checkscript(sample):
     script = os.getcwd() + '/default_script.txt'
+    #script = fname
     my_script = list()
     my_error = dict()
     with open(script, "r") as f:
@@ -10459,7 +10499,8 @@ def checkscript(sample):
             my_line = my_line + 1
     f.close()
 
-    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant']
+    # setMultiVarConstant(self, layer, symbol, identifier, value)
+    my_function_1 = ['setroughness',  'setdensity',  'setthickness', 'setcombinedthickness', 'setratio', 'seteshift', 'setmageshift', 'setmagdensity', 'setvariationconstant', 'setmultivarconstant']
 
     my_function_2 = ['getroughness', 'getdensity',  'getthickness', 'gettotalthickness','geteshift', 'getmageshift', 'getmagdensity']
 
@@ -10598,6 +10639,11 @@ def checkscript(sample):
                         my_error['Type'] = 'layer larger than number of defined layers'
                         my_error['Line'] = my_line
 
+                    if int(params[0]) < 0 and not (problem):
+                        problem = True
+                        my_error['Type'] = 'layer must be a positive value'
+                        my_error['Line'] = my_line
+
                     if params[1].isdigit() or params[2].isdigit():
                         problem = True
                         my_error['Type'] = 'values must be entered as integers'
@@ -10623,6 +10669,81 @@ def checkscript(sample):
                             my_error['Line'] = my_line
 
 
+                elif function.lower() == 'setmultivarconstant':
+                    import ast
+
+                    identifier = list()
+                    value = list()
+                    if len(params) != 4:
+                        problem = True
+                        my_error['Type'] = 'Unexpected number of parameters'
+                        my_error['Line'] = my_line
+
+                    m = len(sample.structure)
+
+                    if int(params[0]) > m - 1 and not (problem):
+                        problem = True
+                        my_error['Type'] = 'layer larger than number of defined layers'
+                        my_error['Line'] = my_line
+
+                    if int(params[0]) < 0 and not (problem):
+                        problem = True
+                        my_error['Type'] = 'layer must be a positive value'
+                        my_error['Line'] = my_line
+
+                    if params[1].isdigit():
+                        problem = True
+                        my_error['Type'] = 'values must be entered as integers'
+                        my_error['Line'] = my_line
+
+                    try:
+                        identifier = ast.literal_eval(params[2].replace(" ",","))
+
+                        # Do something with the result
+                    except (ValueError, SyntaxError) as e:
+                        # Handle the exception (e.g., invalid input)
+                        problem = True
+                        my_error['Type'] = 'Invalid list entry for element variation KEYS'
+                        my_error['Line'] = my_line
+
+                    try:
+                        value = ast.literal_eval(params[3].replace(" ",","))
+                        # Do something with the result
+                    except (ValueError, SyntaxError) as e:
+                        # Handle the exception (e.g., invalid input)
+                        problem = True
+                        my_error['Type'] = 'Invalid list entry for element variation VALUES'
+                        my_error['Line'] = my_line
+
+                    if not (problem):
+                        params[1] = params[1].strip(' ')
+                        if params[1] not in list(sample.structure[int(params[0])].keys()):
+                            problem = True
+                            my_error['Type'] = str(params[1]) + ' not in layer'
+                            my_error['Line'] = my_line
+
+                        if len(sample.structure[int(params[0])][params[1]].polymorph) - len(identifier) != 2 and not (problem):
+                            problem = True
+                            my_error['Type'] = 'This function can only vary two element variations (total number variation - constant = 2)'
+                            my_error['Line'] = my_line
+
+                        if len(identifier) != len(identifier) and not (problem):
+                            problem = True
+                            my_error['Type'] = 'identifier list and value list must be the same length'
+                            my_error['Line'] = my_line
+
+                        for id in identifier:
+                            if not (problem) and id not in sample.structure[int(params[0])][params[1]].polymorph:
+                                problem = True
+                                my_error['Type'] = str(id) + ' not found in layer'
+                                my_error['Line'] = my_line
+
+                        for val in value:
+                            if not problem and isinstance(val, str):
+                                problem = True
+                                my_error['Type'] = 'Value must be float type and not a string'
+                                my_error['Line'] = my_line
+                    # setMultiVarConstant(self, layer, symbol, identifier, value)
 
                 elif function.lower() == 'setratio':
                     if len(params) != 5:
@@ -10879,6 +11000,38 @@ class licenseWidget(QDialog):
         self.scrollable_text_area.setReadOnly(True)
 
         with open('license.txt', 'r',encoding='ISO-8859-1') as f:
+            file_contents = f.read()
+            self.scrollable_text_area.setText(file_contents)
+
+        vbox.addWidget(self.scrollable_text_area)
+
+        pagelayout.addLayout(vbox)
+
+        self.setLayout(pagelayout)
+
+class tipsWidget(QDialog):
+    """
+    Purpose: Initialize script window to allow user to perform special operations
+    """
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Script Window')
+        self.setGeometry(180, 60, 700, 400)
+        pagelayout = QVBoxLayout()
+
+
+        # creating the script workspace
+        vbox = QVBoxLayout()
+        text = 'Analysis Tips'
+        self.title = QLabel(text)
+        self.title.setWordWrap(True)
+        self.title.setAlignment(Qt.AlignCenter)
+        vbox.addWidget(self.title)
+
+        self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
+        self.scrollable_text_area.setReadOnly(True)
+
+        with open('tips.txt', 'r',encoding='ISO-8859-1') as f:
             file_contents = f.read()
             self.scrollable_text_area.setText(file_contents)
 
