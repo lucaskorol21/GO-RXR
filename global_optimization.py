@@ -31,12 +31,14 @@ from data_structure import *
 import time
 from material_model import *
 import copy
+from Ti34_XAS_Python import GetTiFormFactor
+#import pygmo as pg
 
 global x_vars
 x_vars = []
 
 
-def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=False):
+def changeSampleParams(x, parameters, sample, backS, scaleF, script, orbitals, use_script=False):
     """
     Purpose: Change the parameters for the input sample for x-values
     :param x: A list that contains the new parameters values
@@ -52,6 +54,16 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     # Loop through each sample parameter
     for p in range(len(parameters)):
         params = parameters[p]
+        if params[0] == 'ORBITAL':
+            ffname = params[2]
+            if params[1] == 'DEXY':
+                orbitals[ffname][0] = x[p]
+            elif params[1] == 'DEXZYZ':
+                orbitals[ffname][1] = x[p]
+            elif params[1] == 'DEX2Y2':
+                orbitals[ffname][2] = x[p]
+            elif params[1] == 'DEZZ':
+                orbitals[ffname][3] = x[p]
 
         if params[0] == "SCALING FACTOR":  # scale the reflectivity spectra
             name = params[1]
@@ -197,7 +209,7 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, use_script=
     if use_script:
         sample = readScript(sample,script)
     # include th script functionality here
-    return sample, backS, scaleF
+    return sample, backS, scaleF, orbitals
 
 def isfloat(num):
     """
@@ -328,6 +340,16 @@ def readScript(sample, script):
                 else:  # key case
                     sample.setVariationConstant(layer, symbol, identifier,  variables[key])
 
+            elif function.lower() == 'setmultivarconstant':
+                import ast
+                layer = int(params[0])  # gets layer index
+                symbol = params[1].strip(' ')  # gets element symbol
+                identifier = ast.literal_eval(params[2].replace(" ",","))  # gets element variation identifier
+                key = ast.literal_eval(params[3].replace(" ",","))  # gets value or key
+
+                sample.setMultiVarConstant(layer, symbol, identifier,  key)
+
+
             elif function.lower() == 'setratio':
                 layer = int(params[0])  # gets layer index
                 symbol = params[1].strip(' ')  # get element symbol
@@ -391,6 +413,20 @@ def rolling_average(R, window, iter=1):
             R = np.convolve(R, kernel, mode='same')
     return R
 
+def arc_length(R,Rsim,qz):
+    if len(R) == 0:
+        arc = 0
+    else:
+        arc = sum(np.sqrt(np.array(np.diff(R))**2 +np.array(np.diff(qz))**2))
+
+    if len(Rsim) == 0:
+        arcSim = 0
+    else:
+        arcSim = sum(np.sqrt(np.array(np.diff(Rsim))**2 +np.array(np.diff(qz))**2))
+
+    total_length = abs(arc-arcSim)
+    return total_length
+
 def total_variation(R, Rsim):
     """
     Purpose: Calculate the difference in the total variation between R and Rsim
@@ -401,7 +437,7 @@ def total_variation(R, Rsim):
     if len(R) == 0:
         totVar = 0
     else:
-        totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data (arc length)
+        totVar = sum([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data
 
     if len(Rsim) == 0:
         totVarSim = 0
@@ -411,6 +447,25 @@ def total_variation(R, Rsim):
     variation = abs(totVar-totVarSim)
     return variation
 
+def tv(R, Rsim):
+    """
+    Purpose: Calculate the difference in the total variation between R and Rsim
+    :param R: Smoothed reflectivity data
+    :param Rsim: Reflectivity simulation
+    :return: Difference in total variation
+    """
+    if len(R) == 0:
+        totVar = 0
+    else:
+        totVar = np.array([abs(R[idx+1]-R[idx]) for idx in range(len(R)-1)])/len(R)  # total variation in fitted data
+
+    if len(Rsim) == 0:
+        totVarSim = 0
+    else:
+        totVarSim = np.array([abs(Rsim[idx+1]-Rsim[idx]) for idx in range(len(Rsim)-1)])/len(Rsim)  # total variation in simulation
+
+    variation = abs(totVar-totVarSim)
+    return variation
 
 def scanCompute(x, *args):
     """
@@ -438,13 +493,22 @@ def scanCompute(x, *args):
     smooth_dict = args[12]  # dictionary of already smoothed out data
     script = args[13]
     use_script = args[14]
+    orbitals = args[15]
+    sf_dict = args[16]
 
     # determines if saving will be done in callback function
     if optimizeSave:
         x_vars.append(x)
 
     # change the sample parameters
-    sample, backS, scaleF = changeSampleParams(x, parameters, sample, backS, scaleF,script, use_script=use_script)
+    sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
+
+    my_list = [L[0] for L in parameters]
+
+    if 'ORBITAL' in my_list:
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
 
 
     i = 0 # keeps track of which boundary to use
@@ -472,7 +536,7 @@ def scanCompute(x, *args):
 
             qz = np.array(myData[0])  # retrieves momentum transfer
             # calculate simulation
-            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor)
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
@@ -514,12 +578,13 @@ def scanCompute(x, *args):
                 # calculates cost function depending on objective function used
                 if n != 0:
                     if objective == 'Chi-Square':
-                        fun_val = fun_val + sum((Rdat[idx]-Rsim[idx])**2/abs(Rsim[idx]))*w
+                        fun_val = fun_val + sum((Rdat[idx]-Rsim[idx])**2/np.absolute(Rsim[idx]))*w
                     elif objective == 'L1-Norm':
                         fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
                     elif objective == 'L2-Norm':
                         fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
-
+                    elif objective == 'Arctan':
+                        fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
             fun = fun + fun_val/m  # updates cost function
 
             # calculates total variation over entire boundary
@@ -538,7 +603,221 @@ def scanCompute(x, *args):
             n = len(Rdat)
 
             # calculates simulation
-            E, Rsim = sample.energy_scan(Theta, E)
+            E, Rsim = sample.energy_scan(Theta, E, sf_dict=sf_dict)
+            Rsim = Rsim[pol]
+
+            j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
+            E = E[j]
+
+            if len(Rsim) != len(j):
+                Rsim = Rsim[j]
+            if len(Rdat) != len(j):
+                Rdat = Rdat[j]
+            if len(Rsmooth) != len(j):
+                Rsmooth = Rsmooth[j]
+            # transforms data and simulation as specified by user
+            if r_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+                Rsmooth = np.log10(Rsmooth)
+            elif r_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+                Rsmooth = np.log(Rsmooth)
+            elif r_scale == 'qz^4':
+                qz = np.sin(Theta*np.pi/180)*(E * 0.001013546143)
+                Rsim = np.multiply(Rsim, np.power(qz, 4))
+                Rdat = np.multiply(Rdat, np.power(qz, 4))
+                Rsmooth = np.multiply(Rsmooth, np.power(qz,4))
+            elif r_scale == 'x':
+                pass
+
+            m = 0  # keeps track of total number of points used in specified boundary
+            for b in range(len(xbound)):
+                lw = xbound[b][0]  # upper boundary
+                up = xbound[b][1]  # lower boundary
+                w = weights[b]  # weights
+
+                idx = [x for x in range(len(E)) if E[x] >= lw and E[x] < up]  # determines index boundaries
+
+                n = len(idx)
+                m = m + n  # update number of points used
+
+                # determines which objective function to use
+                if len(idx) != 0:
+                    Rnew = (Rdat - min(Rdat)) / (max(Rdat) - min(Rdat))
+                    Rnew_s = (Rsim - min(Rdat)) / (max(Rdat) - min(Rdat))
+                    if objective == 'Chi-Square':
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx])) * w
+                        else:
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                    elif objective == 'L1-Norm':
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum(np.abs(Rnew[idx] - Rnew_s[idx])) * w
+                        else:
+                            fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif objective == 'L2-Norm':
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx])**2) * w
+                        else:
+                            fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+                    elif objective == 'Arctan':
+                        if r_scale == 'x':
+                            fun_val = fun_val + sum(np.arctan((Rnew[idx] - Rnew_s[idx]) ** 2)) * w
+                        else:
+                            fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
+
+            fun = fun + fun_val/m  # calculates cost function
+
+            # calculates the total variation for entire boundary
+            var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
+            gamma = gamma + total_variation(Rsmooth[var_idx], Rsim[var_idx])/len(Rsmooth[var_idx])
+
+    fun = fun + gamma*shape_weight  # adds the total variation to the cost function
+
+    return fun
+
+def residuals(x, *args):
+    """
+    Purpose: Calculate the cost function for the data fitting algorithms
+    :param x: List of parameters values
+    :param args: List of required parameters for cost function calculation
+    :return:
+    """
+
+    fun = np.array([])  # used to minimize the global optimization
+    gamma = np.array([])
+
+    sample = args[0]  # slab class
+    scans = args[1]  # list of scan names to use in cost function
+    data = args[2]  # Data for all scans
+    backS = args[3]  # background shift
+    scaleF = args[4]  # scaling factor
+    parameters = args[5]  # list of parameters to change
+    sBounds = args[6]  # defines the bounds of the scans
+    sWeights = args[7]  # defines the weights for each scan
+    objective = args[8]  # defines methodology in cost function (chi-square, L1-norm, L2-norm)
+    shape_weight = args[9]  # total variation weighting
+    optimizeSave = args[10]  # save optimization values
+    r_scale = args[11]  # defines how to transform R [log(x), ln(x), x, qz^4]
+    smooth_dict = args[12]  # dictionary of already smoothed out data
+    script = args[13]
+    use_script = args[14]
+    orbitals = args[15]
+    sf_dict = args[16]
+
+    # determines if saving will be done in callback function
+    if optimizeSave:
+        x_vars.append(x)
+
+    # change the sample parameters
+    sample, backS, scaleF, orbitals = changeSampleParams(x, parameters, sample, backS, scaleF,script, orbitals, use_script=use_script)
+
+    my_list = [L[0] for L in parameters]
+
+    if 'ORBITAL' in my_list:
+        for okey in list(orbitals.keys()):
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]))
+            sf_dict[okey] = my_data
+
+
+    i = 0 # keeps track of which boundary to use
+    for scan in scans:
+
+        scanType = scan[1]  # retrieves scan type
+        name = scan[2]  # name of scan
+
+        Rsmooth = smooth_dict[name]['Data'][2]  # retrieve smoothed data scan
+
+        xbound = sBounds[i]  # scan boundaries
+        weights = sWeights[i]  # scan weights
+        i = i + 1
+        background_shift = float(backS[name])  # retrieves the background shift
+        scaling_factor = float(scaleF[name])  # retrieves the scaling factor
+        if scanType == 'Reflectivity':  # reflectivity scan case
+            myDataScan = data[name]
+            myData = myDataScan['Data']  # retrieves original data
+            E = myDataScan['Energy']  # retrieves energy pf scan
+            pol = myDataScan['Polarization']  # retrieves polarization of scan
+            Rdat = np.array(myData[2])  # retrieves the reflectivity
+
+            fun_val = 0  # for cost function calculation
+
+
+            qz = np.array(myData[0])  # retrieves momentum transfer
+            # calculate simulation
+            qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor,sf_dict=sf_dict)
+            Rsim = Rsim[pol]
+
+            j = [x for x in range(len(qz)) if qz[x] > xbound[0][0] and qz[x] < xbound[-1][-1]]
+            qz = qz[j]
+            if len(Rsim) != len(j):
+                Rsim = Rsim[j]
+            if len(Rdat) != len(j):
+                Rdat = Rdat[j]
+            if len(Rsmooth) != len(j):
+                Rsmooth = Rsmooth[j]
+            # transforms R depending on users selection
+            if r_scale == 'log(x)':
+                Rsim = np.log10(Rsim)
+                Rdat = np.log10(Rdat)
+                Rsmooth = np.log10(Rsmooth)
+            elif r_scale == 'ln(x)':
+                Rsim = np.log(Rsim)
+                Rdat = np.log(Rdat)
+                Rsmooth = np.log(Rsmooth)
+            elif r_scale == 'qz^4':
+                Rsim = np.multiply(Rsim, np.power(qz,4))
+                Rdat = np.multiply(Rdat, np.power(qz,4))
+                Rsmooth = np.multiply(Rsmooth, np.power(qz,4))
+            elif r_scale == 'x':
+                pass
+
+            # calculate the cost function
+            m = 0  # keeps track of total number of data values used for each scan
+            for b in range(len(xbound)):
+                lw = xbound[b][0]  # lower boundary
+                up = xbound[b][1]  # upper boundary
+                w = weights[b]  # weights
+
+                # determines indices of qz values found in boundary
+                idx = [x for x in range(len(qz)) if qz[x] >= lw and qz[x] < up]  # determines index boundaries
+                n = len(idx)
+                m = m + n  # updates number of data points used
+
+                # calculates cost function depending on objective function used
+                if n != 0:
+                    if objective == 'Chi-Square':
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
+                        #fun_val = fun_val + sum((Rdat[idx]-Rsim[idx])**2/np.absolute(Rsim[idx]))*w
+                    elif objective == 'L1-Norm':
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
+                        #fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                    elif objective == 'L2-Norm':
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
+                        #fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+                    elif objective == 'Arctan':
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
+                        #fun_val = fun_val + sum(np.arctan((Rdat[idx] - Rsim[idx]) ** 2)) * w
+
+            # calculates total variation over entire boundary
+            var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][-1]]
+            #gamma = np.concatenate((gamma, tv(Rsmooth[var_idx], Rsim[var_idx])))
+
+        elif scanType == 'Energy':
+            myDataScan = data[name]
+            myData = myDataScan['Data']  # retrieves energy scan data
+            Theta = myDataScan['Angle']  # retrieves angle in degrees
+            Rdat = np.array(myData[2])  # obtains reflectivity data
+            E = np.array(myData[3])  # retrieves list of energy
+            pol = myDataScan['Polarization']  # retrieves polarization of scan
+            fun_val = 0
+
+            n = len(Rdat)
+
+            # calculates simulation
+            E, Rsim = sample.energy_scan(Theta, E,sf_dict=sf_dict)
             Rsim = Rsim[pol]
 
             j = [x for x in range(len(E)) if E[x] > xbound[0][0] and E[x] < xbound[-1][-1]]
@@ -581,27 +860,28 @@ def scanCompute(x, *args):
                 # determines which objective function to use
                 if len(idx) != 0:
                     if objective == 'Chi-Square':
-                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
                     elif objective == 'L1-Norm':
-                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
                     elif objective == 'L2-Norm':
-                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx])**2) * w
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
+                    elif objective == 'Arctan':
+                        fun = np.concatenate((fun, (Rdat[idx]-Rsim[idx])*w))
 
-            fun = fun + fun_val/m  # calculates cost function
+            #fun = fun + fun_val/m  # calculates cost function
 
             # calculates the total variation for entire boundary
             var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
-            gamma = gamma + total_variation(Rsmooth[var_idx], Rsim[var_idx])/len(Rsmooth[var_idx])
+            #gamma = np.concatenate((gamma, tv(Rsmooth[var_idx], Rsim[var_idx])))
 
-    fun = fun + gamma*shape_weight  # adds the total variation to the cost function
+    #fun = fun + gamma*shape_weight  # adds the total variation to the cost function
 
     return fun
-
 """
 Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
 evolution wrapper. 
 """
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,use_script=False):
     """
     Purpose: wrapper used to setup and run the scipy differential evolution algorithm
     :param sample: slab class
@@ -636,7 +916,8 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script]  # required format for function scanCompute
+
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict]  # required format for function scanCompute
 
 
     p=True
@@ -659,7 +940,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -669,7 +950,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -687,7 +968,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -696,7 +977,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script, orbitals, sf_dict]
 
     p = True
     if goParam[6] == 'True':
@@ -717,7 +998,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
-def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, use_script=False):
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script,orbitals, sf_dict, use_script=False):
     global x_vars
     x_vars = []
 
@@ -726,7 +1007,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]
 
     diff = goParam[8]
     _max = goParam[9]
@@ -741,13 +1022,14 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         _max = float(_max)
 
     if goParam[1] == 'lm':
-        result = optimize.least_squares(scanCompute, x0, args=params, jac=goParam[0], method=goParam[1],
+
+        result = optimize.least_squares(residuals, x0, args=params, jac=goParam[0], method=goParam[1],
                                         ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
                                         x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]),
                                         diff_step=diff,
                                         max_nfev=_max)
     else:
-        result = optimize.least_squares(scanCompute, x0,bounds=bounds, args=params, jac=goParam[0], method=goParam[1],
+        result = optimize.least_squares(residuals, x0,bounds=bounds, args=params, jac=goParam[0], method=goParam[1],
                                         ftol=float(goParam[2]), xtol=float(goParam[3]), gtol=float(goParam[4]),
                                         x_scale=float(goParam[5]), loss=goParam[6], f_scale=float(goParam[7]),
                                         diff_step=diff,
@@ -760,11 +1042,15 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
 
     print('Chi: ' + str(fun))
     print('Fitting parameters: ', x)
+    cov_matrix = np.linalg.inv(result.jac.T @ result.jac)
+    std_devs = np.sqrt(np.diag(cov_matrix))
+    #correlation_matrix = cov_matrix / np.outer(std_devs, std_devs)
+    print(np.diag(cov_matrix))
 
     f.close()
     return x, fun
 
-def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script, use_script=False):
+def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, use_script=False):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -774,7 +1060,7 @@ def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBound
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict]  # required format for function scanCompute
 
     # checking if locally biased
     p=True

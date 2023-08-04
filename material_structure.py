@@ -37,38 +37,52 @@ from scipy.special import erf
 import warnings
 import copy
 
+def find_ff(element,E, ff_dict):
+    F = form_factor(ff_dict[element], E)
+    return F
+
 @njit()
-def ALS(alpha, beta, precision=1e-6):
+def ALS(beta, delta, beta_m, delta_m, precision=1e-6):
     """
-    Purpose: Return the indices for the adaptive layer segmentation
-    :param alpha: numpy array of refractive form factor values
+    Purpose: Return a list of the indices for the adaptive layer segmentation
+    :param alpha: numpy array of refractive component
     :param beta: numpy array of absorptive form factor values
     :param precision: precision value used in slicing
     :return: my_slabs - contains indices for slicing
     """
 
-    alpha = alpha /np.linalg.norm(alpha)  # normalize the refractive component
-    beta = beta /np.linalg.norm(beta)  # normalize the absorptive component
+    beta = beta /np.linalg.norm(beta)  # normalize the refractive component
+    delta = delta /np.linalg.norm(delta)  # normalize the absorptive component
+    beta_m = beta_m/np.linalg.norm(beta_m)
+    delta_m = delta_m / np.linalg.norm(delta_m)
 
     idx_a = 0  # keeps track of surface of previous slab
 
-    n = alpha.size
+    n = beta.size
     my_slabs = np.zeros(n) # pre-initialize the slab array to the maximum number of slabs possible
 
     dsSlab = 1  # counts the number of slices
     for idx_b in range(1,n):
 
-        # retrieves permittivity values
-        f1 = alpha[idx_a]
-        f2 = alpha[idx_b]
-        f1b = beta[idx_a]
-        f2b = beta[idx_b]
+        # retrieves optical values
+        f1 = beta[idx_a]
+        f2 = beta[idx_b]
+        f1d = delta[idx_a]
+        f2d = delta[idx_b]
 
-        delta_a = np.absolute(f2-f1)  # varitation of refractive component
-        delta_b = np.absolute(f2b-f1b)  # variation of absorptive component
+        # retrieved magneto-optical values
+        f1m = beta_m[idx_a]
+        f2m = beta_m[idx_b]
+        f1dm = delta_m[idx_a]
+        f2dm = delta_m[idx_b]
+
+        var_b = np.absolute(f2-f1)  # varitation of refractive component
+        var_d = np.absolute(f2d-f1d)  # variation of absorptive component
+        var_bm = np.absolute(f2m - f1m)  # varitation of the magnetic refractive component
+        var_dm = np.absolute(f2dm - f1dm)  # variation of magnetic absorptive component
 
         # checks if variation meets precision value if not check next value
-        if delta_a>precision or delta_b>precision:
+        if var_b>precision or var_d>precision or var_bm>precision or var_dm>precision:
             my_slabs[dsSlab] = idx_b
             idx_a = idx_b  # change previous slice location
             dsSlab = dsSlab + 1
@@ -807,8 +821,8 @@ class slab:
         thickness = np.array([])  # thickness array
         density_struct = {k: np.array([]) for k in self.myelements}  # hold structure density
         density_poly = {k: dict() for k in list(self.poly_elements.keys())}  # hold polymorph elements
-        density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
-
+        #density_mag = {k: dict() for k in list(self.mag_elements.keys())}  # hold magnetic elements
+        density_mag = {k: dict() for k in list(self.find_sf[1].keys())}
 
         # Pre-initialized density_poly array
         for ele in list(self.poly_elements.keys()):
@@ -877,7 +891,9 @@ class slab:
                         if ele not in self.find_sf[0]:
                             self.find_sf[0][ele] = self.structure[layer][ele].scattering_factor
                             name = self.structure[layer][ele].scattering_factor
-                            #self.eShift[name] = 0
+                            if name not in self.eShift.keys():
+                                self.eShift[name] = 0
+                                self.ff_scale[name] = 1
 
 
                         sigma = self.structure[layer][ele].roughness  # roughness parameterization
@@ -984,7 +1000,9 @@ class slab:
                             if ele not in self.find_sf[0]:
                                 self.find_sf[0][poly] = self.structure[layer][ele].scattering_factor[po]
                                 name = self.structure[layer][ele].scattering_factor[po]
-                                #self.eShift[name] = 0
+                                if name not in self.eShift.keys():
+                                    self.eShift[name] = 0
+                                    self.ff_scale[name] = 1
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1131,9 +1149,11 @@ class slab:
 
         # Create magnetic dictionary
         density_magnetic = dict()
+
         for ele in list(density_mag.keys()):
             for mag in list(density_mag[ele].keys()):
-                density_magnetic[mag] = density_mag[ele][mag]
+                if mag in list(self.find_sf[1].keys()):
+                    density_magnetic[mag] = density_mag[ele][mag]
 
         self.transition = transition  # keeps track of transition
         return thickness, density, density_magnetic
@@ -1189,7 +1209,7 @@ class slab:
 
 
 
-    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1):
+    def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1, sf_dict={}):
 
         """
         Purpose: Takes the model of the material and computes the reflection
@@ -1201,36 +1221,57 @@ class slab:
         :param bShift: float containing the background shift value
         :param sFactor: float containing the scaling factor value
         :return:
-            qz - momentum transfer
+            qz - numpy array containing the momentum transfer
             R - dictionary for simulated reflectivity for the different types of x-ray polarizations
 
         """
-
 
         h = 4.135667696e-15  # Plank's constant eV*s
         c = 2.99792458e8  # speed of light m/s
         wavelength = h * c / (E * 1e-10)  # wavelength of incoming x-ray
 
         # computes density profile based on the defined model (depth-dependent concentration)
-        thickness, density, density_magnetic = self.density_profile(step=0.1)
+        thickness, density, density_magnetic = self.density_profile(step=s_min)
 
         sf = dict()  # scattering factors of non-magnetic components
         sfm = dict()  # scattering factors of magnetic components
 
+        #print(self.find_sf[1])
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+        else:
+            # Non-Magnetic Scattering Factor - no need to access original
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_ff(self.find_sf[0][e],E+dE,sf_dict)
 
-        # Non-Magnetic Scattering Factor
-        for e in self.find_sf[0].keys():
-            dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
-            scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
-            sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
-        # Magnetic Scattering Factor
-        for em in self.find_sf[1].keys():
-            dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], E + dE, True) * scale
+
 
         delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
         delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates depth-dependent magnetic components
+        if type(delta_m) != list and type(delta_m) != np.ndarray:
+            delta_m = np.zeros(len(delta))
+        if type(beta_m) != list and type(beta_m) != np.ndarray:
+            beta_m = np.zeros(len(beta))
+
+        #if type(delta_m) != list and type(beta_m) != list:
+        #    delta_m = delta
+        #    beta_m = beta
 
         # definition of magneto-optical constant as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
@@ -1240,7 +1281,7 @@ class slab:
         Q = np.vectorize(complex)(beta_m, delta_m)
         epsilon_mag = Q*epsilon*2*(-1)
 
-        my_slabs = ALS(epsilon.real, epsilon.imag, precision)  # performs the adaptive layer segmentation using Numba
+        my_slabs = ALS(epsilon.real, epsilon.imag, Q.real, Q.imag, precision)  # performs the adaptive layer segmentation using Numba
 
         my_slabs = my_slabs.astype(int)  # sets all values in my_slab to integers
 
@@ -1248,6 +1289,7 @@ class slab:
 
 
         m = len(my_slabs)  # number of slabs
+
         A =pr.Generate_structure(m)  # initializes Pythonreflectivity object class
 
         m_j=0  # previous slab
@@ -1270,7 +1312,7 @@ class slab:
             if layer == 0:
                 if self.layer_magnetized[0]:
                     for ele in self.structure[layer].keys():
-                        if self.structure[0][ele].mag_scattering_factor != None:
+                        if len(self.structure[0][ele].mag_scattering_factor) != 0:
                             gamma = self.structure[0][ele].gamma
                             phi = self.structure[0][ele].phi
 
@@ -1339,7 +1381,7 @@ class slab:
 
         return qz, R
 
-    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1):
+    def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1, sf_dict={}):
         """
         Purpose: Compute the energy scan spectra
         :param Theta: Grazing angle in degrees
@@ -1374,16 +1416,28 @@ class slab:
         sfm = dict()
         sf = dict()
 
-        # Non-Magnetic Scattering Factor
-        for e in self.find_sf[0].keys():
-            dE = float(self.eShift[self.find_sf[0][e]])
-            scale = float(self.ff_scale[self.find_sf[0][e]])
-            sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
-        # Magnetic Scattering Factor
-        for em in self.find_sf[1].keys():
-            dE = float(self.mag_eShift[self.find_sf[1][em]])
-            scale = float(self.ffm_scale[self.find_sf[1][em]])
-            sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+        else:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_ff(self.find_sf[0][e], energy + dE, sf_dict)
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True) * scale
 
 
         d_len = len(thickness)
@@ -1391,14 +1445,13 @@ class slab:
 
         delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
 
-
         epsilon = 1 - 2*delta + 1j*beta*2  # dielectric constant
 
         # definition as described in Lott Dieter Thesis
         Q = beta_m + 1j*delta_m  # magneto-optical constant
         epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
         # retrieves the slabs at each energy using list comprehension
-        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, Q[E].real, Q[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
 
         # initializes the object for reflectivity computation using list comprehension
 
@@ -1519,7 +1572,7 @@ class slab:
     def setVariationConstant(self, layer, symbol, identifier, val):
         """
         Purpose: Sets element variation of a certain layer to a constant value
-        :param layer: Layer as an interger type
+        :param layer: Layer as an integer type
         :param symbol: Symbol of element or dummy variable
         :param identifier: Element variation identifier
         :param val: Constant value as float type
@@ -1544,6 +1597,45 @@ class slab:
                     self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
 
                 self.structure[layer][symbol].poly_ratio[idx] = val  # sets constant ratio value
+
+    def setMultiVarConstant(self, layer, symbol, identifier, value):
+        """
+        Purpose: Sets multiple element variation ratios constant. This is ideal when optimizing an element with more than four variations.
+                 It should be noted that this function only works when only two element variations are allowed to vary.
+        :param layer: integer type that signals the layer
+        :param symbol: Symbol of the element or dummy variable
+        :param identifier: List of identifiers to hold constant
+        :param value: List of the ratio values
+        :return:
+        """
+
+        gamma = 1-sum(value)  # value of remaining element variations ratio sum
+        keys = list(self.structure[layer].keys())  # finds all the elements in the selected layer
+
+        # loops through elements in the layer until symbol is found
+        if symbol in keys:
+            if len(self.structure[layer][symbol].polymorph) - len(identifier) == 2:
+                # determines the index for the variations to hold constant
+
+                idx = [i for i in range(len(self.structure[layer][symbol].polymorph)) if self.structure[layer][symbol].polymorph[i] not in identifier]
+
+
+                beta = sum(self.structure[layer][symbol].poly_ratio[idx])  # sum of the polymorphs
+
+                # sets non-constant element variation ratio's appropriately
+                for i in idx:
+                    r = self.structure[layer][symbol].poly_ratio[i]
+                    self.structure[layer][symbol].poly_ratio[i] = gamma * r / beta
+
+                # sets the constant values
+                my_i = 0
+                # loops through each keys in the polymorphs
+                for i,key in enumerate(self.structure[layer][symbol].polymorph):
+                    if key in identifier:  # if the key is in the identifiers than set the appropriate value
+                        self.structure[layer][symbol].poly_ratio[i] = value[my_i]
+                        my_i = my_i + 1
+
+
 
     def setRatio(self,layer, symbol, identifier1, identifier2, ratio):
         """

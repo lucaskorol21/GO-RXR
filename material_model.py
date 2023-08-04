@@ -39,6 +39,7 @@ with open('form_factor.pkl', 'rb') as f:
     ff_temp = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
     for key in ff_temp.keys():
         ff[key] = ff_temp[key]['Data']
+
 f.close()
 
 # Loads the magnetic form factors stored in our database
@@ -49,6 +50,15 @@ with open('form_factor_magnetic.pkl','rb') as f:
     for key in ffm_temp.keys():
         ffm[key] = ffm_temp[key]['Data']
 f.close()
+
+def change_ff(ffname, value):
+    # changes the value of a form factor
+    ff[ffname] = value
+
+def retrieve_ff():
+    # retrieve the form factor dictionary
+    # This is mainly used when retrieving the dictionary in a different python script
+    return ff
 
 def _use_given_ff(directory):
     """
@@ -108,6 +118,9 @@ def form_factor(f,E):
 
     return F
 
+
+
+
 def find_form_factor(element, E, mag):
     """
     Purpose: Return the magnetic or non-magnetic form factor of a selected element and energy
@@ -156,7 +169,7 @@ def MOC(rho, sfm, E, n):
     delta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
     beta_m = np.array([np.zeros(n) for x in range(len(E))])  # pre-initialization
     # Computes the dispersive and absorptive components of the magnetic-optical constant using list comprehensions
-    for element in elements:
+    for element in sfm.keys():
         delta_m = delta_m + np.array(
             [constant[x] * sfm[element][x, 0] * rho[element] for x in range(len(sfm[element][:, 0]))])
         beta_m = beta_m + np.array(
@@ -276,14 +289,7 @@ def index_of_refraction(rho, sf, E):
 if __name__ == "__main__":
 
 
-    E = 800 # Xray Energy
-    h = 4.135667696e-15  # Plank's Constant [eV s]
-    c = 2.99792450e18  # Speed of light in vacuum [A/s]
-
-    Theta = np.linspace(0.1, 89.9, 899)  # Angles
-    wavelength = (h*c)/E  # Wavelength (same unit as roughness) (Angstroms or nm)
-    test = np.loadtxt('test_example.txt')  # Data from ReMagX
-
+    print('Hello World!')
 
 
 
