@@ -74,7 +74,8 @@ Once all of this is setup the python file GUI_GO.py can be run. This will open u
 ## Download
 Currently, there are a few updates that still need to be done before a stand-alone application can be downloaded. The application for GO-RXR is planned to be launched in July of 2023 and will be made accessible throught the link below.
 
-- [Download](https://research-groups.usask.ca/qmax/people.php)
+- [DO-RXR](https://research-groups.usask.ca/qmax/people.php)
+- [Visual Studio Installer](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 
 ## Credits
