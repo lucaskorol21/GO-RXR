@@ -1,9 +1,7 @@
 import os
 
 from collections import Counter
-import numpy as np
 import material_structure as ms
-import matplotlib.pyplot as plt
 import pickle
 import unittest
 
