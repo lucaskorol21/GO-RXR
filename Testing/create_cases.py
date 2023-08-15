@@ -78,7 +78,7 @@ def unitCell_model():
     sample.polymorphous(4, 'A', ['Sr', 'La'], [0, 1], sf=['Sr', 'La'])
     sample.polymorphous(4, 'B', ['Ti', 'Mn2', 'Mn3'], [0, 0, 1], sf=['Ti', 'Fe', 'Mn'])
     sample.polymorphous(5, 'A', ['Sr', 'La'], [0, 1], sf=['Sr', 'La'])
-    sample.polymorphous(5, 'B', ['Ti', 'Mn2', 'Mn3'], [0, 0.1, 0.9], sf=['Ti', 'Fe', 'Mn'])
+    sample.polymorphous(5, 'B', ['Ti', 'Mn2', 'Mn3'], [0, 0, 1], sf=['Ti', 'Fe', 'Mn'])
 
     thickness, density, mag_density = sample.density_profile()
 

@@ -635,7 +635,7 @@ class slab:
         # Chekcs that all poly_ratio types are floating points
         for x in poly_ratio:
             if type(x) != int and type(x) != float:
-                raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be type float or interger.')
+                raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio can only be type float or interger.')
 
 
         if abs(1 - sum(poly_ratio)) > 1e-3:
