@@ -631,14 +631,11 @@ class slab:
         if len(poly_ratio) != len(polymorph):
             raise RuntimeError('Layer ' + str(lay) + ': variables poly_ratio and polymorph must be same length.')
 
-        # Checks that all polymorphous types are strings
-        if len(set([type(x) for x in polymorph])) != 1:
-            raise TypeError('Layer ' +str(lay)+ ': variable polymorph must only contain strings.')
 
         # Chekcs that all poly_ratio types are floating points
         for x in poly_ratio:
             if type(x) != int and type(x) != float:
-                raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
+                raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be type float or interger.')
 
 
         if abs(1 - sum(poly_ratio)) > 1e-3:
