@@ -1,3 +1,4 @@
+import importlib
 import os
 
 from collections import Counter
@@ -5,13 +6,7 @@ import material_structure as ms
 import pickle
 import unittest
 
-def saveTest(data, fname):
-
-    my_dir = os.getcwd()
-
-    filename = my_dir + '/test_data/' + fname
-    with open(filename, 'wb') as file:
-        pickle.dump(data, file)
+importlib.reload(ms)
 
 
 class TestDensityProfile(unittest.TestCase):
@@ -32,7 +27,10 @@ class TestDensityProfile(unittest.TestCase):
         test_case['Thickness'] = thickness
 
         filename = 'simple_density.pkl'
-        my_path = os.getcwd() + '/test_data/' + filename
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -65,7 +63,10 @@ class TestDensityProfile(unittest.TestCase):
         test_case['Thickness'] = thickness
 
         filename = 'var_density.pkl'
-        my_path = os.getcwd() + '/test_data/' + filename
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -92,7 +93,10 @@ class TestDensityProfile(unittest.TestCase):
         test_case['Thickness'] = thickness
 
         filename = 'surfaceImpurity_density.pkl'
-        my_path = os.getcwd() + '/test_data/' + filename
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -137,7 +141,10 @@ class TestDensityProfile(unittest.TestCase):
         test_case['Thickness'] = thickness
 
         filename = 'unitCell_density.pkl'
-        my_path = os.getcwd() + '/test_data/' + filename
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -151,20 +158,139 @@ class TestDensityProfile(unittest.TestCase):
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
-    #def linkedRoughness_test(self):
-    #    pass
+    def test_linkedRoughness(self):
+        sample = ms.slab(3)
+        sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+        sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, 0.084], roughness=[0, 1, 3],
+                        linked_roughness=[False, 0.25, False])
+        sample.addlayer(2, 'SrTiO3', 20, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5],
+                        linked_roughness=[4, 4.5, False])
 
-    #def elementVar_test(self):
-    #    pass
+        sample.polymorphous(1, 'Mn', ['Mn2', 'Mn3'], [0.5, 0.5], sf=['Fe', 'Mn'])
 
-    #def magnetic_test(self):
-    #    pass
+        thickness, density, mag_density = sample.density_profile()
 
-    #def dummyVar_test(self):
-    #    pass
+        test_case = density
+        test_case['Thickness'] = thickness
 
-    #def negative_test(self):
-    #    pass
+        filename = 'linked_density.pkl'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+
+        with open(my_path, 'rb') as file:
+            solution = pickle.load(file)
+
+        # len(loaded_data)
+        # Counter(loaded_data)
+        self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
+        self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
+
+        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+
+        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+
+    def test_magnetic(self):
+        sample = ms.slab(3)
+        sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+        sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, 0.084], roughness=[0, 1, 3],
+                        linked_roughness=[False, 0.25, False])
+        sample.addlayer(2, 'SrTiO3', 20, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5],
+                        linked_roughness=[4, 4.5, False])
+
+        sample.polymorphous(1, 'Mn', ['Mn2', 'Mn3'], [0.5, 0.5], sf=['Fe', 'Mn'])
+
+        sample.magnetization(1, ['Mn2', 'Mn3'], [0.015, 0.01], ['Co', 'Ni'])
+
+        thickness, density, mag_density = sample.density_profile()
+
+        test_case = density
+        test_case['Thickness'] = thickness
+        for key in mag_density:
+            test_case['Mag:' + key] = mag_density[key]
+
+        filename = 'mag_density.pkl'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+
+        with open(my_path, 'rb') as file:
+            solution = pickle.load(file)
+
+        # len(loaded_data)
+        # Counter(loaded_data)
+        self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
+        self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
+
+        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+
+        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+
+    def test_dummy(self):
+        sample = ms.slab(3)
+        sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+        sample.addlayer(1, 'LaMnX0', 15, density=4, roughness=[0, 1, 3],
+                        linked_roughness=[False, 0.25, False])
+        sample.addlayer(2, 'SrTiQ0', 20, density=3.5, roughness=[1.5, 5, 2.5],
+                        linked_roughness=[4, 4.5, False])
+
+        thickness, density, mag_density = sample.density_profile()
+
+        test_case = density
+        test_case['Thickness'] = thickness
+
+        filename = 'dummy_density.pkl'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+
+        with open(my_path, 'rb') as file:
+            solution = pickle.load(file)
+
+        # len(loaded_data)
+        # Counter(loaded_data)
+        self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
+        self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
+
+        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+
+        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+
+    def test_negative_test(self):
+        sample = ms.slab(3)
+        sample.addlayer(0, 'SrTiO3', 50, density=[-0.028, 0.028, 0.084], roughness=[1.5, 5, -2.5])
+        sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, -0.084], roughness=[0, -1, 3],
+                        linked_roughness=[False, 0.25, False])
+        sample.addlayer(2, 'SrTiO3', 20, density=[0.028, -0.028, 0.084], roughness=[1.5, 5, 2.5],
+                        linked_roughness=[4, -4.5, False])
+
+        sample.magnetization(1, ['Mn'], [-0.015], ['Co'])
+
+        thickness, density, mag_density = sample.density_profile()
+
+        test_case = density
+        test_case['Thickness'] = thickness
+
+        filename = 'negative_density.pkl'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+
+        with open(my_path, 'rb') as file:
+            solution = pickle.load(file)
+
+        # len(loaded_data)
+        # Counter(loaded_data)
+        self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
+        self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
+
+        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+
+        self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
 if __name__ == '__main__':
     unittest.main()

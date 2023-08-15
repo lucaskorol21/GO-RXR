@@ -493,9 +493,17 @@ class slab:
             if density < 0:
                 warnings.warn('Layer ' + str(num_layer) + ': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
                 density = abs(density)
-                print(density)
             elif density >20:
                 warnings.warn('Layer ' + str(num_layer) + ': The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+        elif type(density) == list or type(density) == np.ndarray:
+            for idx,dens in enumerate(density):
+                if dens < 0:
+                    warnings.warn('Layer ' + str(
+                        num_layer) + ': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                    density[idx] = abs(dens)
+                elif dens > 20:
+                    warnings.warn('Layer ' + str(num_layer) + ': The density of ' + str(
+                        density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
         elif type(roughness) == list or type(roughness) == np.ndarray:
             if len(density) != num_elements:
                 raise ValueError('Density array must have same number of elements as does chemical formula')
@@ -704,6 +712,9 @@ class slab:
             for k in check:
                 if k != int and k != float:
                     raise TypeError('Values in density list must be either integers or floating point values')
+            for idx, dens in enumerate(density):
+                if dens<0:
+                    density[idx] = abs(dens)
 
         # Checks that all identifiers are strings
         if type(identifier) == list:
@@ -936,7 +947,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
-                            if type(self.structure[layer+1][ele].linked_roughness) is float:  # roughness is NOT linked to the previous site
+                            if type(self.structure[layer+1][ele].linked_roughness) is float or type(self.structure[layer+1][ele].linked_roughness) is int:  # roughness is NOT linked to the previous site
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:  # roughness is linked to the previous site
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1031,7 +1042,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if type(self.structure[layer+1][ele].linked_roughness) is float:
+                            if type(self.structure[layer+1][ele].linked_roughness) is float or type(self.structure[layer+1][ele].linked_roughness) is int:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1107,9 +1118,10 @@ class slab:
                         erf_func = self.error_function(thickness, sigma, offset, True) + 1
                         const = (next_density - current_density) / 2
 
-                        #ma = 0
+                        ma = 0
                         for mag in list(density_mag[ele].keys()):
-                            ma = list(self.structure[layer][ele].polymorph).index(mag)
+                            if len(self.structure[layer][ele].polymorph) != 0:
+                                ma = list(self.structure[layer][ele].polymorph).index(mag)
                             # finds magnetic scattering factors
                             if mag not in self.find_sf[1]:
                                 mag_sf = self.structure[layer][ele].mag_scattering_factor[ma]
@@ -1132,7 +1144,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if type(self.structure[layer+1][ele].linked_roughness) is float:
+                            if type(self.structure[layer+1][ele].linked_roughness) is float or type(self.structure[layer+1][ele].linked_roughness) is int:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element

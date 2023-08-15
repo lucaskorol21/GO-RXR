@@ -87,6 +87,74 @@ def unitCell_model():
 
     saveTest(test_case, 'unitCell_density.pkl')
 
+def linkedRough_model():
+    sample = ms.slab(3)
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+    sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, 0.084], roughness=[0, 1, 3],linked_roughness=[False,0.25,False])
+    sample.addlayer(2, 'SrTiO3', 20, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5], linked_roughness=[4,4.5,False])
+
+    sample.polymorphous(1, 'Mn', ['Mn2','Mn3'], [0.5,0.5], sf=['Fe', 'Mn'])
+
+    thickness, density, mag_density = sample.density_profile()
+
+    data = density
+    data['Thickness'] = thickness
+
+    saveTest(data, 'linked_density.pkl')
+
+def magnetic_model():
+    sample = ms.slab(3)
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+    sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, 0.084], roughness=[0, 1, 3],
+                    linked_roughness=[False, 0.25, False])
+    sample.addlayer(2, 'SrTiO3', 20, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5],
+                    linked_roughness=[4, 4.5, False])
+
+    sample.polymorphous(1, 'Mn', ['Mn2', 'Mn3'], [0.5, 0.5], sf=['Fe', 'Mn'])
+
+    sample.magnetization(1, ['Mn2','Mn3'], [0.015,0.01], ['Co','Ni'])
+
+    thickness, density, mag_density = sample.density_profile()
+
+    data = density
+    data['Thickness'] = thickness
+    for key in mag_density:
+        data['Mag:'+key] = mag_density[key]
+
+    saveTest(data, 'mag_density.pkl')
+
+def dummy_model():
+    sample = ms.slab(3)
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+    sample.addlayer(1, 'LaMnX0', 15, density=4, roughness=[0, 1, 3],
+                    linked_roughness=[False, 0.25, False])
+    sample.addlayer(2, 'SrTiQ0', 20, density=3.5, roughness=[1.5, 5, 2.5],
+                    linked_roughness=[4, 4.5, False])
+
+    thickness, density, mag_density = sample.density_profile()
+
+    data = density
+    data['Thickness'] = thickness
+
+    saveTest(data, 'dummy_density.pkl')
+
+def negative_model():
+    sample = ms.slab(3)
+    sample.addlayer(0, 'SrTiO3', 50, density=[-0.028, 0.028, 0.084], roughness=[1.5, 5, -2.5])
+    sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, -0.084], roughness=[0, -1, 3],
+                    linked_roughness=[False, 0.25, False])
+    sample.addlayer(2, 'SrTiO3', 20, density=[0.028, -0.028, 0.084], roughness=[1.5, 5, 2.5],
+                    linked_roughness=[4, -4.5, False])
+
+    sample.magnetization(1, ['Mn'], [-0.015], ['Co'])
+
+    thickness, density, mag_density = sample.density_profile()
+
+    data = density
+    data['Thickness'] = thickness
+
+    saveTest(data, 'negative_density.pkl')
+
 if __name__ == "__main__":
-    unitCell_model()
+
     print('DONE!')
