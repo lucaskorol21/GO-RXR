@@ -493,7 +493,7 @@ def MergeWithOffRes(inSpec,EShift,S1,S2,m,b,E1,w1,E2,w2,offresFile,element,c1,c2
 
 
 
-def GetTiFormFactor(dExy,dExzyz,dEx2y2,dEz2, nd=1,T=300,tenDq=2.12):
+def GetTiFormFactor(dExy,dExzyz,dEx2y2,dEz2, nd=0,T=300,tenDq=2.12):
 
 #prepath = "ff/"
 #OrbE = np.loadtxt(prepath + "OrbitalEnergies.txt")
@@ -501,6 +501,7 @@ def GetTiFormFactor(dExy,dExzyz,dEx2y2,dEz2, nd=1,T=300,tenDq=2.12):
   dExzyz = float(dExzyz)
   dEx2y2 = float(dEx2y2)
   dEz2 = float(dEz2)
+
   #Ops = load_obj("Ti34OpsPython")
   Ops = copy.deepcopy(OpsTi)
   
@@ -728,5 +729,6 @@ def GetTiFormFactor(dExy,dExzyz,dEx2y2,dEz2, nd=1,T=300,tenDq=2.12):
   
 #Example call
 
-#GetTiFormFactor(1,300,2.1,0.1,-0.1,0.1,-0.14)
+#data = GetTiFormFactor(0,0,0,0, nd=0,T=300,tenDq=2.12)
 
+#np.savetxt('Ti_sub.ff',data)

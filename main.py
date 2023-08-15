@@ -137,6 +137,10 @@ if __name__ == '__main__':
     from scipy.interpolate import UnivariateSpline
     import material_structure as ms
     import material_model as mm
+    from scipy.special import erf
+
+    print(erf(-1))
+    """
     #fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
 
@@ -154,6 +158,7 @@ if __name__ == '__main__':
     for val in result:
         print(isinstance(val, str))
     # Global Minimum Example
+    """
     """
     sample = ds.ReadSampleHDF5(fname)
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -465,7 +470,7 @@ if __name__ == '__main__':
     time_array = time_array/100/1e6
     plt.figure()
     plt.plot(slab_array[1:], time_array[1:] ,'o')
-    plt.xlabel('Number of Slabs', fontsize=12)
+    plt.xlabel('Number of Slices', fontsize=12)
     plt.ylabel('Average Execution Time (ms)', fontsize=12)
     plt.minorticks_on()
     plt.tick_params(which='both', direction='in', top=True, right=True)

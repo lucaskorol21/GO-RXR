@@ -483,6 +483,7 @@ class slab:
                         num_layer) + ': Thickness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
                 if thickness[idx] > 100:
                     warnings.warn('Layer ' + str(num_layer) + ': Thickness is much larger than expected')
+
         # Checks Density
         if density == None:
             pass
@@ -492,12 +493,19 @@ class slab:
             if density < 0:
                 warnings.warn('Layer ' + str(num_layer) + ': Density must be positive. The absolute value was taken as it was assumed the user meant to input a negative value.')
                 density = abs(density)
+                print(density)
             elif density >20:
-                warnings.warn('Layer ' + str(num_layer) + ': The density of ' + str(
-                    density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
-        elif type(density) == list or type(density) == np.ndarray:
+                warnings.warn('Layer ' + str(num_layer) + ': The density of ' + str(density) + ' g/cm^3 might be too large of a value. Consider double checking your density. ')
+        elif type(roughness) == list or type(roughness) == np.ndarray:
             if len(density) != num_elements:
                 raise ValueError('Density array must have same number of elements as does chemical formula')
+
+            for idx in range(len(density)):
+                if density[idx] < 0:
+                    density[idx] = abs(roughness[idx])
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                if density[idx] > 20:
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness is much larger than expected')
 
 
 
@@ -527,6 +535,15 @@ class slab:
             linked_roughness = temp_linked_roughness
         elif len(linked_roughness) != num_elements:
             ValueError('linked_roughness must have the same number of elements as chemical formula.')
+        if type(roughness) != list and type(roughness) != np.ndarray:
+            raise TypeError('Layer ' + str(num_layer) + ': Roughness must be of float, integer, list, or numpy.ndarray type.')
+        else:
+            for idx in range(len(linked_roughness)):
+                if linked_roughness[idx] < 0:
+                    linked_roughness[idx] = abs(linked_roughness[idx])
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness should be entered as a positive value. The absolute value was taken as it was assumed the user meant to input a negative value.')
+                if linked_roughness[idx] > 15:
+                    warnings.warn('Layer ' + str(num_layer) + ': Roughness is much larger than expected')
 
         # -------------------------------------------------------------------------------------------------------------#
         # Retrieve the element info
@@ -619,8 +636,9 @@ class slab:
             raise TypeError('Layer ' +str(lay)+ ': variable polymorph must only contain strings.')
 
         # Chekcs that all poly_ratio types are floating points
-        if len(set([type(x) for x in poly_ratio])) != 1:
-            raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
+        for x in poly_ratio:
+            if type(x) != int and type(x) != float:
+                raise TypeError('Layer ' +str(lay)+ ': variable poly_ratio must only be of type float.')
 
 
         if abs(1 - sum(poly_ratio)) > 1e-3:
@@ -808,7 +826,7 @@ class slab:
 
         return val
 
-    def density_profile(self, step = 0.1):
+    def density_profile(self, step=0.1):
         """
         Purpose: Creates the density profile based on the slab properties
         :return: thickness - thickness array in angstrom
@@ -921,7 +939,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer+1].keys()):  # element in next layer
-                            if self.structure[layer+1][ele].linked_roughness != False:  # roughness is NOT linked to the previous site
+                            if type(self.structure[layer+1][ele].linked_roughness) is float:  # roughness is NOT linked to the previous site
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:  # roughness is linked to the previous site
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1016,7 +1034,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness != False:
+                            if type(self.structure[layer+1][ele].linked_roughness) is float:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element
@@ -1117,7 +1135,7 @@ class slab:
                             next_density = current_density
                             sigma = 0
                         elif ele in list(self.structure[layer + 1].keys()):
-                            if self.structure[layer+1][ele].linked_roughness != False:
+                            if type(self.structure[layer+1][ele].linked_roughness) is float:
                                 sigma = self.structure[layer+1][ele].linked_roughness
                             else:
                                 position = self.structure[layer + 1][ele].position  # position of element

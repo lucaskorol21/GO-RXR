@@ -40,7 +40,6 @@ sequence can be done.
 """
 
 import matplotlib.pyplot as plt
-from prettytable import PrettyTable
 import os
 from material_structure import *
 from material_model import *
@@ -3028,75 +3027,6 @@ def ReadDataASCII(fname):
 
     return Sinfo, Sscan, SimInfo, SimScan, sample
 
-
-
-
-def selectScan(fname):
-    """
-    Purpose: Takes in the read in data and plots the data and the simulated data
-    :param Sinfo: Scan info
-    :param Sscan: Scan data
-    :param sample: Data sample for simulation
-    :return:
-    """
-    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
-
-    # Prints out the scans and their information
-    header = ['#', 'Scan Type', 'Energy', 'Angle', 'Polarization']
-    tab = PrettyTable(header)
-    dataNumber = list()
-    for scan in Sinfo:
-        data = [scan['dataNumber'], scan['scanType'], scan['energy'], scan['angle'], scan['polarization']]
-        dataNumber.append(str(scan['dataNumber']))
-        tab.add_row(data)
-
-    val = input('Select scan # you would like to use: ')
-    while val in dataNumber:
-        # Determines the scan to use based on #
-        val = int(val)
-        info = Sinfo[val-1]
-        simInfo = SimInfo[val-1]
-        data = Sscan[val-1]
-        simData = SimScan[val-1]
-
-        scan_type = info['scanType']  # determine the scan type
-        pol = info['polarization']  # determines the polarization of the scan
-        Rdata = data[1]  # retrieves the reflectivity information
-
-
-        if scan_type == 'Reflectivity':
-            E = info['energy']  # retrieves the energy
-            qz = np.array(data[0])  # gets momentum transfer of data
-
-            R = np.array(simData[1])
-            # Determines if the reflectivity of the data should be calculated
-            plt.figure()
-            plt.plot(qz, Rdata)
-            plt.plot(qz, R)
-            plt.legend(['Data', 'Simulation'])
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-
-
-
-        elif scan_type == 'Energy':
-            Theta = info['angle']  # angle of energy scan
-            energy = np.array(data[0])  # energy array
-            R = np.array(simData[1])
-
-            plt.figure(2)
-            plt.plot(energy, Rdata)
-            plt.plot(energy, R)
-            plt.legend(['Data', 'Simulation'])
-            # Again, determines if natural logarithm needs to be calculated
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-
-
-
-        plt.show()
-
-        val = input('Select scan # you would like to use: ')
 
 
 def hdf5ToDict(hform):

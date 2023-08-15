@@ -33,6 +33,7 @@ import os
 
 
 # Loads the non-magnetic form factors stored in our database
+my_dir = os.getcwd()
 with open('form_factor.pkl', 'rb') as f:
     global ff
     ff = dict()

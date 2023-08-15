@@ -404,7 +404,7 @@ if __name__ == '__main__':
     plt.tick_params(axis='y', labelleft=False)
     plt.show()
     """
-    """
+
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -465,12 +465,12 @@ if __name__ == '__main__':
     time_array = time_array/100/1e6
     plt.figure()
     plt.plot(slab_array[1:], time_array[1:] ,'o')
-    plt.xlabel('Number of Slabs', fontsize=12)
+    plt.xlabel('Number of Slices', fontsize=12)
     plt.ylabel('Average Execution Time (ms)', fontsize=12)
     plt.minorticks_on()
     plt.tick_params(which='both', direction='in', top=True, right=True)
     plt.show()
-    """
+
     """
     thickness, density, mag_density = sample.density_profile(step=0.01)
     idx = [i for i in range(len(thickness)) if thickness[i] <= 60]
