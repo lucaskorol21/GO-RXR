@@ -2,6 +2,7 @@ import os
 import pickle
 import material_structure as ms
 import matplotlib.pyplot as plt
+import material_model as mm
 
 
 def saveTest(data, fname):
@@ -156,5 +157,14 @@ def negative_model():
     saveTest(data, 'negative_density.pkl')
 
 if __name__ == "__main__":
+    form_factors = ['Co','Ni']
+    energy = [400,600,625,641.51,648.25,800]
 
+    solution = []
+    test_case = []
+    for ff in form_factors:
+        recast = [val for val in mm.find_form_factor(ff,energy,True)]
+        test_case += recast
+
+    print(test_case)
     print('DONE!')
