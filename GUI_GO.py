@@ -9467,9 +9467,9 @@ class progressWidget(QWidget):
                                               float(orbitals[okey][2]), float(orbitals[okey][3]))
 
                     sf_dict[okey] = my_data
-                    
-                gamma = 0
+
                 fun = 0
+                gamma = 0
 
                 for i, scan in enumerate(self.scans):
                     name = scan
@@ -9481,7 +9481,7 @@ class progressWidget(QWidget):
                     background_shift = float(backS[name])
                     scaling_factor = float(scaleF[name])
 
-                    if 'Angle' not in self.data.keys():
+                    if 'Angle' not in self.data[name].keys():
                         myDataScan = self.data[name]
                         myData = myDataScan['Data']
                         E = myDataScan['Energy']
@@ -9516,10 +9516,6 @@ class progressWidget(QWidget):
                         elif self.y_scale == 'x':
                             pass
 
-                        #window = 5
-                        #R = go.rolling_average(Rdat, window)
-                        # total variation
-                        #var_idx = [x for x in range(len(qz)) if qz[x] >= xbound[0][0] and qz[x] < xbound[-1][1]]
                         if len(Rsmooth) != 0:
                             val = go.total_variation(Rsmooth, Rsim) / len(Rsmooth)
                         else:
@@ -9555,6 +9551,7 @@ class progressWidget(QWidget):
                             fun = fun + fun_val / m
 
                     else:
+
                         myDataScan = self.data[name]
                         myData = myDataScan['Data']
                         Theta = myDataScan['Angle']
@@ -9583,18 +9580,13 @@ class progressWidget(QWidget):
                             Rdat = np.log(Rdat)
                             Rsmooth = np.log(Rsmooth)
                         elif self.y_scale == 'qz^4':
-                            qz = np.sin(Theta * np.pi / 180) * (E * 0.001013546143)
+                            qz = np.array(myData[0])
                             Rsim = np.multiply(Rsim, np.power(qz, 4))
                             Rdat = np.multiply(Rdat, np.power(qz, 4))
                             Rsmooth = np.multiply(Rsmooth, np.power(qz, 4))
                         elif self.y_scale == 'x':
                             pass
 
-                        #window = 5
-                        #R = go.rolling_average(Rdat, window)
-
-                        #var_idx = [x for x in range(len(E)) if E[x] >= xbound[0][0] and E[x] < xbound[-1][1]]
-                        # total variation
                         if len(Rsmooth) != 0:
                             val = go.total_variation(Rsmooth, Rsim) / len(Rsmooth)
                         else:
@@ -9617,19 +9609,19 @@ class progressWidget(QWidget):
                                 Rnew_s = (Rsim - min(Rdat)) / (max(Rdat) - min(Rdat))
                                 if self.objective == 'Chi-Square':
                                     if self.y_scale == 'x':
-                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx])) * w
+                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx]))
                                     else:
-                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx])) * w
+                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2 / abs(Rsim[idx]))
                                 elif self.objective == 'L1-Norm':
                                     if self.y_scale == 'x':
-                                        fun_val = fun_val + sum(np.abs(Rnew[idx] - Rnew_s[idx])) * w
+                                        fun_val = fun_val + sum(np.abs(Rnew[idx] - Rnew_s[idx]))
                                     else:
-                                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx])) * w
+                                        fun_val = fun_val + sum(np.abs(Rdat[idx] - Rsim[idx]))
                                 elif self.objective == 'L2-Norm':
                                     if self.y_scale == 'x':
-                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2) * w
+                                        fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2)
                                     else:
-                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2) * w
+                                        fun_val = fun_val + sum((Rdat[idx] - Rsim[idx]) ** 2)
                                 elif self.objective == 'Arctan':
                                     if self.y_scale == 'x':
                                         fun_val = fun_val + sum(np.arctan((Rnew[idx] - Rnew_s[idx]) ** 2)) * w
@@ -9640,6 +9632,7 @@ class progressWidget(QWidget):
                             self.costFun[name].append(fun_val / m)
                             self.objFun[name].append(fun_val / m + val * self.shape_weight)
                             fun = fun + fun_val / m
+
 
                 self.costFun['total'].append(fun)
                 self.varFun['total'].append(gamma * self.shape_weight)

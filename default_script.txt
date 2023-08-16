@@ -50,15 +50,15 @@
 #setVariationConstant(14,B,Mn2+,0.29622505384943193)
 
 # Multiple constant variations
-setMultiVarConstant(2,B,["Ti" "Mn2+"],[0.9368580115723412 0])
-setMultiVarConstant(3,B,["Ti" "Mn2+"],[0.8380563690203824 0])
-setMultiVarConstant(4,B,["Ti" "Mn2+"],[0.5798002115703154 0])
-setMultiVarConstant(5,B,["Ti" "Mn2+"],[0.006519066014363431 0])
-setMultiVarConstant(6,B,["Ti" "Mn2+"],[0 0])
+#setMultiVarConstant(2,B,["Ti" "Mn2+"],[0.9368580115723412 0])
+#setMultiVarConstant(3,B,["Ti" "Mn2+"],[0.8380563690203824 0])
+#setMultiVarConstant(4,B,["Ti" "Mn2+"],[0.5798002115703154 0])
+#setMultiVarConstant(5,B,["Ti" "Mn2+"],[0.006519066014363431 0])
+#setMultiVarConstant(6,B,["Ti" "Mn2+"],[0 0])
 
-setMultiVarConstant(14,B,["Ti" "Mn2+"],[0 0])
-setMultiVarConstant(15,B,["Ti" "Mn2+"],[0 0])
-setMultiVarConstant(16,B,["Ti" "Mn2+"],[0 0])
+#setMultiVarConstant(14,B,["Ti" "Mn2+"],[0 0])
+#setMultiVarConstant(15,B,["Ti" "Mn2+"],[0 0])
+#setMultiVarConstant(16,B,["Ti" "Mn2+"],[0 0])
 
 # ------------------------ Magnetic Density Workspace -------------------------#
 
@@ -66,14 +66,14 @@ setMultiVarConstant(16,B,["Ti" "Mn2+"],[0 0])
 # getMagDensity(layer,element, variation)
 
 
-rho = getMagDensity(7, B, Mn3+)
-setMagDensity(7, B,Mn3+,rho)
-setMagDensity(8, B,Mn3+,rho)
-setMagDensity(9, B,Mn3+,rho)
-setMagDensity(10, B,Mn3+,rho)
-setMagDensity(11, B,Mn3+,rho)
-setMagDensity(12, B,Mn3+,rho)
-setMagDensity(13, B,Mn3+,rho)
+#rho = getMagDensity(7, B, Mn3+)
+#setMagDensity(7, B,Mn3+,rho)
+#setMagDensity(8, B,Mn3+,rho)
+#setMagDensity(9, B,Mn3+,rho)
+#setMagDensity(10, B,Mn3+,rho)
+#setMagDensity(11, B,Mn3+,rho)
+#setMagDensity(12, B,Mn3+,rho)
+#setMagDensity(13, B,Mn3+,rho)
 #setMagDensity(14, B,Mn3-4,rho)
 #setMagDensity(15, B,Mn3-4,rho)
 #setMagDensity(16, B,Mn3-4,rho)
