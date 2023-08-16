@@ -40,7 +40,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()),Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key]-solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key]-solution[key])) for key in test_case.keys())
 
         self.assertTrue(total==0)  # checks to make sure that the values are correct
 
@@ -76,7 +76,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -106,7 +106,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -154,7 +154,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -187,7 +187,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -224,7 +224,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -255,7 +255,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 
@@ -288,7 +288,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(sum(test_case[key] - solution[key]) for key in test_case.keys())
+        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
 
         self.assertTrue(total == 0)  # checks to make sure that the values are correct
 

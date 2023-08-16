@@ -2,17 +2,6 @@ import material_model as mm
 import numpy as np
 import unittest
 
-
-def are_nested_lists_equal(list1, list2):
-    if len(list1) != len(list2):
-        return False
-
-    for sublist1, sublist2 in zip(list1, list2):
-        if sublist1 != sublist2:
-            return False
-
-    return True
-
 class TestMaterialModel(unittest.TestCase):
     def test_form_factors_E(self):
         form_factors = ['La','Mn','O']
@@ -26,7 +15,7 @@ class TestMaterialModel(unittest.TestCase):
 
         my_sum = 0
         for idx in range(len(test_case)):
-            my_sum += sum(solution[idx]-test_case[idx])
+            my_sum += abs(sum(solution[idx]-test_case[idx]))
 
         self.assertFalse(my_sum==0)
         #self.assertFalse(are_nested_lists_equal(solution, test_case))
@@ -45,7 +34,7 @@ class TestMaterialModel(unittest.TestCase):
 
         my_sum = 0
         for idx in range(len(test_case)):
-            my_sum += sum(solution[idx] - test_case[idx])
+            my_sum += abs(sum(solution[idx] - test_case[idx]))
 
         self.assertFalse(my_sum == 0)
 
@@ -61,14 +50,14 @@ class TestMaterialModel(unittest.TestCase):
 
         my_sum = 0
         for idx in range(len(test_case)):
-            my_sum += sum(solution[idx]-test_case[idx])
+            my_sum += abs(sum(solution[idx]-test_case[idx]))
 
         self.assertFalse(my_sum==0)
         #self.assertFalse(are_nested_lists_equal(solution, test_case))
 
     def test_form_factors_Elist_mag(self):
 
-        solution = solution = [np.array([0., 0.]), np.array([0., 0.]), np.array([-0.00681891,  0.        ]), np.array([0.30686376, 2.47434212]), np.array([ 0.24675064, -0.34005255]), np.array([0., 0.]), np.array([0., 0.]), np.array([0., 0.]), np.array([0.1187884 , 0.00154338]), np.array([-4.77536493, -3.46825118]), np.array([-0.92991243, -0.23784557]), np.array([0., 0.])]
+        solution = [np.array([0., 0.]), np.array([0., 0.]), np.array([-0.00681891,  0.        ]), np.array([0.30686376, 2.47434212]), np.array([ 0.24675064, -0.34005255]), np.array([0., 0.]), np.array([0., 0.]), np.array([0., 0.]), np.array([0.1187884 , 0.00154338]), np.array([-4.77536493, -3.46825118]), np.array([-0.92991243, -0.23784557]), np.array([0., 0.])]
 
         form_factors = ['Co','Ni']
         energy = [400,600,625,641.51,648.25,800]
@@ -80,7 +69,7 @@ class TestMaterialModel(unittest.TestCase):
 
         my_sum = 0
         for idx in range(len(test_case)):
-            my_sum += sum(solution[idx] - test_case[idx])
+            my_sum += abs(sum(solution[idx] - test_case[idx]))
 
         self.assertFalse(my_sum == 0)
 
