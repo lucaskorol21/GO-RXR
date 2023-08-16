@@ -38,7 +38,7 @@ class TestMaterialModel(unittest.TestCase):
 
         total = sum(abs(np.log(Rsol)-np.log(Rtest)))/len(theta)
 
-        self.assertFalse(total > 0.005)
+        self.assertFalse(total > 0.002)
 
     def test_single_element_larger_film_sigma(self):
         # Reflectivity retrieved from the Center of X-ray Optics
@@ -62,7 +62,7 @@ class TestMaterialModel(unittest.TestCase):
 
         total = sum(abs(np.log(Rsol)-np.log(Rtest)))/len(theta)
 
-        self.assertFalse(total > 0.005)
+        self.assertFalse(total > 0.002)
 
     def test_compound_film_sigma(self):
         # Reflectivity retrieved from the Center of X-ray Optics
@@ -85,7 +85,7 @@ class TestMaterialModel(unittest.TestCase):
 
         total = sum(abs(np.log(Rsol)-np.log(Rtest)))/len(theta)
 
-        self.assertFalse(total > 0.005)
+        self.assertFalse(total > 0.002)
 
     def test_compound_film_pi(self):
         # Reflectivity retrieved from the Center of X-ray Optics
@@ -108,7 +108,7 @@ class TestMaterialModel(unittest.TestCase):
 
         total = sum(abs(np.log(Rsol)-np.log(Rtest)))/len(theta)
 
-        self.assertFalse(total > 0.005)
+        self.assertFalse(total > 0.002)
 
     def test_ReMagX(self):
         pass
