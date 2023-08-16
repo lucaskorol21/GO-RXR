@@ -3,6 +3,7 @@ import pickle
 import material_structure as ms
 import matplotlib.pyplot as plt
 import material_model as mm
+import numpy as np
 
 
 def saveTest(data, fname):
@@ -157,14 +158,85 @@ def negative_model():
     saveTest(data, 'negative_density.pkl')
 
 if __name__ == "__main__":
-    form_factors = ['Co','Ni']
-    energy = [400,600,625,641.51,648.25,800]
 
-    solution = []
+    sample = ms.slab(3)
+    sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
+    sample.addlayer(1, 'LaMnO3', 15, density=[0.028, 0.028, 0.084], roughness=[0, 1, 3],
+                    linked_roughness=[False, 0.25, False])
+    sample.addlayer(2, 'SrTiO3', 20, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5],
+                    linked_roughness=[4, 4.5, False])
+
+    sample.polymorphous(1, 'Mn', ['Mn2', 'Mn3'], [0.5, 0.5], sf=['Fe', 'Mn'])
+
+    sample.magnetization(1, ['Mn2', 'Mn3'], [0.015, 0.01], ['Co', 'Ni'])
+
+    sample.energy_shift()
+
+    energy = np.array([641,642.1,650.5,653])
+
+    thickness, density, density_magnetic = sample.density_profile(step=0.1)  # Computes the density profile
+    # Magnetic Scattering Factor
+    sfm = dict()
+    sf = dict()
+
+
+    for e in sample.find_sf[0].keys():
+        sf[e] = mm.find_form_factor(sample.find_sf[0][e], energy, False)
+    # Magnetic Scattering Factor
+    for em in sample.find_sf[1].keys():
+        sfm[em] = mm.find_form_factor(sample.find_sf[1][em], energy, True)
+
+
+    d_len = len(thickness)
+    delta, beta = mm.IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+
+    delta_m, beta_m = mm.MOC(density_magnetic, sfm, energy,
+                          d_len)  # absorptive and dispersive components for magnetic components
+
+    temp = np.zeros((16,751))
+    print(len(delta[0,:]), len(temp[0,:]))
+
+    temp[0,:] = delta[0,:]
+    temp[1, :] = delta[1, :]
+    temp[2, :] = delta[2, :]
+    temp[3, :] = delta[3, :]
+
+    temp[4, :] = beta[0, :]
+    temp[5, :] = beta[1, :]
+    temp[6, :] = beta[2, :]
+    temp[7, :] = beta[3, :]
+
+    temp[8, :] = delta_m[0, :]
+    temp[9, :] = delta_m[1, :]
+    temp[10, :] = delta_m[2, :]
+    temp[11, :] = delta_m[3, :]
+
+    temp[12, :] = beta_m[0, :]
+    temp[13, :] = beta_m[1, :]
+    temp[14, :] = beta_m[2, :]
+    temp[15, :] = beta_m[3, :]
+
+
+    #my_data = np.array([delta, beta, delta_m, beta_m])
+    #fname = os.getcwd() + '/test_data/optical_energy.txt'
+    #np.savetxt(fname, temp)
+
+    form_factors = ['Co', 'Ni']
+    energy = [400, 600, 625, 641.51, 648.25, 800]
+
+    solution = [np.array([0., 0.]), np.array([0., 0.]), np.array([-0.00681891, 0.0]),
+                np.array([0.30686376, 2.47434212]), np.array([0.24675064, -0.34005255]), np.array([0., 0.]),
+                np.array([0., 0.]), np.array([0., 0.]), np.array([0.1187884, 0.00154338]),
+                np.array([-4.77536493, -3.46825118]), np.array([-0.92991243, -0.23784557]), np.array([0., 0.])]
     test_case = []
     for ff in form_factors:
-        recast = [val for val in mm.find_form_factor(ff,energy,True)]
-        test_case += recast
+        for E in energy:
+            test_case.append(mm.find_form_factor(ff, E, True))
 
-    print(test_case)
-    print('DONE!')
+    my_sum = 0
+    for idx in range(len(test_case)):
+        my_sum += abs(sum(solution[idx] - test_case[idx]))
+
+    print(my_sum)
+
+

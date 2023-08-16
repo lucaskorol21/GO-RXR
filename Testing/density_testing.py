@@ -40,9 +40,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()),Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key]-solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total==0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_elementVar(self):
         # Testing models that include element variations (defined as polymorphous in the code)
@@ -76,9 +76,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_surfaceImpurity(self):
         # testing to make sure that the surface layer is being defined properly
@@ -106,9 +106,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
 
     def test_unitCell(self):
@@ -154,9 +154,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_linkedRoughness(self):
         sample = ms.slab(3)
@@ -187,9 +187,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_magnetic(self):
         sample = ms.slab(3)
@@ -224,9 +224,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_dummy(self):
         sample = ms.slab(3)
@@ -255,9 +255,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
     def test_negative_test(self):
         sample = ms.slab(3)
@@ -288,9 +288,9 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
-        total = sum(abs(sum(test_case[key] - solution[key])) for key in test_case.keys())
+        total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
-        self.assertTrue(total == 0)  # checks to make sure that the values are correct
+        self.assertEqual(total,0)  # checks to make sure that the values are correct
 
 if __name__ == '__main__':
     unittest.main()
