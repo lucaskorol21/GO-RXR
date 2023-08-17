@@ -40,14 +40,14 @@
 #setRatio(layer, element, indentifier1, identifier2, ratio) where ratio=identifier1/identifier2
 #setVariationConstant(layer, element, identifier, value)
 
-#setVariationConstant(2, B, Ti,0.9368580115723412)
-#setVariationConstant(3, B, Ti,0.8380563690203824)
-#setVariationConstant(4, B, Ti,0.5798002115703154)
-#setVariationConstant(5, B, Ti,0.006519066014363431)
-#setVariationConstant(6, B, Ti,0.0242466343076104)
-#setVariationConstant(14,B,Mn2+,0.030718436673865812)
-#setVariationConstant(15,B,Mn2+,0.19552804020068865)
-#setVariationConstant(14,B,Mn2+,0.29622505384943193)
+setVariationConstant(2, B, Ti,0.9368580115723412)
+setVariationConstant(3, B, Ti,0.8380563690203824)
+setVariationConstant(4, B, Ti,0.5798002115703154)
+setVariationConstant(5, B, Ti,0.006519066014363431)
+setVariationConstant(6, B, Ti,0)
+setVariationConstant(14,B,Mn2+,0.030718436673865812)
+setVariationConstant(15,B,Mn2+,0.19552804020068865)
+setVariationConstant(14,B,Mn2+,0.29622505384943193)
 
 # Multiple constant variations
 #setMultiVarConstant(2,B,["Ti" "Mn2+"],[0.9368580115723412 0])

@@ -38,6 +38,13 @@ import warnings
 import copy
 
 def find_ff(element,E, ff_dict):
+    """
+    Purpose: Return the form factor from material_model.py
+    :param element: The element symbol
+    :param E: The energy in units of electronvolts (can be entered as a list of energies)
+    :param ff_dict: form factor dictionary
+    :return: The real and imaginary component of the form factor {can be a list of tuples (real, imaginary)}
+    """
     F = form_factor(ff_dict[element], E)
     return F
 
