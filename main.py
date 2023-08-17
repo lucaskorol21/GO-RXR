@@ -256,8 +256,9 @@ if __name__ == '__main__':
     plt.plot(my_slabs[1:], my_time, 'o')
     plt.show()
     """
-    """
 
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
+    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3")
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample = ds.ReadSampleHDF5(fname)
     name = '64_836.04_S'
@@ -345,27 +346,28 @@ if __name__ == '__main__':
 
     from matplotlib import ticker
     # Plot the data on the top-left subplot
-    axes[0].plot(my_thickness1, my_epsilon1)
+    axes[0].plot(my_thickness1, my_epsilon1, linewidth=0.5)
     axes[0].plot(thickness, delta)
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
     #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[0].legend(frameon=False)
     axes[0].set_ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=20)
 
 
     # Plot the data on the top-right subplot
-    axes[1].plot(my_thickness3, my_epsilon3)
+    axes[1].plot(my_thickness3, my_epsilon3, linewidth=0.5)
     axes[1].plot(thickness, delta)
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
     axes[1].tick_params(axis='y', labelleft=False)
     axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[1].legend(frameon=False)
+    #axes[1].legend(frameon=False)
 
     axes[0].set_xlim(30,45)
     axes[1].set_xlim(30, 45)
+    axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
+    axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
     # Adjust the layout
     plt.tight_layout()
 
@@ -374,7 +376,7 @@ if __name__ == '__main__':
 
 
     plt.figure(3)
-    plt.plot(my_thickness2, my_epsilon2)
+    plt.plot(my_thickness2, my_epsilon2,linewidth=0.5)
     plt.plot(thickness, delta)
     plt.xlabel(r'z Position ($\mathrm{\AA}$)', fontsize=16)
     plt.ylabel(r'$\mathrm{\delta \left(E \right)}$', fontsize=20)
@@ -385,9 +387,26 @@ if __name__ == '__main__':
 
     # Set tick parameters
     plt.tick_params(which='both', direction='in', top=True, right=True)
+    plt.text(0.02, 0.98, '(c)', transform=plt.gca().transAxes, fontsize=14, fontweight='bold', va='top', ha='left')
+    #plt.text(0.02, 0.98, "(c)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
     plt.show()
 
+    """
+   
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
+    data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    sample = ds.ReadSampleHDF5(fname)
+    sample.energy_shift()
 
+    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3")  # look for form factors in directory
+
+    # set form factors found in file directory
+
+
+    name = '64_836.04_S'
+
+    E = 836.04
+    qz = data_dict[name]['Data'][0]
     qz,R = sample.reflectivity(E,qz, precision = 1e-2, s_min=0.1)
     qz, R1 = sample.reflectivity(E, qz, precision = 1e-3, s_min=0.1)
     qz, R2 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
@@ -408,11 +427,13 @@ if __name__ == '__main__':
     plt.tick_params(which='both', direction='in', top=True, right=True)
     plt.tick_params(axis='y', labelleft=False)
     plt.show()
+    
     """
     """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3")
     sample = ds.ReadSampleHDF5(fname)
     name = '64_836.04_S'
 
@@ -520,6 +541,7 @@ if __name__ == '__main__':
     from matplotlib import ticker
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
+    struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
     name1 = '47_E429.58_Th10.0_S'
 
     E = data_dict[name1]['Data'][3]
@@ -568,6 +590,10 @@ if __name__ == '__main__':
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].legend(frameon=False)
+    font_props = {'family': 'sans-serif', 'size': 12, 'weight': 'bold'}
+    axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
+    axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
+
 
     shared_x = fig.add_subplot(111, frame_on=False)
     shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
@@ -693,10 +719,14 @@ if __name__ == '__main__':
     axes[0].get_shared_x_axes().join(axes[0], shared_x)
     axes[1].get_shared_x_axes().join(axes[1], shared_x)
     axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    font_props = {'family': 'sans-serif', 'size': 12, 'weight': 'bold'}
+    axes[0].text(0.01, 0.98, "(a)", transform=axes[0].transAxes, va='top', **font_props)
+    axes[1].text(0.01, 0.98, "(b)", transform=axes[1].transAxes, va='top', **font_props)
 
     plt.tight_layout()
     plt.show()
-
+    """
+    """
     hello = np.loadtxt("//cabinet/work$/lsk601/Downloads/SrTiO3_attenuation.txt")
     E = hello[:,0]
     attenuation = hello[:,1]

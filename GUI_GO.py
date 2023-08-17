@@ -4735,7 +4735,7 @@ class GlobalOptimizationWidget(QWidget):
         plotLayout = QHBoxLayout()  # plotting layout
 
         self.goParameters = {
-            'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
+            'differential evolution': ['currenttobest1bin', 50, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
                                        'immediate'],
             'simplicial homology': ['None', 1, 'simplicial'],
             'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
@@ -4744,7 +4744,7 @@ class GlobalOptimizationWidget(QWidget):
         # Uncomment this is the direct algorithm is used
         """
         self.goParameters = {
-            'differential evolution': ['currenttobest1bin', 2, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
+            'differential evolution': ['currenttobest1bin', 50, 15, 1e-6, 0, 0.5, 1, 0.7, True, 'latinhypercube',
                                        'immediate'],
             'simplicial homology': ['None', 1, 'simplicial'],
             'dual annealing': [150, 5230.0, 2e-5, 2.62, 5.0, 10000000.0, True],
@@ -7968,7 +7968,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
-        self.version = '0.3'
+        self.version = '0.3.1'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -8937,7 +8937,7 @@ class ReflectometryApp(QMainWindow):
         from PyQt5.QtGui import QDesktopServices
         from PyQt5.QtCore import QUrl
 
-        file_path = 'GO-RXR_UserGuide_v0.3.pdf'
+        file_path = 'GO-RXR_UserGuide_v0.3.1.pdf'
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 
@@ -10452,6 +10452,15 @@ class LoadingScreen(QDialog):
 
         self.accept()
 
+def checkbracket(s, i=0, cnt=0):
+    # checks to make sure the brackets are balanced
+    if i == len(s): return cnt == 0
+    if cnt < 0: return False
+    if s[i] == "(": return  checkbracket(s, i + 1, cnt + 1)
+    elif s[i] == ")": return  checkbracket(s, i + 1, cnt - 1)
+    return checkbracket(s, i + 1, cnt)
+
+"""
 def checkbracket(myStr):
     # checks to make sure that the brackets are maintained
     open_list = ["[", "{", "("]
@@ -10468,11 +10477,12 @@ def checkbracket(myStr):
                 stack.pop()
             else:
                 return True
-
+    print(stack)
     if len(stack) == 0:
         return False
     else:
         return True
+"""
 
 def checkscript(sample):
     script = os.getcwd() + '/default_script.txt'

@@ -110,8 +110,6 @@ class TestReflectivity(unittest.TestCase):
 
         self.assertTrue(total < 0.002)
 
-    def test_ReMagX(self):
-        pass
 
 if __name__ == "__main__":
 

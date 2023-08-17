@@ -38,6 +38,13 @@ import warnings
 import copy
 
 def find_ff(element,E, ff_dict):
+    """
+    Purpose: Return the form factor from material_model.py
+    :param element: The element symbol
+    :param E: The energy in units of electronvolts (can be entered as a list of energies)
+    :param ff_dict: form factor dictionary
+    :return: The real and imaginary component of the form factor {can be a list of tuples (real, imaginary)}
+    """
     F = form_factor(ff_dict[element], E)
     return F
 
@@ -213,12 +220,12 @@ def get_number(string):
     finish = True  # Boolean used to determine if end of successive digits
     mynumbers = list()  # Stores the successive digits to be joined later
     while len(string)>0 and finish:
-       # Determines if left most character is a digit
-       if string[0].isdigit():
-           mynumbers.append(string[0])  # appends digit to character list
-           string = string[1:]  # removes digit from string
-       else:
-           finish = False
+        # Determines if left most character is a digit
+        if string[0].isdigit():
+            mynumbers.append(string[0])  # appends digit to character list
+            string = string[1:]  # removes digit from string
+        else:
+            finish = False
     num = int(''.join(mynumbers))  # joins digits into integer type
 
     return string, num
