@@ -50,10 +50,11 @@ import h5py
 
 def getTitleInfo(title):
     """
-    Purpose: Retrieves important information in the scan title
+    Purpose: Retrieves important information in the scan title from ReMagX
     :param title: title/label of the scan
     :return:
     """
+
     title = title.split('_')  # split title into an array
 
     angle = None

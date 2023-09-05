@@ -1,4 +1,5 @@
 import unittest
+from data_structure import *
 
 class TestMaterialStructure(unittest.TestCase):
     def test_getTitleInfo(self):
