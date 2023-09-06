@@ -1,7 +1,6 @@
 Broaden_Spectrum.py
 GUI_GO.py
 KK_And_Merge.py
-Pythonreflectivity.cpp
 Thesis-plots.py
 Ti34_XAS_Python.py
 data_structure.py
@@ -13,8 +12,8 @@ material_model.py
 material_structure.py
 setup.py
 setup_reflectivity.py
-GO_RXR.egg-info/PKG-INFO
-GO_RXR.egg-info/SOURCES.txt
-GO_RXR.egg-info/dependency_links.txt
-GO_RXR.egg-info/requires.txt
-GO_RXR.egg-info/top_level.txt
+GUI_GO.egg-info/PKG-INFO
+GUI_GO.egg-info/SOURCES.txt
+GUI_GO.egg-info/dependency_links.txt
+GUI_GO.egg-info/requires.txt
+GUI_GO.egg-info/top_level.txt

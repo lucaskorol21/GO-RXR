@@ -224,7 +224,6 @@ def evaluate_list(string):
     :param string: Scan boundaries in string form
     :return: Boundary in list format
     """
-
     # check to make sure it is a list
     if type(string) is not np.ndarray and type(string) is not list:
         if string[0] != '[' and string[-1] != ']':
@@ -243,14 +242,13 @@ def evaluate_list(string):
             if len(array1) > len(array2):  # string has commas
                 my_array = array1
             elif len(array1)< len(array2):  # string has spaces
+                if len(array2) > 2:
+                    array2.remove(',')
                 my_array = array2
             elif len(array1) == len(array2):  # string has spaces and commas
                 my_array = array1
 
-            if ',' in my_array:
-                my_array = list(filter(lambda item: item != ',', my_array))
-
-            final_array = [float(s.replace(',','')) for s in my_array]  # transforms in back into a list of strings
+            final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
     else:
         final_array = string
 
@@ -286,10 +284,9 @@ def find_parameter_bound(string):
 
     return my_list
 
-"""
+
 def find_each_bound(string):
     # find each boundary in a list of boundaries in string format.
-    # '[[[0.01,0.05],[0.05,0.5]]]' ---> ['[[0.01,0.05],[0.05,0.5]]']
     my_bounds = []
     my_string = ''
     for s in string:
@@ -299,45 +296,10 @@ def find_each_bound(string):
             my_bounds.append(my_string)
             my_string = ''
     my_bounds.append(my_string)
-    print(my_bounds)
-    return my_bounds
-"""
-
-def find_closing_bracket(string, open_index):
-    stack = []  # Use a stack to keep track of nested brackets
-    for i in range(open_index, len(string)):
-        if string[i] == '[':
-            stack.append('[')
-        elif string[i] == ']':
-            if not stack:
-                return -1  # No matching opening bracket found
-            stack.pop()
-            if not stack:
-                return i  # Found the matching closing bracket
-
-    return -1  # No matching closing bracket found
-
-def find_each_bound(string):
-    #string = string[1:-1]
-    my_bounds = []
-
-    while string != '':
-        if string[0] == ',' or string[0] == ' ':
-            string = string[1:]
-        else:
-            idx = find_closing_bracket(string,0)
-            my_bounds.append(string[0:idx+1])
-            string = string[idx+2:]
-
     return my_bounds
 
 def find_the_bound(string):
-
     bound_list = []
-
-    translation_table = str.maketrans('', '', "'")
-    string = string.translate(translation_table)
-
 
     # gets string in expected form
     removeFront = True
@@ -353,31 +315,24 @@ def find_the_bound(string):
     open_count = 0
     closed_count = 0
     my_string = ''
-    skip = False
     for s in string:
-
-
         if s == '[':
             open_count = open_count + 1
         if s ==']':
             closed_count = closed_count + 1
 
-        if open_count == 0 and closed_count == 0 and ( s == ' ' or s == ','):
-           skip = False
-        else:
-            skip = True
-
-
-        if s != '[' and s != ']' and skip:
+        if s != '[' and s != ']':
             my_string = my_string + s
 
         if open_count == 1 and closed_count == 1:
             open_count = 0
             closed_count = 0
-            my_string = my_string.split(',')
+            my_string = my_string.split()
+            if '' in my_string:
+                my_string.remove('')
             bound_list.append(my_string)
-
             my_string = ''
+
     for i, bound in enumerate(bound_list):
         bound_list[i] = [float(bound[0]), float(bound[1])]
 

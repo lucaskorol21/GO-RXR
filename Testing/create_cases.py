@@ -163,12 +163,19 @@ if __name__ == "__main__":
     find_file = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
 
     sample = ds.ReadSampleHDF5(find_file)
-    from GUI_GO import checkbracket
+    from data_structure import *
 
-    tests = ['()', '{}', '[]', '(asd)', '{15csc}', '[bfb%]', '([sdfsd])', '([sdfsd]}', '((asdasd)', '(sadasdad))',
-             '(sdasdsadsa{dasdsad})', '[dasdsadsa[adasda]asdasd]', '']
-    outputs = [True, True, True, True, True, True, True, False, False, False, True, True, False]
+    tests = ['[[0.01,0.5],[0.5,0.9]]', '[[0.01,0.9]]', '[[200,255],[255,600],[650,800]]',
+                    '[[255.5 ,275]]','[[ 800,895 ],[900, 921.5]]',
+                    '[[0.01,0.52],[0.52,0.65]]', '[[0.55,0.5678778]]','[[125.5,555],[587,598.9],[698,755.5]]']
+    solution = ['[[0.01],[0.5]]']
 
-    for i, test in enumerate(tests):
-        value = checkbracket(test)
-        print(test, value, outputs[i])
+    for test in tests:
+
+        value = find_the_bound(test)
+        print(value)
+
+
+
+
+
