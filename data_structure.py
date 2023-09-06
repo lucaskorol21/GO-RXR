@@ -40,7 +40,6 @@ sequence can be done.
 """
 
 import matplotlib.pyplot as plt
-from prettytable import PrettyTable
 import os
 from material_structure import *
 from material_model import *
@@ -51,10 +50,11 @@ import h5py
 
 def getTitleInfo(title):
     """
-    Purpose: Retrieves important information in the scan title
+    Purpose: Retrieves important information in the scan title from ReMagX
     :param title: title/label of the scan
     :return:
     """
+
     title = title.split('_')  # split title into an array
 
     angle = None
@@ -224,6 +224,7 @@ def evaluate_list(string):
     :param string: Scan boundaries in string form
     :return: Boundary in list format
     """
+
     # check to make sure it is a list
     if type(string) is not np.ndarray and type(string) is not list:
         if string[0] != '[' and string[-1] != ']':
@@ -236,6 +237,7 @@ def evaluate_list(string):
 
             array1 = string.split(',')  # get all the components of the list
             array2 = string.split()
+            #array2.remove(',')
 
             my_array = []
             if len(array1) > len(array2):  # string has commas
@@ -245,7 +247,10 @@ def evaluate_list(string):
             elif len(array1) == len(array2):  # string has spaces and commas
                 my_array = array1
 
-            final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
+            if ',' in my_array:
+                my_array = list(filter(lambda item: item != ',', my_array))
+
+            final_array = [float(s.replace(',','')) for s in my_array]  # transforms in back into a list of strings
     else:
         final_array = string
 
@@ -272,6 +277,8 @@ def find_parameter_bound(string):
         if s == ']':
             count_closed = count_closed + 1
         if count_open == 2 and count_closed == 2:
+            my_idx = my_string.find('[')
+            my_string = my_string[my_idx:]
             my_list.append(my_string)
             count_open = 0
             count_closed = 0
@@ -279,8 +286,10 @@ def find_parameter_bound(string):
 
     return my_list
 
-
+"""
 def find_each_bound(string):
+    # find each boundary in a list of boundaries in string format.
+    # '[[[0.01,0.05],[0.05,0.5]]]' ---> ['[[0.01,0.05],[0.05,0.5]]']
     my_bounds = []
     my_string = ''
     for s in string:
@@ -290,10 +299,45 @@ def find_each_bound(string):
             my_bounds.append(my_string)
             my_string = ''
     my_bounds.append(my_string)
+    print(my_bounds)
+    return my_bounds
+"""
+
+def find_closing_bracket(string, open_index):
+    stack = []  # Use a stack to keep track of nested brackets
+    for i in range(open_index, len(string)):
+        if string[i] == '[':
+            stack.append('[')
+        elif string[i] == ']':
+            if not stack:
+                return -1  # No matching opening bracket found
+            stack.pop()
+            if not stack:
+                return i  # Found the matching closing bracket
+
+    return -1  # No matching closing bracket found
+
+def find_each_bound(string):
+    #string = string[1:-1]
+    my_bounds = []
+
+    while string != '':
+        if string[0] == ',' or string[0] == ' ':
+            string = string[1:]
+        else:
+            idx = find_closing_bracket(string,0)
+            my_bounds.append(string[0:idx+1])
+            string = string[idx+2:]
+
     return my_bounds
 
 def find_the_bound(string):
+
     bound_list = []
+
+    translation_table = str.maketrans('', '', "'")
+    string = string.translate(translation_table)
+
 
     # gets string in expected form
     removeFront = True
@@ -309,22 +353,28 @@ def find_the_bound(string):
     open_count = 0
     closed_count = 0
     my_string = ''
+    skip = False
     for s in string:
         if s == '[':
             open_count = open_count + 1
         if s ==']':
             closed_count = closed_count + 1
 
-        if s != '[' and s != ']':
+        if open_count == 0 and closed_count == 0 and ( s == ' ' or s == ','):
+           skip = False
+        else:
+            skip = True
+
+
+        if s != '[' and s != ']' and skip:
             my_string = my_string + s
 
         if open_count == 1 and closed_count == 1:
             open_count = 0
             closed_count = 0
-            my_string = my_string.split()
-            if '' in my_string:
-                my_string.remove('')
+            my_string = my_string.split(',')
             bound_list.append(my_string)
+
             my_string = ''
 
     for i, bound in enumerate(bound_list):
@@ -356,55 +406,77 @@ def evaluate_weights(weights):
     # format = [[],[],[]]
     weight_list = []
     final_array = []
+
     if type(weights) is not np.ndarray and type(weights) is not list:
         if weights != '[]':
-            weights = weights[1:-1]
+            # removes uneccesary characters and spaces
+            translation_table = str.maketrans('', '', "'")
+            weights = weights.translate(translation_table)
+
+            # gets string in expected form
+            removeFront = True
+            if weights[0] != ' ':
+                removeFront = False
+            s_idx = 0
+            while removeFront:
+                if weights[s_idx] == ' ':
+                    removeFront = False
+                s_idx = s_idx + 1
+            weights = weights[s_idx + 1:-1]
+
 
             # finding the list of weights
-            string = ''
-            num_open = 0
-            num_closed = 0
+            open_count = 0
+            closed_count = 0
+            my_string = ''
+            skip = False
             for s in weights:
-                if s != '[' and s != ']' and s != '\'':
-                    string = string + s
+
 
                 if s == '[':
-                    num_open = num_open + 1
+                    open_count = open_count + 1
                 if s == ']':
-                    num_closed = num_closed + 1
+                    closed_count = closed_count + 1
 
-                if num_open == 1 and num_closed == 1:
-                    num_open = 0
-                    num_closed = 0
-                    string = string.split(',')
-                    if '' in string:
-                        string.remove('')
-                    weight_list.append(string)
-                    string = ''
+                if open_count == 0 and closed_count == 0 and (s == ' ' or s == ','):
+                    skip = False
+                else:
+                    skip = True
 
-            for weight in weight_list:
-                temp_array = [float(w) for w in weight]
+                if s != '[' and s != ']' and skip:
+                    my_string = my_string + s
 
-                final_array.append(temp_array)
+                if open_count == 1 and closed_count == 1:
+                    open_count = 0
+                    closed_count = 0
+                    my_string = my_string.split(',')
+                    weight_list.append(my_string)
+
+                    my_string = ''
+
+        for weight in weight_list:
+            temp_array = [float(w) for w in weight]
+
+            final_array.append(temp_array)
     else:
         final_array = weights
+
     return final_array
 
 
 def find_parameter_values(string):
     my_string = ''
     for s in string:
-        if s != '[' and s != ']' and s != ',':
+        if s != '[' and s != ']':
             my_string = my_string + s
 
-    my_array = my_string.split()
-
+    my_array = my_string.split(',')
     final_array = [float(my_array[0]), [float(my_array[1]), float(my_array[2])]]
 
     return final_array
 
 def evaluate_parameters(parameters):
-    # format = [[val, [lower,upper]],[val, lower, upper]]
+    # format = [[val, [lower,upper]],[val, [lower, upper]]]
     if type(parameters) is not np.ndarray and type(parameters) is not list:
         if parameters[0] != '[' and parameters[-1] != ']':
             raise TypeError('String is not a list.')
@@ -413,6 +485,7 @@ def evaluate_parameters(parameters):
         if parameters != '[]':
             parameters = parameters[1:-1]
             parameters = find_parameter_bound(parameters)
+
             for param in parameters:
                 temp_param = find_parameter_values(param)
                 final_array.append(temp_param)
@@ -3028,75 +3101,6 @@ def ReadDataASCII(fname):
 
     return Sinfo, Sscan, SimInfo, SimScan, sample
 
-
-
-
-def selectScan(fname):
-    """
-    Purpose: Takes in the read in data and plots the data and the simulated data
-    :param Sinfo: Scan info
-    :param Sscan: Scan data
-    :param sample: Data sample for simulation
-    :return:
-    """
-    Sinfo, Sscan, SimInfo, SimScan, sample = ReadDataASCII(fname)
-
-    # Prints out the scans and their information
-    header = ['#', 'Scan Type', 'Energy', 'Angle', 'Polarization']
-    tab = PrettyTable(header)
-    dataNumber = list()
-    for scan in Sinfo:
-        data = [scan['dataNumber'], scan['scanType'], scan['energy'], scan['angle'], scan['polarization']]
-        dataNumber.append(str(scan['dataNumber']))
-        tab.add_row(data)
-
-    val = input('Select scan # you would like to use: ')
-    while val in dataNumber:
-        # Determines the scan to use based on #
-        val = int(val)
-        info = Sinfo[val-1]
-        simInfo = SimInfo[val-1]
-        data = Sscan[val-1]
-        simData = SimScan[val-1]
-
-        scan_type = info['scanType']  # determine the scan type
-        pol = info['polarization']  # determines the polarization of the scan
-        Rdata = data[1]  # retrieves the reflectivity information
-
-
-        if scan_type == 'Reflectivity':
-            E = info['energy']  # retrieves the energy
-            qz = np.array(data[0])  # gets momentum transfer of data
-
-            R = np.array(simData[1])
-            # Determines if the reflectivity of the data should be calculated
-            plt.figure()
-            plt.plot(qz, Rdata)
-            plt.plot(qz, R)
-            plt.legend(['Data', 'Simulation'])
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-
-
-
-        elif scan_type == 'Energy':
-            Theta = info['angle']  # angle of energy scan
-            energy = np.array(data[0])  # energy array
-            R = np.array(simData[1])
-
-            plt.figure(2)
-            plt.plot(energy, Rdata)
-            plt.plot(energy, R)
-            plt.legend(['Data', 'Simulation'])
-            # Again, determines if natural logarithm needs to be calculated
-            if pol == 'S' or pol == 'P' or pol == 'LC' or pol == 'RC':
-                plt.yscale('log')
-
-
-
-        plt.show()
-
-        val = input('Select scan # you would like to use: ')
 
 
 def hdf5ToDict(hform):
