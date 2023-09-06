@@ -162,18 +162,20 @@ def negative_model():
 if __name__ == "__main__":
     find_file = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
 
-    sample = ds.ReadSampleHDF5(find_file)
-    from data_structure import *
+    from data_structure import Read_ReMagX
+    filename = 'Pim7uc.all'
+    if os.getcwd().split('\\')[-1] == 'Testing':
+        my_path = os.getcwd() + '/test_data/' + filename
+        path = os.getcwd() + '/test_data/'
+    else:
+        my_path = os.getcwd() + '/Testing/test_data/' + filename
+        path = os.getcwd() + '/Testing/test_data/'
 
-    tests = ['[[0.01,0.5],[0.5,0.9]]', '[[0.01,0.9]]', '[[200,255],[255,600],[650,800]]',
-                    '[[255.5 ,275]]','[[ 800,895 ],[900, 921.5]]',
-                    '[[0.01,0.52],[0.52,0.65]]', '[[0.55,0.5678778]]','[[125.5,555],[587,598.9],[698,755.5]]']
-    solution = ['[[0.01],[0.5]]']
 
-    for test in tests:
+    data_info, data_dict = Read_ReMagX(my_path)
 
-        value = find_the_bound(test)
-        print(value)
+    name = list(data_dict.keys())[0]
+    print(data_dict[name].keys())
 
 
 

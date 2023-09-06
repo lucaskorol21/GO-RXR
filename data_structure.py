@@ -355,8 +355,6 @@ def find_the_bound(string):
     my_string = ''
     skip = False
     for s in string:
-
-
         if s == '[':
             open_count = open_count + 1
         if s ==']':
@@ -378,6 +376,7 @@ def find_the_bound(string):
             bound_list.append(my_string)
 
             my_string = ''
+
     for i, bound in enumerate(bound_list):
         bound_list[i] = [float(bound[0]), float(bound[1])]
 
@@ -407,38 +406,61 @@ def evaluate_weights(weights):
     # format = [[],[],[]]
     weight_list = []
     final_array = []
+
     if type(weights) is not np.ndarray and type(weights) is not list:
         if weights != '[]':
-            weights = weights[1:-1]
+            # removes uneccesary characters and spaces
+            translation_table = str.maketrans('', '', "'")
+            weights = weights.translate(translation_table)
+
+            # gets string in expected form
+            removeFront = True
+            if weights[0] != ' ':
+                removeFront = False
+            s_idx = 0
+            while removeFront:
+                if weights[s_idx] == ' ':
+                    removeFront = False
+                s_idx = s_idx + 1
+            weights = weights[s_idx + 1:-1]
+
 
             # finding the list of weights
-            string = ''
-            num_open = 0
-            num_closed = 0
+            open_count = 0
+            closed_count = 0
+            my_string = ''
+            skip = False
             for s in weights:
-                if s != '[' and s != ']' and s != '\'':
-                    string = string + s
+
 
                 if s == '[':
-                    num_open = num_open + 1
+                    open_count = open_count + 1
                 if s == ']':
-                    num_closed = num_closed + 1
+                    closed_count = closed_count + 1
 
-                if num_open == 1 and num_closed == 1:
-                    num_open = 0
-                    num_closed = 0
-                    string = string.split(',')
-                    if '' in string:
-                        string.remove('')
-                    weight_list.append(string)
-                    string = ''
+                if open_count == 0 and closed_count == 0 and (s == ' ' or s == ','):
+                    skip = False
+                else:
+                    skip = True
 
-            for weight in weight_list:
-                temp_array = [float(w) for w in weight]
+                if s != '[' and s != ']' and skip:
+                    my_string = my_string + s
 
-                final_array.append(temp_array)
+                if open_count == 1 and closed_count == 1:
+                    open_count = 0
+                    closed_count = 0
+                    my_string = my_string.split(',')
+                    weight_list.append(my_string)
+
+                    my_string = ''
+
+        for weight in weight_list:
+            temp_array = [float(w) for w in weight]
+
+            final_array.append(temp_array)
     else:
         final_array = weights
+
     return final_array
 
 
