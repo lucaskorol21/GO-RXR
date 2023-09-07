@@ -41,6 +41,9 @@ sequence can be done.
 
 import matplotlib.pyplot as plt
 import os
+
+import numpy as np
+
 from material_structure import *
 from material_model import *
 from time import *
@@ -3271,6 +3274,151 @@ def saveNewFile(fname, info, data_dict, sample):
 
     f.close()
     return
+
+def QUAD_to_data_dict(fname):
+    data_dict = dict()
+
+    # read the data file and convert each line into a list format
+    with open(fname) as f:
+        lines = [line for line in f]
+
+    f.close()
+    start_new = True
+    data = [[],[],[],[]]
+    name = ''
+    scan_type = ''
+    for idx,line in enumerate(lines):
+        if idx == 0 or start_new:  # initialization
+            line = line.split()
+            scan_number = line[0]
+            pol = line[1]
+            scan_type = line[2]
+            energy = float(line[3])
+            angle = float(line[4])
+
+            temp_energy = str(round(float(line[3]),2))
+            temp_angle = str(round(float(line[4]),2))
+
+            name = ''
+            if scan_type == 'A':
+                name = line[0] + '_' + temp_energy + '_' + line[1]
+            else:
+                name = line[0] + '_E' + temp_energy + '_Th' + temp_angle + '_' + line[1]
+
+            data_dict[name] = dict()
+            data_dict[name]['Background Shift'] = 0
+            data_dict[name]['Scaling Factor'] = 1
+            data_dict[name]['DatasetNumber'] = scan_number
+            data_dict[name]['Polarization'] = pol
+            data_dict[name]['Energy'] = energy
+            if scan_type == 'E':
+                data_dict[name]['Angle'] = angle
+
+            start_new = False
+            data = [[],[],[],[]]
+
+        elif line[0] == '=':
+            # terminate and start new
+            n = len(data[0])
+            if scan_type == 'A':
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data.pop()
+                print(data)
+            else:
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data[3] = np.array(data[3])
+
+            data_dict[name]['DataPoints'] = n
+            data_dict[name]['Data'] = data
+            start_new = True
+        else:
+            line = line.split()
+            # save the data
+            if scan_type == 'A':
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+            else:
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+                data[3].append(float(line[0]))  # E
+    return data_dict
+
+def createDataHDF5fromDict(filename, data_dict_list):
+    """
+    Purpose: Create HDF5 data file from data_dict
+    :param filename: Name of file (must have .h5 extension)
+    :param data_dict_list: Dictionary or list of dictionaries
+    :return: N/A
+    """
+
+    if filename.endswith('.h5'):
+
+        f = h5py.File(filename, "a")
+        if type(data_dict_list) is dict:
+            data_dict_list = [data_dict_list]
+
+        simulated = f.create_group('Simulated_data')
+        simR = simulated.create_group('Reflectivity_Scan')
+        simE = simulated.create_group('Energy_Scan')
+
+        experiment = f.create_group('Experimental_data')
+        reflScan = experiment.create_group('Reflectivity_Scan')
+        energyScan = experiment.create_group('Energy_Scan')
+
+        for data_dict in data_dict_list:  # loops through all data_dicts
+            for name in data_dict.keys(): # loop through all data
+                if 'Angle' in data_dict[name].keys():
+                    dat = data_dict[name]['Data']
+                    dat = np.array(dat)
+                    m = np.shape(dat)
+                    dset = energyScan.create_dataset(name, m, data=dat, maxshape=(4, None), chunks=True)
+                    dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset.attrs['Energy'] = data_dict[name]['Energy']
+                    dset.attrs['Angle'] = data_dict[name]['Angle']
+                    dset.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+                    dat1 = data_dict[name]['Data']
+                    dset1 = simE.create_dataset(name, m, data=dat1, maxshape=(4, None), chunks=True)
+                    dset1.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset1.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset1.attrs['Energy'] = data_dict[name]['Energy']
+                    dset1.attrs['Angle'] = data_dict[name]['Angle']
+                    dset1.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset1.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset1.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+                else:
+                    dat = data_dict[name]['Data']
+                    dat = np.array(dat)
+                    m = np.shape(dat)
+
+                    dset = reflScan.create_dataset(name, m, data=dat, maxshape=(3, None), chunks=True)
+                    dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset.attrs['Energy'] = data_dict[name]['Energy']
+                    dset.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+                    dat1 = data_dict[name]['Data']
+                    dset1 = simR.create_dataset(name, m, data=dat1, maxshape=(3, None), chunks=True)
+                    dset1.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset1.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset1.attrs['Energy'] = data_dict[name]['Energy']
+                    dset1.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset1.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset1.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+        f.close()
+
 
 if __name__ == "__main__":
 

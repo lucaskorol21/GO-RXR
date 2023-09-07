@@ -139,9 +139,26 @@ if __name__ == '__main__':
     import material_model as mm
     from scipy.special import erf
 
-    print(erf(-1))
+    import data_structure as ds
+
+    filename1 = 'LC_10uc_Feb_FE_DATA.dat'
+    filename2 = 'LC_10uc_Feb_FQ_DATA.dat'
+    path = "//cabinet/work$/lsk601/My Documents/DataFiles/"
+    fname = 'LC_10uc_Feb_DATA.h5'
+
+
+
+    data_dict_1 = ds.QUAD_to_data_dict(path + filename1)
+    #data_dict_2 = ds.QUAD_to_data_dict(path + filename2)
+
+
+    #ds.createDataHDF5fromDict(path + fname, [data_dict_1,data_dict_2])
+
+
+
+
     """
-    #fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
+    ##fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
 
     struct_names, mag_names = mm._use_given_ff('//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/')
@@ -256,7 +273,7 @@ if __name__ == '__main__':
     plt.plot(my_slabs[1:], my_time, 'o')
     plt.show()
     """
-
+    """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_v4.h5"
     struct_names, mag_names = mm._use_given_ff("//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3")
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -390,7 +407,7 @@ if __name__ == '__main__':
     plt.text(0.02, 0.98, '(c)', transform=plt.gca().transAxes, fontsize=14, fontweight='bold', va='top', ha='left')
     #plt.text(0.02, 0.98, "(c)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
     plt.show()
-
+    """
     """
    
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
