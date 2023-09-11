@@ -2624,12 +2624,19 @@ class sampleWidget(QWidget):
                         if sfm != '' and sfm not in ffm_to_remove:
                             ffm_to_remove.append(sfm)
 
+
             for key in list(self.eShift.keys()):
                 if key.startswith('ff-'):
                     to_remove = key.strip('ff-')
                     if to_remove in ff_to_remove:
                         del self.eShift[key]
                         del self.ffScale[key]
+                        if to_remove in self.sample.eShift.keys():
+                            del self.sample.eShift[to_remove]
+                        if to_remove in self.sample.find_sf[0].keys():
+                            del self.sample.find_sf[0][to_remove]
+                        if to_remove in self.sample.ff_scale.keys():
+                            del self.sample.ff_scale[to_remove]
 
 
                 elif key.startswith('ffm-'):
@@ -2637,6 +2644,13 @@ class sampleWidget(QWidget):
                     if to_remove in ffm_to_remove:
                         del self.eShift[key]
                         del self.ffScale[key]
+                        if to_remove in self.sample.mag_eShift.keys():
+                            del self.sample.mag_eShift[to_remove]
+                        if to_remove in self.sample.find_sf[1].keys():
+                            del self.sample.find_sf[1][to_remove]
+                        if to_remove in self.sample.ffm_scale.keys():
+                            del self.sample.ffm_scale[to_remove]
+
 
     def _copyLayer(self):
         """
@@ -8692,6 +8706,7 @@ class ReflectometryApp(QMainWindow):
 
         """
         self.sample = self._sampleWidget._createSample()
+        self.sample.energy_shift()
         self._sampleWidget.sample = self.sample
         self._reflectivityWidget.sample = self.sample
 

@@ -3325,7 +3325,6 @@ def QUAD_to_data_dict(fname):
                 data[1] = np.array(data[1])
                 data[2] = np.array(data[2])
                 data.pop()
-                print(data)
             else:
                 data[0] = np.array(data[0])
                 data[1] = np.array(data[1])

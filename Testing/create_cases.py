@@ -160,24 +160,30 @@ def negative_model():
 
 
 if __name__ == "__main__":
-    find_file = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
 
-    from data_structure import Read_ReMagX
-    filename = 'Pim7uc.all'
+    filename = '7uc_sample_test.h5'
     if os.getcwd().split('\\')[-1] == 'Testing':
         my_path = os.getcwd() + '/test_data/' + filename
-        path = os.getcwd() + '/test_data/'
     else:
         my_path = os.getcwd() + '/Testing/test_data/' + filename
-        path = os.getcwd() + '/Testing/test_data/'
+
+    sample = ds.ReadSampleHDF5(my_path)
 
 
-    data_info, data_dict = Read_ReMagX(my_path)
+    parameters = [[0, 'B', 'Ti', 'Mn2', 0.5], [1, 'B', 'Ti', 'Mn3', 0.1], [2, 'B', 'Mn3', 'Mn2', 0.9],
+                  [3, 'B', 'Mn2', 'Mn3', 0.75], [4, 'B', 'Ti', 'Mn2', 0.55], [5, 'B', 'Mn2', 'Ti', 0.925],
+                  [6, 'B', 'Mn3', 'Ti', 0.4], [7, 'B', 'Ti', 'Mn2', 0.33333337], [8, 'B', 'Ti', 'Mn3', 0.84],
+                  [9, 'B', 'Mn3', 'Mn2', 0.65315315131], [00, 'B', 'Mn2', 'Mn3', 0.22232]]
 
-    name = list(data_dict.keys())[0]
-    print(data_dict[name].keys())
+    #layer, symbol, identifier1, identifier2, ratio
+    # Ti, Mn2, Mn3
 
-
-
-
-
+    my_list = []
+    my_dict = {}
+    for params in parameters:
+        my_dict = {}
+        sample.setRatio(params[0], params[1], params[2], params[3], params[4])
+        for i, key in enumerate(sample.structure[params[0]]['B'].polymorph):
+            my_dict[key] = sample.structure[params[0]]['B'].poly_ratio[i]
+        my_list.append(my_dict)
+    print(my_list)
