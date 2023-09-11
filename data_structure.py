@@ -289,23 +289,6 @@ def find_parameter_bound(string):
 
     return my_list
 
-"""
-def find_each_bound(string):
-    # find each boundary in a list of boundaries in string format.
-    # '[[[0.01,0.05],[0.05,0.5]]]' ---> ['[[0.01,0.05],[0.05,0.5]]']
-    my_bounds = []
-    my_string = ''
-    for s in string:
-        if s != '\'' and s != ',':
-            my_string = my_string + s
-        if s == ',' and my_string[-1] == ']':
-            my_bounds.append(my_string)
-            my_string = ''
-    my_bounds.append(my_string)
-    print(my_bounds)
-    return my_bounds
-"""
-
 def find_closing_bracket(string, open_index):
     stack = []  # Use a stack to keep track of nested brackets
     for i in range(open_index, len(string)):
