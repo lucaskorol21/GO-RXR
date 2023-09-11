@@ -1,6 +1,6 @@
 """
 Library: material_structure
-Version: 0.1
+Version: 0.3
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -1036,6 +1036,7 @@ class slab:
                                 if name not in self.eShift.keys():
                                     self.eShift[name] = 0
                                     self.ff_scale[name] = 1
+
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1514,9 +1515,6 @@ class slab:
         for e in self.find_sf[0].keys():
             if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
                 key_delete.append(e)
-            #else:
-            #    self.eShift[self.find_sf[0][e]] = 0
-            #    self.ff_scale[self.find_sf[0][e]] = 1
 
         for em in self.find_sf[1].keys():
             if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
@@ -1599,7 +1597,7 @@ class slab:
             self.structure[layer][identifier].density = density
         elif identifier.upper() == 'ALL':
             for key in keys:
-                self.structure[layer][key].roughness = density
+                self.structure[layer][key].density = density
 
 
 
@@ -1612,7 +1610,6 @@ class slab:
         :param val: Constant value as float type
         :return:
         """
-
         # for now this will only work for 3 element variations
         keys = list(self.structure[layer].keys())
 
@@ -1627,15 +1624,20 @@ class slab:
 
                 # sets non-constant element variation ratio's appropriately
                 for i in idx_no:
-                    r = self.structure[layer][symbol].poly_ratio[i]
-                    self.structure[layer][symbol].poly_ratio[i] = (1-val)*r/my_total
+                    if my_total == 0:
+                        r = 1/2
+                        self.structure[layer][symbol].poly_ratio[i] = (1-val)*r
+                    else:
+                        r = self.structure[layer][symbol].poly_ratio[i]
+                        self.structure[layer][symbol].poly_ratio[i] = (1 - val) * r / my_total
 
                 self.structure[layer][symbol].poly_ratio[idx] = val  # sets constant ratio value
 
     def setMultiVarConstant(self, layer, symbol, identifier, value):
         """
         Purpose: Sets multiple element variation ratios constant. This is ideal when optimizing an element with more than four variations.
-                 It should be noted that this function only works when only two element variations are allowed to vary.
+                 It should be noted that this function only works when two element variations are allowed to vary.
+                  - len(identifier) = total number of element variations - 2
         :param layer: integer type that signals the layer
         :param symbol: Symbol of the element or dummy variable
         :param identifier: List of identifiers to hold constant
@@ -1648,18 +1650,22 @@ class slab:
 
         # loops through elements in the layer until symbol is found
         if symbol in keys:
-            if len(self.structure[layer][symbol].polymorph) - len(identifier) == 2:
+            if len(self.structure[layer][symbol].polymorph) - len(identifier) <= 2:
                 # determines the index for the variations to hold constant
 
                 idx = [i for i in range(len(self.structure[layer][symbol].polymorph)) if self.structure[layer][symbol].polymorph[i] not in identifier]
 
-
                 beta = sum(self.structure[layer][symbol].poly_ratio[idx])  # sum of the polymorphs
+
 
                 # sets non-constant element variation ratio's appropriately
                 for i in idx:
-                    r = self.structure[layer][symbol].poly_ratio[i]
-                    self.structure[layer][symbol].poly_ratio[i] = gamma * r / beta
+                    if beta == 0:
+                        r = 1/2
+                        self.structure[layer][symbol].poly_ratio[i] = gamma * r
+                    else:
+                        r = self.structure[layer][symbol].poly_ratio[i]
+                        self.structure[layer][symbol].poly_ratio[i] = gamma * r / beta
 
                 # sets the constant values
                 my_i = 0
@@ -1775,7 +1781,7 @@ class slab:
             keys = list(self.structure[i].keys())
             if identifier in keys:
                 val = copy.deepcopy(self.structure[i][identifier].thickness)
-                self.structure[i][identifier].thickness = val*dprime/d
+                self.structure[i][identifier].thickness = val*d/dprime
             elif identifier.upper() == 'ALL':
                 val = copy.deepcopy(self.structure[i][keys[0]].thickness)
                 for key in keys:

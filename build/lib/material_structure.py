@@ -1036,6 +1036,7 @@ class slab:
                                 if name not in self.eShift.keys():
                                     self.eShift[name] = 0
                                     self.ff_scale[name] = 1
+
                             # Density normalization
                             density_poly[ele][poly] = density_poly[ele][poly] + (const[po]*erf_func + begin*current_density[po])
 
@@ -1514,10 +1515,11 @@ class slab:
         for e in self.find_sf[0].keys():
             if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
                 key_delete.append(e)
+
             #else:
             #    self.eShift[self.find_sf[0][e]] = 0
             #    self.ff_scale[self.find_sf[0][e]] = 1
-
+        print(key_delete)
         for em in self.find_sf[1].keys():
             if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
                 mag_key_delete.append(em)
@@ -1599,7 +1601,7 @@ class slab:
             self.structure[layer][identifier].density = density
         elif identifier.upper() == 'ALL':
             for key in keys:
-                self.structure[layer][key].roughness = density
+                self.structure[layer][key].density = density
 
 
 
@@ -1635,7 +1637,8 @@ class slab:
     def setMultiVarConstant(self, layer, symbol, identifier, value):
         """
         Purpose: Sets multiple element variation ratios constant. This is ideal when optimizing an element with more than four variations.
-                 It should be noted that this function only works when only two element variations are allowed to vary.
+                 It should be noted that this function only works when two element variations are allowed to vary.
+                  - len(identifier) = total number of element variations - 2
         :param layer: integer type that signals the layer
         :param symbol: Symbol of the element or dummy variable
         :param identifier: List of identifiers to hold constant
@@ -1775,7 +1778,7 @@ class slab:
             keys = list(self.structure[i].keys())
             if identifier in keys:
                 val = copy.deepcopy(self.structure[i][identifier].thickness)
-                self.structure[i][identifier].thickness = val*dprime/d
+                self.structure[i][identifier].thickness = val*d/dprime
             elif identifier.upper() == 'ALL':
                 val = copy.deepcopy(self.structure[i][keys[0]].thickness)
                 for key in keys:

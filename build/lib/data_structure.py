@@ -41,6 +41,9 @@ sequence can be done.
 
 import matplotlib.pyplot as plt
 import os
+
+import numpy as np
+
 from material_structure import *
 from material_model import *
 from time import *
@@ -224,6 +227,7 @@ def evaluate_list(string):
     :param string: Scan boundaries in string form
     :return: Boundary in list format
     """
+
     # check to make sure it is a list
     if type(string) is not np.ndarray and type(string) is not list:
         if string[0] != '[' and string[-1] != ']':
@@ -242,13 +246,14 @@ def evaluate_list(string):
             if len(array1) > len(array2):  # string has commas
                 my_array = array1
             elif len(array1)< len(array2):  # string has spaces
-                if len(array2) > 2:
-                    array2.remove(',')
                 my_array = array2
             elif len(array1) == len(array2):  # string has spaces and commas
                 my_array = array1
 
-            final_array = [float(s) for s in my_array]  # transforms in back into a list of strings
+            if ',' in my_array:
+                my_array = list(filter(lambda item: item != ',', my_array))
+
+            final_array = [float(s.replace(',','')) for s in my_array]  # transforms in back into a list of strings
     else:
         final_array = string
 
@@ -284,9 +289,10 @@ def find_parameter_bound(string):
 
     return my_list
 
-
+"""
 def find_each_bound(string):
     # find each boundary in a list of boundaries in string format.
+    # '[[[0.01,0.05],[0.05,0.5]]]' ---> ['[[0.01,0.05],[0.05,0.5]]']
     my_bounds = []
     my_string = ''
     for s in string:
@@ -296,10 +302,45 @@ def find_each_bound(string):
             my_bounds.append(my_string)
             my_string = ''
     my_bounds.append(my_string)
+    print(my_bounds)
+    return my_bounds
+"""
+
+def find_closing_bracket(string, open_index):
+    stack = []  # Use a stack to keep track of nested brackets
+    for i in range(open_index, len(string)):
+        if string[i] == '[':
+            stack.append('[')
+        elif string[i] == ']':
+            if not stack:
+                return -1  # No matching opening bracket found
+            stack.pop()
+            if not stack:
+                return i  # Found the matching closing bracket
+
+    return -1  # No matching closing bracket found
+
+def find_each_bound(string):
+    #string = string[1:-1]
+    my_bounds = []
+
+    while string != '':
+        if string[0] == ',' or string[0] == ' ':
+            string = string[1:]
+        else:
+            idx = find_closing_bracket(string,0)
+            my_bounds.append(string[0:idx+1])
+            string = string[idx+2:]
+
     return my_bounds
 
 def find_the_bound(string):
+
     bound_list = []
+
+    translation_table = str.maketrans('', '', "'")
+    string = string.translate(translation_table)
+
 
     # gets string in expected form
     removeFront = True
@@ -315,22 +356,28 @@ def find_the_bound(string):
     open_count = 0
     closed_count = 0
     my_string = ''
+    skip = False
     for s in string:
         if s == '[':
             open_count = open_count + 1
         if s ==']':
             closed_count = closed_count + 1
 
-        if s != '[' and s != ']':
+        if open_count == 0 and closed_count == 0 and ( s == ' ' or s == ','):
+           skip = False
+        else:
+            skip = True
+
+
+        if s != '[' and s != ']' and skip:
             my_string = my_string + s
 
         if open_count == 1 and closed_count == 1:
             open_count = 0
             closed_count = 0
-            my_string = my_string.split()
-            if '' in my_string:
-                my_string.remove('')
+            my_string = my_string.split(',')
             bound_list.append(my_string)
+
             my_string = ''
 
     for i, bound in enumerate(bound_list):
@@ -362,38 +409,61 @@ def evaluate_weights(weights):
     # format = [[],[],[]]
     weight_list = []
     final_array = []
+
     if type(weights) is not np.ndarray and type(weights) is not list:
         if weights != '[]':
-            weights = weights[1:-1]
+            # removes uneccesary characters and spaces
+            translation_table = str.maketrans('', '', "'")
+            weights = weights.translate(translation_table)
+
+            # gets string in expected form
+            removeFront = True
+            if weights[0] != ' ':
+                removeFront = False
+            s_idx = 0
+            while removeFront:
+                if weights[s_idx] == ' ':
+                    removeFront = False
+                s_idx = s_idx + 1
+            weights = weights[s_idx + 1:-1]
+
 
             # finding the list of weights
-            string = ''
-            num_open = 0
-            num_closed = 0
+            open_count = 0
+            closed_count = 0
+            my_string = ''
+            skip = False
             for s in weights:
-                if s != '[' and s != ']' and s != '\'':
-                    string = string + s
+
 
                 if s == '[':
-                    num_open = num_open + 1
+                    open_count = open_count + 1
                 if s == ']':
-                    num_closed = num_closed + 1
+                    closed_count = closed_count + 1
 
-                if num_open == 1 and num_closed == 1:
-                    num_open = 0
-                    num_closed = 0
-                    string = string.split(',')
-                    if '' in string:
-                        string.remove('')
-                    weight_list.append(string)
-                    string = ''
+                if open_count == 0 and closed_count == 0 and (s == ' ' or s == ','):
+                    skip = False
+                else:
+                    skip = True
 
-            for weight in weight_list:
-                temp_array = [float(w) for w in weight]
+                if s != '[' and s != ']' and skip:
+                    my_string = my_string + s
 
-                final_array.append(temp_array)
+                if open_count == 1 and closed_count == 1:
+                    open_count = 0
+                    closed_count = 0
+                    my_string = my_string.split(',')
+                    weight_list.append(my_string)
+
+                    my_string = ''
+
+        for weight in weight_list:
+            temp_array = [float(w) for w in weight]
+
+            final_array.append(temp_array)
     else:
         final_array = weights
+
     return final_array
 
 
@@ -3204,6 +3274,151 @@ def saveNewFile(fname, info, data_dict, sample):
 
     f.close()
     return
+
+def QUAD_to_data_dict(fname):
+    data_dict = dict()
+
+    # read the data file and convert each line into a list format
+    with open(fname) as f:
+        lines = [line for line in f]
+
+    f.close()
+    start_new = True
+    data = [[],[],[],[]]
+    name = ''
+    scan_type = ''
+    for idx,line in enumerate(lines):
+        if idx == 0 or start_new:  # initialization
+            line = line.split()
+            scan_number = line[0]
+            pol = line[1]
+            scan_type = line[2]
+            energy = float(line[3])
+            angle = float(line[4])
+
+            temp_energy = str(round(float(line[3]),2))
+            temp_angle = str(round(float(line[4]),2))
+
+            name = ''
+            if scan_type == 'A':
+                name = line[0] + '_' + temp_energy + '_' + line[1]
+            else:
+                name = line[0] + '_E' + temp_energy + '_Th' + temp_angle + '_' + line[1]
+
+            data_dict[name] = dict()
+            data_dict[name]['Background Shift'] = 0
+            data_dict[name]['Scaling Factor'] = 1
+            data_dict[name]['DatasetNumber'] = scan_number
+            data_dict[name]['Polarization'] = pol
+            data_dict[name]['Energy'] = energy
+            if scan_type == 'E':
+                data_dict[name]['Angle'] = angle
+
+            start_new = False
+            data = [[],[],[],[]]
+
+        elif line[0] == '=':
+            # terminate and start new
+            n = len(data[0])
+            if scan_type == 'A':
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data.pop()
+                print(data)
+            else:
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data[3] = np.array(data[3])
+
+            data_dict[name]['DataPoints'] = n
+            data_dict[name]['Data'] = data
+            start_new = True
+        else:
+            line = line.split()
+            # save the data
+            if scan_type == 'A':
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+            else:
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+                data[3].append(float(line[0]))  # E
+    return data_dict
+
+def createDataHDF5fromDict(filename, data_dict_list):
+    """
+    Purpose: Create HDF5 data file from data_dict
+    :param filename: Name of file (must have .h5 extension)
+    :param data_dict_list: Dictionary or list of dictionaries
+    :return: N/A
+    """
+
+    if filename.endswith('.h5'):
+
+        f = h5py.File(filename, "a")
+        if type(data_dict_list) is dict:
+            data_dict_list = [data_dict_list]
+
+        simulated = f.create_group('Simulated_data')
+        simR = simulated.create_group('Reflectivity_Scan')
+        simE = simulated.create_group('Energy_Scan')
+
+        experiment = f.create_group('Experimental_data')
+        reflScan = experiment.create_group('Reflectivity_Scan')
+        energyScan = experiment.create_group('Energy_Scan')
+
+        for data_dict in data_dict_list:  # loops through all data_dicts
+            for name in data_dict.keys(): # loop through all data
+                if 'Angle' in data_dict[name].keys():
+                    dat = data_dict[name]['Data']
+                    dat = np.array(dat)
+                    m = np.shape(dat)
+                    dset = energyScan.create_dataset(name, m, data=dat, maxshape=(4, None), chunks=True)
+                    dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset.attrs['Energy'] = data_dict[name]['Energy']
+                    dset.attrs['Angle'] = data_dict[name]['Angle']
+                    dset.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+                    dat1 = data_dict[name]['Data']
+                    dset1 = simE.create_dataset(name, m, data=dat1, maxshape=(4, None), chunks=True)
+                    dset1.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset1.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset1.attrs['Energy'] = data_dict[name]['Energy']
+                    dset1.attrs['Angle'] = data_dict[name]['Angle']
+                    dset1.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset1.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset1.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+                else:
+                    dat = data_dict[name]['Data']
+                    dat = np.array(dat)
+                    m = np.shape(dat)
+
+                    dset = reflScan.create_dataset(name, m, data=dat, maxshape=(3, None), chunks=True)
+                    dset.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset.attrs['Energy'] = data_dict[name]['Energy']
+                    dset.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+                    dat1 = data_dict[name]['Data']
+                    dset1 = simR.create_dataset(name, m, data=dat1, maxshape=(3, None), chunks=True)
+                    dset1.attrs['DatasetNumber'] = data_dict[name]['DatasetNumber']
+                    dset1.attrs['DataPoints'] = data_dict[name]['DataPoints']
+                    dset1.attrs['Energy'] = data_dict[name]['Energy']
+                    dset1.attrs['Polarization'] = data_dict[name]['Polarization']
+                    dset1.attrs['Background Shift'] = data_dict[name]['Background Shift']
+                    dset1.attrs['Scaling Factor'] = data_dict[name]['Scaling Factor']
+
+        f.close()
+
 
 if __name__ == "__main__":
 

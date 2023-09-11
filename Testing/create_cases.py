@@ -160,24 +160,45 @@ def negative_model():
 
 
 if __name__ == "__main__":
-    find_file = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim7uc_unitCell_complete.h5"
-
-    from data_structure import Read_ReMagX
-    filename = 'Pim7uc.all'
+    from GUI_GO import checkscript
+    from global_optimization import changeSampleParams
+    # Tests setVariationConstant function for script feature
+    # Tests to element fit
+    # Tests to element fit
+    filename = 'Pim4uc_test.h5'
     if os.getcwd().split('\\')[-1] == 'Testing':
         my_path = os.getcwd() + '/test_data/' + filename
-        path = os.getcwd() + '/test_data/'
+        script_name = '/test_data/test_script.txt'
     else:
         my_path = os.getcwd() + '/Testing/test_data/' + filename
-        path = os.getcwd() + '/Testing/test_data/'
+        script_name = '/Testing/test_data/test_script.txt'
+
+    sample = ds.ReadSampleHDF5(my_path)
+
+    data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+
+    parameters = [['SCALING FACTOR', 'ALL SCANS'], ['BACKGROUND SHIFT', 'ALL SCANS']]
+
+    x = [1.5, 1e-7]  # parameter values
+
+    # create the background shift and scaling factor keys
+    backS = dict()
+    scaleF = dict()
+    for name in list(data_dict.keys()):
+        backS[name] = 0
+        scaleF[name] = 1
+
+    my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+    orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
+
+    sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
+                                                                         my_script, orbitals)
 
 
-    data_info, data_dict = Read_ReMagX(my_path)
-
-    name = list(data_dict.keys())[0]
-    print(data_dict[name].keys())
 
 
+    # check background shift
 
+    # check scaling factors
 
-
+    # check orbitals
