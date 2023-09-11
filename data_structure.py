@@ -3419,6 +3419,353 @@ def createDataHDF5fromDict(filename, data_dict_list):
         f.close()
 
 
+class DataFile:
+    # This class is used to save the data files in the appropriate form for GO-RXR
+    def __init__(self):
+        self.experimental_data = dict() # dictionary that contains all the data information
+
+    def addEnergyScan(self, dnum, min_energy, theta, polarization, EList, RList, thetaList=[], background_shift=0, scaling_factor=1):
+        """
+        Purpose: Add energy scan to experimental data
+        :param dnum: data scan number (entered as an integer type)
+        :param min_energy: Minimum energy (entered as a float)
+        :param theta: Constant grazing angle in degrees (entered as a float/integer)
+        :param EList: List of energies (energies must be float values)
+        :param RList: List of reflectivity values (reflectivity must be float values)
+        :param thetaList: List of measured theta values (default is to use constant theta value)
+        :param background_shift: Shift value to apply to experimental data (default set to 0)
+        :param scaling factor: Scaling factor applied to experimental data (default set to 1)
+        """
+        qzList = []
+        # checks all variables that they are the correct type
+        if type(dnum) != int:
+            raise TypeError('Dataset number must be an integer type.')
+        if type(min_energy) != float and type(min_energy) != int:
+            raise TypeError('Minimum energy must be an integer or float type.')
+        if type(theta) != float and type(theta) != int:
+            raise TypeError('Grazing angle must be a float or integer type.')
+        if polarization not in ['S', 'P', 'LC', 'RC']:
+            raise TypeError('Polarization must be S, P, LC, or RC.')
+        if type(EList) != list and type(EList) != np.ndarray:
+            raise TypeError('List of energies must be a list or numpy array.')
+        if type(RList) != list and type(RList) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(thetaList) != list and type(thetaList) != np.ndarray:
+            raise TypeError('List of grazing angles must be a list or numpy array.')
+        if type(background_shift) != float and type(background_shift) != int:
+            raise TypeError('Background shift must be an integer or float type.')
+        if type(scaling_factor) != float and type(scaling_factor) != int:
+            raise TypeError('Scaling factor must be an integer or float type.')
+
+        if len(thetaList) != 0:
+            if len(EList) != len(RList):
+                raise ValueError('Elist and Rlist must be the same length')
+            thetaList = [theta for i in range(len(EList))]  # creates thetaList if not set
+            qzList = np.sin(np.array(thetaList) * np.pi / 180) * (np.array(EList) * 0.001013546143)
+        else:
+            if len(EList) != len(RList) and len(EList) != len(thetaList):
+                raise ValueError('Elist, Rlist, and thetaList must be the same length')
+
+            qzList = np.sin(np.array(thetaList) * np.pi / 180) * (np.array(EList) * 0.001013546143)
+
+        num_points = len(EList)
+        # create energy scan name
+        temp_energy = str(round(float(min_energy), 2))
+        temp_theta = str(round(float(theta), 2))
+        name = str(dnum) + '_E' + str(temp_energy) + '_Th' + str(temp_theta) + '_' + polarization
+
+        # create dictionary for input data
+        self.experimental_data[name] = dict()
+        self.experimental_data[name]['Background Shift'] = background_shift
+        self.experimental_data[name]['Scaling Factor'] = scaling_factor
+        self.experimental_data[name]['DatasetNumber'] = str(dnum)
+        self.experimental_data[name]['Polarization'] = polarization
+        self.experimental_data[name]['Energy'] = min_energy
+        self.experimental_data[name]['Angle'] = theta
+        self.experimental_data[name]['DataPoints'] = num_points
+
+        # set the data in the appropriate form
+        data = [np.array(qzList), np.array(thetaList), np.array(RList), np.array(EList)]
+        self.experimental_data[name]['Data'] = data
+
+    def addReflectivityScan(self, dnum, energy, polarization, qzList, RList, thetaList=[], background_shift=0,
+                      scaling_factor=1):
+        """
+        Purpose: Add energy scan to experimental data
+        :param dnum: data scan number (entered as an integer type)
+        :param energy: Minimum energy (entered as a float)
+        :param qzList: List of energies (energies must be float values)
+        :param RList: List of reflectivity values (reflectivity must be float values)
+        :param thetaList: List of measured theta values (default is to use constant theta value)
+        :param background_shift: Shift value to apply to experimental data (default set to 0)
+        :param scaling factor: Scaling factor applied to experimental data (default set to 1)
+        """
+
+        # checks all variables that they are the correct type
+        if type(dnum) != int:
+            raise TypeError('Dataset number must be an integer type.')
+        if type(energy) != float and type(energy) != int:
+            raise TypeError('Constant energy must be an integer or float type.')
+        if polarization not in ['S', 'P', 'LC', 'RC']:
+            raise TypeError('Polarization must be S, P, LC, or RC.')
+        if type(qzList) != list and type(qzList) != np.ndarray:
+            raise TypeError('List of energies must be a list or numpy array.')
+        if type(RList) != list and type(RList) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(thetaList) != list and type(thetaList) != np.ndarray:
+            raise TypeError('List of grazing angles must be a list or numpy array.')
+        if type(background_shift) != float and type(background_shift) != int:
+            raise TypeError('Background shift must be an integer or float type.')
+        if type(scaling_factor) != float and type(scaling_factor) != int:
+            raise TypeError('Scaling factor must be an integer or float type.')
+
+        if len(thetaList) != 0:
+            if len(qzList) != len(RList):
+                raise ValueError('Elist and Rlist must be the same length')
+            thetaList = np.arcsin(np.array(qzList)/(energy * 0.001013546143))*180/np.pi
+        else:
+            if len(qzList) != len(RList) and len(thetaList) != len(thetaList):
+                raise ValueError('Elist, Rlist, and thetaList must be the same length')
+
+
+        num_points = len(qzList)
+        # create energy scan name
+        temp_energy = str(round(float(energy), 2))
+
+        name = str(dnum) + '_' + str(temp_energy) + '_' + polarization
+
+        # create dictionary for input data
+        self.experimental_data[name] = dict()
+        self.experimental_data[name]['Background Shift'] = background_shift
+        self.experimental_data[name]['Scaling Factor'] = scaling_factor
+        self.experimental_data[name]['DatasetNumber'] = str(dnum)
+        self.experimental_data[name]['Polarization'] = polarization
+        self.experimental_data[name]['Energy'] = energy
+        self.experimental_data[name]['DataPoints'] = num_points
+
+        # set the data in the appropriate form
+        data = [np.array(qzList), np.array(thetaList), np.array(RList)]
+        self.experimental_data[name]['Data'] = data
+
+    def addAsymmetrySpectrum(self, dnum, min_energy, theta, polarization, EList, R1List, R2List, thetaList=[], background_shift=0,
+                      scaling_factor=1):
+        """
+        Purpose: Add energy scan to experimental data
+        :param dnum: data scan number (entered as an integer type)
+        :param min_energy: Minimum energy (entered as a float)
+        :param theta: Constant grazing angle in degrees (entered as a float/integer)
+        :param EList: List of energies (energies must be float values)
+        :param R1List: List of reflectivity values (reflectivity must be float values)
+        :param R2List: List of reflectivity values (reflectivity must be float values)
+        :param thetaList: List of measured theta values (default is to use constant theta value)
+        :param background_shift: Shift value to apply to experimental data (default set to 0)
+        :param scaling factor: Scaling factor applied to experimental data (default set to 1)
+        """
+        # Note: For the asymmetry calculation
+        #       -> A = (R1-R2)/(R1+R2)
+        qzList = []
+        # checks all variables that they are the correct type
+        if type(dnum) != int:
+            raise TypeError('Dataset number must be an integer type.')
+        if type(min_energy) != float and type(min_energy) != int:
+            raise TypeError('Minimum energy must be an integer or float type.')
+        if type(theta) != float and type(theta) != int:
+            raise TypeError('Grazing angle must be a float or integer type.')
+        if polarization not in ['AC', 'AL']:
+            raise TypeError('Polarization must be AL or AC.')
+        if type(EList) != list and type(EList) != np.ndarray:
+            raise TypeError('List of energies must be a list or numpy array.')
+        if type(R1List) != list and type(R1List) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(R2List) != list and type(R2List) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(thetaList) != list and type(thetaList) != np.ndarray:
+            raise TypeError('List of grazing angles must be a list or numpy array.')
+        if type(background_shift) != float and type(background_shift) != int:
+            raise TypeError('Background shift must be an integer or float type.')
+        if type(scaling_factor) != float and type(scaling_factor) != int:
+            raise TypeError('Scaling factor must be an integer or float type.')
+
+        if len(thetaList) != 0:
+            if len(EList) != len(R1List):
+                raise ValueError('Elist and R1list must be the same length')
+            if len(R2List) != len(R1List):
+                raise ValueError('R1list and R2list must be the same length')
+            thetaList = [theta for i in range(len(EList))]  # creates thetaList if not set
+            qzList = np.sin(np.array(thetaList) * np.pi / 180) * (np.array(EList) * 0.001013546143)
+        else:
+            if len(EList) != len(R1List) and len(EList) != len(thetaList) and len(R1List) != len(R2List):
+                raise ValueError('Elist, R1list, R2List, and thetaList must be the same length')
+
+            qzList = np.sin(np.array(thetaList) * np.pi / 180) * (np.array(EList) * 0.001013546143)
+
+        num_points = len(EList)
+        # create energy scan name
+        temp_energy = str(round(float(min_energy), 2))
+        temp_theta = str(round(float(theta), 2))
+        name = str(dnum) + '_E' + str(temp_energy) + '_Th' + str(temp_theta) + '_' + polarization
+
+        # create dictionary for input data
+        self.experimental_data[name] = dict()
+        self.experimental_data[name]['Background Shift'] = background_shift
+        self.experimental_data[name]['Scaling Factor'] = scaling_factor
+        self.experimental_data[name]['DatasetNumber'] = str(dnum)
+        self.experimental_data[name]['Polarization'] = polarization
+        self.experimental_data[name]['Energy'] = min_energy
+        self.experimental_data[name]['Angle'] = theta
+        self.experimental_data[name]['DataPoints'] = num_points
+
+        # set the data in the appropriate form
+        A = (np.array(R1List)-np.array(R2List))/(np.array(R1List)+np.array(R2List))
+        data = [np.array(qzList), np.array(thetaList), A, np.array(EList)]
+        self.experimental_data[name]['Data'] = data
+
+    def addAsymmetryCurve(self, dnum, energy, polarization, qzList, R1List, R2List, thetaList=[], background_shift=0,
+                            scaling_factor=1):
+        """
+        Purpose: Add energy scan to experimental data
+        :param dnum: data scan number (entered as an integer type)
+        :param energy: Minimum energy (entered as a float)
+        :param qzList: List of energies (energies must be float values)
+        :param R1List: List of reflectivity values (reflectivity must be float values)
+        :param R2List: List of reflectivity values (reflectivity must be float values)
+        :param thetaList: List of measured theta values (default is to use constant theta value)
+        :param background_shift: Shift value to apply to experimental data (default set to 0)
+        :param scaling factor: Scaling factor applied to experimental data (default set to 1)
+        """
+        # Note: The asymmetry calculation is calculated as follows
+        #           -> A = (R1-R2)/(R1+R2)
+
+        # checks all variables that they are the correct type
+        if type(dnum) != int:
+            raise TypeError('Dataset number must be an integer type.')
+        if type(energy) != float and type(energy) != int:
+            raise TypeError('Constant energy must be an integer or float type.')
+        if polarization not in ['AL', 'AC']:
+            raise TypeError('Polarization must be AL or AC.')
+        if type(qzList) != list and type(qzList) != np.ndarray:
+            raise TypeError('List of energies must be a list or numpy array.')
+        if type(R1List) != list and type(R1List) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(R2List) != list and type(R2List) != np.ndarray:
+            raise TypeError('List of reflectivity must be a list or numpy array.')
+        if type(thetaList) != list and type(thetaList) != np.ndarray:
+            raise TypeError('List of grazing angles must be a list or numpy array.')
+        if type(background_shift) != float and type(background_shift) != int:
+            raise TypeError('Background shift must be an integer or float type.')
+        if type(scaling_factor) != float and type(scaling_factor) != int:
+            raise TypeError('Scaling factor must be an integer or float type.')
+
+        if len(thetaList) != 0:
+            if len(qzList) != len(R1List):
+                raise ValueError('qzList and R1List must be the same length')
+            if len(R2List) != len(R1List):
+                raise ValueError('R1List and R2List must be the same length')
+            thetaList = np.arcsin(np.array(qzList) / (energy * 0.001013546143)) * 180 / np.pi
+        else:
+            if len(qzList) != len(R1List) and len(thetaList) != len(thetaList) and len(R2List) != len(R1List):
+                raise ValueError('qzList, R1List, R2List, and thetaList must be the same length')
+
+        num_points = len(qzList)
+        # create energy scan name
+        temp_energy = str(round(float(energy), 2))
+
+        name = str(dnum) + '_' + str(temp_energy) + '_' + polarization
+
+        # create dictionary for input data
+        self.experimental_data[name] = dict()
+        self.experimental_data[name]['Background Shift'] = background_shift
+        self.experimental_data[name]['Scaling Factor'] = scaling_factor
+        self.experimental_data[name]['DatasetNumber'] = str(dnum)
+        self.experimental_data[name]['Polarization'] = polarization
+        self.experimental_data[name]['Energy'] = energy
+        self.experimental_data[name]['DataPoints'] = num_points
+
+        # set the data in the appropriate form
+        A = (np.array(R1List)- np.array(R2List))/(np.array(R1List) + np.array(R2List))
+        data = [np.array(qzList), np.array(thetaList), A]
+        self.experimental_data[name]['Data'] = data
+
+    def return_data_dict(self):
+        # returns the data dictonary
+        return self.experimental_data
+
+    def is_name_in_data(self, name):
+        """
+        Purpose: determine if some experimental data has already been included into the dataset
+        :param name: The name of the experimental data
+        :return: True if found in experimental data
+        """
+        if name in self.experimental_data.keys():
+            return True
+        else:
+            return False
+
+    def saveData(self,fname):
+        createDataHDF5fromDict(fname, self.experimental_data)
+
+
+"""
+        if idx == 0 or start_new:  # initialization
+            line = line.split()
+            scan_number = line[0]
+            pol = line[1]
+            scan_type = line[2]
+            energy = float(line[3])
+            angle = float(line[4])
+
+            temp_energy = str(round(float(line[3]),2))
+            temp_angle = str(round(float(line[4]),2))
+
+            name = ''
+            if scan_type == 'A':
+                name = line[0] + '_' + temp_energy + '_' + line[1]
+            else:
+                name = line[0] + '_E' + temp_energy + '_Th' + temp_angle + '_' + line[1]
+
+            data_dict[name] = dict()
+            data_dict[name]['Background Shift'] = 0
+            data_dict[name]['Scaling Factor'] = 1
+            data_dict[name]['DatasetNumber'] = scan_number
+            data_dict[name]['Polarization'] = pol
+            data_dict[name]['Energy'] = energy
+            if scan_type == 'E':
+                data_dict[name]['Angle'] = angle
+
+            start_new = False
+            data = [[],[],[],[]]
+
+        elif line[0] == '=':
+            # terminate and start new
+            n = len(data[0])
+            if scan_type == 'A':
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data.pop()
+            else:
+                data[0] = np.array(data[0])
+                data[1] = np.array(data[1])
+                data[2] = np.array(data[2])
+                data[3] = np.array(data[3])
+
+            data_dict[name]['DataPoints'] = n
+            data_dict[name]['Data'] = data
+            start_new = True
+        else:
+            line = line.split()
+            # save the data
+            if scan_type == 'A':
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+            else:
+                data[0].append(float(line[2]))  # qz
+                data[1].append(float(line[1]))  # Theta
+                data[2].append(float(line[3]))  # R
+                data[3].append(float(line[0]))  # E
+"""
+
 if __name__ == "__main__":
 
     sample = slab(8)
