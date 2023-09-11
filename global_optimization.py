@@ -1,6 +1,6 @@
 """
 Library: global_optimization.py
-Version: 0.1
+Version: 0.3
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -100,23 +100,34 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, orbitals, u
                 # Determine if user wants to use compound or element mode
                 if mode == 'COMPOUND':
                     characteristic = params[3]  # thickness/density/roughness/linked roughness
-                    ele_idx = params[4]
+                    ele_idx = params[4]  # row highlighted in GO-RXR
 
                     my_ele = list(sample.structure[layer].keys())[ele_idx]
-                    diffT = x[p] - sample.structure[layer][my_ele].thickness
-                    diffD = x[p] - sample.structure[layer][my_ele].density
-                    diffR = x[p] - sample.structure[layer][my_ele].roughness
-                    diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
+
+                    diffT = 0
+                    diffD = 0
+                    diffR = 0
+                    diffLR = 0
+
+                    if characteristic == 'THICKNESS':
+                        diffT = x[p] - sample.structure[layer][my_ele].thickness
+                    elif characteristic == 'DENSITY':
+                        diffD = x[p] - sample.structure[layer][my_ele].density
+                    elif characteristic == 'ROUGHNESS':
+                        diffR = x[p] - sample.structure[layer][my_ele].roughness
+                    elif characteristic == 'LINKED ROUGHNESS':
+                        diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
                     #print(sample.structure)
                     # determine the difference parameter for compound mode (will always be the first element)
                     for ele in list(sample.structure[layer].keys()):
                         if characteristic == 'THICKNESS':
-
+                            #diffT = x[p] - sample.structure[layer][my_ele].thickness
                             if ele == my_ele:
                                 sample.structure[layer][ele].thickness = x[p]
                             else:
                                 sample.structure[layer][ele].thickness = sample.structure[layer][ele].thickness + diffT
                         elif characteristic == 'DENSITY':
+                            #diffD = x[p] - sample.structure[layer][my_ele].density
                             stoich = sample.structure[layer][ele].stoichiometry  # stoichiometry
                             molar_mass = sample.structure[layer][ele].molar_mass  # molar mass
                             if ele == my_ele:
@@ -124,11 +135,13 @@ def changeSampleParams(x, parameters, sample, backS, scaleF, script, orbitals, u
                             else:
                                 sample.structure[layer][ele].density = sample.structure[layer][ele].density + diffD*stoich # set density
                         elif characteristic == 'ROUGHNESS':
+                            #diffR = x[p] - sample.structure[layer][my_ele].roughness
                             if ele == my_ele:
                                 sample.structure[layer][ele].roughness = x[p]
                             else:
                                 sample.structure[layer][ele].roughness = sample.structure[layer][ele].roughness + diffR
                         elif characteristic == 'LINKED ROUGHNESS':
+                            #diffLR = x[p] - sample.structure[layer][my_ele].linked_roughness
                             if ele == my_ele:
                                 sample.structure[layer][ele].linked_roughness = x[p]
                             else:

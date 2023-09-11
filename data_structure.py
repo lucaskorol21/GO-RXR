@@ -1,6 +1,6 @@
 """
 Library: data_structure
-Version: 0.2
+Version: 0.3
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023

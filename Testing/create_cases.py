@@ -160,30 +160,45 @@ def negative_model():
 
 
 if __name__ == "__main__":
-
-    filename = '7uc_sample_test.h5'
+    from GUI_GO import checkscript
+    from global_optimization import changeSampleParams
+    # Tests setVariationConstant function for script feature
+    # Tests to element fit
+    # Tests to element fit
+    filename = 'Pim4uc_test.h5'
     if os.getcwd().split('\\')[-1] == 'Testing':
         my_path = os.getcwd() + '/test_data/' + filename
+        script_name = '/test_data/test_script.txt'
     else:
         my_path = os.getcwd() + '/Testing/test_data/' + filename
+        script_name = '/Testing/test_data/test_script.txt'
 
     sample = ds.ReadSampleHDF5(my_path)
 
+    data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
 
-    parameters = [[0, 'B', 'Ti', 'Mn2', 0.5], [1, 'B', 'Ti', 'Mn3', 0.1], [2, 'B', 'Mn3', 'Mn2', 0.9],
-                  [3, 'B', 'Mn2', 'Mn3', 0.75], [4, 'B', 'Ti', 'Mn2', 0.55], [5, 'B', 'Mn2', 'Ti', 0.925],
-                  [6, 'B', 'Mn3', 'Ti', 0.4], [7, 'B', 'Ti', 'Mn2', 0.33333337], [8, 'B', 'Ti', 'Mn3', 0.84],
-                  [9, 'B', 'Mn3', 'Mn2', 0.65315315131], [00, 'B', 'Mn2', 'Mn3', 0.22232]]
+    parameters = [['SCALING FACTOR', 'ALL SCANS'], ['BACKGROUND SHIFT', 'ALL SCANS']]
 
-    #layer, symbol, identifier1, identifier2, ratio
-    # Ti, Mn2, Mn3
+    x = [1.5, 1e-7]  # parameter values
 
-    my_list = []
-    my_dict = {}
-    for params in parameters:
-        my_dict = {}
-        sample.setRatio(params[0], params[1], params[2], params[3], params[4])
-        for i, key in enumerate(sample.structure[params[0]]['B'].polymorph):
-            my_dict[key] = sample.structure[params[0]]['B'].poly_ratio[i]
-        my_list.append(my_dict)
-    print(my_list)
+    # create the background shift and scaling factor keys
+    backS = dict()
+    scaleF = dict()
+    for name in list(data_dict.keys()):
+        backS[name] = 0
+        scaleF[name] = 1
+
+    my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+    orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
+
+    sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
+                                                                         my_script, orbitals)
+
+
+
+
+    # check background shift
+
+    # check scaling factors
+
+    # check orbitals

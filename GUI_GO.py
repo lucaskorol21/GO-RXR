@@ -10498,8 +10498,12 @@ def checkbracket(myStr):
         return True
 """
 
-def checkscript(sample):
-    script = os.getcwd() + '/default_script.txt'
+def checkscript(sample, fname=''):
+
+    if fname == '':
+        script = os.getcwd() + '/default_script.txt'
+    else:
+        script = os.getcwd() + fname
     #script = fname
     my_script = list()
     my_error = dict()
