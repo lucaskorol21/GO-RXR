@@ -1516,10 +1516,6 @@ class slab:
             if self.find_sf[0][e] == '' or self.find_sf[0][e] == 0 or self.find_sf[0][e] == '0':
                 key_delete.append(e)
 
-            #else:
-            #    self.eShift[self.find_sf[0][e]] = 0
-            #    self.ff_scale[self.find_sf[0][e]] = 1
-        print(key_delete)
         for em in self.find_sf[1].keys():
             if self.find_sf[1][em] == '' or self.find_sf[1][em] == 0 or self.find_sf[1][em] == '0':
                 mag_key_delete.append(em)

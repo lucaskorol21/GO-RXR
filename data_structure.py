@@ -3696,7 +3696,7 @@ class DataFile:
         :param name: The name of the experimental data
         :return: True if found in experimental data
         """
-        if name in self.experimental_data.keys():
+        if name in list(self.experimental_data.keys()):
             return True
         else:
             return False
