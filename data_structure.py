@@ -3704,68 +3704,6 @@ class DataFile:
     def saveData(self,fname):
         createDataHDF5fromDict(fname, self.experimental_data)
 
-
-"""
-        if idx == 0 or start_new:  # initialization
-            line = line.split()
-            scan_number = line[0]
-            pol = line[1]
-            scan_type = line[2]
-            energy = float(line[3])
-            angle = float(line[4])
-
-            temp_energy = str(round(float(line[3]),2))
-            temp_angle = str(round(float(line[4]),2))
-
-            name = ''
-            if scan_type == 'A':
-                name = line[0] + '_' + temp_energy + '_' + line[1]
-            else:
-                name = line[0] + '_E' + temp_energy + '_Th' + temp_angle + '_' + line[1]
-
-            data_dict[name] = dict()
-            data_dict[name]['Background Shift'] = 0
-            data_dict[name]['Scaling Factor'] = 1
-            data_dict[name]['DatasetNumber'] = scan_number
-            data_dict[name]['Polarization'] = pol
-            data_dict[name]['Energy'] = energy
-            if scan_type == 'E':
-                data_dict[name]['Angle'] = angle
-
-            start_new = False
-            data = [[],[],[],[]]
-
-        elif line[0] == '=':
-            # terminate and start new
-            n = len(data[0])
-            if scan_type == 'A':
-                data[0] = np.array(data[0])
-                data[1] = np.array(data[1])
-                data[2] = np.array(data[2])
-                data.pop()
-            else:
-                data[0] = np.array(data[0])
-                data[1] = np.array(data[1])
-                data[2] = np.array(data[2])
-                data[3] = np.array(data[3])
-
-            data_dict[name]['DataPoints'] = n
-            data_dict[name]['Data'] = data
-            start_new = True
-        else:
-            line = line.split()
-            # save the data
-            if scan_type == 'A':
-                data[0].append(float(line[2]))  # qz
-                data[1].append(float(line[1]))  # Theta
-                data[2].append(float(line[3]))  # R
-            else:
-                data[0].append(float(line[2]))  # qz
-                data[1].append(float(line[1]))  # Theta
-                data[2].append(float(line[3]))  # R
-                data[3].append(float(line[0]))  # E
-"""
-
 if __name__ == "__main__":
 
     sample = slab(8)
