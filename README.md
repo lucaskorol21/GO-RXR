@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#how-to-use">how-to-use</a> •
+  <a href="#install">how-to-use</a> •
   <a href="#download">Download</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
@@ -40,43 +40,33 @@
   - this is specifically used for the shape parameterization
 * Progress workspace
 
-## how-to-use
-
-The current version of GO-RXR only works for python 3.7 as this is required by the PythonReflectivity code. I would highly suggest downloading the stand-alone applications instead.
-
-To clone the github repostitory the following line of code can be input into the command prompt window:
-```bash
-# Clone this repository
-$ git clone https://github.com/lucaskorol21/MaterialReflection.git
-```
-Personally, I prefer to clone the repository in the 'code' tab in github.
-
-The dependencies and libraries that need to be included are:
- - Python 3.7
- - Cython 0.29.24
- - PyQt5 5.15.7
- - h5py 2.9.0
- - matplotlib 3.4.3
- - numba 0.55.2
- - numpy 1.21.4
- - scipy 1.7.1
- - steuptools 62.3.2
-
-After setting up your python interpreter run the following code in the python terminal.
+## install
+1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
+2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+3. Clone GO-RXR from the main branch in this repository
+4. Install the python libraries by running the setup python file:
 
 ```bash
-# Installing Pythonreflectivity cython file
 $ python setup.py install
 ```
-Once all of this is setup the python file GUI_GO.py can be run. This will open up the GO-RXR workspace and you can begin analyzing your data. It is important to note that GO-RXR can only load in project workspaces with the '.h5' extensions. The documentation can be found in the GO-RXR documentation in this repository, or by clicking the help tab in the application.
-
+5. If the setup file does not work, then the following libraries can be installed:
+    * Cython 0.29.24
+    * numpy 1.21.4
+    * PyQt5 5.15.7
+    * h5py 2.9.0
+    * matplotlib 3.4.3
+    * numba 0.55.2
+    * pyqt5 0.12.4
+    * scipy 1.7.1
+7. Install Python reflectivity by running
+```bash
+$ python setup_reflectivity.py install
+```
+9. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
+10. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
 ## Download
-Currently, there are a few updates that still need to be done before a stand-alone application can be downloaded. The application for GO-RXR is planned to be launched in July of 2023 and will be made accessible throught the link below.
-
-- [GO-RXR](https://research-groups.usask.ca/qmax/people.php)
-- [Visual Studio Installer](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-
+The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023.
 
 ## Credits
 
