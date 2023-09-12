@@ -3405,7 +3405,7 @@ def createDataHDF5fromDict(filename, data_dict_list):
 class DataFile:
     # This class is used to save the data files in the appropriate form for GO-RXR
     def __init__(self):
-        self.experimental_data = dict() # dictionary that contains all the data information
+        self.experimental_data = dict()
 
     def addEnergyScan(self, dnum, min_energy, theta, polarization, EList, RList, thetaList=[], background_shift=0, scaling_factor=1):
         """
@@ -3440,7 +3440,8 @@ class DataFile:
         if type(scaling_factor) != float and type(scaling_factor) != int:
             raise TypeError('Scaling factor must be an integer or float type.')
 
-        if len(thetaList) != 0:
+
+        if len(thetaList) == 0:
             if len(EList) != len(RList):
                 raise ValueError('Elist and Rlist must be the same length')
             thetaList = [theta for i in range(len(EList))]  # creates thetaList if not set
@@ -3448,7 +3449,7 @@ class DataFile:
         else:
             if len(EList) != len(RList) and len(EList) != len(thetaList):
                 raise ValueError('Elist, Rlist, and thetaList must be the same length')
-
+            print(thetaList)
             qzList = np.sin(np.array(thetaList) * np.pi / 180) * (np.array(EList) * 0.001013546143)
 
         num_points = len(EList)
@@ -3471,7 +3472,7 @@ class DataFile:
         data = [np.array(qzList), np.array(thetaList), np.array(RList), np.array(EList)]
         self.experimental_data[name]['Data'] = data
 
-    def addReflectivityScan(self, dnum, energy, polarization, qzList, RList, thetaList=[], background_shift=0,
+    def addReflectivityScan(self,dnum, energy, polarization, qzList, RList, thetaList=[], background_shift=0,
                       scaling_factor=1):
         """
         Purpose: Add energy scan to experimental data
@@ -3502,7 +3503,7 @@ class DataFile:
         if type(scaling_factor) != float and type(scaling_factor) != int:
             raise TypeError('Scaling factor must be an integer or float type.')
 
-        if len(thetaList) != 0:
+        if len(thetaList) == 0:
             if len(qzList) != len(RList):
                 raise ValueError('Elist and Rlist must be the same length')
             thetaList = np.arcsin(np.array(qzList)/(energy * 0.001013546143))*180/np.pi
@@ -3569,7 +3570,7 @@ class DataFile:
         if type(scaling_factor) != float and type(scaling_factor) != int:
             raise TypeError('Scaling factor must be an integer or float type.')
 
-        if len(thetaList) != 0:
+        if len(thetaList) == 0:
             if len(EList) != len(R1List):
                 raise ValueError('Elist and R1list must be the same length')
             if len(R2List) != len(R1List):
@@ -3639,7 +3640,7 @@ class DataFile:
         if type(scaling_factor) != float and type(scaling_factor) != int:
             raise TypeError('Scaling factor must be an integer or float type.')
 
-        if len(thetaList) != 0:
+        if len(thetaList) == 0:
             if len(qzList) != len(R1List):
                 raise ValueError('qzList and R1List must be the same length')
             if len(R2List) != len(R1List):
@@ -3668,6 +3669,7 @@ class DataFile:
         A = (np.array(R1List)- np.array(R2List))/(np.array(R1List) + np.array(R2List))
         data = [np.array(qzList), np.array(thetaList), A]
         self.experimental_data[name]['Data'] = data
+
 
     def return_data_dict(self):
         # returns the data dictonary
