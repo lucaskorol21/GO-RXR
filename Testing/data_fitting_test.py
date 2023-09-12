@@ -6,6 +6,10 @@ import data_structure as ds
 from global_optimization import changeSampleParams
 from GUI_GO import checkscript
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/data_fitting_test.py
+# into the terminal
+
 class TestDataFitting(unittest.TestCase):
     def test_ChangeSampleParams_element(self):
         # Tests to element fit

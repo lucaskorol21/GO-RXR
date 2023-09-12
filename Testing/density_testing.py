@@ -1,13 +1,14 @@
 import importlib
 import os
-
 from collections import Counter
 import material_structure as ms
 import pickle
 import unittest
-
 importlib.reload(ms)
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/density_testing.py
+# into the terminal
 
 class TestDensityProfile(unittest.TestCase):
     def test_simple_profile(self):

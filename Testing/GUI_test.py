@@ -1,6 +1,10 @@
 import unittest
 from GUI_GO import stringcheck, checkbracket
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/GUI_test.py
+# into the terminal
+
 class TestDataFitting(unittest.TestCase):
     def test_checkstring(self):
         strings = ['.000', '5.135481', '6', '5.2131.1551', '15,1531','-5.14','423143#.34','abcd',

@@ -1,6 +1,10 @@
 import unittest
 from data_structure import *
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/test_data_structure.py
+# into the terminal
+
 class TestMaterialStructure(unittest.TestCase):
     def test_getTitleInfo(self):
         # testing function that retrieves information from ReMagX data names

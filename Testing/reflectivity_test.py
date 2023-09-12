@@ -3,6 +3,10 @@ import material_structure as ms
 import os
 import unittest
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/reflectivity_test.py
+# into the terminal
+
 def load_reflections(fname):
 
     if os.getcwd().split('\\')[-1] == 'Testing':
