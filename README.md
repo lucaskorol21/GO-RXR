@@ -108,7 +108,7 @@ There are currently no papers published using GO-RXR, but there are several pape
 
 ## Bugs
 * Resolved (5/10/2023): Data fitting will run the script regardless if script option is selected. It is suggested to comment out every line of the script for now until this issues is resolved.
-* Issues with providing an element variation identifier with the same name as a previously defined element. If possible always provide a different element variation idenitifer name that is different than any of the element names provided in any layer.
+* Issues with providing an element variation identifier with the same name as a previously defined element. If possible always provide a different element variation identifier name that is different than any of the element names provided in any layer.
 
 ---
 
