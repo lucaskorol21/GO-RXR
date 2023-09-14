@@ -33,6 +33,8 @@ A clear statement of need that illustrates the purpose of the software.
 
 A description of how this software compares to other commonly-used packages in this research area.
 
+# References
+
 # Acknowledgments
 
 Give the proper acknowledgments.
