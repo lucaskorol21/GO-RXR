@@ -4,6 +4,10 @@ import os
 import material_structure as ms
 import unittest
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/material_model_testing.py
+# into the terminal
+
 class TestMaterialModel(unittest.TestCase):
     def test_form_factors_E(self):
         form_factors = ['La','Mn','O']

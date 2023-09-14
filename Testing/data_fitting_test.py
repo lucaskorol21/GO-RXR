@@ -6,6 +6,10 @@ import data_structure as ds
 from global_optimization import changeSampleParams
 from GUI_GO import checkscript
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/data_fitting_test.py
+# into the terminal
+
 class TestDataFitting(unittest.TestCase):
     def test_ChangeSampleParams_element(self):
         # Tests to element fit
@@ -90,11 +94,6 @@ class TestDataFitting(unittest.TestCase):
         sample = ds.ReadSampleHDF5(my_path)
 
         data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
-
-        #parameters = [[1, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'], [3, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'],
-        #              [2, 'STRUCTURAL', 'ELEMENT', 'Ti', 'DENSITY'], [4, 'STRUCTURAL', 'ELEMENT', 'O', 'DENSITY'],
-        #              [5, 'STRUCTURAL', 'ELEMENT', 'O', 'ROUGHNESS'], [6, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS'],
-        #              [7, 'STRUCTURAL', 'ELEMENT', 'C2', 'LINKED ROUGHNESS']]
 
         parameters = [[0, 'STRUCTURAL', 'COMPOUND','ROUGHNESS',0],[1, 'STRUCTURAL', 'COMPOUND','THICKNESS',1],
                       [2, 'STRUCTURAL', 'COMPOUND','DENSITY',2], [3, 'STRUCTURAL', 'COMPOUND','ROUGHNESS',0],
@@ -186,12 +185,109 @@ class TestDataFitting(unittest.TestCase):
 
         data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
 
-        parameters = [[1, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'], [3, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'],
-                      [2, 'STRUCTURAL', 'ELEMENT', 'Ti', 'DENSITY'], [4, 'STRUCTURAL', 'ELEMENT', 'O', 'DENSITY'],
-                      [5, 'STRUCTURAL', 'ELEMENT', 'O', 'ROUGHNESS'], [6, 'STRUCTURAL', 'ELEMENT', 'Mn', 'ROUGHNESS'],
-                      [7, 'STRUCTURAL', 'ELEMENT', 'C2', 'LINKED ROUGHNESS']]
+        parameters = [[0, 'POLYMORPHOUS', 'A', 'Sr'], [1, 'POLYMORPHOUS', 'A', 'La'],
+                      [2, 'POLYMORPHOUS', 'A', 'Sr'], [3, 'POLYMORPHOUS', 'Mn', 'Mn2+'],
+                      [4, 'POLYMORPHOUS', 'Mn', 'Mn3+'], [5, 'POLYMORPHOUS', 'Mn', 'Mn2+'],
+                      [6, 'POLYMORPHOUS', 'Mn', 'Mn3+']]
 
-        x = [10, 20, 0.025, 0.086, 0.5, 5, 2.75]  # parameter values
+        x = [0.5, 0.15468, 0.7, 0.641, 0.9999, 0.0001, 0.123456789]  # parameter values
+
+        # create the background shift and scaling factor keys
+        backS = dict()
+        scaleF = dict()
+        for name in list(data_dict.keys()):
+            backS[name] = 0
+            scaleF[name] = 1
+
+        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
+
+        sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF, my_script, orbitals)
+
+        # test sample parameters
+        sample_solution = copy.deepcopy(sample)
+
+        sample_solution = copy.deepcopy(sample)
+
+        idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[0]['A'].poly_ratio[idx] = 0.5
+        sample_solution.structure[0]['A'].poly_ratio[idx_no] = 1 - 0.5
+
+        idx = list(sample_solution.structure[1]['A'].polymorph).index('La')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[1]['A'].poly_ratio[idx] = 0.15468
+        sample_solution.structure[1]['A'].poly_ratio[idx_no] = 1 - 0.15468
+
+        idx = list(sample_solution.structure[2]['A'].polymorph).index('Sr')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[2]['A'].poly_ratio[idx] = 0.7
+        sample_solution.structure[2]['A'].poly_ratio[idx_no] = 1 - 0.7
+
+        idx = list(sample_solution.structure[3]['Mn'].polymorph).index('Mn2+')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[3]['Mn'].poly_ratio[idx] = 0.641
+        sample_solution.structure[3]['Mn'].poly_ratio[idx_no] = 1 - 0.641
+
+        idx = list(sample_solution.structure[4]['Mn'].polymorph).index('Mn3+')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[4]['Mn'].poly_ratio[idx] = 0.9999
+        sample_solution.structure[4]['Mn'].poly_ratio[idx_no] = 1 - 0.9999
+
+        idx = list(sample_solution.structure[5]['Mn'].polymorph).index('Mn2+')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[5]['Mn'].poly_ratio[idx] = 0.0001
+        sample_solution.structure[5]['Mn'].poly_ratio[idx_no] = 1 - 0.0001
+
+        idx = list(sample_solution.structure[6]['Mn'].polymorph).index('Mn3+')
+        idx_no = 0 if idx == 1 else 1
+        sample_solution.structure[6]['Mn'].poly_ratio[idx] = 0.123456789
+        sample_solution.structure[6]['Mn'].poly_ratio[idx_no] = 1 - 0.123456789
+
+        for j, param in enumerate(parameters):
+            idx_s = list(sample_solution.structure[param[0]][param[2]].polymorph).index(param[3])
+            idx_s_no = 0 if idx_s == 1 else 1
+            solution1 = sample_solution.structure[param[0]][param[2]].poly_ratio[idx_s]
+            solution2 = sample_solution.structure[param[0]][param[2]].poly_ratio[idx_s_no]
+
+            idx_t = list(sample_new.structure[param[0]][param[2]].polymorph).index(param[3])
+            idx_t_no = 0 if idx_s == 1 else 1
+            test1 = sample_new.structure[param[0]][param[2]].poly_ratio[idx_t]
+            test2 = sample_new.structure[param[0]][param[2]].poly_ratio[idx_t_no]
+
+            self.assertEqual(solution1, test1)
+            self.assertEqual(solution2, test2)
+
+
+        # test background shift
+        for bkey in list(backS.keys()):
+            self.assertEqual(backS[bkey], backS_new[bkey])
+
+        # test scaling factor
+        for skey in list(scaleF.keys()):
+            self.assertEqual(scaleF[skey], scaleF_new[skey])
+
+        # test orbital
+        self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
+
+    def test_ChangeSampleParams_magnetic(self):
+        # Tests to element fit
+        filename = 'Pim4uc_test.h5'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            script_name = '/Testing/test_data/test_script.txt'
+
+        sample = ds.ReadSampleHDF5(my_path)
+
+        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+
+        parameters = [[3, 'MAGNETIC', 'Mn', 'Mn2+'], [4, 'MAGNETIC', 'Mn', 'Mn3+'],
+                      [5, 'MAGNETIC', 'Mn', 'Mn2+'], [6, 'MAGNETIC', 'Mn', 'Mn3+']]
+
+        x = [0.001, 0.015,0.1648844464646, 0.00001313131313131563]  # parameter values
 
         # create the background shift and scaling factor keys
         backS = dict()
@@ -206,31 +302,29 @@ class TestDataFitting(unittest.TestCase):
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
                                                                              my_script, orbitals)
 
-        # test sample parameters
         sample_solution = copy.deepcopy(sample)
-        sample_solution.structure[1]['A'].thickness = 10
-        sample_solution.structure[3]['A'].thickness = 20
-        sample_solution.structure[2]['Ti'].density = 0.025
-        sample_solution.structure[4]['O'].density = 0.086
-        sample_solution.structure[5]['O'].roughness = 0.5
-        sample_solution.structure[6]['Mn'].roughness = 5
-        sample_solution.structure[7]['C2'].linked_roughness = 2.75
 
-        for i in range(0, 8):
-            for key in list(sample_solution.structure[i].keys()):
-                test_thickness = sample_new.structure[i][key].thickness
-                sol_thickness = sample_solution.structure[i][key].thickness
-                test_density = sample_new.structure[i][key].density
-                sol_density = sample_solution.structure[i][key].density
-                test_roughness = sample_new.structure[i][key].roughness
-                sol_roughness = sample_solution.structure[i][key].roughness
-                test_linked = sample_new.structure[i][key].linked_roughness
-                sol_linked = sample_solution.structure[i][key].linked_roughness
+        idx = list(sample_solution.structure[3]['Mn'].polymorph).index('Mn2+')
+        sample_solution.structure[3]['Mn'].mag_density[idx] = 0.001
 
-                self.assertEqual(test_thickness, sol_thickness)
-                self.assertEqual(test_density, sol_density)
-                self.assertEqual(test_roughness, sol_roughness)
-                self.assertEqual(test_linked, sol_linked)
+        idx = list(sample_solution.structure[4]['Mn'].polymorph).index('Mn3+')
+        sample_solution.structure[4]['Mn'].mag_density[idx] = 0.015
+
+        idx = list(sample_solution.structure[5]['Mn'].polymorph).index('Mn2+')
+        sample_solution.structure[5]['Mn'].mag_density[idx] = 0.1648844464646
+
+        idx = list(sample_solution.structure[6]['Mn'].polymorph).index('Mn2+')
+        sample_solution.structure[6]['Mn'].mag_density[idx] = 0.00001313131313131563
+
+        for i, param in enumerate(parameters):
+            idx_s = list(sample_solution.structure[param[0]][param[2]].polymorph).index(param[3])
+            solution = sample_solution.structure[param[0]][param[2]].mag_density[idx_s]
+
+            idx_t = list(sample_new.structure[param[0]][param[2]].polymorph).index(param[3])
+            test_value = sample_new.structure[param[0]][param[2]].mag_density[idx_t]
+
+            self.assertEqual(solution, test_value)
+
 
         # test background shift
         for bkey in list(backS.keys()):
@@ -243,14 +337,102 @@ class TestDataFitting(unittest.TestCase):
         # test orbital
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
-    def test_ChangeSampleParams_magnetic(self):
-        pass
-
     def test_ChangeSampleParams_eShift(self):
-        pass
+        # test scattering factors
+        filename = 'Pim4uc_test.h5'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            script_name = '/Testing/test_data/test_script.txt'
+
+        sample = ds.ReadSampleHDF5(my_path)
+
+        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+
+        parameters = [['SCATTERING FACTOR', 'STRUCTURAL', 'Sr'], ['SCATTERING FACTOR', 'STRUCTURAL', 'Ti'],
+                      ['SCATTERING FACTOR', 'STRUCTURAL', 'O'], ['SCATTERING FACTOR', 'STRUCTURAL', 'La'],
+                      ['SCATTERING FACTOR', 'STRUCTURAL', 'Mn2'], ['SCATTERING FACTOR', 'STRUCTURAL', 'Mn3']]
+
+        x = [-0.55,0.25,1.5,-2.5,1,-2]  # parameter values
+
+        # create the background shift and scaling factor keys
+        backS = dict()
+        scaleF = dict()
+        for name in list(data_dict.keys()):
+            backS[name] = 0
+            scaleF[name] = 1
+
+        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
+
+        sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
+                                                                             my_script, orbitals)
+
+
+        solutions = {'Sr': -0.55, 'Ti': 0.25, 'O':1.5, 'La':-2.5, 'Mn2':1,'Mn3':-2}
+
+        # test background shift
+        for bkey in list(backS.keys()):
+            self.assertEqual(backS[bkey], backS_new[bkey])
+
+        # test scaling factor
+        for skey in list(scaleF.keys()):
+            self.assertEqual(scaleF[skey], scaleF_new[skey])
+
+        # test orbital
+        self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
+
+        for key in solutions.keys():
+            self.assertEqual(sample_new.eShift[key], solutions[key])
 
     def test_ChangeSampleParams_eShift_mag(self):
-        pass
+        # test magnetic scattering factors
+        filename = 'Pim4uc_test.h5'
+        if os.getcwd().split('\\')[-1] == 'Testing':
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
+        else:
+            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            script_name = '/Testing/test_data/test_script.txt'
+
+        sample = ds.ReadSampleHDF5(my_path)
+
+        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+
+        parameters = [['SCATTERING FACTOR', 'MAGNETIC', 'Co'], ['SCATTERING FACTOR', 'MAGNETIC', 'Ni']]
+
+        x = [0.1254545,-0.89797979]  # parameter values
+
+        # create the background shift and scaling factor keys
+        backS = dict()
+        scaleF = dict()
+        for name in list(data_dict.keys()):
+            backS[name] = 0
+            scaleF[name] = 1
+
+        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
+
+        sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
+                                                                             my_script, orbitals)
+
+        solutions = {'Co': 0.1254545, 'Ni': -0.89797979}
+
+        # test background shift
+        for bkey in list(backS.keys()):
+            self.assertEqual(backS[bkey], backS_new[bkey])
+
+        # test scaling factor
+        for skey in list(scaleF.keys()):
+            self.assertEqual(scaleF[skey], scaleF_new[skey])
+
+        # test orbital
+        self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
+
+        for key in solutions.keys():
+            self.assertEqual(sample_new.mag_eShift[key], solutions[key])
 
     def test_ChangeSampleParams_orbitals(self):
         # Tests to element fit

@@ -1076,6 +1076,7 @@ class sampleWidget(QWidget):
 
             value = self.magTable.item(row, column).text()  # retrieves current value
 
+
             prev_value = self.magData[element][layer][column + 1][idx]  # retrieves previous value
             if column == 1:  # form factor column
                 prev_dict_name = 'ffm-' + prev_value
@@ -1102,6 +1103,14 @@ class sampleWidget(QWidget):
                             if column == 1:
                                 if prev_value != '' and value == '':
                                     self.magData[element][i][1][idx] = ''
+
+            if is_float(value):
+                if float(value) < 0 or float(value) > 1:
+                    messageBox = QMessageBox()
+                    messageBox.setWindowTitle("Warning")
+                    messageBox.setText('GO-RXR will change all magnetic density negative values to positive values.')
+                    messageBox.exec()
+                    self.varData[element][layer][column][row] = 0
 
             self.magData[element][layer][column + 1][idx] = value
 
@@ -1231,6 +1240,13 @@ class sampleWidget(QWidget):
                     self.varData[element][layer][column] = list(self.varData[element][layer][column])
                 self.varData[element][layer][column][row] = value
 
+                if is_float(value):
+                    if float(value)<0 or float(value)>1:
+                        messageBox = QMessageBox()
+                        messageBox.setWindowTitle("Warning")
+                        messageBox.setText('Ratio value must be between 0 and 1.')
+                        messageBox.exec()
+                        self.varData[element][layer][column][row] = 0
             # changing the scattering factor
             if column == 2:
                 if prev_value != value:
@@ -1307,7 +1323,13 @@ class sampleWidget(QWidget):
                                 self.structTableInfo[i][j][5] = value  # changes the scattering factor for all
 
             self.structTableInfo[layer][row][column] = self.structTable.item(row, column).text()  # update info
-
+            if column in [0,1,2,3,4,5]:
+                if is_float(value):
+                    if float(value) < 0:
+                        messageBox = QMessageBox()
+                        messageBox.setWindowTitle("Warning")
+                        messageBox.setText('All negative crystal values are converted to positive values.')
+                        messageBox.exec()
             # update fitting parameters and their info!
             for fit in copy_of_list:
                 element = self.structTableInfo[layer][row][0]
@@ -8473,6 +8495,8 @@ class ReflectometryApp(QMainWindow):
 
                 self._sampleWidget.setTableEShift()  # reset the energy shift table
                 self._noiseWidget._resetVariables(self.data_dict, selectedScans, boundaries)
+                self._noiseWidget.smoothScans= copy.copy(self.data_dict)
+
             elif fname.endswith('.all'):
                 messageBox = QMessageBox()
                 messageBox.setWindowTitle("ReMagX")
@@ -8600,6 +8624,7 @@ class ReflectometryApp(QMainWindow):
                     "File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
         self.activate_tab_1()
+
     def _saveFile(self):
         """
         Purpose: Save the current project space
@@ -8730,7 +8755,10 @@ class ReflectometryApp(QMainWindow):
                 self._reflectivityWidget.data_dict = self.data_dict
                 for scan in self.data:
                     self._reflectivityWidget.whichScan.addItem(scan[2])
+
+        self._noiseWidget.smoothScans = copy.copy(self.data_dict)
         self.activate_tab_1()
+
     def _loadReMagX(self):
         """
         Purpose: import data from a ReMagX file type
@@ -8763,6 +8791,7 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.whichScan.blockSignals(False)
 
             self._noiseWidget._resetVariables(self.data_dict, [''], [])
+            self._noiseWidget.smoothScans = copy.copy(self.data_dict)
         else:
             messageBox = QMessageBox()
             messageBox.setWindowTitle("ReMagX File")
@@ -9143,21 +9172,21 @@ class progressWidget(QWidget):
         buttonLayout = QVBoxLayout()
 
         # plot objective function
-        self.objButton = QPushButton('Total Cost')
+        self.objButton = QPushButton('Objective Function')
         self.objButton.clicked.connect(self._setObj)
         self.objButton.setFixedWidth(200)
         self.objButton.setStyleSheet('background: blue; color: white')
         buttonLayout.addWidget(self.objButton)
 
         # plot total cost function
-        self.costButton = QPushButton('Norm')
+        self.costButton = QPushButton('Cost Function')
         self.costButton.clicked.connect(self._setCost)
         self.costButton.setFixedWidth(200)
         self.costButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.costButton)
 
         # plot shape parameterization
-        self.varButton = QPushButton('Variation')
+        self.varButton = QPushButton('Total Variation Comparison')
         self.varButton.clicked.connect(self._setVar)
         self.varButton.setFixedWidth(200)
         self.varButton.setStyleSheet('background: lightGrey')
@@ -11062,6 +11091,12 @@ class tipsWidget(QDialog):
 
         self.setLayout(pagelayout)
 
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 if __name__ == '__main__':
     fname = 'Pim10uc.h5'
 

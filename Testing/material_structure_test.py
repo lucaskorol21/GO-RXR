@@ -5,6 +5,10 @@ import material_structure as ms
 import pickle
 import data_structure as ds
 
+# This test script can be executed by inputting
+#  ->  python -m unittest -v Testing/material_structure_test.py
+# into the terminal
+
 class TestMaterialStructure(unittest.TestCase):
     def test_adaptive_layer_segmentation(self):
         # Test the adaptive layer segmentation implementation

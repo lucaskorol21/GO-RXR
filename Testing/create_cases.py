@@ -165,6 +165,7 @@ if __name__ == "__main__":
     # Tests setVariationConstant function for script feature
     # Tests to element fit
     # Tests to element fit
+    # Tests to element fit
     filename = 'Pim4uc_test.h5'
     if os.getcwd().split('\\')[-1] == 'Testing':
         my_path = os.getcwd() + '/test_data/' + filename
@@ -177,9 +178,12 @@ if __name__ == "__main__":
 
     data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
 
-    parameters = [['SCALING FACTOR', 'ALL SCANS'], ['BACKGROUND SHIFT', 'ALL SCANS']]
+    parameters = [[0, 'POLYMORPHOUS', 'A', 'Sr'], [1, 'POLYMORPHOUS', 'A', 'La'],
+                  [2, 'POLYMORPHOUS', 'A', 'Sr'], [3, 'POLYMORPHOUS', 'Mn', 'Mn2+'],
+                  [4, 'POLYMORPHOUS', 'Mn', 'Mn3+'], [5, 'POLYMORPHOUS', 'Mn', 'Mn2+'],
+                  [6, 'POLYMORPHOUS', 'Mn', 'Mn3+']]
 
-    x = [1.5, 1e-7]  # parameter values
+    x = [0.5, 0.15468, 0.7, 0.641, 0.9999, 0.0001, 0.123456789]  # parameter values
 
     # create the background shift and scaling factor keys
     backS = dict()
@@ -194,6 +198,44 @@ if __name__ == "__main__":
     sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
                                                                          my_script, orbitals)
 
+    import copy
+    # test sample parameters
+    sample_solution = copy.deepcopy(sample)
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[0]['A'].poly_ratio[idx] = 0.5
+    sample_solution.structure[0]['A'].poly_ratio[idx_no] = 1-0.5
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[1]['A'].poly_ratio[idx] = 0.15468
+    sample_solution.structure[1]['A'].poly_ratio[idx_no] = 1-0.15468
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[2]['A'].poly_ratio[idx] = 0.7
+    sample_solution.structure[2]['A'].poly_ratio[idx_no] = 1-0.7
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[3]['Mn'].poly_ratio[idx] = 0.641
+    sample_solution.structure[3]['Mn'].poly_ratio[idx_no] = 1-0.641
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[4]['Mn'].poly_ratio[idx] = 0.9999
+    sample_solution.structure[4]['Mn'].poly_ratio[idx_no] = 1-0.9999
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[5]['Mn'].poly_ratio[idx] = 0.0001
+    sample_solution.structure[5]['Mn'].poly_ratio[idx_no] = 1-0.0001
+
+    idx = list(sample_solution.structure[0]['A'].polymorph).index('Sr')
+    idx_no = 0 if idx == 1 else 1
+    sample_solution.structure[6]['Mn'].poly_ratio[idx] = 0.123456789
+    sample_solution.structure[6]['Mn'].poly_ratio[idx_no] = 1-0.123456789
 
 
 

@@ -141,20 +141,92 @@ if __name__ == '__main__':
 
     import data_structure as ds
 
-    filename1 = 'LC_10uc_Feb_FE_DATA.dat'
-    filename2 = 'LC_10uc_Feb_FQ_DATA.dat'
-    path = "//cabinet/work$/lsk601/My Documents/DataFiles/"
-    fname = 'LC_10uc_Feb_DATA.h5'
+    #sample = ms.slab(3)
+    #sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
+    #sample.addlayer(1, 'LaMnO3', 52.6, roughness=[1.25,0.72,0.2])
+    #sample.addlayer(2, 'CCO', [15,10,5], density=[0,0.082,0.042], roughness=[0,1.8,2.5])
+    sample = ms.slab(12)
+    sample.addlayer(0, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(0,'A', ['Sr','La'], [1,0],sf=['Sr','La'])
+    sample.polymorphous(0, 'B', ['Ti', 'Mn'], [1, 0], sf=['Ti','Mn'])
+    sample.addlayer(1, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(1, 'A', ['Sr', 'La'], [0.95, 0.05],sf=['Sr','La'])
+    sample.polymorphous(1, 'B', ['Ti', 'Mn'], [1, 0], sf=['Ti','Mn'])
+    sample.addlayer(2, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(2, 'A', ['Sr', 'La'], [0.75, 0.25],sf=['Sr','La'])
+    sample.polymorphous(2, 'B', ['Ti', 'Mn'], [0.95, 0.05], sf=['Ti','Mn'])
+    sample.addlayer(3, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(3, 'A', ['Sr', 'La'], [0.25, 0.75],sf=['Sr','La'])
+    sample.polymorphous(3, 'B', ['Ti', 'Mn'], [0.78, 0.22], sf=['Ti','Mn'])
+    sample.addlayer(4, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(4, 'A', ['Sr', 'La'], [0.05, 0.95],sf=['Sr','La'])
+    sample.polymorphous(4, 'B', ['Ti', 'Mn'], [0.22, 0.78], sf=['Ti','Mn'])
+    sample.addlayer(5, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(5, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+    sample.polymorphous(5, 'B', ['Ti', 'Mn'], [0.05, 0.95], sf=['Ti','Mn'])
+    sample.addlayer(6, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(6, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+    sample.polymorphous(6, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+    sample.addlayer(7, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(7, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+    sample.polymorphous(7, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+    sample.addlayer(8, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(8, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+    sample.polymorphous(8, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+    sample.addlayer(9, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(9, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+    sample.polymorphous(9, 'B', ['Ti', 'Mn'], [0, 1],sf=['Ti','Mn'])
+    sample.addlayer(10, 'ABO3', 3.905, density=[0.005,0.028,0.084], roughness=[0,0,0])
+    sample.polymorphous(10, 'A', ['Sr', 'La'], [0, 1], sf=['Sr','La'])
+    sample.polymorphous(10, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+    sample.addlayer(11, 'CCO', [15,10,5], density=[0,0.082,0.042], roughness=[0,1.8,2.5], linked_roughness=[0,0.5,0.5])
 
 
+    sample.energy_shift()
+    sample.plot_density_profile()
+    plt.show()
 
-    data_dict_1 = ds.QUAD_to_data_dict(path + filename1)
-    #data_dict_2 = ds.QUAD_to_data_dict(path + filename2)
+    sample.eShift['Mn'] = -1.1
+    sample.eShift['La'] = 0.5
+
+    constant_energy = [400,500,455,642.0,700,833]
+    number = [1,3,5,7,9,11]
+    theta = np.linspace(0.1,89.9,134)
+
+    example_file = ds.DataFile()
+
+    for idx,E in enumerate(constant_energy):
+        qz = np.sin(theta * np.pi / 180) * (E * 0.001013546143)
+        qz, R = sample.reflectivity(E,qz)
+
+        example_file.addReflectivityScan(number[idx], E, 'S', qz, R['S'])
+        example_file.addReflectivityScan(number[idx]+1, E, 'P', qz, R['P'])
 
 
-    #ds.createDataHDF5fromDict(path + fname, [data_dict_1,data_dict_2])
+    constant_theta = [5,10,15]
+    E_Mn = np.linspace(630,670,211)
+    E_Ti = np.linspace(450,480, 211)
+    E_La = np.linspace(830,860,211)
 
+    number = [13,15,17]
+    for idx,angle in enumerate(constant_theta):
+        E, R = sample.energy_scan(angle, E_Ti)
+        example_file.addEnergyScan(number[idx], 450, angle, 'S', E_Ti, R['S'])
+        example_file.addEnergyScan(number[idx]+1, 450, angle, 'P', E_Ti, R['P'])
 
+    number = [19, 21, 23]
+    for idx, angle in enumerate(constant_theta):
+        E, R = sample.energy_scan(angle, E_Mn)
+        example_file.addEnergyScan(number[idx], 630, angle, 'S', E_Mn, R['S'])
+        example_file.addEnergyScan(number[idx] + 1, 630, angle, 'P', E_Mn, R['P'])
+
+    number = [25, 27, 29]
+    for idx, angle in enumerate(constant_theta):
+        E, R = sample.energy_scan(angle, E_La)
+        example_file.addEnergyScan(number[idx], 830, angle, 'S', E_La, R['S'])
+        example_file.addEnergyScan(number[idx] + 1, 830, angle, 'P', E_La, R['P'])
+
+    example_file.saveData('example2.h5')
 
 
     """

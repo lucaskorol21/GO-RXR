@@ -659,7 +659,7 @@ def scanCompute(x, *args):
                 # determines which objective function to use
                 if len(idx) != 0:
                     Rnew = (Rdat - min(Rdat)) / (max(Rdat) - min(Rdat))
-                    Rnew_s = (Rsim - min(Rdat)) / (max(Rdat) - min(Rdat))
+                    Rnew_s = (Rsim - min(Rsim)) / (max(Rsim) - min(Rsim))
                     if objective == 'Chi-Square':
                         if r_scale == 'x':
                             fun_val = fun_val + sum((Rnew[idx] - Rnew_s[idx]) ** 2 / abs(Rnew_s[idx])) * w
