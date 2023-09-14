@@ -20,3 +20,19 @@ affiliations:
 date: 24 Septemeber 2023
 bibliography: paper.bib
 ---
+
+# Summary
+
+This is the summary of my paper. A summary describing the high-level functionality and purpose of the software for a diverse, non-specialist audience.
+
+# Statement of Need
+
+A clear statement of need that illustrates the purpose of the software.
+
+# Comparison
+
+A description of how this software compares to other commonly-used packages in this research area.
+
+# Acknowledgments
+
+Give the proper acknowledgments.
