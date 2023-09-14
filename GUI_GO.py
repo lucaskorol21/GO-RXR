@@ -9172,21 +9172,21 @@ class progressWidget(QWidget):
         buttonLayout = QVBoxLayout()
 
         # plot objective function
-        self.objButton = QPushButton('Total Cost')
+        self.objButton = QPushButton('Objective Function')
         self.objButton.clicked.connect(self._setObj)
         self.objButton.setFixedWidth(200)
         self.objButton.setStyleSheet('background: blue; color: white')
         buttonLayout.addWidget(self.objButton)
 
         # plot total cost function
-        self.costButton = QPushButton('Norm')
+        self.costButton = QPushButton('Cost Function')
         self.costButton.clicked.connect(self._setCost)
         self.costButton.setFixedWidth(200)
         self.costButton.setStyleSheet('background: lightGrey')
         buttonLayout.addWidget(self.costButton)
 
         # plot shape parameterization
-        self.varButton = QPushButton('Variation')
+        self.varButton = QPushButton('Total Variation Comparison')
         self.varButton.clicked.connect(self._setVar)
         self.varButton.setFixedWidth(200)
         self.varButton.setStyleSheet('background: lightGrey')
