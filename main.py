@@ -140,7 +140,7 @@ if __name__ == '__main__':
     from scipy.special import erf
 
     import data_structure as ds
-
+    """
     #sample = ms.slab(3)
     #sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
     #sample.addlayer(1, 'LaMnO3', 52.6, roughness=[1.25,0.72,0.2])
@@ -227,7 +227,7 @@ if __name__ == '__main__':
         example_file.addEnergyScan(number[idx] + 1, 830, angle, 'P', E_La, R['P'])
 
     example_file.saveData('example2.h5')
-
+    """
 
     """
     ##fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
@@ -480,8 +480,8 @@ if __name__ == '__main__':
     #plt.text(0.02, 0.98, "(c)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
     plt.show()
     """
-    """
-   
+
+
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample = ds.ReadSampleHDF5(fname)
@@ -498,26 +498,29 @@ if __name__ == '__main__':
     qz = data_dict[name]['Data'][0]
     qz,R = sample.reflectivity(E,qz, precision = 1e-2, s_min=0.1)
     qz, R1 = sample.reflectivity(E, qz, precision = 1e-3, s_min=0.1)
-    qz, R2 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
+    qz, R2 = sample.reflectivity(E, qz, precision=1e-5, s_min=0.1)
+    qz, R3 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
     R = R['S']
     R1 = R1['S']
     R2 = R2['S']
 
     plt.figure()
-    plt.plot(qz, np.log10(R))
-    plt.plot(qz, np.log10(R1))
-    plt.plot(qz, np.log10(R2), '--')
-    plt.legend(['precision=0.01','precision=0.001','precision=1e-20'], frameon=False)
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+    plt.plot(qz, R,'b')
+    plt.plot(qz, R1,'r')
+    plt.plot(qz, R2, 'y')
+    plt.plot(qz, R2, 'k--')
+    plt.legend(['precision=0.01','precision=0.001','precision=1e-5','precision=1e-20'], frameon=False)
+    plt.ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=16)
     plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     # Set minor ticks
     plt.minorticks_on()
     # Set tick parameters
     plt.tick_params(which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
+    plt.yscale('log')
     plt.show()
-    
-    """
+
+
     """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
 
@@ -627,6 +630,7 @@ if __name__ == '__main__':
     np.savetxt('E1_460.76_best.txt', my_data.transpose())
     """
     """
+
     from matplotlib import ticker
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -638,9 +642,9 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(E, R)
     plt.xlabel('Energy, E (eV)', fontsize=12)
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    plt.ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=12)
     plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
     plt.minorticks_on()
     plt.show()
 
@@ -674,7 +678,7 @@ if __name__ == '__main__':
     axes[0].plot(E2, R2, label=r'Exp ($\sigma$)')
     axes[0].plot(Eb, Rs2, label=r'Calc ($\sigma$)')
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -692,7 +696,8 @@ if __name__ == '__main__':
     axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
     axes[0].get_shared_x_axes().join(axes[0], shared_x)
     axes[1].get_shared_x_axes().join(axes[1], shared_x)
-    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=12)
+    axes[0].ticklabel_format(axis='y', scilimits=[-3, 3])
 
     plt.tight_layout()
     plt.show()
@@ -723,12 +728,16 @@ if __name__ == '__main__':
     qz2, R2 = sample_t2.reflectivity(E, qz)
     qz3, R3 = sample_t3.reflectivity(E, qz)
 
+    R1['S'] = np.log10(R1['S'])
+    R2['S'] = np.log10(R2['S'])
+    R3['S'] = np.log10(R3['S'])
+
     plt.figure(1)
-    plt.plot(qz1, np.log10(R1['S'])+6)
-    plt.plot(qz1, np.log10(R2['S'])+3)
-    plt.plot(qz1, np.log10(R3['S']))
+    plt.plot(qz1, (R1['S']-min(R1['S']))/(max(R1['S'])-min(R1['S']))+1)
+    plt.plot(qz1, (R2['S']-min(R2['S']))/(max(R2['S'])-min(R2['S']))+0.5)
+    plt.plot(qz1, (R3['S']-min(R3['S']))/(max(R3['S'])-min(R3['S']))+0)
     plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
     plt.minorticks_on()
     plt.legend([r'5 $\mathrm{\AA}$', r'20 $\mathrm{\AA}$', r'40 $\mathrm{\AA}$'], frameon=False, fontsize=10)
     plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
@@ -776,20 +785,29 @@ if __name__ == '__main__':
     qz2, R2s = sample2.reflectivity(E, qz)
     qz3, R3s = sample3.reflectivity(E, qz)
 
+
+    R1i['S'] = np.log10(R1i['S'])
+    R2i['S'] = np.log10(R2i['S'])
+    R3i['S'] = np.log10(R3i['S'])
+
+    R1s['S'] = np.log10(R1s['S'])
+    R2s['S'] = np.log10(R2s['S'])
+    R3s['S'] = np.log10(R3s['S'])
+
     fig, axes = plt.subplots(1,2)
-    axes[0].plot(qz1, np.log10(R1i['S'])+6, label=r'$\sigma_{i}$=0 $\mathrm{\AA}$')
-    axes[0].plot(qz1, np.log10(R2i['S'])+3, label=r'$\sigma_{i}$=3 $\mathrm{\AA}$')
-    axes[0].plot(qz1, np.log10(R3i['S']), label=r'$\sigma_{i}$=6 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R1i['S']-min(R1i['S']))/(max(R1i['S'])-min(R1i['S']))+1, label=r'$\sigma_{i}$=0 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R2i['S']-min(R2i['S']))/(max(R2i['S'])-min(R2i['S']))+0.5, label=r'$\sigma_{i}$=3 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R3i['S']-min(R3i['S']))/(max(R3i['S'])-min(R1i['S']))+0, label=r'$\sigma_{i}$=6 $\mathrm{\AA}$')
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].legend(frameon=False)
-
-    axes[1].plot(qz1, np.log10(R1s['S']) + 6, label=r'$\sigma_{s}$=0 $\mathrm{\AA}$')
-    axes[1].plot(qz1, np.log10(R2s['S']) + 3, label=r'$\sigma_{s}$=3 $\mathrm{\AA}$')
-    axes[1].plot(qz1, np.log10(R3s['S']), label=r'$\sigma_{s}$=6 $\mathrm{\AA}$')
+    print(min(R1i['S']))
+    axes[1].plot(qz1, (R1s['S']-min(R1s['S']))/(max(R1s['S'])-min(R1s['S']))+1, label=r'$\sigma_{s}$=0 $\mathrm{\AA}$')
+    axes[1].plot(qz1, (R2s['S']-min(R2s['S']))/(max(R2s['S'])-min(R2s['S']))+0.5, label=r'$\sigma_{s}$=3 $\mathrm{\AA}$')
+    axes[1].plot(qz1, (R3s['S']-min(R3s['S']))/(max(R3s['S'])-min(R3s['S']))+0, label=r'$\sigma_{s}$=6 $\mathrm{\AA}$')
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
     axes[1].tick_params(axis='y', labelleft=False)
     axes[1].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
@@ -814,8 +832,7 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
-    """
-    """
+
     hello = np.loadtxt("//cabinet/work$/lsk601/Downloads/SrTiO3_attenuation.txt")
     E = hello[:,0]
     attenuation = hello[:,1]
