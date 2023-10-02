@@ -1,6 +1,6 @@
 """
 Library: GUI_GO
-Version: 0.2
+Version: 1.0
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: March 28nd, 2023
@@ -8004,7 +8004,7 @@ class ReflectometryApp(QMainWindow):
         super().__init__()
         cwd = os.getcwd()
 
-        self.version = '0.3.1'
+        self.version = '1.0'
         self.fname = cwd + '\demo.h5'  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
@@ -8014,6 +8014,10 @@ class ReflectometryApp(QMainWindow):
         self.sample = ms.slab(1)  # app is initialized and no project is selected
         self.sample.addlayer(0, 'SrTiO3', 50)
         self.sample.energy_shift()
+
+        # Preferences
+        self.reflectivity_engine = 'PythonReflectivity'
+        self.temperature = 0 # kelvin
 
         # set the title
         my_name = 'GO-RXR (version '+self.version +')'
@@ -8166,9 +8170,15 @@ class ReflectometryApp(QMainWindow):
         self.script.triggered.connect(self._script)
         toolsMenu.addAction(self.script)
 
+
         self.showFormFactor = QAction('Form Factors', self)
         self.showFormFactor.triggered.connect(self._showFormFactor)
         toolsMenu.addAction(self.showFormFactor)
+
+        preferenceMenu = menuBar.addMenu("&Preferences")
+        self.prefer = QAction('Preference', self)
+        self.prefer.triggered.connect(self._preferences)
+        preferenceMenu.addAction(self.prefer)
 
         helpMenu = menuBar.addMenu("&Help")
         self.license = QAction('License', self)
@@ -8954,6 +8964,23 @@ class ReflectometryApp(QMainWindow):
         formFactor.show()
         formFactor.exec_()
         formFactor.close()
+
+    def _preferences(self):
+        """
+        Initialize the preferences widget
+        """
+
+        prefer = Preferences([self.reflectivity_engine, self.temperature])
+        prefer.show()
+        prefer.exec_()
+        userinput = prefer.val
+        prefer.close()
+
+        self.reflectivity_engine = userinput[0]
+        self.temperature = userinput[1]
+
+
+
 
     def _license(self):
         """
@@ -10299,6 +10326,77 @@ class showFormFactors(QDialog):
         self.magButton.setStyleSheet('background: magenta')
         self.structButton.setStyleSheet('background: pink')
         self.stackLayout.setCurrentIndex(1)
+
+class Preferences(QDialog):
+    """
+    Create Widget to select preferences
+    """
+    def __init__(self,values):
+        super().__init__()
+
+        self.val = values
+        self.reflectivity_engine = values[0]
+        self.temperature = values[1]
+        pageLayout = QVBoxLayout()  # page layout
+        self.setWindowTitle('Preferences')
+        #self.setGeometry(80, 80, 80, 80)  # window geometry
+
+        buttonLayout = QVBoxLayout()
+        buttonLabel = QLabel('Reflectivity Engine:')
+        # Create a button group to ensure exclusive selection
+        button_group = QButtonGroup()
+
+        # Create two radio buttons and add them to the button group
+        self.Pythonreflectivity = QRadioButton("PythonReflectivity")
+        self.udkm = QRadioButton("udkm1Dsim")
+
+        button_group.addButton(self.Pythonreflectivity)
+        button_group.addButton(self.udkm)
+
+        if self.reflectivity_engine == 'PythonReflectivity':
+            self.Pythonreflectivity.setChecked(True)
+            self.udkm.setChecked(False)
+        else:
+            self.Pythonreflectivity.setChecked(False)
+            self.udkm.setChecked(True)
+
+        buttonLayout.addWidget(buttonLabel)
+        buttonLayout.addWidget(self.Pythonreflectivity)
+        buttonLayout.addWidget(self.udkm)
+        buttonLayout.setSpacing(10)
+
+        tempLayout = QHBoxLayout()
+        tempLabel = QLabel('Temperature (Kelvin):')
+        self.tempField = QLineEdit()
+        self.tempField.setText(str(self.temperature))
+        tempLayout.addWidget(tempLabel)
+        tempLayout.addWidget(self.tempField)
+
+
+        saveButton = QPushButton('Save Preferences')
+        saveButton.clicked.connect(self.savePreferences)
+
+        pageLayout.addLayout(buttonLayout)
+        pageLayout.addLayout(tempLayout)
+        pageLayout.addWidget(saveButton)
+        pageLayout.setSpacing(20)
+        self.setLayout(pageLayout)
+
+
+
+    def savePreferences(self):
+
+        if self.Pythonreflectivity.isChecked():
+            self.reflectivity_engine = 'PythonReflectivity'
+        else:
+            self.reflectivity_engine = 'udkm1Dsim'
+
+        #self.accept()  # close the widget
+        if is_float(self.tempField.text()):
+            self.temperature = float(self.tempField.text())
+
+        self.val = [self.reflectivity_engine, self.temperature]  # reset layer values
+
 
 
 class scriptWidget(QDialog):

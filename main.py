@@ -140,6 +140,17 @@ if __name__ == '__main__':
     from scipy.special import erf
 
     import data_structure as ds
+
+    # udkm1Dsim Testing
+
+    import udkm1Dsim as ud
+    u = ud.u  # import the pint unit registry from udkm1Dsim
+    import scipy.constants as constants
+    import numpy as np
+    import matplotlib.pyplot as plt
+    u.setup_matplotlib()  # use matplotlib with pint units
+
+    Ti = ud.Atom('Ti',id='Ti4+')
     """
     #sample = ms.slab(3)
     #sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
@@ -481,7 +492,7 @@ if __name__ == '__main__':
     plt.show()
     """
 
-
+    """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample = ds.ReadSampleHDF5(fname)
@@ -519,7 +530,7 @@ if __name__ == '__main__':
     #plt.tick_params(axis='y', labelleft=False)
     plt.yscale('log')
     plt.show()
-
+    """
 
     """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
