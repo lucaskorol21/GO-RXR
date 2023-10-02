@@ -591,10 +591,11 @@ class sampleWidget(QWidget):
     Purpose: This widget contains all the information about the sample and all it's properties.
     """
     # sample widget that contains all the information about the sample parameters
-    def __init__(self, sample):
+    def __init__(self, parent,sample):
         super(sampleWidget, self).__init__()
 
         # ------------------------------- parameter initialization -------------------------------------#
+        self.parent = parent  # parent Widget
         self.data_dict = {}
         self.sample = sample  # variable used to define sample info
         self.structTableInfo = []  # used to keep track of the table info instead of constantly switching
@@ -3056,7 +3057,7 @@ class reflectivityWidget(QWidget):
     """
     Purpose: This widget handles the reflectivity workspace
     """
-    def __init__(self, sWidget, data, data_dict, sim_dict):
+    def __init__(self, parent, sWidget, data, data_dict, sim_dict):
         """
         :param sWidget: sampleWidget
         :param data: data information
@@ -3079,6 +3080,7 @@ class reflectivityWidget(QWidget):
         self.currentVal = []  # value of current fitting parameter
 
         self.sWidget = sWidget  # allows for reflectivityWidget to have access to sampleWidget information
+        self.parent = parent
         self.sample = sWidget.sample  # retrieves slab class form sampleWidget
         self.data = data  # information on the data
         self.data_dict = data_dict  # data info dictionary
@@ -3445,6 +3447,7 @@ class reflectivityWidget(QWidget):
         self.scalingFactor.editingFinished.connect(self.sfChange)
         self.setLayout(pagelayout)
 
+
     def changeToReflScan(self):
         """
         Purpose: Plot reflectivity scan simulation
@@ -3487,7 +3490,9 @@ class reflectivityWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
 
             sf_dict[okey] = my_data
 
@@ -3627,7 +3632,9 @@ class reflectivityWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
 
             sf_dict[okey] = my_data
 
@@ -4058,7 +4065,9 @@ class reflectivityWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
 
             sf_dict[okey] = my_data
 
@@ -4167,7 +4176,9 @@ class reflectivityWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
 
             sf_dict[okey] = my_data
 
@@ -4497,7 +4508,9 @@ class reflectivityWidget(QWidget):
             for okey in list(orbitals.keys()):
                 my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                           float(orbitals[okey][1]),
-                                          float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                          float(orbitals[okey][2]),
+                                          float(orbitals[okey][3]),
+                                          T=float(self.parent.temperature))
 
                 sf_dict[okey] = my_data
 
@@ -4597,7 +4610,9 @@ class reflectivityWidget(QWidget):
             for okey in list(orbitals.keys()):
                 my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                           float(orbitals[okey][1]),
-                                          float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                          float(orbitals[okey][2]),
+                                          float(orbitals[okey][3]),
+                                          T=float(self.parent.temperature))
 
                 sf_dict[okey] = my_data
 
@@ -4741,7 +4756,7 @@ class GlobalOptimizationWidget(QWidget):
     """
     Purpose: Widget used to setup a data fitting
     """
-    def __init__(self, sWidget, rWidget, nWidget, pWidget, rApp):
+    def __init__(self, parent, sWidget, rWidget, nWidget, pWidget, rApp):
         super().__init__()
 
 
@@ -4751,6 +4766,7 @@ class GlobalOptimizationWidget(QWidget):
         self.rWidget = rWidget  # reflectivityWidget
         self.nWidget = nWidget  # smoothingWidget
         self.pWidget = pWidget  # progressWidget
+        self.parent = parent # parent Widget
         self.rApp = rApp  # Application widget
 
         self.sample = copy.deepcopy(self.sWidget.sample)  # update slab class
@@ -6064,8 +6080,10 @@ class GlobalOptimizationWidget(QWidget):
             sf_dict2 = copy.copy(self.sWidget.sf_dict)
             for okey in list(orbitals.keys()):
                 my_data = GetTiFormFactor(float(orbitals[okey][0]),
-                                       float(orbitals[okey][1]),
-                                       float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                          float(orbitals[okey][1]),
+                                          float(orbitals[okey][2]),
+                                          float(orbitals[okey][3]),
+                                          T=float(self.parent.temperature))
 
                 sf_dict2[okey] = my_data
             
@@ -8017,7 +8035,7 @@ class ReflectometryApp(QMainWindow):
 
         # Preferences
         self.reflectivity_engine = 'PythonReflectivity'
-        self.temperature = 0 # kelvin
+        self.temperature = 300 # kelvin
 
         # set the title
         my_name = 'GO-RXR (version '+self.version +')'
@@ -8054,11 +8072,11 @@ class ReflectometryApp(QMainWindow):
         self.scanProgress = QComboBox()
 
         # initializing workspace widgets
-        self._sampleWidget = sampleWidget(self.sample)  # initialize the sample widget
-        self._reflectivityWidget = reflectivityWidget(self._sampleWidget, self.data, self.data_dict, self.sim_dict)
+        self._sampleWidget = sampleWidget(self, self.sample)  # initialize the sample widget
+        self._reflectivityWidget = reflectivityWidget(self, self._sampleWidget, self.data, self.data_dict, self.sim_dict)
         self._noiseWidget = dataSmoothingWidget()
-        self._progressWidget = progressWidget(self._sampleWidget, self._reflectivityWidget, self._noiseWidget)
-        self._goWidget = GlobalOptimizationWidget(self._sampleWidget, self._reflectivityWidget, self._noiseWidget, self._progressWidget,
+        self._progressWidget = progressWidget(self,self._sampleWidget, self._reflectivityWidget, self._noiseWidget)
+        self._goWidget = GlobalOptimizationWidget(self, self._sampleWidget, self._reflectivityWidget, self._noiseWidget, self._progressWidget,
                                                   self)
 
         # initializing workspace button signals and layout
@@ -9164,9 +9182,11 @@ class progressWidget(QWidget):
     """
     Purpose: Used to update the user of the data fitting progress
     """
-    def __init__(self, sWidget, rWidget, nWidget):
+    def __init__(self, parent, sWidget, rWidget, nWidget):
         super().__init__()
         # which plot
+
+        self.parent = parent
         self.sWidget = sWidget
         self.rWidget = rWidget
         self.nWidget = nWidget
@@ -9311,7 +9331,9 @@ class progressWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
             sf_dict[okey] = my_data
             
         if name != '':
@@ -9418,7 +9440,9 @@ class progressWidget(QWidget):
         for okey in list(orbitals.keys()):
             my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                       float(orbitals[okey][1]),
-                                      float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                      float(orbitals[okey][2]),
+                                      float(orbitals[okey][3]),
+                                      T=float(self.parent.temperature))
             sf_dict[okey] = my_data
             
         background_shift = 0
@@ -9534,7 +9558,9 @@ class progressWidget(QWidget):
                 for okey in list(orbitals.keys()):
                     my_data = GetTiFormFactor(float(orbitals[okey][0]),
                                               float(orbitals[okey][1]),
-                                              float(orbitals[okey][2]), float(orbitals[okey][3]))
+                                              float(orbitals[okey][2]),
+                                              float(orbitals[okey][3]),
+                                              T=float(self.parent.temperature))
 
                     sf_dict[okey] = my_data
 
