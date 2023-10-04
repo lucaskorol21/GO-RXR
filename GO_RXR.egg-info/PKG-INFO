@@ -5,6 +5,6 @@ Summary: Global Optimization of Resonant X-ray Reflectometry Tool
 Home-page: https://github.com/lucaskorol21/GO-RXR
 Author: Lucas Korol
 Author-email: lsk601@usask.ca
-Maintainer: Robert Green
-Requires-Python: ==3.7
+Maintainer: Robert J. Green
+Requires-Python: >=3.7
 License-File: license.txt

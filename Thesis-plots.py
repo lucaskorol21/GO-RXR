@@ -47,7 +47,8 @@ def total_variation(R, Rsim):
     variation = abs(totVar-totVarSim)
     return variation
 
-def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, type='R', xmin=0.0, xmax=100000.0, reverse=False, size=0, top=1.0):
+def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, type='R', xmin=0.0, xmax=100000.0, reverse=False, size=0, top=1.0,
+                   ymax=1):
 
     if reverse:
         scans = scans[::-1]
@@ -66,28 +67,33 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
             idx = [i for i in range(len(qz)) if qz[i]>xmin and qz[i] < xmax]
 
             qz = qz[idx]
-            R = R[idx]
-            Rsim = Rsim[idx]
+            R = np.log10(R[idx])
+            Rsim = np.log10(Rsim[idx])
+
+            Rsim = (Rsim - min(R)) / (max(R) - min(R))
+            R = (R-min(R))/(max(R)-min(R))
 
             if size != 0:
-                axes[sub[0],sub[1]].plot(qz, np.log10(R)+offset+i*step, 'b')
-                axes[sub[0],sub[1]].plot(qz, np.log10(Rsim)+offset+i*step, 'r')
+                axes[sub[0],sub[1]].plot(qz, R+offset+i*step, 'b')
+                axes[sub[0],sub[1]].plot(qz, Rsim+offset+i*step, 'r')
             else:
-                axes[my_idx].plot(qz, np.log10(R) + offset + i * step, 'b')
-                axes[my_idx].plot(qz, np.log10(Rsim) + offset + i * step, 'r')
+                axes[my_idx].plot(qz, R + offset + i * step, 'b')
+                axes[my_idx].plot(qz, Rsim + offset + i * step, 'r')
 
         if size != 0:
             axes[sub[0],sub[1]].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[sub[0], sub[1]].tick_params(axis='y', labelleft=False)
+            #axes[sub[0], sub[1]].tick_params(axis='y', labelleft=False)
             axes[sub[0],sub[1]].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False)
             axes[sub[0], sub[1]].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[sub[0], sub[1]].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+            axes[sub[0], sub[1]].set_ylim([axes[sub[0], sub[1]].get_ylim()[0], ymax])
         else:
             axes[my_idx].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[my_idx].tick_params(axis='y', labelleft=False)
+            #axes[my_idx].tick_params(axis='y', labelleft=False)
             axes[my_idx].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax])
 
 
 
@@ -99,8 +105,12 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
             idx = [i for i in range(len(qz)) if qz[i] > xmin and qz[i] < xmax]
 
             qz = qz[idx]
-            R = R[idx]/np.linalg.norm(Rsim)
-            Rsim = Rsim[idx]/np.linalg.norm(Rsim)
+
+            Rsim = np.array(Rsim[idx])
+            R = np.array(R[idx])
+
+            Rsim = (Rsim - min(R)) / (max(R) - min(R))
+            R = (R - min(R)) / (max(R) - min(R))
 
             if size != 0:
                 axes[sub[0],sub[1]].plot(qz, R + step * i + offset, 'b')
@@ -109,23 +119,23 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
                 axes[my_idx].plot(qz, R + step * i + offset, 'b')
                 axes[my_idx].plot(qz, Rsim + step * i + offset, 'r')
 
-        ymax = max(sim_dict[scan]['Data'][2][idx]) + step * i + offset
+        #ymax = max(sim_dict[scan]['Data'][2][idx]) + step * i + offset
 
         if size != 0:
             axes[sub[0],sub[1]].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
+            #axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
             axes[sub[0],sub[1]].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
             axes[sub[0], sub[1]].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[sub[0], sub[1]].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-            axes[sub[0], sub[1]].set_ylim([axes[sub[0], sub[1]].get_ylim()[0], 2])
+            axes[sub[0], sub[1]].set_ylim([axes[sub[0], sub[1]].get_ylim()[0], ymax])
         else:
             axes[my_idx].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[my_idx].tick_params(axis='y', labelleft=False)
+            #axes[my_idx].tick_params(axis='y', labelleft=False)
             axes[my_idx].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
             #axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 1.9])
-            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], 0.8])
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax])
 
 
     elif type == 'E':
@@ -137,16 +147,12 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
             R = data_dict[scan]['Data'][2]
             Rsim = sim_dict[scan]['Data'][2]
             idx = [i for i in range(len(E)) if E[i] > xmin and E[i] < xmax]
-            if i==0:
-                ymin = min(sim_dict[scan]['Data'][2][idx])
 
-            max1 = max(data_dict[scan]['Data'][2][idx])
-            max2 = max(sim_dict[scan]['Data'][2][idx])
-            my_max = max(max1, max2)
 
             E = E[idx]
-            R = R[idx]/my_max
-            Rsim = Rsim[idx]/my_max
+
+            Rsim = (Rsim[idx]-min(R[idx]))/(max(R[idx])-min(R[idx]))
+            R = (R[idx] - min(R[idx])) / (max(R[idx]) - min(R[idx]))
 
             if size != 0:
                 axes[sub[0],sub[1]].plot(E, R + step * i + offset, 'b')
@@ -156,22 +162,21 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
                 axes[my_idx].plot(E, Rsim + step * i + offset, 'r')
 
 
-        ymax = max(sim_dict[scan]['Data'][2][idx])+step*i + offset
 
         if size != 0:
             axes[sub[0],sub[1]].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
+            #axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
             axes[sub[0],sub[1]].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[sub[0], sub[1]].yaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[sub[0],sub[1]].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False)
-            axes[sub[0],sub[1]].set_ylim([axes[sub[0],sub[1]].get_ylim()[0], ymax + step * top])
+            axes[sub[0],sub[1]].set_ylim([axes[sub[0],sub[1]].get_ylim()[0], ymax])
         else:
             axes[my_idx].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[my_idx].tick_params(axis='y', labelleft=False)
+            #axes[my_idx].tick_params(axis='y', labelleft=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False)
-            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax + step*top])
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax])
 
 
 
@@ -187,19 +192,14 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
 
             idx = [i for i in range(len(E)) if E[i] > xmin and E[i] < xmax]
 
-            if i==0:
-                ymin = min(sim_dict[scan]['Data'][2][idx])
-
-            min1 = abs(min(data_dict[scan]['Data'][2][idx]))
-            min2 = abs(min(sim_dict[scan]['Data'][2][idx]))
-            max1 = max(data_dict[scan]['Data'][2][idx])
-            max2 = max(sim_dict[scan]['Data'][2][idx])
-
-            my_max = max(min1, min2, max1, max2)
 
             E = E[idx]
-            R = np.array(R[idx])/my_max
-            Rsim = np.array(Rsim[idx])/my_max
+            R = np.array(R[idx])
+            Rsim = np.array(Rsim[idx])
+
+            Rsim = (Rsim - min(R)) / (max(R) - min(R))
+            R = (R-min(R))/(max(R)-min(R))
+
 
             if size!=0:
                 axes[sub[0],sub[1]].plot(E, R + step * i + offset, 'b')
@@ -209,22 +209,20 @@ def plotting_scans(data_dict, sim_dict, scans, axes,sub,offset=0.0,step=2.0, typ
                 axes[my_idx].plot(E, Rsim + step * i + offset, 'r')
 
 
-        ymax = max(sim_dict[scan]['Data'][2][idx]) + step*i + offset
-
         if size != 0:
             axes[sub[0],sub[1]].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
+            #axes[sub[0],sub[1]].tick_params(axis='y', labelleft=False)
             axes[sub[0],sub[1]].legend([r'Exp', r'Calc'], frameon=False)
             axes[sub[0], sub[1]].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[sub[0], sub[1]].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-            axes[sub[0],sub[1]].set_ylim([axes[sub[0],sub[1]].get_ylim()[0], ymax + step*top])
+            axes[sub[0],sub[1]].set_ylim([axes[sub[0],sub[1]].get_ylim()[0], ymax])
         else:
             axes[my_idx].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-            axes[my_idx].tick_params(axis='y', labelleft=False)
+            #axes[my_idx].tick_params(axis='y', labelleft=False)
             axes[my_idx].legend([r'Exp', r'Calc'], frameon=False)
             axes[my_idx].xaxis.set_minor_locator(ticker.AutoMinorLocator())
             axes[my_idx].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax + step*top])
+            axes[my_idx].set_ylim([axes[my_idx].get_ylim()[0], ymax])
 
 
 def return_name_from_scanNum(data, scanNum):
@@ -275,6 +273,43 @@ if __name__ == "__main__":
     #sample = ds.ReadSampleHDF5(fname)
     #sample.energy_shift()
 
+    # test case
+
+    fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
+    qz_s = np.loadtxt('smooth.csv')[:, 4]
+    R_s = np.loadtxt('smooth.csv')[:, 5]
+
+
+
+    data, data_dict, sim_dict = ds.LoadDataHDF5(fname)
+
+    dat = data_dict['63_833.85_S']['Data']
+
+    idx_s = [i for i in qz_s if i > 0.08]
+    idx = [i for i in dat[0] if i > 0.08]
+
+
+    fig, axes = plt.subplots(2,1)
+    axes[0].plot(np.array(dat[0])[idx], np.array(dat[2])[idx], 'k')
+    axes[0].plot(qz_s[idx_s], R_s[idx_s], 'r--')
+    axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    # axes[0,2].tick_params(axis='y', labelleft=False)
+    axes[0].legend(['Exp', 'Fourier'], loc='upper right', frameon=False)
+    axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[0].set_yscale('log')
+
+
+    axes[1].plot(np.array(dat[0])[idx][:-1], np.diff(np.log10(dat[2])[idx]) / np.diff(dat[0])[idx], 'k')
+    axes[1].plot(qz_s[idx_s][:-1], np.diff(np.log10(R_s[idx_s])) / np.diff(qz_s[idx_s]), 'r')
+    axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
+    # axes[1,0].tick_params(axis='y', labelleft=False)
+    axes[1].legend(['Exp', 'NN'], loc='upper left', frameon=False)
+    axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+
+    plt.show()
+
     """
     # oxidation state at surface
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v2.h5"
@@ -321,7 +356,8 @@ if __name__ == "__main__":
     print('La: ' + str(Total_La))
     print('O: ' + str(Total_O))
     print('Electrons: ' +str(Total_electrons))
-    
+    """
+    """
     # Unit Cell Model - 13uc 150K
     fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_complete.h5"
     fname2 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
@@ -486,8 +522,8 @@ if __name__ == "__main__":
     axes[1].set_xlabel(r'z Position ($\AA$)', fontsize=20)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0)
-    
     """
+
     """
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
 
@@ -712,8 +748,8 @@ if __name__ == "__main__":
     # plt.gca().invert_xaxis()
     plt.show()
     """
-
     """
+
     # Unit Cell Model - 13uc 150K
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1.h5"
 
@@ -740,9 +776,9 @@ if __name__ == "__main__":
     Mn_E_asymm2 = return_name_from_scanNum(data2, E_asymm_num)
 
     fig, axes = plt.subplots(1,2)
-    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0,0), offset=0, step=1.5, xmin=635, xmax=660,
+    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0,0), offset=0, step=1, xmin=635, xmax=660, ymax=6,
                    type='E', reverse=True, size=0, top=1.5)
-    plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=3, xmin=635, xmax=660,
+    plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (0, 1), offset=0, step=1, xmin=635, xmax=660, ymax=3.2,
                    type='EA', reverse=True, size=0, top=0.75)
 
 
@@ -780,11 +816,11 @@ if __name__ == "__main__":
     shared_x.set_xlabel('Energy, E (eV)', fontsize=16)
 
     plotting_scans(data_dict1, sim_dict1, keys, axes, (0,0), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
     plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
     plotting_scans(data_dict3, sim_dict3, keys, axes, (0, 2), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
 
 
     axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
@@ -802,6 +838,7 @@ if __name__ == "__main__":
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.075)
+    plt.subplots_adjust(wspace=0.2)
     #shared_x.yaxis.set_label_coords(-0.01, 0.5)
 
     fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete_interface.h5"
@@ -824,11 +861,12 @@ if __name__ == "__main__":
     shared_x.set_xlabel('Energy, E (eV)', fontsize=16)
 
     plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
     plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
     plotting_scans(data_dict3, sim_dict3, keys, axes, (0, 2), offset=0, step=1, xmin=632, xmax=662,
-                   type='E', reverse=True, size=0, top=1.25)
+                   type='E', reverse=True, size=0, top=1.25,ymax=2.1)
+
 
 
     axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
@@ -847,7 +885,8 @@ if __name__ == "__main__":
     axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
-    plt.subplots_adjust(hspace=0.075)
+    plt.subplots_adjust(wspace=0.2)
+    plt.subplots_adjust(hspace=0.1)
     # shared_x.yaxis.set_label_coords(-0.01, 0.5)
 
     fname1 = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-150K_unitCell_v1_mag.h5"
@@ -865,16 +904,16 @@ if __name__ == "__main__":
     #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
     #shared_x.set_xlabel(r'Momentum Transfer,$\mathrm{qz}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
 
-    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=0.75, xmin=0.03, xmax=0.5,
-                   type='RA', reverse=True, size=0, top=1)
-    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=0.75, xmin=0.03, xmax=0.5,
-                   type='RA', reverse=True, size=0, top=1)
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=1, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1, ymax=3.5)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1, ymax=3.5)
 
     #axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
     #axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
     #axes[0].get_shared_x_axes().join(axes[0], shared_x)
     #axes[1].get_shared_x_axes().join(axes[1], shared_x)
-    axes[0].text(0.02, 0.98, "(d)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
+    #axes[0].text(0.02, 0.98, "(d)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
 
     #axes[0, 0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
     axes[0].set_ylabel('Circular Polarization Asymmetry (arb. units)', fontsize=16)
@@ -901,10 +940,10 @@ if __name__ == "__main__":
     #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
     #shared_x.set_xlabel(r'Momentum Transfer,$\mathrm{q_z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
 
-    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=0.5, xmin=0.03, xmax=0.5,
-                   type='RA', reverse=True, size=0, top=1)
-    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=0.5, xmin=0.03, xmax=0.5,
-                   type='RA', reverse=True, size=0, top=1)
+    plotting_scans(data_dict1, sim_dict1, keys, axes, (0, 0), offset=0, step=1.1, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1, ymax=2.2)
+    plotting_scans(data_dict2, sim_dict2, keys, axes, (0, 1), offset=0, step=1.1, xmin=0.03, xmax=0.5,
+                   type='RA', reverse=True, size=0, top=1, ymax=2.2)
 
     #axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
     #axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
@@ -920,12 +959,13 @@ if __name__ == "__main__":
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.075)
+    plt.subplots_adjust(wspace=0.2)
     # shared_x.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
-    """
+
 
     """
-
+    """
     #  ------------------ Remove the magnetic dead layer
 
     fig, axes = plt.subplots(2,1)
@@ -1405,7 +1445,7 @@ if __name__ == "__main__":
     error = np.sqrt(error) * (1e-8) ** 2 * (3.905) ** 2 * 6.02214076e23
     print('10uc: ' + str(Total_Mn2_10 * 0.028)+' +- ' + str(error))
     """
-
+    """
     # [qz_data,R_data,qz_sim,R_sim, random_points, predictions]
 
     # ---------------------------------- MAGNETIC ERROR
@@ -1425,7 +1465,7 @@ if __name__ == "__main__":
     E = np.sqrt(E)* (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
     D = D* (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
-    print('Total Magnetism (4uc) = ' + str(D) + ' +- ' + str(E))
+    print('Total Magnetism (4uc) = ' + str(D/4) + ' +- ' + str(E))
 
     rho = np.array([0.0003066750126945097, 0.0002068731239481137, 0.016932058948664633, 0.02655782307499808, 0.0314329491242263, 0.0314329491242263, 0.0314329491242263, 0.0314329491242263,
                     0.00010936761100236586]) / 10  # scaled by 10 in GUI
@@ -1448,7 +1488,7 @@ if __name__ == "__main__":
     E1 = np.sqrt(E1) * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
     D1 = D1 * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
-    print('Total Magnetism (7uc) = ' + str(D1) + ' +- ' + str(E1))
+    print('Total Magnetism (7uc) = ' + str(D1/7) + ' +- ' + str(E1))
 
     rho = np.array([0.00019341730101137163, 0.000186586051446197, 0.014676919509906398, 0.027492584861078195,
                     0.031889765641913245, 0.031889765641913245, 0.031889765641913245, 0.031889765641913245,
@@ -1475,7 +1515,7 @@ if __name__ == "__main__":
     E2 = np.sqrt(E2) * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
     D2 = D2 * (1e-8) ** 2 * (3.97) ** 2 * 6.02214076e23
 
-    print('Total Magnetism (10uc) = ' + str(D) + ' +- ' + str(E))
+    print('Total Magnetism (10uc) = ' + str(D2/10) + ' +- ' + str(E))
     x = [4, 7, 10]
     y = np.array([D/4,D1/7,D2/10])
     dy = [E/4,E1/7,E2/10]
@@ -1487,9 +1527,12 @@ if __name__ == "__main__":
     #plt.ticklabel_format(axis='y', style='sci', scilimits=(-10, -10))
     plt.xlabel(r'Film Thickness (uc)', fontsize=13)
     plt.ylabel(r'Average magnetic contribution per unit cell  (arb. units)', fontsize=13)
-    plt.ylim([0,0.125])
+    #plt.ylim([0,0.125])
     plt.show()
 
+    # calculate total number of 5/6 thick uc
+    # 4uc
+    """
 
     """
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
@@ -1678,7 +1721,6 @@ if __name__ == "__main__":
     """
     """
 
-
     data = np.loadtxt('35_460.76_S.txt')
 
     qz_data = data[0]
@@ -1702,7 +1744,7 @@ if __name__ == "__main__":
     axes[0,0].plot(qz_sim, R_sim, 'b')
     axes[0,0].plot(qz_nr, R_nr, 'r')
     axes[0,0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0,0].tick_params(axis='y', labelleft=False)
+    #axes[0,0].tick_params(axis='y', labelleft=False)
     axes[0,0].legend(['Exp', 'Sim', 'NN'], loc='upper right', frameon=False)
     axes[0, 0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -1712,7 +1754,7 @@ if __name__ == "__main__":
     axes[0,1].plot(qz_data, R_data, marker='o', markersize=3, markerfacecolor='none', markeredgecolor='k', color='none')
     axes[0,1].plot(qz_s, R_s, 'r')
     axes[0,1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0,1].tick_params(axis='y', labelleft=False)
+    #axes[0,1].tick_params(axis='y', labelleft=False)
     axes[0,1].legend(['Exp','Spline'], loc='upper right', frameon=False)
     axes[0, 1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -1722,7 +1764,7 @@ if __name__ == "__main__":
     axes[0,2].plot(qz_data, R_data, marker='o', markersize=3, markerfacecolor='none', markeredgecolor='k', color='none')
     axes[0,2].plot(qz_f, R_f, 'r')
     axes[0,2].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0,2].tick_params(axis='y', labelleft=False)
+    #axes[0,2].tick_params(axis='y', labelleft=False)
     axes[0,2].legend(['Exp', 'Fourier'], loc='upper right', frameon=False)
     axes[0, 2].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0, 2].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -1733,8 +1775,8 @@ if __name__ == "__main__":
     axes[1,0].plot(qz_data[:-1], np.diff(R_data)/np.diff(qz_data), 'k')
     axes[1,0].plot(qz_nr[:-1], np.diff(R_nr)/np.diff(qz_nr), 'r')
     axes[1,0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[1,0].tick_params(axis='y', labelleft=False)
-    axes[1,0].legend(['Exp', 'NN'], loc='upper right', frameon=False)
+    #axes[1,0].tick_params(axis='y', labelleft=False)
+    axes[1,0].legend(['Exp', 'NN'], loc='upper left', frameon=False)
     axes[1, 0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 0].set_xlim([axes[1, 0].get_xlim()[0], up])
@@ -1742,8 +1784,8 @@ if __name__ == "__main__":
     axes[1,1].plot(qz_data[:-1], np.diff(R_data) / np.diff(qz_data),'k')
     axes[1,1].plot(qz_s[:-1], np.diff(R_s) / np.diff(qz_s), 'r')
     axes[1,1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[1,1].tick_params(axis='y', labelleft=False)
-    axes[1,1].legend(['Exp', 'Spline'], loc='upper right', frameon=False)
+    #axes[1,1].tick_params(axis='y', labelleft=False)
+    axes[1,1].legend(['Exp', 'Spline'], loc='upper left', frameon=False)
     axes[1, 1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 1].set_xlim([axes[0, 0].get_xlim()[0], up])
@@ -1751,8 +1793,8 @@ if __name__ == "__main__":
     axes[1,2].plot(qz_data[:-1], np.diff(R_data) / np.diff(qz_data),'k')
     axes[1,2].plot(qz_f[:-1], np.diff(R_f) / np.diff(qz_f), 'r')
     axes[1,2].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[1,2].tick_params(axis='y', labelleft=False)
-    axes[1,2].legend(['Exp', 'Fourier'], loc='upper right', frameon=False)
+    #axes[1,2].tick_params(axis='y', labelleft=False)
+    axes[1,2].legend(['Exp', 'Fourier'], loc='upper left', frameon=False)
     axes[1, 2].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 2].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1, 2].set_xlim([axes[0, 0].get_xlim()[0], up])
@@ -1760,16 +1802,26 @@ if __name__ == "__main__":
     axes[1,1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
 
     axes[0,0].set_ylabel(r'log $\left(\frac{R}{R_{0}} \right)$', fontsize=20)
-    axes[1,0].set_ylabel(r'$\frac{d}{d q_{z}} \left[ \frac{R(q_{z})}{R_{0}(q_{z})}  \right]$', fontsize=20)
+    axes[1,0].set_ylabel(r'$\mathrm{\frac{d}{d q_{z}} \left[ log \left( \frac{R(q_{z})}{R_{0}(q_{z})} \right)  \right]}$', fontsize=20)
 
-    axes[0,0].text(0.02, 0.98, "(a)", transform=axes[0,0].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[0,1].text(0.02, 0.98, "(b)", transform=axes[0,1].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[0,2].text(0.02, 0.98, "(c)", transform=axes[0,2].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1,0].text(0.02, 0.98, "(d)", transform=axes[1,0].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1,1].text(0.02, 0.98, "(e)", transform=axes[1,1].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1,2].text(0.02, 0.98, "(f)", transform=axes[1,2].transAxes, fontsize=14, fontweight='bold', va='top')
+    #axes[0,0].text(0.02, 0.98, "(a)", transform=axes[0,0].transAxes, fontsize=14, fontweight='bold', va='bottom')
+    axes[0,0].text(0.025, 0.025, "(a)", transform=axes[0,0].transAxes, fontsize=14, fontweight='bold',
+            verticalalignment='bottom', horizontalalignment='left')
+    axes[0, 1].text(0.025, 0.025, "(b)", transform=axes[0, 1].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[0, 2].text(0.025, 0.025, "(c)", transform=axes[0, 2].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 0].text(0.025, 0.025, "(d)", transform=axes[1, 0].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 1].text(0.025, 0.025, "(e)", transform=axes[1, 1].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 2].text(0.025, 0.025, "(f)", transform=axes[1, 2].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
 
     plt.tight_layout()
+    plt.subplots_adjust(hspace=0.1)
+    plt.subplots_adjust(wspace=0.15)
+    #plt.subplots_adjust(left=0.15, right=0.85, top=0.75, bottom=0.25)
     plt.show()
 
     """
@@ -2006,7 +2058,7 @@ if __name__ == "__main__":
     print(b)
     """
 
-
+    """
     fig, axes = plt.subplots(2,3)
     # -------------------------------------------------- Atomic Slice Density Profile - 10uc
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
@@ -2294,8 +2346,8 @@ if __name__ == "__main__":
     #plt.gca().invert_xaxis()
     plt.show()
 
-
     """
+
 
     fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM2-300K_complete.h5"
 
@@ -2391,18 +2443,18 @@ if __name__ == "__main__":
     #               fig=14)
 
     fig, axes = plt.subplots(2,3)
-    plotting_scans(data_dict, sim_dict, Mn_resonance, axes, (0, 0), offset=0, step=1.5, xmin=635, xmax=660,
-                   type='E', reverse=True, size=1, top=1.5)
-    plotting_scans(data_dict, sim_dict, Mn_E_asymm, axes, (1, 0), offset=0, step=3, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1, top=0.75)
-    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0, 1), offset=0, step=1.5, xmin=635, xmax=660,
-                   type='E', reverse=True, size=1, top=1.5)
-    plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (1, 1), offset=0, step=3, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1, top=0.75)
-    plotting_scans(data_dict1, sim_dict1, Mn_resonance1, axes, (0, 2), offset=0, step=1.5, xmin=635, xmax=660,
-                   type='E', reverse=True, size=1, top=1.5)
-    plotting_scans(data_dict1, sim_dict1, Mn_E_asymm1, axes, (1, 2), offset=0, step=3, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1, top=0.75)
+    plotting_scans(data_dict, sim_dict, Mn_resonance, axes, (0, 0), offset=0, step=1, xmin=635, xmax=660,
+                   type='E', reverse=True, size=1, top=1.5, ymax=5.9)
+    plotting_scans(data_dict, sim_dict, Mn_E_asymm, axes, (1, 0), offset=0, step=1.1, xmin=635, xmax=660,
+                   type='EA', reverse=True, size=1, top=0.75, ymax=3.5)
+    plotting_scans(data_dict2, sim_dict2, Mn_resonance2, axes, (0, 1), offset=0, step=1, xmin=635, xmax=660,
+                   type='E', reverse=True, size=1, top=1.5, ymax=5.9)
+    plotting_scans(data_dict2, sim_dict2, Mn_E_asymm2, axes, (1, 1), offset=0, step=1.1, xmin=635, xmax=660,
+                   type='EA', reverse=True, size=1, top=0.75, ymax=3.5)
+    plotting_scans(data_dict1, sim_dict1, Mn_resonance1, axes, (0, 2), offset=0, step=1, xmin=635, xmax=660,
+                   type='E', reverse=True, size=1, top=1.5, ymax=5.9)
+    plotting_scans(data_dict1, sim_dict1, Mn_E_asymm1, axes, (1, 2), offset=0, step=1.1, xmin=635, xmax=660,
+                   type='EA', reverse=True, size=1, top=0.75, ymax=3.5)
 
 
     #shared_y = fig.add_subplot(111, frame_on=False)
@@ -2428,8 +2480,13 @@ if __name__ == "__main__":
     axes[1, 0].text(0.02, 0.98, "(d)", transform=axes[1,0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1, 1].text(0.02, 0.98, "(e)", transform=axes[1,1].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1, 2].text(0.02, 0.98, "(f)", transform=axes[1,2].transAxes, fontsize=14, fontweight='bold', va='top')
+
+    from matplotlib.ticker import StrMethodFormatter
+
+    #plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}'))  # 1 decimal places
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
+    plt.subplots_adjust(wspace=0.2)
     #plt.subplots_adjust(hspace=0.08)
     #shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
@@ -2438,12 +2495,12 @@ if __name__ == "__main__":
 
     fig, axes = plt.subplots(1, 3)
 
-    plotting_scans(data_dict, sim_dict, Mn_R_asymm, axes, (0, 0), offset=0, step=0.75, xmin=0.04, xmax=0.5,
-                   type='RA', reverse=True, top=0.5)
-    plotting_scans(data_dict2, sim_dict2, Mn_R_asymm2, axes, (0, 1), offset=0, step=0.75, xmin=0.04,xmax=0.5,
-                   type='RA', reverse=True, top=0.5)
-    plotting_scans(data_dict1, sim_dict1, Mn_R_asymm1, axes, (0, 2), offset=0, step=0.75, xmin=0.04, xmax=0.5,
-                   type='RA', reverse=True, top=0.5)
+    plotting_scans(data_dict, sim_dict, Mn_R_asymm, axes, (0, 0), offset=0, step=1.1, xmin=0.04, xmax=0.48,
+                   type='RA', reverse=True, top=0.5,ymax=3.6)
+    plotting_scans(data_dict2, sim_dict2, Mn_R_asymm2, axes, (0, 1), offset=0, step=1.1, xmin=0.04,xmax=0.48,
+                   type='RA', reverse=True, top=0.5,ymax=3.6)
+    plotting_scans(data_dict1, sim_dict1, Mn_R_asymm1, axes, (0, 2), offset=0, step=1.1, xmin=0.04, xmax=0.48,
+                   type='RA', reverse=True, top=0.5,ymax=3.6)
 
     #shared_x = fig.add_subplot(111, frame_on=False)
     #shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
@@ -2460,7 +2517,7 @@ if __name__ == "__main__":
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
 
     axes[1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
-    axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+    axes[0].set_ylabel(r'Circular Polarized Asymmetry (arb. units)', fontsize=16)
 
     axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
@@ -2468,22 +2525,23 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.08)
+    plt.subplots_adjust(wspace=0.2)
     plt.show()
 
     # supplemental energy scans!
     fig, axes = plt.subplots(2, 3)
     plotting_scans(data_dict, sim_dict, Ti_resonance, axes, (0, 0), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=3.8)
     plotting_scans(data_dict2, sim_dict2, Ti_resonance2, axes, (0, 1), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=3.8)
     plotting_scans(data_dict1, sim_dict1, Ti_resonance1, axes, (0, 2), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=3.8)
     plotting_scans(data_dict, sim_dict, La_resonance, axes, (1, 0), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=1.5)
     plotting_scans(data_dict2, sim_dict2, La_resonance2, axes, (1, 1), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=1.5)
     plotting_scans(data_dict1, sim_dict1, La_resonance1, axes, (1, 2), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
+                   type='E', reverse=True, size=1, top=1,ymax=1.5)
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
@@ -2510,7 +2568,7 @@ if __name__ == "__main__":
     #x_label_pos = x_label.get_position()
 
     #shared_x.xaxis.set_label_coords(0.35, -0.04)
-    shared_y.yaxis.set_label_coords(-0.02, 0.5)
+    #shared_y.yaxis.set_label_coords(-0.02, 0.5)
 
     axes[0, 0].text(0.02, 0.98, "(a)", transform=axes[0, 0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[0, 1].text(0.02, 0.98, "(b)", transform=axes[0, 1].transAxes, fontsize=14, fontweight='bold', va='top')
@@ -2520,24 +2578,26 @@ if __name__ == "__main__":
     axes[1, 2].text(0.02, 0.98, "(f)", transform=axes[1, 2].transAxes, fontsize=14, fontweight='bold', va='top')
 
     plt.tight_layout()
+    plt.subplots_adjust(hspace=0.2)
+    plt.subplots_adjust(wspace=0.2)
     #plt.subplots_adjust(hspace=0.08)
     plt.show()
 
     fig, axes = plt.subplots(2,3)
 
-    plotting_scans(data_dict, sim_dict, resonant, axes, (0, 0), offset=0, step=3, xmin=0.01, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict2, sim_dict2, resonant2, axes, (0, 1), offset=0, step=3, xmin=0.037, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict1, sim_dict1,resonant1, axes, (0, 2), offset=0, step=3, xmin=0.037, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
+    plotting_scans(data_dict, sim_dict, resonant, axes, (0, 0), offset=0, step=0.5, xmin=0.01, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.25,ymax=2.7)
+    plotting_scans(data_dict2, sim_dict2, resonant2, axes, (0, 1), offset=0, step=0.5, xmin=0.037, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.2,ymax=2.7)
+    plotting_scans(data_dict1, sim_dict1,resonant1, axes, (0, 2), offset=0, step=0.5, xmin=0.037, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.25,ymax=2.7)
 
-    plotting_scans(data_dict, sim_dict, non_resonant, axes, (1, 0), offset=0, step=3, xmin=0.01, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict2, sim_dict2, non_resonant2, axes, (1, 1), offset=0, step=3, xmin=0.037, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict1, sim_dict1, non_resonant1, axes, (1, 2), offset=0, step=3, xmin=0.037, xmax=0.9,
-                   type='R', reverse=True, size=1, top=1.25)
+    plotting_scans(data_dict, sim_dict, non_resonant, axes, (1, 0), offset=0, step=0.5, xmin=0.01, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.25,ymax=2.1)
+    plotting_scans(data_dict2, sim_dict2, non_resonant2, axes, (1, 1), offset=0, step=0.5, xmin=0.037, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.25,ymax=2.1)
+    plotting_scans(data_dict1, sim_dict1, non_resonant1, axes, (1, 2), offset=0, step=0.5, xmin=0.037, xmax=0.9,
+                   type='R', reverse=True, size=1, top=1.25,ymax=2.1)
 
     axes[0,0].set_xticks([0.1,0.2,0.3,0.4,0.5,0.6,0.7])
     axes[0, 1].set_xticks([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
@@ -2547,12 +2607,19 @@ if __name__ == "__main__":
     axes[1, 1].set_xticks([0.1, 0.2, 0.3, 0.4, 0.5])
     axes[1, 2].set_xticks([0.1, 0.2, 0.3, 0.4, 0.5])
 
-    axes[0, 0].text(0.02, 0.98, "(a)", transform=axes[0, 0].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[0, 1].text(0.02, 0.98, "(b)", transform=axes[0, 1].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[0, 2].text(0.02, 0.98, "(c)", transform=axes[0, 2].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1, 0].text(0.02, 0.98, "(d)", transform=axes[1, 0].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1, 1].text(0.02, 0.98, "(e)", transform=axes[1, 1].transAxes, fontsize=14, fontweight='bold', va='top')
-    axes[1, 2].text(0.02, 0.98, "(f)", transform=axes[1, 2].transAxes, fontsize=14, fontweight='bold', va='top')
+    axes[0,0].text(0.05, 0.05, '(a)', transform=axes[0,0].transAxes, fontsize=14, fontweight='bold',
+            verticalalignment='bottom', horizontalalignment='left')
+    axes[0, 1].text(0.05, 0.05, '(b)', transform=axes[0, 1].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[0, 2].text(0.05, 0.05, '(c)', transform=axes[0, 2].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 0].text(0.05, 0.05, '(d)', transform=axes[1, 0].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 1].text(0.05, 0.05, '(e)', transform=axes[1, 1].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+    axes[1, 2].text(0.05, 0.05, '(f)', transform=axes[1, 2].transAxes, fontsize=14, fontweight='bold',
+                    verticalalignment='bottom', horizontalalignment='left')
+
 
     shared_y = fig.add_subplot(111, frame_on=False)
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
@@ -2564,8 +2631,10 @@ if __name__ == "__main__":
     axes[1, 0].get_shared_y_axes().join(axes[1, 0], shared_y)
 
     axes[1,1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
-    shared_y.yaxis.set_label_coords(-0.02, 0.5)
+    #shared_y.yaxis.set_label_coords(-0.02, 0.5)
     plt.tight_layout()
+    plt.subplots_adjust(hspace=0.2)
+    plt.subplots_adjust(wspace=0.2)
     plt.show()
     
     
@@ -2613,7 +2682,7 @@ if __name__ == "__main__":
     # axes[0, 0].get_shared_x_axes().join(axes[0, 0], shared_x)
     # axes[0, 1].get_shared_x_axes().join(axes[0, 1], shared_x)
     # axes[0, 1].get_shared_x_axes().join(axes[0, 2], shared_x)
-    """
+
 
     """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
@@ -2727,18 +2796,18 @@ if __name__ == "__main__":
 
     fig, axes = plt.subplots(2,3)
 
-    plotting_scans(data_dict_4, sim_dict_4, Mn_resonance_4,axes,(0,0), offset=0, step=1,xmin=635,xmax=660,
-                   type='E', reverse=True, size=1, top=2.3)
-    plotting_scans(data_dict_7, sim_dict_7, Mn_resonance_7, axes, (0, 1), offset=0, step=1, xmin=635, xmax=660,
-                   type='E', reverse=True, size=1, top=2.3)
-    plotting_scans(data_dict_10, sim_dict_10, Mn_resonance_10, axes, (0, 2), offset=0, step=1, xmin=635, xmax=660,
-                   type='E', reverse=True, size=1, top=2.3)
+    plotting_scans(data_dict_4, sim_dict_4, Mn_resonance_4,axes,(0,0), offset=0, step=1.4,xmin=635,xmax=660,
+                   type='E', reverse=True, size=1, top=2.3,ymax=10.1)
+    plotting_scans(data_dict_7, sim_dict_7, Mn_resonance_7, axes, (0, 1), offset=0, step=1.4, xmin=635, xmax=660,
+                   type='E', reverse=True, size=1, top=2.3,ymax=10.1)
+    plotting_scans(data_dict_10, sim_dict_10, Mn_resonance_10, axes, (0, 2), offset=0, step=1.4, xmin=635, xmax=660,
+                   type='E', reverse=True, size=1, top=2.3,ymax=10.1)
     plotting_scans(data_dict_4, sim_dict_4, Mn_E_asymm_4, axes, (1, 0), offset=0, step=2, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1)
+                   type='EA', reverse=True, size=1,ymax=10.4)
     plotting_scans(data_dict_7, sim_dict_7, Mn_E_asymm_7, axes, (1, 1), offset=0, step=2, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1)
+                   type='EA', reverse=True, size=1,ymax=10.4)
     plotting_scans(data_dict_10, sim_dict_10, Mn_E_asymm_10, axes, (1, 2), offset=0, step=2, xmin=635, xmax=660,
-                   type='EA', reverse=True, size=1)
+                   type='EA', reverse=True, size=1,ymax=10.4)
 
     axes[0, 0].text(0.02, 0.98, "(a)", transform=axes[0, 0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[0, 1].text(0.02, 0.98, "(b)", transform=axes[0, 1].transAxes, fontsize=14, fontweight='bold', va='top')
@@ -2763,17 +2832,20 @@ if __name__ == "__main__":
     axes[1,1].set_xlabel('Energy, E (eV)', fontsize=16)
     #shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
-    plt.subplots_adjust(hspace=0.075)
+    plt.subplots_adjust(hspace=0.1)
+    plt.subplots_adjust(wspace=0.2)
+    axes[1,0].legend([r'Exp', r'Calc'],loc='upper right', frameon=False)
+    # shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
 
     fig, axes = plt.subplots(1,3)
 
-    plotting_scans(data_dict_4, sim_dict_4, Mn_R_asymm_4, axes, (0, 0), offset=0, step=0.5, xmin=0.01,
-                   type='RA', reverse=True, top=0)
-    plotting_scans(data_dict_7, sim_dict_7, Mn_R_asymm_7, axes, (0, 1), offset=0, step=0.5, xmin=0.01,
-                   type='RA', reverse=True, top=-0.25)
-    plotting_scans(data_dict_10, sim_dict_10, Mn_R_asymm_10, axes, (0, 2), offset=0, step=0.5, xmin=0.01,
-                   type='RA', reverse=True, top=-0.25)
+    plotting_scans(data_dict_4, sim_dict_4, Mn_R_asymm_4, axes, (0, 0), offset=0, step=1.2, xmin=0.01,
+                   type='RA', reverse=True, top=0, ymax=2.5)
+    plotting_scans(data_dict_7, sim_dict_7, Mn_R_asymm_7, axes, (0, 1), offset=0, step=1.2, xmin=0.01,
+                   type='RA', reverse=True, top=-0.25, ymax=2.5)
+    plotting_scans(data_dict_10, sim_dict_10, Mn_R_asymm_10, axes, (0, 2), offset=0, step=1.2, xmin=0.01,
+                   type='RA', reverse=True, top=-0.25, ymax=2.5)
 
     axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
@@ -2782,6 +2854,9 @@ if __name__ == "__main__":
     axes[0].set_ylabel('Circular Polarized Asymmetry (arb. units)', fontsize=14)
     axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=14)
     plt.tight_layout()
+    plt.subplots_adjust(hspace=0.075)
+    plt.subplots_adjust(wspace=0.2)
+    # shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
 
     fig, axes = plt.subplots(2, 3)
@@ -2798,18 +2873,18 @@ if __name__ == "__main__":
     sim_dict_7['38_455.73_S']['Data'][0] = sim_dict_7['38_455.73_S']['Data'][0][my_idx]
     sim_dict_7['38_455.73_S']['Data'][2] = sim_dict_7['38_455.73_S']['Data'][2][my_idx]
 
-    plotting_scans(data_dict_4, sim_dict_4, resonant_4, axes, (0, 0), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
-    plotting_scans(data_dict_7, sim_dict_7, resonant_7, axes, (0, 1), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
-    plotting_scans(data_dict_10, sim_dict_10, resonant_10, axes, (0, 2), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
-    plotting_scans(data_dict_4, sim_dict_4, non_resonant_4, axes, (1, 0), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
-    plotting_scans(data_dict_7, sim_dict_7, non_resonant_7, axes, (1, 1), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
-    plotting_scans(data_dict_10, sim_dict_10, non_resonant_10, axes, (1, 2), offset=0, step=3, xmin=0.01,
-                   type='R', reverse=True, size=1, top=0)
+    plotting_scans(data_dict_4, sim_dict_4, resonant_4, axes, (1, 0), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
+    plotting_scans(data_dict_7, sim_dict_7, resonant_7, axes, (1, 1), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
+    plotting_scans(data_dict_10, sim_dict_10, resonant_10, axes, (1, 2), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
+    plotting_scans(data_dict_4, sim_dict_4, non_resonant_4, axes, (0, 0), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
+    plotting_scans(data_dict_7, sim_dict_7, non_resonant_7, axes, (0, 1), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
+    plotting_scans(data_dict_10, sim_dict_10, non_resonant_10, axes, (0, 2), offset=0, step=0.5, xmin=0.01,
+                   type='R', reverse=True, size=1, top=0, ymax=3.9)
 
     axes[0, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[1, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
@@ -2828,8 +2903,9 @@ if __name__ == "__main__":
     axes[1, 1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
-    plt.subplots_adjust(hspace=0.075)
-    shared_y.yaxis.set_label_coords(-0.01, 0.5)
+    plt.subplots_adjust(hspace=0.1)
+    plt.subplots_adjust(wspace=0.2)
+    # shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
 
     fig, axes = plt.subplots(2, 3)
@@ -2838,18 +2914,18 @@ if __name__ == "__main__":
     shared_y.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
     shared_y.set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
 
-    plotting_scans(data_dict_4, sim_dict_4, Ti_resonance_4, axes, (0, 0), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict_7, sim_dict_7, Ti_resonance_7, axes, (0, 1), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict_10, sim_dict_10, Ti_resonance_10, axes, (0, 2), offset=0, step=1, xmin=455, xmax=470,
-                   type='E', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict_4, sim_dict_4, La_resonance_4, axes, (1, 0), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict_7, sim_dict_7, La_resonance_7, axes, (1, 1), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
-    plotting_scans(data_dict_10, sim_dict_10, La_resonance_10, axes, (1, 2), offset=0, step=1, xmin=830, xmax=860,
-                   type='E', reverse=True, size=1, top=1.25)
+    plotting_scans(data_dict_4, sim_dict_4, Ti_resonance_4, axes, (1, 0), offset=0, step=1, xmin=455, xmax=470,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
+    plotting_scans(data_dict_7, sim_dict_7, Ti_resonance_7, axes, (1, 1), offset=0, step=1, xmin=455, xmax=470,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
+    plotting_scans(data_dict_10, sim_dict_10, Ti_resonance_10, axes, (1, 2), offset=0, step=1, xmin=455, xmax=470,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
+    plotting_scans(data_dict_4, sim_dict_4, La_resonance_4, axes, (0, 0), offset=0, step=1, xmin=830, xmax=860,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
+    plotting_scans(data_dict_7, sim_dict_7, La_resonance_7, axes, (0, 1), offset=0, step=1, xmin=830, xmax=860,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
+    plotting_scans(data_dict_10, sim_dict_10, La_resonance_10, axes, (0, 2), offset=0, step=1, xmin=830, xmax=860,
+                   type='E', reverse=True, size=1, top=1.25, ymax=2.6)
 
     axes[0, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
     axes[1, 0].set_ylabel('')  # Remove existing x-axis label for this subplot
@@ -2868,8 +2944,9 @@ if __name__ == "__main__":
     axes[1, 1].set_xlabel('Energy, E (eV)', fontsize=16)
     # shared_ax.xaxis.set_label_coords(0.35, -0.075)
     plt.tight_layout()
-    plt.subplots_adjust(hspace=0.075)
-    shared_y.yaxis.set_label_coords(-0.01, 0.5)
+    plt.subplots_adjust(hspace=0.1)
+    plt.subplots_adjust(wspace=0.2)
+    #shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.show()
     """
     """
@@ -2917,9 +2994,9 @@ if __name__ == "__main__":
     plt.plot(np.diff(data[1]))
     plt.plot(np.diff(data[5]))
     plt.show()
+    
     """
     """
-
     # Total Variation
 
     fname1 = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_test1-0.h5"
@@ -2933,7 +3010,7 @@ if __name__ == "__main__":
     keys = ["64_836.04_S", "63_833.85_S"]
     #keys = ["63_833.85_S"]
 
-    fig, axes = plt.subplots(1,2)
+    fig, axes = plt.subplots(1,1)
 
 
     
@@ -2942,36 +3019,41 @@ if __name__ == "__main__":
     for i, key in enumerate(keys):
         E = data_dict1[key]['Energy']
         qz = data_dict1[key]['Data'][0]
-        R = np.log10(data_dict1[key]['Data'][2])
+        R = np.log10(data_dict3[key]['Data'][2])
+        Rs = np.log10(sim_dict3[key]['Data'][2])
 
-        Rs = np.log10(sim_dict1[key]['Data'][2])
+        Rs = (Rs-min(R))/(max(R)-min(R))
+        R = (R - min(R)) / (max(R) - min(R))
 
         l1_norm = sum(np.abs(R - Rs)) / len(R)
         tv = total_variation(R, Rs)
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
 
-        axes[0].plot(qz[idx], R[idx] + i * 2, 'b')
-        axes[0].plot(qz[idx], Rs[idx] + i * 2, 'r')
+        axes.plot(qz[idx], R[idx] + i * 0.5, 'b')
+        axes.plot(qz[idx], Rs[idx] + i * 0.5, 'r')
 
         print('E=' + str(E) + ': ' + str(l1_norm))
-
-
+    """
+    """
     for i, key in enumerate(keys):
         E = data_dict2[key]['Energy']
         qz = data_dict2[key]['Data'][0]
         R = np.log10(data_dict2[key]['Data'][2])
-
         Rs = np.log10(sim_dict2[key]['Data'][2])
+
+        Rs = (Rs - min(R)) / (max(R) - min(R))
+        R = (R - min(R)) / (max(R) - min(R))
 
         l1_norm = sum(np.abs(R - Rs)) / len(R)
         tv = total_variation(R, Rs)
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
 
-        axes[1].plot(qz[idx], R[idx] + i * 2, 'b')
-        axes[1].plot(qz[idx], Rs[idx] + i * 2, 'r')
+        axes[1].plot(qz[idx], R[idx] + i * 0.5, 'b')
+        axes[1].plot(qz[idx], Rs[idx] + i * 0.5, 'r')
 
         print('E=' + str(E) + ': ' + str(l1_norm))
-
+    """
+    """
     axes[0].legend([r'Exp ($\sigma$)', r'Calc ($\sigma$)'], frameon=False, loc='lower left')
 
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -2980,55 +3062,57 @@ if __name__ == "__main__":
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
     axes[1].tick_params(axis='y', labelleft=False)
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
 
 
     shared_x = fig.add_subplot(111, frame_on=False)
     shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    shared_x.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
+    shared_x.set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
 
     axes[0].set_xlabel('')  # Remove existing x-axis label for this subplot
     axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
     axes[0].get_shared_x_axes().join(axes[0], shared_x)
     axes[1].get_shared_x_axes().join(axes[1], shared_x)
 
-    axes[0].set_ylim([-5.5, 2.1])
-    axes[1].set_ylim([-5.5, 2.1])
+    axes[0].set_ylim([-0.1, 1.45])
+    axes[1].set_ylim([-0.1, 1.45])
 
     axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
 
-
-    # plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
+    """
+    """
+    plt.xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\AA^{-1}$)')
     #shared_x.yaxis.set_label_coords(-0.01, 0.5)
     #axes.set_xlim([0.01,0.1])
     #axes.set_xlim([0.01, 0.1])
     #axes.set_ylim([0, 1.60])
     #axes[1].set_ylim([0, 1.60])
 
-    #ax.tick_params(axis='both', which='both', direction='in', bottom=False, left=True)
-    #ax.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
-    #ax.set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
+    axes.tick_params(axis='both', which='both', direction='in', bottom=True, left=True)
+    axes.set_xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
+    axes.set_ylabel(r'Normalized Reflected Intensity (arb. units)', fontsize=16)
     # Set minor ticks for both x and y axes
-    #ax.tick_params(axis='y', labelleft=False)
-    #ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
-    #ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes.tick_params(axis='y', labelleft=False)
+    axes.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    axes.tick_params(axis='both', which='both', direction='in', top=True, right=True)
 
     #axes.tick_params(axis='x', labelbottom=False, bottom=False)
     #axes.tick_params(axis='y', labelleft=False, left=False)
     #axes.tick_params(axis='x', labelbottom=False, bottom=False)
     #axes.tick_params(axis='y', labelleft=False, left=False)
     #plt.tight_layout()
-    #plt.legend([r'Exp ($\sigma$)','Sim ($\sigma$)'], frameon=False)
-    #plt.show()
-    plt.tight_layout()
+    plt.legend([r'Exp ($\sigma$)','Sim ($\sigma$)'], frameon=False)
     plt.show()
+    #plt.tight_layout()
+    #plt.show()
     """
     """
     example1 = np.loadtxt("//cabinet/work$/lsk601/My Documents\Master-data/test2-data.csv", skiprows=1)
@@ -3069,15 +3153,18 @@ if __name__ == "__main__":
         E = data_dict1[key]['Energy']
         qz = data_dict1[key]['Data'][0]
         R = np.log10(data_dict1[key]['Data'][2])
-
         Rs = np.log10(sim_dict1[key]['Data'][2])
+
+        Rs = (Rs - min(R)) / (max(R) - min(R))
+        R = (R-min(R))/(max(R)-min(R))
+
         
         l1_norm = sum(np.abs(R - Rs))/len(R)
 
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01 ]
 
-        axes[0].plot(qz[idx], R[idx]+i*2.5+8, 'b')
-        axes[0].plot(qz[idx], Rs[idx]+i*2.5+8, 'r')
+        axes[0].plot(qz[idx], R[idx]+i*0.5, 'b')
+        axes[0].plot(qz[idx], Rs[idx]+i*0.5, 'r')
 
 
         print('E=' + str(E) + ': ' + str(l1_norm))
@@ -3089,26 +3176,30 @@ if __name__ == "__main__":
 
         Rs = np.log10(sim_dict2[key]['Data'][2])
 
+        Rs = (Rs - min(R)) / (max(R) - min(R))
+        R = (R - min(R)) / (max(R) - min(R))
+
+
         l1_norm = sum(np.abs(R - Rs)) / len(R)
 
         idx = [i for i in range(len(qz)) if qz[i] >= 0.01]
 
-        axes[1].plot(qz[idx], R[idx] + i * 2.5 + 8, 'b')
-        axes[1].plot(qz[idx], Rs[idx] + i * 2.5 + 8, 'r')
+        axes[1].plot(qz[idx], R[idx] + i * 0.5, 'b')
+        axes[1].plot(qz[idx], Rs[idx] + i * 0.5, 'r')
 
         print('E=' + str(E) + ': ' + str(l1_norm))
 
     axes[0].legend([r'Exp ($\sigma$)',r'Calc ($\sigma$)'],frameon=False)
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1].legend([r'Exp ($\sigma$)',r'Calc ($\sigma$)'],frameon=False)
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[1].tick_params(axis='y', labelleft=False)
+    #axes[1].tick_params(axis='y', labelleft=False)
     axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[1].set_xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)', fontsize=16)
+    axes[1].set_xlabel(r'Momentum Transfer, $\mathrm{q_{z}}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     axes[0].text(0.00, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1].text(0.00, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
 
@@ -3121,9 +3212,10 @@ if __name__ == "__main__":
     axes[0].get_shared_y_axes().join(axes[0], shared_y)
     axes[1].get_shared_y_axes().join(axes[1], shared_y)
     #lt.xlabel(r'Momentum Transfer, $q_{z}$ ($\AA^{-1}$)')
-    shared_y.yaxis.set_label_coords(-0.01, 0.5)
+    #shared_y.yaxis.set_label_coords(-0.01, 0.5)
     plt.tight_layout()
-
+    axes[0].set_ylim([0,2.7])
+    axes[1].set_ylim([0, 2.7])
     #plt.yticks([])
 
 
@@ -3140,11 +3232,12 @@ if __name__ == "__main__":
     #plt.ylim([0.1,0.9])
     #plt.gca().xaxis.grid(True)
     plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
     plt.minorticks_on()
-    plt.legend(['Case (a)', 'Case (b)'])
+    plt.legend(['Case (a)', 'Case (b)'], frameon=False)
     plt.xlabel('Differential Evolution Iteration', fontsize=16)
     plt.ylabel('Cost Function (arb. units)', fontsize=16)
+
     plt.text(0.02, 0.98, "(c)", transform=plt.gca().transAxes, fontsize=14, fontweight='bold', va='top',ha='left')
 
 
@@ -3167,16 +3260,16 @@ if __name__ == "__main__":
 
     fig, axes = plt.subplots(1,2)
 
-    axes[0].plot(data1[0], np.log10(data1[2]))
+    axes[0].plot(data1[0], data1[2])
     #plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)')
-    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)',fontsize=12)
+    axes[0].set_ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)',fontsize=12)
     #plt.yscale('log')
 
 
-    axes[1].plot(data2[0], np.log10(data2[2]))
+    axes[1].plot(data2[0], data2[2])
     #plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)')
     #plt.ylabel('Reflectivity')
-    #plt.yscale('log')
+
 
     shared_x = fig.add_subplot(111, frame_on=False)
     shared_x.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
@@ -3188,23 +3281,26 @@ if __name__ == "__main__":
     axes[1].get_shared_x_axes().join(axes[1], shared_x)
 
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
 
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[1].tick_params(axis='y', labelleft=False)
+    #axes[1].tick_params(axis='y', labelleft=False)
     axes[1].xaxis.set_minor_locator(ticker.AutoMinorLocator())
-    axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    #axes[1].yaxis.set_minor_locator(ticker.AutoMinorLocator())
 
     axes[0].text(0.02, 0.98, "(a)", transform=axes[0].transAxes, fontsize=14, fontweight='bold', va='top')
     axes[1].text(0.02, 0.98, "(b)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
 
+    axes[0].set_yscale('log')
+    axes[1].set_yscale('log')
     plt.tight_layout()
+    plt.subplots_adjust(wspace=0.2)
     plt.show()
 
-    """
 
+    """
     """
     # ----------------------------------- Cost Function Testing ------------------------------------------------------#
 

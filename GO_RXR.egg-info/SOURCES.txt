@@ -18,3 +18,12 @@ GO_RXR.egg-info/SOURCES.txt
 GO_RXR.egg-info/dependency_links.txt
 GO_RXR.egg-info/requires.txt
 GO_RXR.egg-info/top_level.txt
+GO_RXR.egg-info/zip-safe
+Testing/GUI_test.py
+Testing/create_cases.py
+Testing/data_fitting_test.py
+Testing/density_testing.py
+Testing/material_model_testing.py
+Testing/material_structure_test.py
+Testing/reflectivity_test.py
+Testing/test_data_structure.py

@@ -141,6 +141,145 @@ if __name__ == '__main__':
 
     import data_structure as ds
 
+    # udkm1Dsim Testing
+
+    import udkm1Dsim as ud
+    u = ud.u  # import the pint unit registry from udkm1Dsim
+    import scipy.constants as constants
+    import numpy as np
+    import matplotlib.pyplot as plt
+    u.setup_matplotlib()  # use matplotlib with pint units
+
+    Co = ud.Atom('Co', mag_amplitude=1, mag_gamma=0 * u.deg, mag_phi=0 * u.deg)
+    Ni = ud.Atom('Ni', mag_amplitude=1, mag_gamma=90 * u.deg, mag_phi=0 * u.deg)
+    Fe = ud.Atom('Fe', mag_amplitude=1, mag_gamma=0 * u.deg, mag_phi=90 * u.deg)
+    Si = ud.Atom('Si')
+
+    prop_Ni = {}
+    # two-temperture model
+    prop_Ni['heat_capacity'] = ['0.1*T',
+                                532 * u.J / u.kg / u.K,
+                                ]
+    prop_Ni['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 4.0e18  # electron-phonon coupling
+    prop_Ni['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Ni['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Ni['opt_ref_index'] = 2.9174 + 3.3545j
+
+    # LLB parameters
+    prop_Ni['eff_spin'] = 0.5
+    prop_Ni['curie_temp'] = 630 * u.K
+    prop_Ni['lamda'] = 0.005
+    prop_Ni['mag_moment'] = 0.393 * u.bohr_magneton
+    prop_Ni['aniso_exponent'] = 3
+    prop_Ni['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Ni['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Ni['mag_saturation'] = 500e3 * u.J / u.T / u.m ** 3
+
+    # build the layer
+    layer_Ni = ud.AmorphousLayer('Ni', 'Ni amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Ni, **prop_Ni)
+
+    # similar to Ni layer
+    prop_Co = {}
+    prop_Co['heat_capacity'] = ['0.1*T',
+                                332 * u.J / u.kg / u.K,
+                                ]
+    prop_Co['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 5.0e18
+    prop_Co['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Co['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Co['opt_ref_index'] = 2.9174 + 3.3545j
+
+    prop_Co['eff_spin'] = 3
+    prop_Co['curie_temp'] = 1480 * u.K
+    prop_Co['lamda'] = 0.005
+    prop_Co['mag_moment'] = 0.393 * u.bohr_magneton
+    prop_Co['aniso_exponent'] = 3
+    prop_Co['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Co['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Co['mag_saturation'] = 1400e3 * u.J / u.T / u.m ** 3
+
+    layer_Co = ud.AmorphousLayer('Co', 'Co amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Co, **prop_Co)
+
+    # similar to Ni layer
+    prop_Fe = {}
+    prop_Fe['heat_capacity'] = ['0.1*T',
+                                732 * u.J / u.kg / u.K,
+                                ]
+    prop_Fe['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 6.0e18
+    prop_Fe['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Fe['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Fe['opt_ref_index'] = 2.9174 + 3.3545j
+
+    prop_Fe['eff_spin'] = 2
+    prop_Fe['curie_temp'] = 1024 * u.K
+    prop_Fe['lamda'] = 0.005
+    prop_Fe['mag_moment'] = 2.2 * u.bohr_magneton
+    prop_Fe['aniso_exponent'] = 3
+    prop_Fe['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Fe['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Fe['mag_saturation'] = 200e3 * u.J / u.T / u.m ** 3
+
+    layer_Fe = ud.AmorphousLayer('Fe', 'Fe amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Fe, **prop_Fe)
+
+    # this is the non-magnetic substrate
+    prop_Si = {}
+    prop_Si['heat_capacity'] = [100 * u.J / u.kg / u.K, 603 * u.J / u.kg / u.K]
+    prop_Si['therm_cond'] = [0, 100 * u.W / (u.m * u.K)]
+
+    prop_Si['sub_system_coupling'] = [0, 0]
+
+    prop_Si['lin_therm_exp'] = [0, 2.6e-6]
+    prop_Si['sound_vel'] = 8.433 * u.nm / u.ps
+    prop_Si['opt_ref_index'] = 3.6941 + 0.0065435j
+
+    layer_Si = ud.AmorphousLayer('Si', "Si amorphous", thickness=1 * u.nm, density=2336 * u.kg / u.m ** 3,
+                                 atom=Si, **prop_Si)
+
+    S = ud.Structure('NiCoFeNi')
+
+    S.add_sub_structure(layer_Ni, 10)
+    S.add_sub_structure(layer_Co, 15)
+    S.add_sub_structure(layer_Fe, 10)
+    S.add_sub_structure(layer_Ni, 25)
+    S.add_sub_structure(layer_Si, 200)
+
+    dyn = ud.XrayDyn(S, True)
+    dyn.disp_messages = True
+    dyn.save_data = False
+
+    dyn.energy = np.r_[5000, 8047] * u.eV  # set two photon energies
+    dyn.qz = np.r_[3.1:3.3:0.0001] / u.angstrom  # qz range
+
+    R_hom, A = dyn.homogeneous_reflectivity()  # this is the actual calculation
+
+    plt.figure()
+    plt.semilogy(dyn.qz[0, :], R_hom[0, :], label='{}'.format(dyn.energy[0]), alpha=0.5)
+    plt.semilogy(dyn.qz[1, :], R_hom[1, :], label='{}'.format(dyn.energy[1]), alpha=0.5)
+    plt.ylabel('Reflectivity')
+    plt.xlabel('$q_z$ [nm$^{-1}$]')
+    plt.legend()
+    plt.show()
+
+
+
+    """
     #sample = ms.slab(3)
     #sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
     #sample.addlayer(1, 'LaMnO3', 52.6, roughness=[1.25,0.72,0.2])
@@ -227,7 +366,7 @@ if __name__ == '__main__':
         example_file.addEnergyScan(number[idx] + 1, 830, angle, 'P', E_La, R['P'])
 
     example_file.saveData('example2.h5')
-
+    """
 
     """
     ##fname = "//cabinet/work$/lsk601/My Documents/LSMO_For_Lucas/RXR_Twente-EM1-150K_v9.h5"
@@ -480,8 +619,8 @@ if __name__ == '__main__':
     #plt.text(0.02, 0.98, "(c)", transform=axes[1].transAxes, fontsize=14, fontweight='bold', va='top')
     plt.show()
     """
+
     """
-   
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
     sample = ds.ReadSampleHDF5(fname)
@@ -498,26 +637,29 @@ if __name__ == '__main__':
     qz = data_dict[name]['Data'][0]
     qz,R = sample.reflectivity(E,qz, precision = 1e-2, s_min=0.1)
     qz, R1 = sample.reflectivity(E, qz, precision = 1e-3, s_min=0.1)
-    qz, R2 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
+    qz, R2 = sample.reflectivity(E, qz, precision=1e-5, s_min=0.1)
+    qz, R3 = sample.reflectivity(E, qz, precision=1e-20, s_min=0.1)
     R = R['S']
     R1 = R1['S']
     R2 = R2['S']
 
     plt.figure()
-    plt.plot(qz, np.log10(R))
-    plt.plot(qz, np.log10(R1))
-    plt.plot(qz, np.log10(R2), '--')
-    plt.legend(['precision=0.01','precision=0.001','precision=1e-20'], frameon=False)
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=16)
+    plt.plot(qz, R,'b')
+    plt.plot(qz, R1,'r')
+    plt.plot(qz, R2, 'y')
+    plt.plot(qz, R2, 'k--')
+    plt.legend(['precision=0.01','precision=0.001','precision=1e-5','precision=1e-20'], frameon=False)
+    plt.ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=16)
     plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=16)
     # Set minor ticks
     plt.minorticks_on()
     # Set tick parameters
     plt.tick_params(which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
+    plt.yscale('log')
     plt.show()
-    
     """
+
     """
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim10uc_unitCell_complete.h5"
 
@@ -627,6 +769,7 @@ if __name__ == '__main__':
     np.savetxt('E1_460.76_best.txt', my_data.transpose())
     """
     """
+
     from matplotlib import ticker
     fname = "//cabinet/work$/lsk601/My Documents/SrTiO3-LaMnO3/Pim4uc_unitCell_complete.h5"
     data, data_dict, sim_dict = ds.ReadDataHDF5(fname)
@@ -638,9 +781,9 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(E, R)
     plt.xlabel('Energy, E (eV)', fontsize=12)
-    plt.ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    plt.ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=12)
     plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
     plt.minorticks_on()
     plt.show()
 
@@ -674,7 +817,7 @@ if __name__ == '__main__':
     axes[0].plot(E2, R2, label=r'Exp ($\sigma$)')
     axes[0].plot(Eb, Rs2, label=r'Calc ($\sigma$)')
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
@@ -692,7 +835,8 @@ if __name__ == '__main__':
     axes[1].set_xlabel('')  # Remove existing x-axis label for this subplot
     axes[0].get_shared_x_axes().join(axes[0], shared_x)
     axes[1].get_shared_x_axes().join(axes[1], shared_x)
-    axes[0].set_ylabel('Normalized Reflected Intensity (arb. units)', fontsize=12)
+    axes[0].set_ylabel('Fractional Reflected Intensity ($\mathrm{R/R_{0}}$)', fontsize=12)
+    axes[0].ticklabel_format(axis='y', scilimits=[-3, 3])
 
     plt.tight_layout()
     plt.show()
@@ -723,12 +867,16 @@ if __name__ == '__main__':
     qz2, R2 = sample_t2.reflectivity(E, qz)
     qz3, R3 = sample_t3.reflectivity(E, qz)
 
+    R1['S'] = np.log10(R1['S'])
+    R2['S'] = np.log10(R2['S'])
+    R3['S'] = np.log10(R3['S'])
+
     plt.figure(1)
-    plt.plot(qz1, np.log10(R1['S'])+6)
-    plt.plot(qz1, np.log10(R2['S'])+3)
-    plt.plot(qz1, np.log10(R3['S']))
+    plt.plot(qz1, (R1['S']-min(R1['S']))/(max(R1['S'])-min(R1['S']))+1)
+    plt.plot(qz1, (R2['S']-min(R2['S']))/(max(R2['S'])-min(R2['S']))+0.5)
+    plt.plot(qz1, (R3['S']-min(R3['S']))/(max(R3['S'])-min(R3['S']))+0)
     plt.tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    plt.tick_params(axis='y', labelleft=False)
+    #plt.tick_params(axis='y', labelleft=False)
     plt.minorticks_on()
     plt.legend([r'5 $\mathrm{\AA}$', r'20 $\mathrm{\AA}$', r'40 $\mathrm{\AA}$'], frameon=False, fontsize=10)
     plt.xlabel(r'Momentum Transfer, $q_{z}$ ($\mathrm{\AA^{-1}}$)', fontsize=12)
@@ -776,20 +924,29 @@ if __name__ == '__main__':
     qz2, R2s = sample2.reflectivity(E, qz)
     qz3, R3s = sample3.reflectivity(E, qz)
 
+
+    R1i['S'] = np.log10(R1i['S'])
+    R2i['S'] = np.log10(R2i['S'])
+    R3i['S'] = np.log10(R3i['S'])
+
+    R1s['S'] = np.log10(R1s['S'])
+    R2s['S'] = np.log10(R2s['S'])
+    R3s['S'] = np.log10(R3s['S'])
+
     fig, axes = plt.subplots(1,2)
-    axes[0].plot(qz1, np.log10(R1i['S'])+6, label=r'$\sigma_{i}$=0 $\mathrm{\AA}$')
-    axes[0].plot(qz1, np.log10(R2i['S'])+3, label=r'$\sigma_{i}$=3 $\mathrm{\AA}$')
-    axes[0].plot(qz1, np.log10(R3i['S']), label=r'$\sigma_{i}$=6 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R1i['S']-min(R1i['S']))/(max(R1i['S'])-min(R1i['S']))+1, label=r'$\sigma_{i}$=0 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R2i['S']-min(R2i['S']))/(max(R2i['S'])-min(R2i['S']))+0.5, label=r'$\sigma_{i}$=3 $\mathrm{\AA}$')
+    axes[0].plot(qz1, (R3i['S']-min(R3i['S']))/(max(R3i['S'])-min(R1i['S']))+0, label=r'$\sigma_{i}$=6 $\mathrm{\AA}$')
     axes[0].tick_params(axis='both', which='both', direction='in', top=True, right=True)
-    axes[0].tick_params(axis='y', labelleft=False)
+    #axes[0].tick_params(axis='y', labelleft=False)
     axes[0].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
     axes[0].xaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].yaxis.set_minor_locator(ticker.AutoMinorLocator())
     axes[0].legend(frameon=False)
-
-    axes[1].plot(qz1, np.log10(R1s['S']) + 6, label=r'$\sigma_{s}$=0 $\mathrm{\AA}$')
-    axes[1].plot(qz1, np.log10(R2s['S']) + 3, label=r'$\sigma_{s}$=3 $\mathrm{\AA}$')
-    axes[1].plot(qz1, np.log10(R3s['S']), label=r'$\sigma_{s}$=6 $\mathrm{\AA}$')
+    print(min(R1i['S']))
+    axes[1].plot(qz1, (R1s['S']-min(R1s['S']))/(max(R1s['S'])-min(R1s['S']))+1, label=r'$\sigma_{s}$=0 $\mathrm{\AA}$')
+    axes[1].plot(qz1, (R2s['S']-min(R2s['S']))/(max(R2s['S'])-min(R2s['S']))+0.5, label=r'$\sigma_{s}$=3 $\mathrm{\AA}$')
+    axes[1].plot(qz1, (R3s['S']-min(R3s['S']))/(max(R3s['S'])-min(R3s['S']))+0, label=r'$\sigma_{s}$=6 $\mathrm{\AA}$')
     axes[1].tick_params(axis='both', which='both', direction='in', top=True, right=True)
     axes[1].tick_params(axis='y', labelleft=False)
     axes[1].legend([r'Exp', r'Calc'], loc='upper right', frameon=False)
@@ -814,8 +971,7 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
-    """
-    """
+
     hello = np.loadtxt("//cabinet/work$/lsk601/Downloads/SrTiO3_attenuation.txt")
     E = hello[:,0]
     attenuation = hello[:,1]

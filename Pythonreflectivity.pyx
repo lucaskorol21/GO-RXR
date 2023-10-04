@@ -403,7 +403,7 @@ cdef inline double complex CalculateVZpi_m(double vyvy, double complex ey, doubl
     return sqrt((1.-vyvy/ez)*ey+eg*eg/ez)
 
 
-cdef void Calculate_Multilayer(double complex *t_comp1_up, double complex *t_comp2_up, double complex *t_comp1_do, double complex *t_comp2_do, double complex *r_ML_in1, double complex *r_ML_in2, double complex *r_ML_ba1, double complex *r_ML_ba2, int N):
+cdef void Calculate_Multilayer(double complex *t_comp1_up, double complex *t_comp2_up, double complex *t_comp1_do, double complex *t_comp2_do, double complex *r_ML_in1, double complex *r_ML_in2, double complex *r_ML_ba1, double complex *r_ML_ba2, double N):
 
     cdef double complex rres1, rres2, tres_up, tres_do, MLfac
 
@@ -445,7 +445,7 @@ cdef void Calculate_Multilayer(double complex *t_comp1_up, double complex *t_com
 
 
 
-cdef double complex ipow(double complex base, int exp):
+cdef double complex ipow(double complex base, double exp):
     cdef double complex result = 1.
     while (exp):
         if (exp%2): #If exp is Uneven
@@ -1754,8 +1754,8 @@ cdef void NormalPhi(double complex epsxx, double complex epsyy, double complex e
     (PHI2[0])[1]=0
 
 
-cdef void Calculate_ANXBN(double complex (*A)[2][2], double complex (*B)[2][2], double complex (*X)[2][2], int N):
-    cdef int expite;
+cdef void Calculate_ANXBN(double complex (*A)[2][2], double complex (*B)[2][2], double complex (*X)[2][2], double N):
+    cdef double expite;
     cdef int i,j;
     cdef double complex  resA[2][2];
     cdef double complex  resB[2][2];
@@ -1796,7 +1796,7 @@ cdef void Calculate_ANXBN(double complex (*A)[2][2], double complex (*B)[2][2], 
 
 
 
-cdef void Calculate_Multilayer_equation(double complex  (*A)[2][2], double complex  (*B)[2][2], double complex (*X)[2][2], double complex  (*result)[2][2], int N):
+cdef void Calculate_Multilayer_equation(double complex  (*A)[2][2], double complex  (*B)[2][2], double complex (*X)[2][2], double complex  (*result)[2][2], double N):
     # This function calculates efficiently
     # X + AXB + A^2 X B^2 + ... + A^(N-1) X B^(N-1)
     # for complex 2x2-Matrices
@@ -2384,7 +2384,7 @@ cdef void FillC0(double complex (*C0)[2][2], double complex  (*rprime)[2][2], do
     Invert2x2(C0)
 
 
-cdef void Calculate_Multilayer_with_Matrices(double complex (*t_comp1_up)[2][2], double complex (*t_comp2_up)[2][2], double complex (*t_comp1_do)[2][2], double complex (*t_comp2_do)[2][2], double complex (*r_ML_in1)[2][2], double complex (*r_ML_in2)[2][2], double complex (*r_ML_ba1)[2][2], double complex (*r_ML_ba2)[2][2], int N):
+cdef void Calculate_Multilayer_with_Matrices(double complex (*t_comp1_up)[2][2], double complex (*t_comp2_up)[2][2], double complex (*t_comp1_do)[2][2], double complex (*t_comp2_do)[2][2], double complex (*r_ML_in1)[2][2], double complex (*r_ML_in2)[2][2], double complex (*r_ML_ba1)[2][2], double complex (*r_ML_ba2)[2][2], double N):
 
     cdef double complex MLfac1[2][2]
     cdef double complex MLfac2[2][2]

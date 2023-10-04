@@ -1,18 +1,17 @@
-from setuptools import setup, Extension
+from setuptools import setup, find_packages
 
 setup(
     name='GO-RXR',
     version='0.3',
-    packages=[''],
+    packages=find_packages(include=['Magnetic_Scattering_Factor', 'Scattering_Factor', 'Testing', 'Tutorial']),
     url='https://github.com/lucaskorol21/GO-RXR',
-    license='',
     author='Lucas Korol',
     author_email='lsk601@usask.ca',
-    maintainer='Robert Green',
+    maintainer='Robert J. Green',
     description='Global Optimization of Resonant X-ray Reflectometry Tool',
-    python_requires='==3.7',
+    python_requires='>=3.7',
     install_requires=[
-        'Cython==0.29.24',
+        'Cython==3.0.2',
         'numpy==1.21.4',
         'PyQt5==5.15.7',
         'h5py==2.9.0',
