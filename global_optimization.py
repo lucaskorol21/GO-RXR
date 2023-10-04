@@ -913,7 +913,7 @@ def residuals(x, *args):
 Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
 evolution wrapper. 
 """
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, temperature, reflectivity_engine, sf_dict,use_script=False):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,temperature, reflectivity_engine,use_script=False):
     """
     Purpose: wrapper used to setup and run the scipy differential evolution algorithm
     :param sample: slab class
@@ -949,7 +949,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
             scans.append(info)
 
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict, temperature, reflectivity_engine]  # required format for function scanCompute
 
 
     p=True

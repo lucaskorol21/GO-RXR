@@ -150,7 +150,135 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     u.setup_matplotlib()  # use matplotlib with pint units
 
-    Ti = ud.Atom('Ti',id='Ti4+')
+    Co = ud.Atom('Co', mag_amplitude=1, mag_gamma=0 * u.deg, mag_phi=0 * u.deg)
+    Ni = ud.Atom('Ni', mag_amplitude=1, mag_gamma=90 * u.deg, mag_phi=0 * u.deg)
+    Fe = ud.Atom('Fe', mag_amplitude=1, mag_gamma=0 * u.deg, mag_phi=90 * u.deg)
+    Si = ud.Atom('Si')
+
+    prop_Ni = {}
+    # two-temperture model
+    prop_Ni['heat_capacity'] = ['0.1*T',
+                                532 * u.J / u.kg / u.K,
+                                ]
+    prop_Ni['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 4.0e18  # electron-phonon coupling
+    prop_Ni['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Ni['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Ni['opt_ref_index'] = 2.9174 + 3.3545j
+
+    # LLB parameters
+    prop_Ni['eff_spin'] = 0.5
+    prop_Ni['curie_temp'] = 630 * u.K
+    prop_Ni['lamda'] = 0.005
+    prop_Ni['mag_moment'] = 0.393 * u.bohr_magneton
+    prop_Ni['aniso_exponent'] = 3
+    prop_Ni['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Ni['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Ni['mag_saturation'] = 500e3 * u.J / u.T / u.m ** 3
+
+    # build the layer
+    layer_Ni = ud.AmorphousLayer('Ni', 'Ni amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Ni, **prop_Ni)
+
+    # similar to Ni layer
+    prop_Co = {}
+    prop_Co['heat_capacity'] = ['0.1*T',
+                                332 * u.J / u.kg / u.K,
+                                ]
+    prop_Co['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 5.0e18
+    prop_Co['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Co['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Co['opt_ref_index'] = 2.9174 + 3.3545j
+
+    prop_Co['eff_spin'] = 3
+    prop_Co['curie_temp'] = 1480 * u.K
+    prop_Co['lamda'] = 0.005
+    prop_Co['mag_moment'] = 0.393 * u.bohr_magneton
+    prop_Co['aniso_exponent'] = 3
+    prop_Co['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Co['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Co['mag_saturation'] = 1400e3 * u.J / u.T / u.m ** 3
+
+    layer_Co = ud.AmorphousLayer('Co', 'Co amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Co, **prop_Co)
+
+    # similar to Ni layer
+    prop_Fe = {}
+    prop_Fe['heat_capacity'] = ['0.1*T',
+                                732 * u.J / u.kg / u.K,
+                                ]
+    prop_Fe['therm_cond'] = [20 * u.W / (u.m * u.K),
+                             80 * u.W / (u.m * u.K), ]
+    g = 6.0e18
+    prop_Fe['sub_system_coupling'] = \
+        ['-{:f}*(T_0-T_1)'.format(g),
+         '{:f}*(T_0-T_1)'.format(g)
+         ]
+    prop_Fe['lin_therm_exp'] = [0, 11.8e-6]
+    prop_Fe['opt_ref_index'] = 2.9174 + 3.3545j
+
+    prop_Fe['eff_spin'] = 2
+    prop_Fe['curie_temp'] = 1024 * u.K
+    prop_Fe['lamda'] = 0.005
+    prop_Fe['mag_moment'] = 2.2 * u.bohr_magneton
+    prop_Fe['aniso_exponent'] = 3
+    prop_Fe['anisotropy'] = [0.45e6, 0.45e6, 0.45e6] * u.J / u.m ** 3
+    prop_Fe['exch_stiffness'] = [5e-14, 5e-14, 5e-14] * u.J / u.m
+    prop_Fe['mag_saturation'] = 200e3 * u.J / u.T / u.m ** 3
+
+    layer_Fe = ud.AmorphousLayer('Fe', 'Fe amorphous', thickness=1 * u.nm,
+                                 density=7000 * u.kg / u.m ** 3, atom=Fe, **prop_Fe)
+
+    # this is the non-magnetic substrate
+    prop_Si = {}
+    prop_Si['heat_capacity'] = [100 * u.J / u.kg / u.K, 603 * u.J / u.kg / u.K]
+    prop_Si['therm_cond'] = [0, 100 * u.W / (u.m * u.K)]
+
+    prop_Si['sub_system_coupling'] = [0, 0]
+
+    prop_Si['lin_therm_exp'] = [0, 2.6e-6]
+    prop_Si['sound_vel'] = 8.433 * u.nm / u.ps
+    prop_Si['opt_ref_index'] = 3.6941 + 0.0065435j
+
+    layer_Si = ud.AmorphousLayer('Si', "Si amorphous", thickness=1 * u.nm, density=2336 * u.kg / u.m ** 3,
+                                 atom=Si, **prop_Si)
+
+    S = ud.Structure('NiCoFeNi')
+
+    S.add_sub_structure(layer_Ni, 10)
+    S.add_sub_structure(layer_Co, 15)
+    S.add_sub_structure(layer_Fe, 10)
+    S.add_sub_structure(layer_Ni, 25)
+    S.add_sub_structure(layer_Si, 200)
+
+    dyn = ud.XrayDyn(S, True)
+    dyn.disp_messages = True
+    dyn.save_data = False
+
+    dyn.energy = np.r_[5000, 8047] * u.eV  # set two photon energies
+    dyn.qz = np.r_[3.1:3.3:0.0001] / u.angstrom  # qz range
+
+    R_hom, A = dyn.homogeneous_reflectivity()  # this is the actual calculation
+
+    plt.figure()
+    plt.semilogy(dyn.qz[0, :], R_hom[0, :], label='{}'.format(dyn.energy[0]), alpha=0.5)
+    plt.semilogy(dyn.qz[1, :], R_hom[1, :], label='{}'.format(dyn.energy[1]), alpha=0.5)
+    plt.ylabel('Reflectivity')
+    plt.xlabel('$q_z$ [nm$^{-1}$]')
+    plt.legend()
+    plt.show()
+
+
+
     """
     #sample = ms.slab(3)
     #sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
