@@ -11,7 +11,7 @@ setup(
     description='Global Optimization of Resonant X-ray Reflectometry Tool',
     python_requires='>=3.7',
     install_requires=[
-        'Cython==0.29.24',
+        'Cython==3.0.2',
         'numpy==1.21.4',
         'PyQt5==5.15.7',
         'h5py==2.9.0',
