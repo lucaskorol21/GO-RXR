@@ -64,10 +64,10 @@ Instructions to create executable using pytinstaller:
 2. Run 'pyinstaller GUI.GO.py' in the terminal.
 3. A new file named GUI_GO.spec will appear in the project file. Open this file.
 4. In this file there is a filed called datas = []. Replace the empty array with:
-    datas = [('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
-    ('.\\material_model.py','.'), ('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
+    [('.\\global_optimization.py', '.'), ('.\\data_structure.py','.'),('.\\material_structure.py','.'),
+    ('.\\material_model.py','.'), ('.\\Ti34_XAS_Python.py','.'), ('.\\Ti34OpsPython.pkl','.'),('.\\default_script.txt','.'), ('.\\form_factor.pkl','.'),
     ('.\\form_factor_magnetic.pkl','.'), ('.\\Perovskite_Density.txt','.'), ('.\\Atomic_Mass.txt','.'),
-    ('.\\demo.h5','.'), ('.\\User_Guide_v0.3.pdf,'.'), ('.\\license.txt,'.')]
+    ('.\\demo.h5','.'), ('.\\GO-RXR_UserGuide_v0.3.1.pdf','.'), ('.\\license.txt','.'),('.\\tips.txt','.'),('.\\demo.h5','.'), ('.\\logo.png','.')]
 5. This includes all the python files, text files, and all other data used to execute GUI_GO.py. If newer versions
    of GO-RXR depend on more files than they must be included into this array. Follow the same naming convention as shown.
 6. Once satisfied run 'pyinstaller GUI_GO.spec' in the terminal. This will ensure that all desired data is included into
