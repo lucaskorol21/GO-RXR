@@ -508,8 +508,9 @@ def scanCompute(x, *args):
     use_script = args[14]
     orbitals = args[15]
     sf_dict = args[16]
-    temperature = float(args[17])
-    reflectivity_engine = args[18]
+    nd = int(args[17])
+    temperature = float(args[18])
+    reflectivity_engine = args[19]
 
     # determines if saving will be done in callback function
     if optimizeSave:
@@ -522,7 +523,7 @@ def scanCompute(x, *args):
 
     if 'ORBITAL' in my_list:
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]), T=temperature)
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]), T=temperature, nd=nd)
             sf_dict[okey] = my_data
 
 
@@ -729,8 +730,9 @@ def residuals(x, *args):
     use_script = args[14]
     orbitals = args[15]
     sf_dict = args[16]
-    temperature = float(args[17])
-    reflectivity_engine = args[18]
+    nd = int(args[17])
+    temperature = float(args[18])
+    reflectivity_engine = args[19]
 
     # determines if saving will be done in callback function
     if optimizeSave:
@@ -743,7 +745,7 @@ def residuals(x, *args):
 
     if 'ORBITAL' in my_list:
         for okey in list(orbitals.keys()):
-            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]), T=temperature)
+            my_data = GetTiFormFactor(float(orbitals[okey][0]), float(orbitals[okey][1]), float(orbitals[okey][2]), float(orbitals[okey][3]), T=temperature, nd=nd)
             sf_dict[okey] = my_data
 
 
@@ -913,7 +915,7 @@ def residuals(x, *args):
 Note that all the global optimization wrappers are identical. As a result I will only go in detail for the differential
 evolution wrapper. 
 """
-def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,temperature, reflectivity_engine,use_script=False):
+def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,nd,temperature, reflectivity_engine,use_script=False):
     """
     Purpose: wrapper used to setup and run the scipy differential evolution algorithm
     :param sample: slab class
@@ -949,7 +951,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
             scans.append(info)
 
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict, temperature, reflectivity_engine]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script,use_script, orbitals, sf_dict, nd, temperature, reflectivity_engine]  # required format for function scanCompute
 
 
     p=True
@@ -972,7 +974,7 @@ def differential_evolution(sample, data_info, data,scan,backS, scaleF, parameter
 
     return x, fun
 
-def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, temperature, reflectivity_engine, use_script=False):
+def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, nd, temperature, reflectivity_engine, use_script=False):
     global x_vars
     x_vars = []
 
@@ -982,7 +984,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals,  sf_dict, temperature, reflectivity_engine]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals,  sf_dict, nd, temperature, reflectivity_engine]  # required format for function scanCompute
 
     p = None
     if goParam[0] == 'None' or goParam[0] == None:
@@ -1000,7 +1002,7 @@ def shgo(sample, data_info, data, scan, backS, scaleF, parameters, bounds, sBoun
     f.close()
     return x, fun
 
-def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, temperature, reflectivity_engine, use_script=False):
+def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, nd, temperature, reflectivity_engine, use_script=False):
     global x_vars
     x_vars = []
 
@@ -1009,7 +1011,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script, orbitals, sf_dict, temperature, reflectivity_engine]
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict,script, use_script, orbitals, sf_dict,nd, temperature, reflectivity_engine]
 
     p = True
     if goParam[6] == 'True':
@@ -1030,7 +1032,7 @@ def dual_annealing(sample, data_info, data, scan,backS, scaleF, parameters, boun
     f.close()
     return x, fun
 
-def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script,orbitals, sf_dict, temperature, reflectivity_engine, use_script=False):
+def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict, script,orbitals, sf_dict, nd, temperature, reflectivity_engine, use_script=False):
     global x_vars
     x_vars = []
 
@@ -1039,7 +1041,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script, orbitals, sf_dict, temperature, reflectivity_engine]
+    params = [sample, scans, data, backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, True, r_scale, smooth_dict, script, use_script, orbitals, sf_dict, nd, temperature, reflectivity_engine]
 
     diff = goParam[8]
     _max = goParam[9]
@@ -1082,7 +1084,7 @@ def least_squares(x0, sample, data_info, data, scan,backS, scaleF, parameters, b
     f.close()
     return x, fun
 
-def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, temperature, reflectivity_engine, use_script=False):
+def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBounds, sWeights, goParam, cb, objective, shape_weight, r_scale, smooth_dict,script,orbitals, sf_dict, nd, temperature, reflectivity_engine, use_script=False):
     # performs the differential evolution global optimization
     global x_vars
     x_vars = []
@@ -1092,7 +1094,7 @@ def direct(sample, data_info, data,scan,backS, scaleF, parameters, bounds,sBound
         if info[2] in scan:
             scans.append(info)
 
-    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict, temperature, reflectivity_engine]  # required format for function scanCompute
+    params = [sample, scans, data,backS, scaleF, parameters, sBounds, sWeights, objective, shape_weight, False, r_scale, smooth_dict, script, use_script, orbitals, sf_dict, nd, temperature, reflectivity_engine]  # required format for function scanCompute
 
     # checking if locally biased
     p=True
