@@ -3,7 +3,7 @@ Library: GUI_GO
 Version: 1.0
 Author: Lucas Korol
 Institution: University of Saskatchewan
-Last Updated: March 28nd, 2023
+Last Updated: October 10, 2023
 Python: version 3.7
 
 Purpose: This python file contains the graphical user interface for the GO-RXR software package.
