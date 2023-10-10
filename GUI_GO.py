@@ -1,6 +1,6 @@
 """
 Library: GUI_GO
-Version: 1.0
+Version: 1.01
 Author: Lucas Korol
 Institution: University of Saskatchewan
 Last Updated: October 10, 2023
