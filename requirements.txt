@@ -1,0 +1,8 @@
+Cython==3.0.2
+PyQt5==5.51.7
+h5py==2.9.0
+matpotlib==3.4.3
+numba==0.55.2
+numpy==1.21.4
+pyqtgraph==0.12.4
+scipy==1.7.1
