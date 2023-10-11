@@ -6706,6 +6706,10 @@ class GlobalOptimizationWidget(QWidget):
         nd=int(self.parent.nd)   # orbital energy oxidation state
         reflectivity_engine = self.parent.reflectivity_engine  # reflectivity engine to use in calculation
 
+        precision = float(self.sWidget._precision)
+        precisionE = float(self.sWidget._Eprecision)
+        step_size = float(self.sWidget._step_size)
+
         # run the selected data fitting algorithm
         if len(parameters) != 0 and len(scans) != 0:
             if idx == 0:  # differential evolution
@@ -6713,26 +6717,27 @@ class GlobalOptimizationWidget(QWidget):
                                                    sBounds, sWeights,
                                                    self.goParameters['differential evolution'], self.callback,
                                                    self.objective, self.shape_weight, r_scale, smooth_dict, script,
-                                                   orbitals, sf_dict,nd,temperature, reflectivity_engine, use_script=use_script)
+                                                   orbitals, sf_dict,nd,temperature, reflectivity_engine,step_size,
+                                                   precision, precisionE,use_script=use_script)
             elif idx == 1:  # simplicial homology
                 x, fun = go.shgo(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds, sWeights,
                                  self.goParameters['simplicial homology'], self.callback,
-                                 self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals,nd,
-                                 temperature, reflectivity_engine, sf_dict,use_script=use_script)
+                                 self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict,nd,
+                                 temperature, reflectivity_engine,step_size, precision, precisionE,use_script=use_script)
             elif idx == 2:  # dual annealing
                 x, fun = go.dual_annealing(sample, data, data_dict, scans, backS, scaleF, parameters, bounds, sBounds,
-                                           sWeights,
-                                           self.goParameters['dual annealing'], self.callback,
-                                           self.objective, self.shape_weight, r_scale, smooth_dict, script, orbitals,nd,
-                                           temperature, reflectivity_engine, sf_dict,use_script=use_script)
+                                           sWeights, self.goParameters['dual annealing'], self.callback, self.objective,
+                                           self.shape_weight, r_scale, smooth_dict, script, orbitals, sf_dict, nd,
+                                           temperature, reflectivity_engine, step_size, precision, precisionE,
+                                           use_script=use_script)
             elif idx == 3:  # least squares
                 bounds = (lw, up)
 
                 x, fun = go.least_squares(x0, sample, data, data_dict, scans, backS, scaleF, parameters, bounds,
                                           sBounds, sWeights,
                                           self.goParameters['least squares'], self.callback,
-                                          self.objective, self.shape_weight, r_scale, smooth_dict, script,orbitals,nd,
-                                          temperature, reflectivity_engine, sf_dict, use_script)
+                                          self.objective, self.shape_weight, r_scale, smooth_dict, script,orbitals,sf_dict,
+                                          nd, temperature, reflectivity_engine, step_size, precision, precisionE,use_script)
 
 
             """
@@ -9838,7 +9843,6 @@ class progressWidget(QWidget):
 
                     sf_dict[okey] = my_data
 
-                print(sf_dict.keys())
                 fun = 0
                 gamma = 0
 
