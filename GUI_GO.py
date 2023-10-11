@@ -3556,7 +3556,7 @@ class reflectivityWidget(QWidget):
             if self.parent.reflectivity_engine == 'PythonReflectivity':
                 qz, R = self.sample.reflectivity(energy, qz, s_min=step_size, precision=prec, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                qz, R = self.sample.reflectivity_udkm(energy, qz, s_min=step_size, precision=prec, sf_dict=sf_dict)
 
             R = R[polName]
             if self.axis_state:  # momentum transfer
@@ -3580,7 +3580,7 @@ class reflectivityWidget(QWidget):
             if self.parent.reflectivity_engine == 'PythonReflectivity':
                 E, R = self.sample.energy_scan(angle, E, s_min=step_size, precision=Eprec, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                E, R = self.sample.energy_scan_udkm(angle, E, s_min=step_size, precision=Eprec, sf_dict=sf_dict)
 
             R = R[polName]
 
@@ -4587,7 +4587,8 @@ class reflectivityWidget(QWidget):
                         qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
                                                             sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                            sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
 
                     Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
@@ -4632,7 +4633,9 @@ class reflectivityWidget(QWidget):
                         E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
                                                           sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                                 sFactor=scaling_factor, precision=Eprec,
+                                                                 sf_dict=sf_dict)
 
                     Rsim = Rsim[pol]
                     self.spectrumWidget.setLogMode(False, False)
@@ -4695,7 +4698,8 @@ class reflectivityWidget(QWidget):
                     qz, Rsim = self.sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
                                                         sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                             sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
@@ -4738,7 +4742,8 @@ class reflectivityWidget(QWidget):
                     E, Rsim = self.sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
                                                       sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                             sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
 
                 Rsim = Rsim[pol]
                 self.spectrumWidget.setLogMode(False, False)
@@ -5457,7 +5462,7 @@ class GlobalOptimizationWidget(QWidget):
         Eprec = float(self.sWidget._Eprecision)
 
         name = scan
-
+        sf_dict = self.sWidget.sf_dict
         my_sigma = []
         fun_val = 0
         xbound = bounds[idx]
@@ -5477,9 +5482,10 @@ class GlobalOptimizationWidget(QWidget):
             qz = np.array(myData[0])
             if self.parent.reflectivity_engine == 'PythonReflectivity':
                 qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, precision=prec,
-                                               s_min=step_size)
+                                               s_min=step_size, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                         sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
             Rsim = Rsim[pol]
 
@@ -5525,9 +5531,10 @@ class GlobalOptimizationWidget(QWidget):
 
             if self.parent.reflectivity_engine == 'PythonReflectivity':
                 E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, precision=Eprec,
-                                             s_min=step_size)
+                                             s_min=step_size, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                         sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
 
             Rsim = Rsim[pol]
 
@@ -5584,6 +5591,7 @@ class GlobalOptimizationWidget(QWidget):
         y_scale = self.isLogWidget.currentText()
         fun = 0
 
+        sf_dict = self.sWidget.sf_dict
         step_size = float(self.sWidget._step_size)
         prec = float(self.sWidget._precision)
         Eprec = float(self.sWidget._Eprecision)
@@ -5606,9 +5614,11 @@ class GlobalOptimizationWidget(QWidget):
 
             qz = np.array(myData[0])
             if self.parent.reflectivity_engine == 'PythonReflectivity':
-                qz, Rsim = sample.reflectivity(E, qz,bShift=background_shift, sFactor=scaling_factor, precision=prec, s_min=step_size)
+                qz, Rsim = sample.reflectivity(E, qz,bShift=background_shift, sFactor=scaling_factor, precision=prec,
+                                               s_min=step_size, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                         sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
             Rsim = Rsim[pol]
 
@@ -5664,9 +5674,11 @@ class GlobalOptimizationWidget(QWidget):
             pol = myDataScan['Polarization']
 
             if self.parent.reflectivity_engine == 'PythonReflectivity':
-                E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, precision=Eprec, s_min=step_size)
+                E, Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, precision=Eprec,
+                                             s_min=step_size, sf_dict=sf_dict)
             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                pass
+                E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                       sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
 
             Rsim = Rsim[pol]
 
@@ -6186,7 +6198,8 @@ class GlobalOptimizationWidget(QWidget):
                     qz, Rsim = sample1.reflectivity(E, qz, s_min=step_size, sFactor=scaling_factor_old,
                                                     bShift=background_shift_old, precision=prec, sf_dict=sf_dict1)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    qz, Rsim = self.sample1.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                             sFactor=scaling_factor, precision=prec, sf_dict=sf_dict1)
 
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
@@ -6203,7 +6216,10 @@ class GlobalOptimizationWidget(QWidget):
                                                                bShift=background_shift, precision=prec,
                                                                sf_dict=sf_dict2)
                             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                                pass
+                                qz, Rgo = self.sample2.reflectivity_udkm(E, qz, s_min=step_size,
+                                                                         bShift=background_shift,
+                                                                         sFactor=scaling_factor, precision=prec,
+                                                                         sf_dict=sf_dict2)
 
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
@@ -6218,7 +6234,10 @@ class GlobalOptimizationWidget(QWidget):
                                                                bShift=background_shift, precision=prec,
                                                                sf_dict=sf_dict2)
                             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                                pass
+                                qz, Rgo = self.sample2.reflectivity_udkm(E, qz, s_min=step_size,
+                                                                         bShift=background_shift,
+                                                                         sFactor=scaling_factor, precision=prec,
+                                                                         sf_dict=sf_dict2)
 
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
@@ -6236,7 +6255,10 @@ class GlobalOptimizationWidget(QWidget):
                                 qz, Rgo = sample2.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
                                                                sFactor=scaling_factor, precision=prec, sf_dict=sf_dict2)
                             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                                pass
+                                qz, Rgo = self.sample2.reflectivity_udkm(E, qz, s_min=step_size,
+                                                                         bShift=background_shift,
+                                                                         sFactor=scaling_factor, precision=prec,
+                                                                         sf_dict=sf_dict2)
 
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(qz[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
@@ -6251,7 +6273,10 @@ class GlobalOptimizationWidget(QWidget):
                                                                bShift=background_shift, precision=prec,
                                                                sf_dict=sf_dict2)
                             elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                                pass
+                                qz, Rgo = self.sample2.reflectivity_udkm(E, qz, s_min=step_size,
+                                                                         bShift=background_shift,
+                                                                         sFactor=scaling_factor, precision=prec,
+                                                                         sf_dict=sf_dict2)
 
                             Rgo = Rgo[pol]
                             self.plotWidget.plot(Theta[rm_idx], Rgo[rm_idx], pen=pg.mkPen((2, 3), width=2),
@@ -6269,14 +6294,16 @@ class GlobalOptimizationWidget(QWidget):
                     E, Rsim = sample1.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor_old,
                                                   bShift=background_shift_old, precision=Eprec, sf_dict=sf_dict1)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    E, Rsim = self.sample1.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                           sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict1)
 
                 if isGO:
                     if self.parent.reflectivity_engine == 'PythonReflectivity':
                         qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
                                                       bShift=background_shift, precision=Eprec, sf_dict=sf_dict2)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        E, Rgo = self.sample2.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                               sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict2)
 
                     Rgo = Rgo[pol]
 
@@ -6289,7 +6316,8 @@ class GlobalOptimizationWidget(QWidget):
                         qz, Rgo = sample2.energy_scan(Theta, E, s_min=step_size, sFactor=scaling_factor,
                                                       bShift=background_shift, precision=Eprec, sf_dict=sf_dict2)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        E, Rsim = self.sample2.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                               sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict2)
 
                     Rgo = Rgo[pol]
                     self.plotWidget.plot(E, Rgo, pen=pg.mkPen((2, 3), width=2), name='Optimized')
@@ -8868,7 +8896,7 @@ class ReflectometryApp(QMainWindow):
             precision = float(self._sampleWidget._precision)
             Eprecision = float(self._sampleWidget._Eprecision)
 
-            loadingApp = LoadingScreen(self, self.sample, sim_dict, self._reflectivityWidget, s_min, precision, Eprecision)
+            loadingApp = LoadingScreen(self, self.sample, sim_dict, self._reflectivityWidget, self._sampleWidget, s_min, precision, Eprecision)
             loadingApp.show()
             loadingApp.exec_()
             sim_dict = loadingApp.sim_dict
@@ -9492,7 +9520,8 @@ class progressWidget(QWidget):
                     qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
                                                    sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                             sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
@@ -9535,7 +9564,8 @@ class progressWidget(QWidget):
                     E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
                                                  sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                           sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
 
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
@@ -9611,7 +9641,8 @@ class progressWidget(QWidget):
                     qz, Rsim = sample.reflectivity(E, qz, s_min=step_size, bShift=background_shift,
                                                    sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                             sFactor=scaling_factor, precision=prec, sf_dict=sf_dict)
 
                 Theta = np.arcsin(qz / (E * 0.001013546143)) * 180 / np.pi
 
@@ -9652,7 +9683,8 @@ class progressWidget(QWidget):
                     E, Rsim = sample.energy_scan(Theta, E, s_min=step_size, bShift=background_shift,
                                                  sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
                 elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                    pass
+                    E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                           sFactor=scaling_factor, precision=Eprec, sf_dict=sf_dict)
 
                 Rsim = Rsim[pol]
                 self.plotWidget.setLogMode(False, False)
@@ -9740,7 +9772,9 @@ class progressWidget(QWidget):
                         if self.parent.reflectivity_engine == 'PythonReflectivity':
                             qz, Rsim = sample.reflectivity(E, qz, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=prec, sf_dict=sf_dict)
                         elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                            pass
+                            qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=step_size, bShift=background_shift,
+                                                                     sFactor=scaling_factor, precision=prec,
+                                                                     sf_dict=sf_dict)
 
                         Rsim = Rsim[pol]
 
@@ -9814,7 +9848,9 @@ class progressWidget(QWidget):
                         if self.parent.reflectivity_engine == 'PythonReflectivity':
                             E,Rsim = sample.energy_scan(Theta, E, bShift=background_shift, sFactor=scaling_factor, s_min=step_size, precision=Eprec, sf_dict=sf_dict)
                         elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                            pass
+                            E, Rsim = self.sample.energy_scan_udkm(Theta, E, s_min=step_size, bShift=background_shift,
+                                                                   sFactor=scaling_factor, precision=Eprec,
+                                                                   sf_dict=sf_dict)
 
                         Rsim = Rsim[pol]
 
@@ -10720,13 +10756,14 @@ class LoadingScreen(QDialog):
     """
     Purpose: Provides progress of saving simulation
     """
-    def __init__(self, parent,sample, sim_dict, rWidget, s_min, precision, Eprecision):
+    def __init__(self, parent,sample, sim_dict, rWidget, sWidget, s_min, precision, Eprecision):
         super().__init__()
         self.parent = parent
         self.setWindowTitle('Saving Simulation')
         self.sample = sample
         self.sim_dict = []
         self.rWidget = rWidget
+        self.sWidget = sWidget
         self.s_min = s_min
         self.my_precision = precision
         self.Eprecision = Eprecision
@@ -10765,9 +10802,12 @@ class LoadingScreen(QDialog):
                     E = self.temp_sim[key]['Data'][3]  # get energy axis
                     Theta = self.temp_sim[key]['Angle']  # get angle
                     if self.parent.reflectivity_engine == 'PythonReflectivity':
-                        E, R = self.sample.energy_scan(Theta, E, bShift=bShift, sFactor=sFactor, s_min=self.s_min, precision=self.Eprecision)
+                        E, R = self.sample.energy_scan(Theta, E, bShift=bShift, sFactor=sFactor, s_min=self.s_min,
+                                                       precision=self.Eprecision, sf_dict=self.sWidget.sf_dict)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        qz, Rsim = self.sample.reflectivity_udkm(E, qz, s_min=self.s_min, bShift=bShift,
+                                                                 sFactor=sFactor, precision=self.Eprecision,
+                                                                 sf_dict=self.sWidget.sf_dict)
                       # calculate energy scan
                     R = R[pol]  # polarization
 
@@ -10776,9 +10816,11 @@ class LoadingScreen(QDialog):
                     qz = self.temp_sim[key]['Data'][0]
                     energy = self.temp_sim[key]['Energy']
                     if self.parent.reflectivity_engine == 'PythonReflectivity':
-                        qz, R = self.sample.reflectivity(energy, qz, bShift=bShift, sFactor=sFactor, s_min=self.s_min, precision=self.my_precision)
+                        qz, R = self.sample.reflectivity(energy, qz, bShift=bShift, sFactor=sFactor, s_min=self.s_min,
+                                                         precision=self.my_precision, sf_dict=self.sWidget.sf_dict)
                     elif self.parent.reflectivity_engine == 'udkm1Dsim':
-                        pass
+                        qz, R = self.sample.reflectivity_udkm(energy, qz, bShift=bShift, sFactor=sFactor, s_min=self.s_min,
+                                                         precision=self.my_precision, sf_dict=self.sWidget.sf_dict)
 
                     R = R[pol]
                     self.temp_sim[key]['Data'][2] = list(R)

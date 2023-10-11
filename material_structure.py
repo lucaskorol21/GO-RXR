@@ -1489,6 +1489,9 @@ class slab:
 
         m = len(my_slabs)  # number of slabs
 
+        R = dict()
+        return qz, R
+
     def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1, sf_dict={}):
         """
         Purpose: Calculates reflectivity for constant grazing angle using Pythonreflectivity
@@ -1646,6 +1649,7 @@ class slab:
         # retrieves the slabs at each energy using list comprehension
         all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, Q[E].real, Q[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
 
+        return energy, R
     def energy_shift(self):
         """
         Purpose: Initialize the energy shift and form factor scaling for the GUI
