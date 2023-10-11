@@ -1,9 +1,9 @@
 """
 Library: material_structure
-Version: 0.3
+Version: 1.01
 Author: Lucas Korol
 Institution: University of Saskatchewan
-Last Updated: March 28nd, 2023
+Last Updated: October 11,2023
 Python: version 3.7
 
 Purpose: This script contains all functions related to retrieving form factors and calculating the structural and
@@ -1247,7 +1247,7 @@ class slab:
     def reflectivity(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1, sf_dict={}):
 
         """
-        Purpose: Takes the model of the material and computes the reflection
+        Purpose: Calculate reflectivity for constant energy using Pythonreflectivity
         :param E: Energy of reflectivity scan (eV)
         :param qi: Starting momentum transfer (A^{-1}) and related to small grazing angle
         :param qf: Ending momentum transfer (A^{-1}) and related to large grazing angle
@@ -1303,10 +1303,6 @@ class slab:
             delta_m = np.zeros(len(delta))
         if type(beta_m) != list and type(beta_m) != np.ndarray:
             beta_m = np.zeros(len(beta))
-
-        #if type(delta_m) != list and type(beta_m) != list:
-        #    delta_m = delta
-        #    beta_m = beta
 
         # definition of magneto-optical constant as described in Lott Dieter Thesis
         n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
@@ -1416,9 +1412,89 @@ class slab:
 
         return qz, R
 
+    def reflectivity_udkm(self, E, qz, precision=1e-6,s_min = 0.1, bShift=0,sFactor=1, sf_dict={}):
+
+        """
+        Purpose: Calculates  reflectivity for constant energy using ukdm1Dsim
+        :param E: Energy of reflectivity scan (eV)
+        :param qi: Starting momentum transfer (A^{-1}) and related to small grazing angle
+        :param qf: Ending momentum transfer (A^{-1}) and related to large grazing angle
+        :param precision: Precision value for adaptive layer segmentation
+        :param s_min: Minimum step size (None indicates using default value)
+        :param bShift: float containing the background shift value
+        :param sFactor: float containing the scaling factor value
+        :return:
+            qz - numpy array containing the momentum transfer
+            R - dictionary for simulated reflectivity for the different types of x-ray polarizations
+
+        """
+
+        h = 4.135667696e-15  # Plank's constant eV*s
+        c = 2.99792458e8  # speed of light m/s
+        wavelength = h * c / (E * 1e-10)  # wavelength of incoming x-ray
+
+        # computes density profile based on the defined model (depth-dependent concentration)
+        thickness, density, density_magnetic = self.density_profile(step=s_min)
+
+        sf = dict()  # scattering factors of non-magnetic components
+        sfm = dict()  # scattering factors of magnetic components
+
+        #print(self.find_sf[1])
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_form_factor(self.find_sf[0][e], E+dE, False)*scale  # find the scattering factor at energy E + dE
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em],E + dE,True)*scale
+        else:
+            # Non-Magnetic Scattering Factor - no need to access original
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])  # retrieve the energy shift of each scattering factor
+                scale = float(self.ff_scale[self.find_sf[0][e]])  # retrieve scaling factor of each scattering factor
+                sf[e] = find_ff(self.find_sf[0][e],E+dE,sf_dict)
+
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], E + dE, True) * scale
+
+
+        delta, beta = index_of_refraction(density, sf, E)  # calculates depth-dependent refractive index components
+        delta_m, beta_m = magnetic_optical_constant(density_magnetic, sfm, E)   # calculates depth-dependent magnetic components
+        if type(delta_m) != list and type(delta_m) != np.ndarray:
+            delta_m = np.zeros(len(delta))
+        if type(beta_m) != list and type(beta_m) != np.ndarray:
+            beta_m = np.zeros(len(beta))
+
+        # definition of magneto-optical constant as described in Lott Dieter Thesis
+        n = 1 + np.vectorize(complex)(-delta, beta)  # complex index of refraction
+        epsilon = n**2  # dielectric constant computation
+
+        # magneto-optical constant as defined in Lott Dieter Thesis
+        Q = np.vectorize(complex)(beta_m, delta_m)
+        epsilon_mag = Q*epsilon*2*(-1)
+
+        my_slabs = ALS(epsilon.real, epsilon.imag, Q.real, Q.imag, precision)  # performs the adaptive layer segmentation using Numba
+
+        my_slabs = my_slabs.astype(int)  # sets all values in my_slab to integers
+
+        my_slabs = my_slabs[1:]  # removes first element as it is not needed for structure generation
+
+
+        m = len(my_slabs)  # number of slabs
+
+        R = dict()
+        return qz, R
+
     def energy_scan(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1, sf_dict={}):
         """
-        Purpose: Compute the energy scan spectra
+        Purpose: Calculates reflectivity for constant grazing angle using Pythonreflectivity
         :param Theta: Grazing angle in degrees
         :param energy: List or numpy array containing the energies in the energy scan
         :param precision: parameter used in adaptive layer segmentation
@@ -1501,6 +1577,79 @@ class slab:
 
         return energy, R
 
+    def energy_scan_udkm(self, Theta, energy, precision=1e-11,s_min = 0.1, bShift=0, sFactor=1, sf_dict={}):
+        """
+        Purpose: Calculates reflectivity for constant grazing angle using udkm1Dsim
+        :param Theta: Grazing angle in degrees
+        :param energy: List or numpy array containing the energies in the energy scan
+        :param precision: parameter used in adaptive layer segmentation
+        :param s_min: minimum slab slice
+        :return: energy, R
+                    - energy: exact energy array that user input
+                    - R: dictionary containing the reflectivity calculation
+                        'S' - s-polarization
+                        'P' - p-polarized
+                        'AL' - asymmetry linear
+                        'RC' - right circular
+                        'LC' - left circular
+                        'AC' - asymmetry circular
+
+        """
+        # initializes the reflectivity array to be returned
+        Elen = len(energy)
+        R = {'S': np.zeros(Elen),
+             'P': np.zeros(Elen),
+             'AL': np.zeros(Elen),
+             'LC': np.zeros(Elen),
+             'RC': np.zeros(Elen),
+             'AC': np.zeros(Elen)}
+
+        h = 4.135667696e-15  # Plank's constant eV*s
+        c = 2.99792458e8  # speed of light m/s
+
+        thickness, density, density_magnetic = self.density_profile(step=s_min)  # Computes the density profile
+        # Magnetic Scattering Factor
+        sfm = dict()
+        sf = dict()
+
+        if len(sf_dict) == 0:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_form_factor(self.find_sf[0][e], energy + dE, False)*scale
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True)*scale
+        else:
+            # Non-Magnetic Scattering Factor
+            for e in self.find_sf[0].keys():
+                dE = float(self.eShift[self.find_sf[0][e]])
+                scale = float(self.ff_scale[self.find_sf[0][e]])
+                sf[e] = find_ff(self.find_sf[0][e], energy + dE, sf_dict)
+            # Magnetic Scattering Factor
+            for em in self.find_sf[1].keys():
+                dE = float(self.mag_eShift[self.find_sf[1][em]])
+                scale = float(self.ffm_scale[self.find_sf[1][em]])
+                sfm[em] = find_form_factor(self.find_sf[1][em], energy + dE, True) * scale
+
+
+        d_len = len(thickness)
+        delta, beta = IoR(density, sf, energy)  # gets absorptive and dispersive components of refractive index
+
+        delta_m, beta_m = MOC(density_magnetic, sfm,energy, d_len)  # absorptive and dispersive components for magnetic components
+
+        epsilon = 1 - 2*delta + 1j*beta*2  # dielectric constant
+
+        # definition as described in Lott Dieter Thesis
+        Q = beta_m + 1j*delta_m  # magneto-optical constant
+        epsilon_mag = Q * epsilon *(-2)  # magneto-optical permittivity
+        # retrieves the slabs at each energy using list comprehension
+        all_slabs = [ALS(epsilon[E].real,epsilon_mag[E].imag, Q[E].real, Q[E].imag, precision=precision)[1:].astype(int) for E in range(len(energy))]
+
+        return energy, R
     def energy_shift(self):
         """
         Purpose: Initialize the energy shift and form factor scaling for the GUI
