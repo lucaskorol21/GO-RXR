@@ -13,11 +13,11 @@ setup(
     install_requires=[
         'Cython==3.0.2',
         'numpy==1.21.4',
-        'PyQt5==5.15.7',
         'h5py==2.9.0',
-        'matplotlib==3.4.3',
         'numba==0.55.2',
         'pyqtgraph==0.12.4',
-        'scipy==1.7.1'
+        'scipy==1.7.1',
+        'matplotlib==3.4.3',
+        'PyQt5==5.15.10',
     ]
 )

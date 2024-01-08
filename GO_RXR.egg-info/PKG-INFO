@@ -1,10 +1,12 @@
-Metadata-Version: 2.1
+Metadata-Version: 1.2
 Name: GO-RXR
-Version: 0.3
+Version: 1.0
 Summary: Global Optimization of Resonant X-ray Reflectometry Tool
 Home-page: https://github.com/lucaskorol21/GO-RXR
 Author: Lucas Korol
 Author-email: lsk601@usask.ca
 Maintainer: Robert J. Green
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
 Requires-Python: >=3.7
-License-File: license.txt

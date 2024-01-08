@@ -40,33 +40,68 @@
   - this is specifically used for the shape parameterization
 * Progress workspace
 
-## install
-1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
-2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-3. Clone GO-RXR from the main branch in this repository
-4. Install the python libraries by running the setup python file:
+
+# Getting Started
+
+## Linux
+
+Tested on Ubuntu 22.04
+
+### Installation
+
+#### 1. Clone GO-RXR from the main branch in this repository:
+```bash
+$ git clone https://github.com/lucaskorol21/GO-RXR.git
+```
+
+#### 2. Prerequisites (Python 3.7)
+
+We recommend creating a virtual enviromnment:
+
+```bash
+$ python3.7 -m venv venv-go-rxr
+```
+
+Install the python libraries by running the setup file:
 
 ```bash
 $ python setup.py install
 ```
-5. If the setup file does not work, then the following libraries can be installed:
-    * Cython 0.29.24
-    * numpy 1.21.4
-    * PyQt5 5.15.7
-    * h5py 2.9.0
-    * matplotlib 3.4.3
-    * numba 0.55.2
-    * pyqt5 0.12.4
-    * scipy 1.7.1
-7. Install Python reflectivity by running
+
+If the setup file does not work, then the following libraries can be installed:
+
+* Cython 0.29.24
+* numpy 1.21.4
+* h5py 2.9.0
+* numba 0.55.2
+* scipy 1.7.1
+* matplotlib 3.4.3
+* PyQt5 5.15.7
+
+** Conflicts found with `matplotlib` and `PyQt5`. Try
+```bash
+$ sudo pip install PyQt5==5.15.10
+```
+
+#### 3 Install Python reflectivity by running
 ```bash
 $ python setup_reflectivity.py install
 ```
-9. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-10. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
-## Download
-The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023.
+In case there you found an error related to `'x86_64-linux-gnu-gcc'`, use
+```bash
+$ sudo python setup_reflectivity.py install
+```
+
+
+## Windows
+
+1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
+2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+4. Install the python libraries as instructed above.
+5. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
+6. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
+
 
 ## Credits
 
@@ -76,6 +111,7 @@ This software uses the following open source packages:
 Conrtibution made by:
  - Dr. Robert J. Green
  - Dr. Raymond Spiteri
+ - Dr. Jesus Perez Curbelo
  - [QMax Group](https://research-groups.usask.ca/qmax/)
  - [Numerical Simulations Research Lab](https://simlab.usask.ca/)
 
