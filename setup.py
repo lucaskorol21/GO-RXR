@@ -18,6 +18,6 @@ setup(
         'pyqtgraph==0.12.4',
         'scipy==1.7.1',
         'matplotlib==3.4.3',
-        'PyQt5==5.15.10',
+        'PyQt5==5.15.10'
     ]
 )

@@ -80,7 +80,8 @@ If the setup file does not work, then the following libraries can be installed:
 
 ** Conflicts found with `matplotlib` and `PyQt5`. Try
 ```bash
-$ sudo pip install PyQt5==5.15.10
+$ sudo apt-get install python3.7-dev
+$ pip install PyQt5
 ```
 
 #### 3 Install Python reflectivity by running
