@@ -1,0 +1,8 @@
+## file extensions
+**/*.pyc
+.env
+
+## folder
+build/
+venv-go-rxr/*
+Tutorial/*.h5
