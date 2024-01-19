@@ -1,6 +1,6 @@
 ## file extensions
-**/*.pyc
-.env
+*.pyc
+*.env
 
 ## folder
 build/

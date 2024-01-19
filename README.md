@@ -78,10 +78,36 @@ If the setup file does not work, then the following libraries can be installed:
 * matplotlib 3.4.3
 * PyQt5 5.15.7
 
-** Conflicts found with `matplotlib` and `PyQt5`. Try
+#### For `matplotlib`, ensure that you have `Pilow` installed
+```bash
+$ pip install Pillow
+```
+
+#### Resolving `PyQt5` Conflicts.
+
+If you encounter conflicts with the PyQt5 package during installation or usage, follow these steps to resolve the issues:
+
+0. (If Already Run `setup.py`)
+
+Comment Out `PyQt5` in `setup.py` and Run Setup Script
+```bash
+$ python setup.py install
+```
+
+1. Uninstall `PyQt5`:
+```bash
+$ pip uninstall PyQt5
+```
+
+2. Install `PyQt5`:
 ```bash
 $ sudo apt-get install python3.7-dev
 $ pip install PyQt5
+```
+
+3. Uncomment `PyQt5` in `setup.py` and Run Setup Script
+```bash
+$ python setup.py install
 ```
 
 #### 3 Install Python reflectivity by running
