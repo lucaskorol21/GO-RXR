@@ -12,8 +12,8 @@
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#install">how-to-use</a> •
-  <a href="#download">Download</a> •
+  <a href="#installation">Install/Configure</a> •
+  <a href="#documentation">How-to-use</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
   <a href="#publications">Publications</a> 
@@ -49,7 +49,8 @@ Tested on Ubuntu 22.04
 
 ### Installation
 
-#### 1. Clone GO-RXR from the main branch in this repository:
+#### 1. Download
+Clone GO-RXR from the main branch in this repository:
 ```bash
 $ git clone https://github.com/lucaskorol21/GO-RXR.git
 ```
@@ -129,13 +130,16 @@ $ sudo python setup_reflectivity.py install
 5. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
 6. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
+## Documentation
 
-## Credits
+The User Guide can be found in `/DOCS`. The file `Tutorial/Tutorial_v0.3.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
+
+# Credits
 
 This software uses the following open source packages:
 - [Pythonreflectivity](https://github.com/malaclypseII/PyXMRTool.git)
 
-Conrtibution made by:
+Contribution made by:
  - Dr. Robert J. Green
  - Dr. Raymond Spiteri
  - Dr. Jesus Perez Curbelo
@@ -144,7 +148,7 @@ Conrtibution made by:
 
 GO-RXR would have not been possible without the University of Saskatchewan and the funding provided by the U of S Physics and Engineering Physics Department, the NSERC-CREATE to INSPIRE fellowship, and the NSERC CGS M.
 
-## License
+# License
 Copyright © 2023 QMaX and Numerical Simulations Lab
 
 GO-RXR has been developed at in the Department of Physics and Engineering Physics at the University of Saskatchewan and is copyrighted by the QMaX and Numerical Simulation Lab. All rights are reserved by the authors, QMaX Research Group, and the Numerical Simulations Research Lab. 
@@ -165,11 +169,11 @@ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY C
 
 END OF TERMS AND CONDITIONS
 
-## Publications
+# Publications
 
 There are currently no papers published using GO-RXR, but there are several papers in progress using GO-RXR.
 
-## Bugs
+# Bugs
 * Resolved (5/10/2023): Data fitting will run the script regardless if script option is selected. It is suggested to comment out every line of the script for now until this issues is resolved.
 * Issues with providing an element variation identifier with the same name as a previously defined element. If possible always provide a different element variation identifier name that is different than any of the element names provided in any layer.
 
