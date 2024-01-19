@@ -1,0 +1,49 @@
+Example 1: Solution
+
+energy_shift = {'La':0.5,'Mn':-1.1}
+
+sample = ms.slab(3)
+sample.addlayer(0,'SrTiO3', 10, roughness=[0.5,2.5,1.3])
+sample.addlayer(1, 'LaMnO3', 52.6, roughness=[1.25,0.72,0.2])sample.addlayer(2, 'CCO', [15,10,5], density=[0,0.082,0.042], roughness=[0,1.8,2.5])
+
+Example 2: Solution
+
+energy_shift = {'La':0.5,'Mn':-1.1}
+
+sample = ms.slab(12)
+sample.addlayer(0, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(0,'A', ['Sr','La'], [1,0],sf=['Sr','La'])
+sample.polymorphous(0, 'B', ['Ti', 'Mn'], [1, 0], sf=['Ti','Mn'])
+sample.addlayer(1, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(1, 'A', ['Sr', 'La'], [0.95, 0.05],sf=['Sr','La'])
+sample.polymorphous(1, 'B', ['Ti', 'Mn'], [1, 0], sf=['Ti','Mn'])
+sample.addlayer(2, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(2, 'A', ['Sr', 'La'], [0.75, 0.25],sf=['Sr','La'])
+sample.polymorphous(2, 'B', ['Ti', 'Mn'], [0.95, 0.05], sf=['Ti','Mn'])
+sample.addlayer(3, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(3, 'A', ['Sr', 'La'], [0.25, 0.75],sf=['Sr','La'])
+sample.polymorphous(3, 'B', ['Ti', 'Mn'], [0.78, 0.22], sf=['Ti','Mn'])
+sample.addlayer(4, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(4, 'A', ['Sr', 'La'], [0.05, 0.95],sf=['Sr','La'])
+sample.polymorphous(4, 'B', ['Ti', 'Mn'], [0.22, 0.78], sf=['Ti','Mn'])
+sample.addlayer(5, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(5, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+sample.polymorphous(5, 'B', ['Ti', 'Mn'], [0.05, 0.95], sf=['Ti','Mn'])
+sample.addlayer(6, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(6, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+sample.polymorphous(6, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+sample.addlayer(7, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(7, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+sample.polymorphous(7, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+sample.addlayer(8, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(8, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+sample.polymorphous(8, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+sample.addlayer(9, 'ABO3', 3.905, density=[0.028,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(9, 'A', ['Sr', 'La'], [0, 1],sf=['Sr','La'])
+sample.polymorphous(9, 'B', ['Ti', 'Mn'], [0, 1],sf=['Ti','Mn'])
+sample.addlayer(10, 'ABO3', 3.905, density=[0.005,0.028,0.084], roughness=[0,0,0])
+sample.polymorphous(10, 'A', ['Sr', 'La'], [0, 1], sf=['Sr','La'])
+sample.polymorphous(10, 'B', ['Ti', 'Mn'], [0, 1], sf=['Ti','Mn'])
+sample.addlayer(11, 'CCO', [15,10,5], density=[0,0.082,0.042], roughness=[0,1.8,2.5], linked_roughness=[0,0.5,0.5])
+    	
+    	
