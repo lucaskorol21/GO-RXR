@@ -1,5 +1,5 @@
 import numpy as np
-import material_structure as ms
+import UTILS.material_structure as ms
 import os
 import unittest
 

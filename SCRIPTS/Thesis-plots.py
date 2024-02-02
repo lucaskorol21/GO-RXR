@@ -1,11 +1,11 @@
 
 import time as time
 import numpy as np
-import material_structure as ms
+import UTILS.material_structure as ms
 import material_model as mm
 import scipy.optimize as optimize
 import matplotlib.pyplot as plt
-import data_structure as ds
+import SCRIPTS.data_structure as ds
 import matplotlib.ticker as ticker
 
 def cost_function(x, *args):

@@ -11,10 +11,10 @@ import pickle
 import os
 import glob
 from scipy.sparse.linalg import LinearOperator
-from Broaden_Spectrum import GetBroadeningList, BroadenGamma, BroadenSigma
+from UTILS.Broaden_Spectrum import GetBroadeningList, BroadenGamma, BroadenSigma
 import matplotlib.pyplot as plt
 from time import perf_counter
-from KK_And_Merge import *
+from UTILS.KK_And_Merge import *
 import copy
 
 global OpsTi

@@ -27,11 +27,11 @@ Note - Once Pythonreflectivity is compatible with higher version of python consi
 
 from scipy import optimize, signal
 import numpy as np
-from data_structure import *
+from SCRIPTS.data_structure import *
 import time
 from material_model import *
 import copy
-from Ti34_XAS_Python import GetTiFormFactor
+from UTILS.Ti34_XAS_Python import GetTiFormFactor
 #import pygmo as pg
 
 global x_vars

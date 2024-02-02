@@ -1,7 +1,7 @@
 import material_model as mm
 import numpy as np
 import os
-import material_structure as ms
+import UTILS.material_structure as ms
 import unittest
 
 # This test script can be executed by inputting

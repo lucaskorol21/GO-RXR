@@ -1,10 +1,10 @@
 import os
 import pickle
-import material_structure as ms
+import UTILS.material_structure as ms
 import matplotlib.pyplot as plt
 import material_model as mm
 import numpy as np
-import data_structure as ds
+import SCRIPTS.data_structure as ds
 
 
 def saveTest(data, fname):
@@ -161,7 +161,7 @@ def negative_model():
 
 if __name__ == "__main__":
     from GUI_GO import checkscript
-    from global_optimization import changeSampleParams
+    from UTILS.global_optimization import changeSampleParams
     # Tests setVariationConstant function for script feature
     # Tests to element fit
     # Tests to element fit

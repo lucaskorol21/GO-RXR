@@ -1,7 +1,7 @@
 import importlib
 import os
 from collections import Counter
-import material_structure as ms
+import UTILS.material_structure as ms
 import pickle
 import unittest
 importlib.reload(ms)

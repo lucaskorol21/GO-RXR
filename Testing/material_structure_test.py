@@ -1,9 +1,9 @@
 import unittest
 import os
 import numpy as np
-import material_structure as ms
+import UTILS.material_structure as ms
 import pickle
-import data_structure as ds
+import SCRIPTS.data_structure as ds
 
 # This test script can be executed by inputting
 #  ->  python -m unittest -v Testing/material_structure_test.py

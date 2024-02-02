@@ -1,9 +1,9 @@
 import copy
 import unittest
-import material_structure as ms
+import UTILS.material_structure as ms
 import os
-import data_structure as ds
-from global_optimization import changeSampleParams
+import SCRIPTS.data_structure as ds
+from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
 
 # This test script can be executed by inputting

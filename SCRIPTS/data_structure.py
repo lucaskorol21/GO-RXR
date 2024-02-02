@@ -44,7 +44,7 @@ import os
 
 import numpy as np
 
-from material_structure import *
+from UTILS.material_structure import *
 from material_model import *
 from time import *
 import ast

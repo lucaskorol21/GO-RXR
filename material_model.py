@@ -25,7 +25,7 @@ scipy (version 1.7.1) - This library is used to interpolate the form factors for
 os - used to access database of atomic masses
 """
 
-from material_structure import *  # version
+from UTILS.material_structure import *  # version
 import pickle
 from numba import *
 from scipy import interpolate
