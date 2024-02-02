@@ -29,7 +29,7 @@ from scipy import optimize, signal
 import numpy as np
 from SCRIPTS.data_structure import *
 import time
-from material_model import *
+from UTILS.material_model import *
 import copy
 from UTILS.Ti34_XAS_Python import GetTiFormFactor
 #import pygmo as pg

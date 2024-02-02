@@ -91,14 +91,14 @@ import numpy as np
 import time
 import sys
 import UTILS.material_structure as ms
-from material_model import change_ff, retrieve_ff
+from UTILS.material_model import change_ff, retrieve_ff
 import os
 import pyqtgraph as pg
 import SCRIPTS.data_structure as ds
 import copy
 import UTILS.global_optimization as go
 
-import material_model as mm
+import UTILS.material_model as mm
 from scipy import signal
 import h5py
 import multiprocessing as mp

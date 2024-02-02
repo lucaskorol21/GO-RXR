@@ -45,7 +45,7 @@ import os
 import numpy as np
 
 from UTILS.material_structure import *
-from material_model import *
+from UTILS.material_model import *
 from time import *
 import ast
 import h5py

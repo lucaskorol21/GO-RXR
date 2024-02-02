@@ -29,7 +29,7 @@ scipy (version 1.7.1) - This python file uses the error function from the scipy 
 
 import matplotlib.pyplot as plt
 import numpy as np
-from material_model import *
+from UTILS.material_model import *
 import Pythonreflectivity as pr
 from numba import *
 from collections import OrderedDict

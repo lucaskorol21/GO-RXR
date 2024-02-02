@@ -2,7 +2,7 @@ import os
 import pickle
 import UTILS.material_structure as ms
 import matplotlib.pyplot as plt
-import material_model as mm
+import UTILS.material_model as mm
 import numpy as np
 import SCRIPTS.data_structure as ds
 

@@ -1,4 +1,4 @@
-import material_model as mm
+import UTILS.material_model as mm
 import numpy as np
 import os
 import UTILS.material_structure as ms
