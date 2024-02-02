@@ -12,8 +12,8 @@
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#install">how-to-use</a> •
-  <a href="#download">Download</a> •
+  <a href="#installation">Install/Configure</a> •
+  <a href="#documentation">How-to-use</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
   <a href="#publications">Publications</a> 
@@ -125,17 +125,21 @@ $ python setup_reflectivity.py install
 ```
 
 
-## Windows
+## Windows  (Tested with Python 3.7 32-bit)
 
 1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
 2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-4. Install the python libraries as instructed above.
-5. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-6. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
+3. Install the python libraries as instructed above.
+4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
+5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
 
 <!-- ## Download
 The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023. -->
+
+## Documentation
+
+The User Guide can be found in `/DOCS`. Also, the file `Tutorial/Tutorial_v0.3.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
 
 ## Credits
 
