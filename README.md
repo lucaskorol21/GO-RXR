@@ -40,42 +40,112 @@
   - this is specifically used for the shape parameterization
 * Progress workspace
 
-## install
-1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
-2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-3. Clone GO-RXR from the main branch in this repository
-4. Install the python libraries by running the setup python file:
+
+# Getting Started
+
+## Linux
+
+Tested on Ubuntu 22.04
+
+### Installation
+
+#### 1. Clone GO-RXR from the main branch in this repository:
+```bash
+$ git clone https://github.com/lucaskorol21/GO-RXR.git
+```
+
+#### 2. Prerequisites (Tested with Python 3.10.12)
+
+We recommend creating a virtual enviromnment:
+
+```bash
+$ virtualvenv venv-go-rxr
+```
+
+Install the python libraries by running the setup file:
 
 ```bash
 $ python setup.py install
 ```
-5. If the setup file does not work, then the following libraries can be installed:
-    * Cython 0.29.24
-    * numpy 1.21.4
-    * PyQt5 5.15.7
-    * h5py 2.9.0
-    * matplotlib 3.4.3
-    * numba 0.55.2
-    * pyqt5 0.12.4
-    * scipy 1.7.1
-7. Install Python reflectivity by running
+
+If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
+
+##### For `matplotlib`, ensure that you have `Pilow` installed
+```bash
+$ pip install Pillow
+```
+
+##### Resolving `PyQt5` Conflicts.
+
+If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be uselful. Try the following steps:
+
+```bash
+# Install necessary dependencies
+sudo apt-get install pyqt5-dev libqt5multimedia5-plugins
+
+# Remove existing PyQt5 installations from the virtual environment
+sudo rm -f -r /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
+
+# Create a symbolic link from the OS libraries to the virtual environment
+sudo ln -f -s /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
+```
+Replace /path/to/your/virtualenv with the path to your virtual environment directory and 3.x with the appropriate Python version (e.g., 3.10, 3.9, etc.). These commands aim to ensure that the global version of PyQt5 matches the one specified in your setup file by using the operating system's libraries and creating a symbolic link accordingly.
+
+#### 3. Install Python reflectivity by running
 ```bash
 $ python setup_reflectivity.py install
 ```
-9. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-10. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
-## Download
-The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023.
+In case there you found an error related to `'x86_64-linux-gnu-gcc'` permission, use
+```bash
+$ sudo python setup_reflectivity.py install
+```
+or
+```bash
+# Ensure that you have write permissions for the dist directory by running
+$ ls -ld dist/
+
+# If the ownership of the dist directory is incorrect, you can change it using the following command:
+$ sudo chown -R $USER dist/
+
+# Try running the installation command again
+$ sudo python setup_reflectivity.py install
+```
+
+If the issue persists, try the following:
+```bash
+# Remove the build directory
+$ rm -rf build/
+
+# Make sure your user has write permissions for the entire project directory
+$ sudo chown -R $USER .
+
+# Try running the installation command again
+$ python setup_reflectivity.py install
+```
+
+
+## Windows
+
+1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
+2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+4. Install the python libraries as instructed above.
+5. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
+6. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
+
+
+<!-- ## Download
+The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023. -->
 
 ## Credits
 
 This software uses the following open source packages:
 - [Pythonreflectivity](https://github.com/malaclypseII/PyXMRTool.git)
 
-Conrtibution made by:
+Contribution made by:
  - Dr. Robert J. Green
  - Dr. Raymond Spiteri
+ - Dr. Jesus Perez Curbelo
  - [QMax Group](https://research-groups.usask.ca/qmax/)
  - [Numerical Simulations Research Lab](https://simlab.usask.ca/)
 

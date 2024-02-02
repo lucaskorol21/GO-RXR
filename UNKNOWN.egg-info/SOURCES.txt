@@ -1,5 +1,8 @@
+LICENSE.txt
 Pythonreflectivity.cpp
+README.md
 license.txt
+setup.cfg
 setup.py
 setup_reflectivity.py
 UNKNOWN.egg-info/PKG-INFO

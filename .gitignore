@@ -3,6 +3,7 @@
 .env
 
 ## folder
+build/
 dist/
 __pycache__/
 build/
