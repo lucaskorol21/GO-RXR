@@ -1,0 +1,11 @@
+## file extensions
+**/*.pyc
+.env
+
+## folder
+dist/
+__pycache__/
+build/
+venv-go-rxr/
+venv-go-rxr-paper/
+Tutorial/*.h5
