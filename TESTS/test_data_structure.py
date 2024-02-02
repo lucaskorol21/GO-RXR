@@ -1,5 +1,11 @@
+import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import numpy as np
 import unittest
-from SCRIPTS.data_structure import *
+from UTILS.data_structure import *
 
 # This test script can be executed by inputting
 #  ->  python -m unittest -v Testing/test_data_structure.py
@@ -34,8 +40,8 @@ class TestMaterialStructure(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             my_path_2 = os.getcwd() + '/test_data/' + filename2
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            my_path_2 = os.getcwd() + '/Testing/test_data/' + filename2
+            my_path = os.getcwd() + '/test_data/' + filename
+            my_path_2 = os.getcwd() + '/test_data/' + filename2
 
         data_info, data_dict = Read_ReMagX(my_path)
 
@@ -115,8 +121,14 @@ class TestMaterialStructure(unittest.TestCase):
                               [148, 'Energy', '66_E499.93_Th20.0_S'], [149, 'Energy', '67_E499.93_Th20.0_P'],
                               [149, 'Energy', '66-67_E499.93_Th20.0_AL_Asymm']]
 
-        self.assertListEqual(data_info, data_info_solution)
-
+        # self.assertListEqual(data_info, data_info_solution)
+        # Assert that the lists are almost equal element-wise
+        # Define epsilon using np.finfo(float).eps
+        eps = np.finfo(float).eps
+        self.assertTrue(len(data_info) == len(data_info_solution), "Lists have different lengths")
+        for x, y in zip(data_info, data_info_solution):
+            self.assertAlmostEqual(x, y, delta=eps)
+            
         with open(my_path_2, 'rb') as file:
             data_dict_solution = pickle.load(file)
         for key in data_dict.keys():

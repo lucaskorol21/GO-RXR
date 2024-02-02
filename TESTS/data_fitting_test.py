@@ -1,8 +1,12 @@
+import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import copy
 import unittest
 import UTILS.material_structure as ms
-import os
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
 

@@ -94,7 +94,7 @@ import UTILS.material_structure as ms
 from UTILS.material_model import change_ff, retrieve_ff
 import os
 import pyqtgraph as pg
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 import copy
 import UTILS.global_optimization as go
 

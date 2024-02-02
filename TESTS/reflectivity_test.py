@@ -1,6 +1,10 @@
+import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import numpy as np
 import UTILS.material_structure as ms
-import os
 import unittest
 
 # This test script can be executed by inputting
@@ -12,7 +16,7 @@ def load_reflections(fname):
     if os.getcwd().split('\\')[-1] == 'Testing':
         my_path = os.getcwd() + '/test_data/' + fname
     else:
-        my_path = os.getcwd() + '/Testing/test_data/' + fname
+        my_path = os.getcwd() + '/test_data/' + fname
 
     data = np.loadtxt(my_path)
     theta = data[:,0]

@@ -2,7 +2,7 @@ import copy
 import unittest
 import UTILS.material_structure as ms
 import os
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
 

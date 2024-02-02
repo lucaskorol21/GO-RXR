@@ -1,5 +1,5 @@
 import unittest
-from SCRIPTS.data_structure import *
+from UTILS.data_structure import *
 
 # This test script can be executed by inputting
 #  ->  python -m unittest -v Testing/test_data_structure.py

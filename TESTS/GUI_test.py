@@ -1,4 +1,10 @@
+import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import unittest
+
 from GUI_GO import stringcheck, checkbracket
 
 # This test script can be executed by inputting

@@ -5,7 +5,7 @@ import UTILS.material_structure as ms
 import UTILS.material_model as mm
 import scipy.optimize as optimize
 import matplotlib.pyplot as plt
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 import matplotlib.ticker as ticker
 
 def cost_function(x, *args):

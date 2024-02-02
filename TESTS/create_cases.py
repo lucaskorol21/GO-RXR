@@ -1,10 +1,15 @@
 import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import copy
 import pickle
 import UTILS.material_structure as ms
 import matplotlib.pyplot as plt
 import UTILS.material_model as mm
 import numpy as np
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 
 
 def saveTest(data, fname):
@@ -171,8 +176,8 @@ if __name__ == "__main__":
         my_path = os.getcwd() + '/test_data/' + filename
         script_name = '/test_data/test_script.txt'
     else:
-        my_path = os.getcwd() + '/Testing/test_data/' + filename
-        script_name = '/Testing/test_data/test_script.txt'
+        my_path = os.getcwd() + '/test_data/' + filename
+        script_name = '/test_data/test_script.txt'
 
     sample = ds.ReadSampleHDF5(my_path)
 
@@ -197,8 +202,6 @@ if __name__ == "__main__":
 
     sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
                                                                          my_script, orbitals)
-
-    import copy
     # test sample parameters
     sample_solution = copy.deepcopy(sample)
 
@@ -236,6 +239,7 @@ if __name__ == "__main__":
     idx_no = 0 if idx == 1 else 1
     sample_solution.structure[6]['Mn'].poly_ratio[idx] = 0.123456789
     sample_solution.structure[6]['Mn'].poly_ratio[idx_no] = 1-0.123456789
+
 
 
 

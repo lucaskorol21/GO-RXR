@@ -27,7 +27,7 @@ Note - Once Pythonreflectivity is compatible with higher version of python consi
 
 from scipy import optimize, signal
 import numpy as np
-from SCRIPTS.data_structure import *
+from UTILS.data_structure import *
 import time
 from UTILS.material_model import *
 import copy

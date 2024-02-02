@@ -4,7 +4,7 @@ import UTILS.material_structure as ms
 import matplotlib.pyplot as plt
 import UTILS.material_model as mm
 import numpy as np
-import SCRIPTS.data_structure as ds
+import UTILS.data_structure as ds
 
 
 def saveTest(data, fname):
