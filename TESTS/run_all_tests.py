@@ -9,6 +9,7 @@ def load_tests_from_file(test_file):
 
 def discover_and_run_tests(test_dir):
     # Discover and run all test files in the specified directory
+    tot_test = 0
     for root, _, files in os.walk(test_dir):
         for file in files:
             if file.startswith("test_") and file.endswith(".py"):
@@ -17,9 +18,11 @@ def discover_and_run_tests(test_dir):
                 test_suite = load_tests_from_file(test_file)
                 runner = unittest.TextTestRunner()
                 result = runner.run(test_suite)
-
-    return result
+                tot_test += result.testsRun
+                
+    print('----------------------------------------------------------------------')
+    print(f"Total tests run: {tot_test}")
 
 if __name__ == "__main__":
     test_dir = "."
-    result = discover_and_run_tests(test_dir)
+    discover_and_run_tests(test_dir)
