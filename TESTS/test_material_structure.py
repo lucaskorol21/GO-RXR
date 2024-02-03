@@ -10,7 +10,7 @@ import pickle
 import UTILS.data_structure as ds
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/material_structure_test.py
+#  ->  python -m unittest -v test_material_structure.py
 # into the terminal
 
 class TestMaterialStructure(unittest.TestCase):

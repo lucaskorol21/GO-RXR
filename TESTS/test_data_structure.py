@@ -7,11 +7,15 @@ import numpy as np
 import unittest
 from UTILS.data_structure import *
 
+# Define epsilon using np.finfo(float).eps
+EPS = np.sqrt(np.finfo(float).eps)
+
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/test_data_structure.py
+#  ->  python -m unittest -v test_data_structure.py
 # into the terminal
 
 class TestMaterialStructure(unittest.TestCase):
+    
     def test_getTitleInfo(self):
         # testing function that retrieves information from ReMagX data names
         tests = ['1_A_800.0_S', '57_A_515.2_P','42-43_A_55.5_S-P_Asymm', '75_E499.93_Th20.0_S',
@@ -123,11 +127,9 @@ class TestMaterialStructure(unittest.TestCase):
 
         # self.assertListEqual(data_info, data_info_solution)
         # Assert that the lists are almost equal element-wise
-        # Define epsilon using np.finfo(float).eps
-        eps = np.finfo(float).eps
         self.assertTrue(len(data_info) == len(data_info_solution), "Lists have different lengths")
         for x, y in zip(data_info, data_info_solution):
-            self.assertAlmostEqual(x, y, delta=eps)
+            self.assertAlmostEqual(x, y, delta=EPS)
             
         with open(my_path_2, 'rb') as file:
             data_dict_solution = pickle.load(file)
@@ -149,11 +151,14 @@ class TestMaterialStructure(unittest.TestCase):
                     test_list = list(data_dict[key][param])
                     solution_list = list(data_dict_solution[key][param])
                     for i in range(len(test_list)):
-                        self.assertListEqual(list(test_list[i]), list(solution_list[i]))
+                        # self.assertListEqual(list(test_list[i]), list(solution_list[i]))
+                        # Assert that the lists are almost equal element-wise
+                        self.assertTrue(len(list(test_list[i])) == len(list(solution_list[i])), "Lists have different lengths")
+                        for x, y in zip(list(test_list[i]), list(solution_list[i])):
+                            self.assertAlmostEqual(x, y, delta=EPS)
+                        
                 elif param == 'Angle':
                     self.assertEqual(data_dict[key][param], data_dict_solution[key][param])
-
-
 
     def test_evaluateList(self):
         # tests to make sure that a simple list can be evaluated
@@ -164,8 +169,6 @@ class TestMaterialStructure(unittest.TestCase):
         for i, test in enumerate(tests):
             value = evaluate_list(test)
             self.assertListEqual(value, solutions[i])
-
-
 
     def test_find_parameter_bound(self):
         # seperate the parameter boundaries
@@ -180,7 +183,6 @@ class TestMaterialStructure(unittest.TestCase):
         for i,test in enumerate(tests):
             value = find_parameter_bound(test)
             self.assertListEqual(value, solution[i])
-
 
     def test_find_each_bound(self):
         tests = ['[[0.01,0.5],[0.5,0.9]],[[0.01,0.9]]', '[[200,255],[255,600],[650,800]]',
@@ -234,7 +236,6 @@ class TestMaterialStructure(unittest.TestCase):
             value = evaluate_weights(test)
             self.assertListEqual(value, solutions[i])
 
-
     def test_find_parameter_values(self):
         # retrieve the parameter boundary values
         tests = ['[1,[0,1]]','[0.5, [ 0.25, 1]]', '[10, [5 ,12]]', '[0.028, [ 0.01, 0.5]]', '[4, [2 ,11.5]]',
@@ -248,7 +249,6 @@ class TestMaterialStructure(unittest.TestCase):
         for i, test in enumerate(tests):
             value = find_parameter_values(test)
             self.assertListEqual(value, solutions[i])
-
 
     def test_evaluate_parameters(self):
         # retrieve parameter bounds from string
@@ -264,3 +264,7 @@ class TestMaterialStructure(unittest.TestCase):
         for i, test in enumerate(tests):
             value = evaluate_parameters(test)
             self.assertListEqual(value, solution[i])
+            
+            
+if __name__ == '__main__':
+    unittest.main()

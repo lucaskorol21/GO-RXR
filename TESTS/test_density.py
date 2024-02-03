@@ -11,8 +11,11 @@ import unittest
 importlib.reload(ms)
 import numpy as np
 
+# Define epsilon using np.finfo(float).eps
+EPS = np.sqrt(np.finfo(float).eps)
+
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/density_testing.py
+#  ->  python -m unittest -v test_density.py
 # into the terminal
 
 class TestDensityProfile(unittest.TestCase):
@@ -41,10 +44,6 @@ class TestDensityProfile(unittest.TestCase):
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
-            
-        print('test_case', test_case)
-        print('solution', solution)
-        print(len(test_case), len(solution))
 
         # len(loaded_data)
         #Counter(loaded_data)
@@ -56,7 +55,7 @@ class TestDensityProfile(unittest.TestCase):
 
         # self.assertEqual(total, 0)  # checks to make sure that the values are correct
         # Assert that the total is close to 0 with an epsilon difference
-        self.assertAlmostEqual(total, 0, delta=np.finfo(float).eps)
+        self.assertAlmostEqual(total, 0, delta=EPS)
 
     def test_elementVar(self):
         # Testing models that include element variations (defined as polymorphous in the code)

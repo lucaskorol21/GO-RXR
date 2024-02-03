@@ -11,10 +11,11 @@ from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/data_fitting_test.py
+#  ->  python -m unittest -v test_data_fitting.py
 # into the terminal
 
 class TestDataFitting(unittest.TestCase):
+    
     def test_ChangeSampleParams_element(self):
         # Tests to element fit
         filename = 'Pim4uc_test.h5'
@@ -22,8 +23,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -92,8 +93,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -182,8 +183,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -281,8 +282,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -348,8 +349,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -398,8 +399,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -445,8 +446,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -506,8 +507,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -576,8 +577,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -644,8 +645,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -714,8 +715,8 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            script_name = '/Testing/test_data/test_script.txt'
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -755,3 +756,5 @@ class TestDataFitting(unittest.TestCase):
         # test orbital
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
+if __name__ == '__main__':
+    unittest.main()

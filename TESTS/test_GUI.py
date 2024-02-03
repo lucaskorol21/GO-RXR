@@ -8,7 +8,7 @@ import unittest
 from GUI_GO import stringcheck, checkbracket
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/GUI_test.py
+#  ->  python -m unittest -v test_GUI.py
 # into the terminal
 
 class TestDataFitting(unittest.TestCase):
@@ -29,3 +29,7 @@ class TestDataFitting(unittest.TestCase):
         for i,test in enumerate(tests):
             value = checkbracket(test)
             self.assertEqual(value, outputs[i])
+            
+            
+if __name__ == '__main__':
+    unittest.main()
