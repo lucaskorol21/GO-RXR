@@ -9,10 +9,7 @@ def load_tests_from_file(test_file):
 
 def discover_and_run_tests(test_dir):
     # Discover and run all test files in the specified directory
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-
-    for root, dirs, files in os.walk(test_dir):
+    for root, _, files in os.walk(test_dir):
         for file in files:
             if file.startswith("test_") and file.endswith(".py"):
                 test_file = os.path.join(root, file)
