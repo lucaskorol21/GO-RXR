@@ -1,12 +1,11 @@
 ## file extensions
-*.pyc
-*.env
+**/*.pyc
+.env
 
 ## folder
+dist/
+__pycache__/
 build/
 venv-go-rxr/
 venv-go-rxr-paper/
 Tutorial/*.h5
-
-# Ignore already tracked .pyc files
-venv-go-rxr/lib/python3.7/site-packages/pkg_resources/__pycache__/*.pyc

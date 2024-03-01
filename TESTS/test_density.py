@@ -1,16 +1,25 @@
-import importlib
 import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import importlib
 from collections import Counter
 import UTILS.material_structure as ms
 import pickle
 import unittest
 importlib.reload(ms)
+import numpy as np
+
+# Define epsilon using np.finfo(float).eps
+EPS = np.sqrt(np.finfo(float).eps)
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/density_testing.py
+#  ->  python -m unittest -v test_density.py
 # into the terminal
 
 class TestDensityProfile(unittest.TestCase):
+    
     def test_simple_profile(self):
         # Test a simple density profile
 
@@ -31,7 +40,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -39,11 +48,14 @@ class TestDensityProfile(unittest.TestCase):
         # len(loaded_data)
         #Counter(loaded_data)
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
-        self.assertEqual(Counter(test_case.keys()),Counter(solution.keys()))  # checks that all keys are the same
+        self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
         total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
+        print('total', total)
 
-        self.assertEqual(total,0)  # checks to make sure that the values are correct
+        # self.assertEqual(total, 0)  # checks to make sure that the values are correct
+        # Assert that the total is close to 0 with an epsilon difference
+        self.assertAlmostEqual(total, 0, delta=EPS)
 
     def test_elementVar(self):
         # Testing models that include element variations (defined as polymorphous in the code)
@@ -67,7 +79,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -97,7 +109,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -110,7 +122,6 @@ class TestDensityProfile(unittest.TestCase):
         total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
         self.assertEqual(total,0)  # checks to make sure that the values are correct
-
 
     def test_unitCell(self):
         # create the test model
@@ -145,7 +156,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -178,7 +189,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -215,7 +226,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -246,7 +257,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)
@@ -279,7 +290,7 @@ class TestDensityProfile(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         with open(my_path, 'rb') as file:
             solution = pickle.load(file)

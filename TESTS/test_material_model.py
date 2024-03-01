@@ -1,14 +1,20 @@
+import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 import UTILS.material_model as mm
 import numpy as np
-import os
 import UTILS.material_structure as ms
 import unittest
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/material_model_testing.py
+#  ->  python -m unittest -v test_material_model.py
 # into the terminal
 
 class TestMaterialModel(unittest.TestCase):
+    
     def test_form_factors_E(self):
         form_factors = ['La','Mn','O']
         energy = [0,200.56,300.48,456.25,788,1200]
@@ -83,7 +89,7 @@ class TestMaterialModel(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         solution = np.loadtxt(my_path)
 
@@ -132,7 +138,7 @@ class TestMaterialModel(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         solution = np.loadtxt(my_path)
 
@@ -174,7 +180,7 @@ class TestMaterialModel(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         solution = np.loadtxt(my_path)
 
@@ -216,7 +222,7 @@ class TestMaterialModel(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         solution = np.loadtxt(my_path)
 

@@ -90,22 +90,22 @@ import traceback
 import numpy as np
 import time
 import sys
-import material_structure as ms
-from material_model import change_ff, retrieve_ff
+import UTILS.material_structure as ms
+from UTILS.material_model import change_ff, retrieve_ff
 import os
 import pyqtgraph as pg
-import data_structure as ds
+import UTILS.data_structure as ds
 import copy
-import global_optimization as go
+import UTILS.global_optimization as go
 
-import material_model as mm
+import UTILS.material_model as mm
 from scipy import signal
 import h5py
 import multiprocessing as mp
 import pickle
 from scipy.interpolate import interp1d, UnivariateSpline
 from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
-from Ti34_XAS_Python import GetTiFormFactor
+from UTILS.Ti34_XAS_Python import GetTiFormFactor
 
 # This global variable is used to stop the data fitting
 global stop

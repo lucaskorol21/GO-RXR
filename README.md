@@ -12,8 +12,8 @@
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
-  <a href="#install">how-to-use</a> •
-  <a href="#download">Download</a> •
+  <a href="#installation">Install/Configure</a> •
+  <a href="#documentation">How-to-use</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
   <a href="#publications">Publications</a> 
@@ -54,12 +54,12 @@ Tested on Ubuntu 22.04
 $ git clone https://github.com/lucaskorol21/GO-RXR.git
 ```
 
-#### 2. Prerequisites (Python 3.7)
+#### 2. Prerequisites (Tested with Python 3.10.12)
 
 We recommend creating a virtual enviromnment:
 
 ```bash
-$ python3.7 -m venv venv-go-rxr
+$ virtualvenv venv-go-rxr
 ```
 
 Install the python libraries by running the setup file:
@@ -68,74 +68,85 @@ Install the python libraries by running the setup file:
 $ python setup.py install
 ```
 
-If the setup file does not work, then the following libraries can be installed:
+If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
 
-* Cython 0.29.24
-* numpy 1.21.4
-* h5py 2.9.0
-* numba 0.55.2
-* scipy 1.7.1
-* matplotlib 3.4.3
-* PyQt5 5.15.7
-
-#### For `matplotlib`, ensure that you have `Pilow` installed
+##### For `matplotlib`, ensure that you have `Pilow` installed
 ```bash
 $ pip install Pillow
 ```
 
-#### Resolving `PyQt5` Conflicts.
+##### Resolving `PyQt5` Conflicts.
 
-If you encounter conflicts with the PyQt5 package during installation or usage, follow these steps to resolve the issues:
+If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be uselful. Try the following steps:
 
-0. (If Already Run `setup.py`)
-
-Comment Out `PyQt5` in `setup.py` and Run Setup Script
 ```bash
-$ python setup.py install
-```
+# Install necessary dependencies
+sudo apt-get install pyqt5-dev libqt5multimedia5-plugins
 
-1. Uninstall `PyQt5`:
-```bash
-$ pip uninstall PyQt5
-```
+# Remove existing PyQt5 installations from the virtual environment
+sudo rm -f -r /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
 
-2. Install `PyQt5`:
-```bash
-$ sudo apt-get install python3.7-dev
-$ pip install PyQt5
+# Create a symbolic link from the OS libraries to the virtual environment
+sudo ln -f -s /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
 ```
+Replace /path/to/your/virtualenv with the path to your virtual environment directory and 3.x with the appropriate Python version (e.g., 3.10, 3.9, etc.). These commands aim to ensure that the global version of PyQt5 matches the one specified in your setup file by using the operating system's libraries and creating a symbolic link accordingly.
 
-3. Uncomment `PyQt5` in `setup.py` and Run Setup Script
-```bash
-$ python setup.py install
-```
-
-#### 3 Install Python reflectivity by running
+#### 3. Install Python reflectivity by running
 ```bash
 $ python setup_reflectivity.py install
 ```
 
-In case there you found an error related to `'x86_64-linux-gnu-gcc'`, use
+In case there you found an error related to `'x86_64-linux-gnu-gcc'` permission, use
 ```bash
 $ sudo python setup_reflectivity.py install
 ```
+or
+```bash
+# Ensure that you have write permissions for the dist directory by running
+$ ls -ld dist/
+
+# If the ownership of the dist directory is incorrect, you can change it using the following command:
+$ sudo chown -R $USER dist/
+
+# Try running the installation command again
+$ sudo python setup_reflectivity.py install
+```
+
+If the issue persists, try the following:
+```bash
+# Remove the build directory
+$ rm -rf build/
+
+# Make sure your user has write permissions for the entire project directory
+$ sudo chown -R $USER .
+
+# Try running the installation command again
+$ python setup_reflectivity.py install
+```
 
 
-## Windows
+## Windows  (Tested with Python 3.7 32-bit)
 
 1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
 2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-4. Install the python libraries as instructed above.
-5. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-6. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
+3. Install the python libraries as instructed above.
+4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
+5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
+
+<!-- ## Download
+The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023. -->
+
+## Documentation
+
+The User Guide can be found in `/DOCS`. Also, the file `Tutorial/Tutorial_v0.3.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
 
 ## Credits
 
 This software uses the following open source packages:
 - [Pythonreflectivity](https://github.com/malaclypseII/PyXMRTool.git)
 
-Conrtibution made by:
+Contribution made by:
  - Dr. Robert J. Green
  - Dr. Raymond Spiteri
  - Dr. Jesus Perez Curbelo

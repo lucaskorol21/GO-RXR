@@ -1,12 +1,16 @@
-import unittest
 import os
+import sys
+# Add the parent directory of GUI_GO.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import unittest
 import numpy as np
 import UTILS.material_structure as ms
 import pickle
 import UTILS.data_structure as ds
 
 # This test script can be executed by inputting
-#  ->  python -m unittest -v Testing/material_structure_test.py
+#  ->  python -m unittest -v test_material_structure.py
 # into the terminal
 
 class TestMaterialStructure(unittest.TestCase):
@@ -17,8 +21,8 @@ class TestMaterialStructure(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             path = os.getcwd() + '/test_data/'
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
-            path = os.getcwd() + '/Testing/test_data/'
+            my_path = os.getcwd() + '/test_data/' + filename
+            path = os.getcwd() + '/test_data/'
 
         optical = np.loadtxt(my_path)
 
@@ -89,7 +93,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -108,7 +112,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -146,7 +150,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -164,7 +168,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -202,7 +206,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -220,7 +224,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -258,7 +262,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -276,7 +280,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -301,7 +305,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -357,7 +361,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -388,7 +392,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -421,7 +425,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -442,7 +446,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -482,7 +486,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -499,7 +503,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -520,7 +524,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
@@ -537,7 +541,7 @@ class TestMaterialStructure(unittest.TestCase):
         if os.getcwd().split('\\')[-1] == 'Testing':
             my_path = os.getcwd() + '/test_data/' + filename
         else:
-            my_path = os.getcwd() + '/Testing/test_data/' + filename
+            my_path = os.getcwd() + '/test_data/' + filename
 
         sample = ds.ReadSampleHDF5(my_path)
 
