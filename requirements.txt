@@ -2,7 +2,6 @@ contourpy==1.2.0
 cycler==0.12.1
 Cython==3.0.8
 fonttools==4.47.2
-GO-RXR==1.0
 h5py==3.10.0
 kiwisolver==1.4.5
 llvmlite==0.42.0
@@ -18,4 +17,3 @@ pyqtgraph==0.13.3
 python-dateutil==2.8.2
 scipy==1.12.0
 six==1.16.0
-UNKNOWN==0.0.0
