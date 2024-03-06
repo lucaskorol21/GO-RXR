@@ -13,10 +13,36 @@ RUN apt-get update && \
     libqt5multimedia5-plugins \
     build-essential \
     gcc \
+    xvfb \
+    libx11-dev \
+    libx11-xcb-dev \
+    libxcb-keysyms1-dev \
+    libxcb-image0-dev \
+    libxcb-shm0-dev \
+    libxcb-icccm4-dev \
+    libxcb-sync-dev \
+    libxcb-randr0-dev \
+    libxcb-render-util0-dev \
+    libxcb-xinerama0-dev \
+    libxcb-xfixes0-dev \
+    libxcb-xkb-dev \
+    libxcb1-dev \
+    libxrender-dev \
+    libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the default Python version to use
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
+
+# # Set environment variables
+ENV QT_DEBUG_PLUGINS=1
+ENV QT_QPA_PLATFORM=xcb
+# ENV QT_QPA_PLATFORM_PLUGIN_PATH=/opt/Qt/${QT_VERSION}/gcc_64/plugins
+# ENV QT_PLUGIN_PATH=/opt/Qt/${QT_VERSION}/gcc_64/plugins
+# ENV DISPLAY=:1
+
+# # Start Xvfb with the desired display number and screen configuration
+# CMD Xvfb :1 -screen 0 1024x768x16 &
 
 # Create and set working directory
 WORKDIR /go-rxr

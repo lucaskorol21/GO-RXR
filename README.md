@@ -124,6 +124,25 @@ $ sudo chown -R $USER .
 $ python setup_reflectivity.py install
 ```
 
+## Docker Image
+
+Create Image
+```bash
+$ sudo docker build -t go-rxr-img .
+```
+
+Run container on interactive mode
+```bash
+$ sudo docker run -it --name go-rxr-cont go-rxr-img
+
+or
+
+docker run -it -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY go-rxr-img
+```
+
+
+
+
 
 ## Windows  (Tested with Python 3.7 32-bit)
 
