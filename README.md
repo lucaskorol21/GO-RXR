@@ -135,9 +135,15 @@ Run container on interactive mode
 ```bash
 $ sudo docker run -it --name go-rxr-cont go-rxr-img
 
+
+////////////////////////////////////////
 or
 
 docker run -it -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY go-rxr-img
+
+or
+
+docker run -it --name go-rxr-cont -e DISPLAY=:1 go-rxr-img
 ```
 
 
