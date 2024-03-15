@@ -62,8 +62,8 @@ The GO-RXR software has been instrumental in analyzing RXR data for diverse appl
 
 *Mention (if applicable) a representative set of past or ongoing research projects using the software and recent scholarly publications enabled by it.*
 
-# References
-
 # Acknowledgments
 
 Give the proper acknowledgments.
+
+# References
