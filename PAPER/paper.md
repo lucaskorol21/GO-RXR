@@ -10,16 +10,19 @@ authors:
     orchid: 0009-0007-1329-6065
     affiliation: "1"
   - name: Raymond J. Spiteri
-    affiliation: "1"
+    affiliation: "2"
   - name: Jesus P. Curbelo
     orchid: 0000-0003-2417-071X
-    affiliation: "1"
+    affiliation: "2"
   - name: Robert J. Green
-    affiliation: "1, 2"
+    affiliation: "1, 3"
 affiliations: 
   - name: Department of Physics & Engineering Physics, University of Saskatchewan, Saskatoon, Canada S7N 5E2
     index: 1
+  - name: Department of Computer Science, University of Saskatchewan, Saskatoon, Canada S7N 5E2
+    index: 2
   - name: Stewart Blusson Quantum Matter Institute, University of British Columbia, Vancouver, Canada V6T 1Z1 
+    index: 3
 date: 15 March 2024
 bibliography: paper.bib
 ---
