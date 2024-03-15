@@ -8,7 +8,7 @@
   <br>
 </h1>
 
-<h4 align="center">A data analysis application for material scientists.</h4>
+<h4 align="center">A scientific tool for material scientists.</h4>
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
