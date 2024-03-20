@@ -27,7 +27,7 @@ date: 15 March 2024
 bibliography: paper.bib
 ---
 
-# Summary and statement of Need
+# Summary and Statement of Need
 
 Resonant x-ray reflectometry (RXR) is a cutting-edge synchrotron technique used to characterize the depth-dependent structure of quantum materials [@keimer_moore_NPh_2017; @green-etal_SRN_2020]. However, the main challenge impeding the success of RXR data analysis lies in its extreme complexity, which necessitates both extensive computational quantum mechanics simulations and the fitting of numerous independent variables. This complexity results in prolonged analysis periods that demand significant engagement from researchers. In response to these challenges, the Global Optimization of Resonant X-ray Reflectometry (GO-RXR) software emerged from rigorous development efforts as a main contribution from the work by [@korol_MSc_2023]. GO-RXR streamlines data analysis, enhances visualization, and reduces the expertise required, offering researchers a more efficient means to analyze RXR data. 
 
@@ -49,7 +49,7 @@ The primary goal of GO-RXR is to simplify and optimize the data analysis process
 
 *TO ADD details of language, packages, and libraries used*
 
-Figure \autoref{fig:flowchart} displays the main steps GO-RXR uses to convert the input into its output. The inputs of the software is the experimental data, and are defined by the reflected intensity, incident grazing angle, photon energy, and polarization. The first step in the data analysis is the data selection step. In this step the user selects the experimental datasets to include into the data analysis. The next step is the parameter selection. In this step, the user selects the model parameters to vary. The final step is known as the data fitting step. In this step, the user will select the global optimization algorithm to implement, along with the algorithm parameters, and start the data fitting between the simulated and selected experimental datasets. The output of GO-RXR is the depth-dependent density profile and it is defined my its model parameters.
+\autoref{fig:flowchart} displays the main steps GO-RXR uses to convert the input into its output. The inputs of the software is the experimental data, and are defined by the reflected intensity, incident grazing angle, photon energy, and polarization. The first step in the data analysis is the data selection step. In this step the user selects the experimental datasets to include into the data analysis. The next step is the parameter selection. In this step, the user selects the model parameters to vary. The final step is known as the data fitting step. In this step, the user will select the global optimization algorithm to implement, along with the algorithm parameters, and start the data fitting between the simulated and selected experimental datasets. The output of GO-RXR is the depth-dependent density profile and it is defined my its model parameters.
 
 ![Flowchart of GO-RXR. The flowchart illustrates the path the software uses to take the experimental data and convert it into a depth-dependent density profile defined by its parameters.\label{fig:flowchart}](../FIGURES/go-rxr-flowchart.png)
 
@@ -63,7 +63,10 @@ The GO-RXR software has been instrumental in analyzing RXR data for diverse appl
 
 # Publications and ongoing research
 
-*Mention (if applicable) a representative set of past or ongoing research projects using the software and recent scholarly publications enabled by it.*
+The GO-RXR software package was utilized for modeling the RXR data in the paper titled "The effect of intrinsic magnetic order on electrochemical water splitting," published in the journal Applied Physics Reviews by [@vanderMinne_etal_2023]. Additionally, GO-RXR played a crucial role in a complementary experimental study investigating morphological and chemical disorder in epitaxial La0.67Sr0.33MnO3. This study is presently under review in the journal XXXXX, with its preprint format available online [@verhage_etal_2023]. These instances underscore the versatility and impact of GO-RXR in advancing scientific exploration, with ongoing research endeavors continuing to harness its capabilities for further discoveries.
+
+
+*Anything else?*
 
 # Acknowledgments
 
