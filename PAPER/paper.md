@@ -58,8 +58,6 @@ The primary goal of GO-RXR is to simplify and optimize the data analysis process
 
 The GO-RXR software has been instrumental in analyzing RXR data for diverse applications. For instance, it has facilitated the in-depth study of the electrochemical water splitting catalyst La0.7 Sr0.3 MnO3/SrTiO3 (LSMO/STO), revealing insights into the material's structural and electronic and magnetic depth profiles. Moreover, GO-RXR's utilization in investigating the thickness relationship between film thickness and the presence of ferromagnetism in the LaMnO3/SrTiO3 heterostructure has shed new light on the mechanisms underlying magnetic phase transitions in ultra-thin films
 
-**Spiteri: not sure why the next paragraph is italicized? I guess it is fluff that we may not want to include?** 
-
 **Jesus: I think the idea should be included but it should be revised carefully by Robert and Lucas so we don't say anything wrong**
 
 *The versatility of GO-RXR can be leveraged in the analysis of various other quantum materials, such as semiconductors, superconductors, and magnetic materials, to elucidate their depth-dependent structures and properties. Additionally, GO-RXR could find application in materials science research, where understanding the structural and electronic characteristics of thin films is crucial for designing advanced electronic devices and functional materials. Furthermore, its ability to streamline data analysis processes and enhance visualization can benefit researchers across different disciplines, including physics, chemistry, and materials engineering, by providing them with a powerful tool for studying complex material systems with greater efficiency and accuracy.*
