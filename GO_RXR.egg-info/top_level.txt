@@ -1,4 +1,0 @@
-Magnetic_Scattering_Factor
-Scattering_Factor
-Testing
-Tutorial

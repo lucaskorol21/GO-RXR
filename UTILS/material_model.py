@@ -31,10 +31,11 @@ from numba import *
 from scipy import interpolate
 import os
 
+# Import ROOT_DIR from the __init__.py file
+from . import ROOT_DIR
 
 # Loads the non-magnetic form factors stored in our database
-my_dir = os.getcwd()
-with open('form_factor.pkl', 'rb') as f:
+with open(os.path.join(ROOT_DIR, 'DATA/form_factor.pkl'), 'rb') as f:
     global ff
     ff = dict()
     ff_temp = pickle.load(f)  # This is made a global variable so we do not have to keep on loading in the file
@@ -44,7 +45,7 @@ with open('form_factor.pkl', 'rb') as f:
 f.close()
 
 # Loads the magnetic form factors stored in our database
-with open('form_factor_magnetic.pkl','rb') as f:
+with open(os.path.join(ROOT_DIR, 'DATA/form_factor_magnetic.pkl'),'rb') as f:
     global ffm
     ffm = dict()
     ffm_temp = pickle.load(f)

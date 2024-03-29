@@ -36,6 +36,10 @@ from collections import OrderedDict
 from scipy.special import erf
 import warnings
 import copy
+import os
+
+# Import ROOT_DIR from the __init__.py file
+from . import ROOT_DIR
 
 def find_ff(element,E, ff_dict):
     """
@@ -349,7 +353,7 @@ def perovskite_density(formula):
     """
     density = None
     # file = open("Perovskite_Density.txt", "r")
-    file = open(os.path.join('DATA', "Perovskite_Density.txt"), "r")
+    file = open(os.path.join(ROOT_DIR, 'DATA', "Perovskite_Density.txt"), "r")
     lines = file.readlines()
     for line in lines:
         if line.split()[0] == formula:
@@ -370,7 +374,7 @@ def atomic_mass(atom):
     mass = None
     
     # file = open("Atomic_Mass.txt", "r")
-    file = open(os.path.join('DATA', "Atomic_Mass.txt"), "r")
+    file = open(os.path.join(ROOT_DIR, 'DATA', "Atomic_Mass.txt"), "r")
     lines = file.readlines()
     for line in lines:
         if line.split()[0] == atom:

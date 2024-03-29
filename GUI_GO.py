@@ -115,8 +115,6 @@ stop = False
 global x_vars
 x_vars = []
 
-
-
 def change_internal_ff(element, ff_dict, my_data):
     """
     Purpose: Change the atomic form factor data for the global atomic form factor dictionary
