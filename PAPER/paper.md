@@ -67,6 +67,10 @@ The GO-RXR software package was utilized for analyzing the RXR data in the paper
 
 # Acknowledgments
 
-Give the proper acknowledgments.
+Raymond J. Spiteri and Robert J. Green acknowledge the support
+from the Natural Sciences and Engineering Research Council of
+Canada (NSERC) Discovery Grant program. Lucas Korol
+acknowledges the support from the NSERC CREATE to INSPIRE
+program. 
 
 # References
