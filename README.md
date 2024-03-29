@@ -132,10 +132,6 @@ $ python setup_reflectivity.py install
 4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
 5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
 
-
-<!-- ## Download
-The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023. -->
-
 ## Documentation
 
 The User Guide can be found in `/DOCS`. Also, the file `Tutorial/Tutorial_v0.3.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
