@@ -1,12 +1,18 @@
 import os
-import sys
-# Add the parent directory of GUI_GO.py to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import copy
 import unittest
-import UTILS.material_structure as ms
-import UTILS.data_structure as ds
+import sys 
+
+# Get the parent directory of the current script's directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the parent directory to the system path
+sys.path.append(parent_dir)
+
+from UTILS import (
+    material_structure as ms,
+    data_structure as ds,
+    global_optimization as go,
+)
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
 

@@ -115,8 +115,6 @@ stop = False
 global x_vars
 x_vars = []
 
-
-
 def change_internal_ff(element, ff_dict, my_data):
     """
     Purpose: Change the atomic form factor data for the global atomic form factor dictionary
@@ -8282,7 +8280,7 @@ class ReflectometryApp(QMainWindow):
         my_name = 'GO-RXR (version '+self.version +')'
         self.setWindowTitle(my_name)
 
-        icon = QtGui.QIcon('logo.png')
+        icon = QtGui.QIcon('FIGURES/logo.png')
         self.setWindowIcon(icon)
 
         # set the geometry of the window

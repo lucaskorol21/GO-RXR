@@ -1,5 +1,11 @@
 import os
 import unittest
+import sys
+
+# Get the parent directory of the current script's directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the parent directory to the system path
+sys.path.append(parent_dir)
 
 def load_tests_from_file(test_file):
     # Load the test suite from the given file

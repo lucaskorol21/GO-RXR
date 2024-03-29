@@ -1,7 +1,10 @@
 import os
 import sys
-# Add the parent directory of GUI_GO.py to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Get the parent directory of the current script's directory
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the parent directory to the system path
+sys.path.append(parent_dir)
 
 import numpy as np
 import UTILS.material_structure as ms

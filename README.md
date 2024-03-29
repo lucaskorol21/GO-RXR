@@ -8,7 +8,7 @@
   <br>
 </h1>
 
-<h4 align="center">A data analysis application for material scientists.</h4>
+<h4 align="center">A scientific tool for material scientists.</h4>
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
@@ -43,7 +43,7 @@
 
 # Getting Started
 
-## Linux
+## Linux (this is the recommended configuration)
 
 Tested on Ubuntu 22.04
 
@@ -124,7 +124,6 @@ $ sudo chown -R $USER .
 $ python setup_reflectivity.py install
 ```
 
-
 ## Windows  (Tested with Python 3.7 32-bit)
 
 1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
@@ -132,10 +131,6 @@ $ python setup_reflectivity.py install
 3. Install the python libraries as instructed above.
 4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
 5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
-
-
-<!-- ## Download
-The stand-alone application for [GO-RXR](https://research-groups.usask.ca/qmax/people.php) will be made available in October 2023. -->
 
 ## Documentation
 
@@ -178,7 +173,9 @@ END OF TERMS AND CONDITIONS
 
 ## Publications
 
-There are currently no papers published using GO-RXR, but there are several papers in progress using GO-RXR.
+The GO-RXR software package has been utilized for analyzing the RXR data in the papers:
+* Emma van der Minne, Lucas Korol, Lidewij M. A. Krakers, Michael Verhage, Carlos M. M. Rosário, Thijs J. Roskamp, Raymond J. Spiteri, Chiara Biz, Mauro Fianchini, Bernard A. Boukamp, Guus Rijnders, Kees Flipse, Jose Gracia, Guido Mul, Hans Hilgenkamp, Robert J. Green, Gertjan Koster, Christoph Baeumer; *The effect of intrinsic magnetic order on electrochemical water splitting*. **Appl. Phys. Rev**. 1 March 2024; 11 (1): 011420. https://doi.org/10.1063/5.0174662
+* Michael Verhage, Emma van der Minne, Ellen M. Kiens, Lucas Korol, Raymond J. Spiteri, Gertjan Koster, Robert J. Green, Christoph Baeumer, Kees Flipse; *A complementary experimental study of epitaxial La0.67Sr0.33MnO3 to identify morphological and chemical disorder*. **arXiv**. 1 Nov 2023. https://arxiv.org/abs/2311.00504 (under review in the journal **ACS Applied Materials & Interfaces**)
 
 ## Bugs
 * Resolved (5/10/2023): Data fitting will run the script regardless if script option is selected. It is suggested to comment out every line of the script for now until this issues is resolved.
