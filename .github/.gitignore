@@ -8,4 +8,5 @@ __pycache__/
 build/
 venv-go-rxr/
 venv-go-rxr-paper/
-Tutorial/*.h5
+**/*.h5
+.idea
