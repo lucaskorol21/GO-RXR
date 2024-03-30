@@ -15,5 +15,6 @@ while os.path.basename(ROOT_DIR) != 'GO-RXR':
         print("Root directory not found")
         break
 
+DATA_DIR = os.path.join(ROOT_DIR, 'DATA')
 # Append the root directory to the Python path
 sys.path.append(ROOT_DIR)

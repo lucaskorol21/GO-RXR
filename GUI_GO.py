@@ -233,7 +233,7 @@ class compoundInput(QDialog):
         :return: density (g/cm^3)
         """
         cwd = os.getcwd()
-        filename = 'Perovskite_Density.txt'
+        filename = 'DATA/Perovskite_Density.txt'
 
         found = False  # boolean user that determines if material found in database
         with open(filename) as file:
@@ -10724,8 +10724,10 @@ class scriptWidget(QDialog):
         super().__init__()
 
         self.cwd = os.getcwd()
+        
+        print('Current working directory: ', self.cwd)
 
-        self.fname = self.cwd + '/default_script.txt'  # obtain current script
+        self.fname = self.cwd + '/DATA/default_script.txt'  # obtain current script
         self.setWindowTitle('Script Window')
         self.setGeometry(180, 60, 700, 400)
         self.sWidget = sWidget
@@ -10790,7 +10792,7 @@ class scriptWidget(QDialog):
 
             # saves to the default script to run throughout the program.
             with open(self.fname, 'w') as f:
-                f.write(self.cwd + '/default_script.txt')
+                f.write(self.cwd + '/DATA/default_script.txt')
             f.close()
         else:
             messageBox = QMessageBox()
@@ -10960,7 +10962,7 @@ def checkbracket(myStr):
 def checkscript(sample, fname=''):
 
     if fname == '':
-        script = os.getcwd() + '/default_script.txt'
+        script = os.getcwd() + '/DATA/default_script.txt'
     else:
         script = os.getcwd() + fname
     #script = fname
