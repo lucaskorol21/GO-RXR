@@ -9,4 +9,4 @@ build/
 venv-go-rxr/
 venv-go-rxr-paper/
 **/*.h5
-.idea
+.idea/
