@@ -134,7 +134,7 @@ $ python setup_reflectivity.py install
 
 ## Documentation
 
-The User Guide can be found in `/DOCS`. Also, the file `Tutorial/Tutorial_v0.3.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
+The User Guide can be found in `/DOCS`. Also, the file `Tutorial/Tutorial.pdf` contains two detailed examples describing the step-by-step procedures to start using the GUI.
 
 ## Credits
 
