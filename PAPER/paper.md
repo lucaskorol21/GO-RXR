@@ -29,9 +29,13 @@ date: 2 April 2024
 bibliography: paper.bib
 ---
 
-# Summary and Statement of Need
+# Summary
 
 Resonant x-ray reflectometry (RXR) is a cutting-edge synchrotron technique used to characterize the depth-dependent structure of quantum materials [@keimer_moore_NPh_2017; @green-etal_SRN_2020]. However, the main challenge impeding the success of RXR data analysis lies in its extreme complexity, driven by complicated model construction and the fitting of numerous independent variables. This complexity results in prolonged analysis periods that demand significant engagement from researchers. In response to these challenges, the Global Optimization of Resonant X-ray Reflectometry (GO-RXR) software emerged from rigorous development efforts as a main contribution from the work by [@korol_MSc_2023]. GO-RXR streamlines data analysis, enhances visualization, and reduces the expertise required, offering researchers a more efficient means to analyze RXR data. 
+
+This paper presents an overview of GO-RXR, highlighting its functionality, example use-cases, and impact in materials science research. Through its comprehensive approach and user-friendly design, GO-RXR offers researchers an efficient tool for analyzing RXR data, facilitating breakthroughs in understanding complex material systems. Additionally, publications and ongoing research utilizing GO-RXR underscore its versatility and impact in advancing scientific exploration.
+
+# Statement of Need
 
 One of the challenges addressed by [@korol_MSc_2023] included the analysis of LaMnO<sub>3</sub>/SrTiO<sub>3</sub> thin-film heterostructures. The data for these samples were collected at the resonant elastic and inelastic x-ray scattering beamline (REIXS) at the Candian Light Source (CLS) in 2017. Although the initial data collection took only three days, attempts to analyze it with the tools available in 2021 yielded little success. In 2023, use of the GO-RXR tool led to a successful analysis, highlighting the efficacy of the software in overcoming longstanding analysis barriers.
 
