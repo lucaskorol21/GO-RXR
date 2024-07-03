@@ -68,6 +68,8 @@ Install the python libraries by running the setup file:
 $ python setup.py install
 ```
 
+* First run ```$ pip install --upgrade pip setuptools``` if needed.
+
 If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
 
 ##### For `matplotlib`, ensure that you have `Pilow` installed
@@ -123,6 +125,18 @@ $ sudo chown -R $USER .
 # Try running the installation command again
 $ python setup_reflectivity.py install
 ```
+
+or 
+
+```bash
+# Install Python Development Headers
+$ sudo apt-get update
+$ sudo apt-get install python3.10-dev
+
+# Install your package using setup.py
+$ python setup_reflectivity.py install
+```
+
 
 ## Windows  (Tested with Python 3.7 32-bit)
 

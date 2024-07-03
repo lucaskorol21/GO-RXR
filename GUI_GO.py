@@ -80,6 +80,7 @@ Instructions to create executable using pytinstaller:
    to initialize because the all the libraries and files need to be unpacked before the software can be run.
 """
 
+import os
 import ast
 from scipy import interpolate
 from PyQt5.QtWidgets import *
@@ -8261,7 +8262,7 @@ class ReflectometryApp(QMainWindow):
         cwd = os.getcwd()
 
         self.version = '1.0'
-        self.fname = cwd + '\demo.h5'  # initial sample
+        self.fname = os.path.join(cwd, 'demo.h5')  # initial sample
         self.data = []  # data info
         self.data_dict = dict()  # dictionary that contains data
         self.sim_dict = dict()  # dictionary that contains simulation

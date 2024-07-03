@@ -8,5 +8,6 @@ __pycache__/
 build/
 venv-go-rxr/
 venv-go-rxr-paper/
+venv-gorxr310/
 **/*.h5
 .idea/
