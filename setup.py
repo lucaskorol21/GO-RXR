@@ -4,7 +4,6 @@ setup(
     name='GO-RXR',
     version='1.0',
     packages=find_packages(include=['Magnetic_Scattering_Factor', 'Scattering_Factor', 'Testing', 'Tutorial']),
-    # packages=['Magnetic_Scattering_Factor', 'Scattering_Factor', 'Testing', 'Tutorial'],
     url='https://github.com/lucaskorol21/GO-RXR',
     author='Lucas Korol',
     author_email='lsk601@usask.ca',

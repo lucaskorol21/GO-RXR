@@ -54,7 +54,7 @@ Tested on Ubuntu 22.04
 $ git clone https://github.com/lucaskorol21/GO-RXR.git
 ```
 
-#### 2. Prerequisites (Tested with Python 3.10.12)
+#### 2. Prerequisites (Tested with Python 3.10.14)
 
 We recommend creating a virtual enviromnment:
 
@@ -72,12 +72,12 @@ $ python setup.py install
 
 If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
 
-##### For `matplotlib`, ensure that you have `Pilow` installed
+#### For `matplotlib`, ensure that you have `Pilow` installed
 ```bash
 $ pip install Pillow
 ```
 
-##### Resolving `PyQt5` Conflicts.
+#### Resolving `PyQt5` Conflicts.
 
 If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be uselful. Try the following steps:
 
@@ -138,13 +138,139 @@ $ python setup_reflectivity.py install
 ```
 
 
-## Windows  (Tested with Python 3.7 32-bit)
+<!-- ## Windows  (Tested with Python 3.7 32-bit)
 
 1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
 2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 3. Install the python libraries as instructed above.
 4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR.
+5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR. -->
+
+
+## Windows (using WSL)
+
+For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux. Below are the detailed steps to set up and run GO-RXR on Windows using WSL.
+
+This configuration was tested on Windows 11 Home and Windows 11 Education.
+
+### Steps to Set Up and Run GO-RXR on Windows Using WSL
+
+1. **Install WSL and Ubuntu**
+
+   - **Enable WSL**:  
+     Open a PowerShell terminal as Administrator and run:  
+     ```bash
+     wsl --install
+     ```
+     Recommended: install Ubuntu 22.04 if available.
+
+   - **Restart your computer**:  
+     After the installation, restart your computer.
+
+   - **Set up Ubuntu**:  
+     After restarting, open the Ubuntu application (you should find it in the Start Menu).  
+     Follow the prompts to create a new UNIX username and password.
+
+2. **Update and Upgrade Ubuntu**
+
+   - **Open Ubuntu Terminal**:  
+     Update the package list:  
+     ```bash
+     sudo apt update
+     ```
+     
+     Upgrade the installed packages:  
+     ```bash
+     sudo apt full-upgrade -y
+     ```
+3. **Set Up Python Environment**
+
+   - **Check/Install Python version**:  
+     You may already have Python installed with Ubuntu. Check the version:  
+     ```bash
+     python3 --version
+     ```
+     Recommended: Python 3.10.12 if available.
+
+   - **Install `virtualenv`**:  
+     Install the virtual environment tool:  
+     ```bash
+     sudo apt install python3-virtualenv -y
+     ```
+
+4. **Clone the Repository**
+
+   - **Install Git (if not already installed)**:  
+     Git should already be installed, but you can install it with:  
+     ```bash
+     sudo apt install git -y
+     ```
+
+   - **Clone the `GO-RXR` repository**:  
+     Clone the repository using Git:  
+     ```bash
+     git clone https://github.com/lucaskorol21/GO-RXR.git
+     ```
+     
+     Navigate to the cloned directory:  
+     ```bash
+     cd GO-RXR/
+     ```
+
+5. **Set Up the Virtual Environment**
+
+   - **Create the virtual environment**:  
+     Inside the `GO-RXR` directory:  
+     ```bash
+     virtualenv venv-go-rxr
+     ```
+
+   - **Activate the virtual environment**:  
+     Activate the virtual environment directory:  
+     ```bash
+     source venv-go-rxr/bin/activate
+     ```
+
+6. **Install Requirements**
+
+   - **Install Python dependencies**:  
+     Run the following command to install the required Python packages:  
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+   - **Install additional dependencies**:  
+     Install PyQt5 and its multimedia plugins:  
+     ```bash
+     sudo apt-get install pyqt5-dev libqt5multimedia5-plugins -y
+     ```
+
+   - **Run the `setup_reflectivity.py` script**:  
+     Install the package by running:  
+     ```bash
+     python setup_reflectivity.py install
+     ```
+
+7. **Running the Application**
+
+   - Go back to the root of the repository and run the GUI:  
+     ```bash
+     python GUI_GO.py
+     ```
+
+#### Resolving `PyQt5` Conflicts.
+
+If you encounter conflicts with the PyQt5 package during installation or usage (issues were noticed on Windows 11 Education) you might need to update the `wsl` version. Try the following steps:
+
+With the Ubuntu terminal open, open a new console and run 
+
+```bash
+wsl --update
+```
+Then, got back to the Ubuntu console and run 
+```bash
+python GUI_GO.py
+```
 
 ## Documentation
 
