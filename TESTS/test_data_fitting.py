@@ -36,8 +36,10 @@ class TestDataFitting(unittest.TestCase):
             # my_path = get_test_data_path(filename)
             # script_name = get_test_data_path('test_script.txt')
 
-        print('test_data_path', os.getcwd() + '/test_data')
-        print(os.listdir(os.getcwd() + '/test_data'))
+        # print('test_data_path', os.getcwd() + '/test_data')
+        # print(os.listdir(os.getcwd() + '/test_data'))
+        print('test_data_path', '/home/runner/work/GO-RXR/test_data')
+        print(os.listdir('/home/runner/work/GO-RXR/test_data'))
 
         print('\nmy_path', my_path)
         print('script_name', script_name)
