@@ -10960,10 +10960,12 @@ def checkbracket(myStr):
         return True
 """
 
-def checkscript(sample, fname=''):
+def checkscript(sample, fname='', testing=False):
 
     if fname == '':
         script = os.getcwd() + '/DATA/default_script.txt'
+    elif testing:
+        script = fname
     else:
         script = os.getcwd() + fname
     #script = fname
