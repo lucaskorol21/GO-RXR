@@ -4,6 +4,8 @@ import unittest
 import sys 
 
 from utils import get_test_data_path
+# Import ROOT_DIR from the __init__.py file
+from UTILS import ROOT_DIR
 
 # Get the parent directory of the current script's directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -36,11 +38,10 @@ class TestDataFitting(unittest.TestCase):
             # my_path = get_test_data_path(filename)
             # script_name = get_test_data_path('test_script.txt')
 
-        # print('test_data_path', os.getcwd() + '/test_data')
-        # print(os.listdir(os.getcwd() + '/test_data'))
-        print('test_data_path', '/home/runner/work/GO-RXR/test_data')
-        print(os.listdir('/home/runner/work/GO-RXR/test_data'))
+        print('test_data_path', os.getcwd())
+        print(os.listdir(os.getcwd()))
 
+        print("ROOT_DIR", ROOT_DIR)
         print('\nmy_path', my_path)
         print('script_name', script_name)
         aux = input('Press enter to continue')
