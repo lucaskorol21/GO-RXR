@@ -3,6 +3,8 @@ import copy
 import unittest
 import sys 
 
+from utils import get_test_data_path
+
 # Get the parent directory of the current script's directory
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to the system path
@@ -29,8 +31,14 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+            # my_path = os.getcwd() + '/test_data/' + filename
+            # script_name = '/test_data/test_script.txt'
+            my_path = get_test_data_path(filename)
+            script_name = get_test_data_path('test_script.txt')
+
+        print('\nmy_path', my_path)
+        print('script_name', script_name)
+        aux = input('Press enter to continue')
 
         sample = ds.ReadSampleHDF5(my_path)
 
