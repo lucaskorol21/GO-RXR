@@ -33,8 +33,9 @@ class TestDataFitting(unittest.TestCase):
         else:
             # my_path = os.getcwd() + '/test_data/' + filename
             # script_name = '/test_data/test_script.txt'
-            my_path = find_root_dir('GO-RXR') + '/TESTS/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+            root_dir = find_root_dir('GO-RXR')
+            my_path = root_dir + '/TESTS/test_data/' + filename
+            script_path = root_dir + '/TESTS/test_data/test_script.txt'
 
         # print('test_data_path', os.getcwd())
         # print(os.listdir(os.getcwd()))
@@ -46,7 +47,7 @@ class TestDataFitting(unittest.TestCase):
         print(os.getcwd() + '/test_data/test_script.txt')
 
         print('my_path', my_path)
-        print('script_name', script_name)
+        print('script_name', script_path)
 
         # aux = input('Press enter to continue')
 
@@ -68,7 +69,8 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        # my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF, my_script, orbitals)
