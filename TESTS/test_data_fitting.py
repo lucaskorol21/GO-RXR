@@ -31,10 +31,13 @@ class TestDataFitting(unittest.TestCase):
             my_path = os.getcwd() + '/test_data/' + filename
             script_name = '/test_data/test_script.txt'
         else:
-            # my_path = os.getcwd() + '/test_data/' + filename
-            # script_name = '/test_data/test_script.txt'
-            my_path = get_test_data_path(filename)
-            script_name = get_test_data_path('test_script.txt')
+            my_path = os.getcwd() + '/test_data/' + filename
+            script_name = '/test_data/test_script.txt'
+            # my_path = get_test_data_path(filename)
+            # script_name = get_test_data_path('test_script.txt')
+
+        print('test_data_path', os.getcwd() + '/test_data')
+        print(os.listdir(os.getcwd() + '/test_data'))
 
         print('\nmy_path', my_path)
         print('script_name', script_name)
