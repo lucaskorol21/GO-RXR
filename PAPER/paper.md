@@ -57,6 +57,8 @@ The primary goal of GO-RXR is to simplify and optimize the data analysis process
 
 ![Flowchart of GO-RXR. The flowchart illustrates the path the software uses to take the experimental data and convert them into a depth-dependent density profile.\label{fig:flowchart}](../FIGURES/go-rxr-flowchart.png)
 
+GO-RXR incorporates a suite of global optimization algorithms specifically designed to tackle the inherent complexities of RXR data analysis. Among these, Differential Evolution (DE), Simplicial Homology Global Optimization (SHGO), and Dual Annealing are the primary methods utilized, each chosen for their effectiveness in handling the high-dimensional optimization challenges typical of RXR. A significant enhancement provided by GO-RXR is the integration of boundary and weight functions, which enable the selective emphasis of specific data regions, thereby improving the precision and relevance of the optimization results [@korol_MSc_2023]. Additionally, the objective function includes a total variation penalty, ensuring that the optimization not only fits the data but also preserves its physical trends, resulting in more accurate and reliable outcomes [@korol_MSc_2023]. These global optimization algorithms, combined with local optimization methods for post-processing refinement, allow GO-RXR to effectively model the structural and electronic properties of thin-film materials. The algorithms are implemented within GO-RXR using the SciPy library [@virtanen2020_scipy].
+
 
 ## Example use-cases
 
