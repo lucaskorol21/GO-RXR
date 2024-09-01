@@ -9,6 +9,8 @@ sys.path.append(parent_dir)
 import numpy as np
 import unittest
 from UTILS.data_structure import *
+from UTILS import ROOT_DIR
+
 
 # Define epsilon using np.finfo(float).eps
 EPS = np.sqrt(np.finfo(float).eps)
@@ -18,6 +20,18 @@ EPS = np.sqrt(np.finfo(float).eps)
 # into the terminal
 
 class TestMaterialStructure(unittest.TestCase):
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+        self.root_dir = ROOT_DIR
+        self.filename1 = 'Pim7uc.all'
+        self.filename2 = 'Pim7uc.pkl'
+        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1
+        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+
+
+
     
     def test_getTitleInfo(self):
         # testing function that retrieves information from ReMagX data names
@@ -41,16 +55,8 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(A, angle[i])
 
     def test_ReadReMagX(self):
-        filename = 'Pim7uc.all'
-        filename2 = 'Pim7uc.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            my_path_2 = os.getcwd() + '/test_data/' + filename2
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            my_path_2 = os.getcwd() + '/test_data/' + filename2
 
-        data_info, data_dict = Read_ReMagX(my_path)
+        data_info, data_dict = Read_ReMagX(self.my_path1)
 
         data_info_solution = [[2, 'Reflectivity', '8_399.39_S'], [3, 'Reflectivity', '13_499.93_S'],
                               [4, 'Reflectivity', '18_600.18_S'], [5, 'Reflectivity', '23_700.14_S'],
@@ -134,7 +140,7 @@ class TestMaterialStructure(unittest.TestCase):
         for x, y in zip(data_info, data_info_solution):
             self.assertAlmostEqual(x, y, delta=EPS)
             
-        with open(my_path_2, 'rb') as file:
+        with open(self.my_path2, 'rb') as file:
             data_dict_solution = pickle.load(file)
         for key in data_dict.keys():
             for param in data_dict[key].keys():
@@ -163,6 +169,7 @@ class TestMaterialStructure(unittest.TestCase):
                 elif param == 'Angle':
                     self.assertEqual(data_dict[key][param], data_dict_solution[key][param])
 
+    
     def test_evaluateList(self):
         # tests to make sure that a simple list can be evaluated
         tests = ['[0,1]', '[0.01, 0.52, 20, 800]', '[0.01   , 0.21 , 0.55, 2]', '[0 2 6 1313 22]', '[0    1  2 0.02]']
@@ -173,6 +180,7 @@ class TestMaterialStructure(unittest.TestCase):
             value = evaluate_list(test)
             self.assertListEqual(value, solutions[i])
 
+    
     def test_find_parameter_bound(self):
         # seperate the parameter boundaries
         tests = ['[1,[0,1]]', '[0.5, [ 0.25, 1]], [10, [5 ,12]]', '[0.028, [ 0.01, 0.5]], [4, [2 ,11.5]], [6, [5 ,7]]',
@@ -266,8 +274,7 @@ class TestMaterialStructure(unittest.TestCase):
 
         for i, test in enumerate(tests):
             value = evaluate_parameters(test)
-            self.assertListEqual(value, solution[i])
-            
+            self.assertListEqual(value, solution[i])         
             
 if __name__ == '__main__':
     unittest.main()
