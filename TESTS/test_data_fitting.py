@@ -12,6 +12,7 @@ from UTILS import (
     material_structure as ms,
     data_structure as ds,
     global_optimization as go,
+    ROOT_DIR,
 )
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
@@ -21,20 +22,21 @@ from GUI_GO import checkscript
 # into the terminal
 
 class TestDataFitting(unittest.TestCase):
-    
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+        self.root_dir = ROOT_DIR
+        self.filename = 'Pim4uc_test.h5'
+        self.my_path = self.root_dir + '/TESTS/test_data/' + self.filename
+        self.script_path = self.root_dir + '/TESTS/test_data/test_script.txt'
+
     def test_ChangeSampleParams_element(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [[1, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'], [3, 'STRUCTURAL', 'ELEMENT', 'A', 'THICKNESS'],
                       [2, 'STRUCTURAL', 'ELEMENT', 'Ti', 'DENSITY'], [4, 'STRUCTURAL', 'ELEMENT', 'O', 'DENSITY'],
@@ -50,7 +52,8 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        # my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF, my_script, orbitals)
@@ -93,18 +96,11 @@ class TestDataFitting(unittest.TestCase):
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
     def test_ChangeSampleParams_compound(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [[0, 'STRUCTURAL', 'COMPOUND','ROUGHNESS',0],[1, 'STRUCTURAL', 'COMPOUND','THICKNESS',1],
                       [2, 'STRUCTURAL', 'COMPOUND','DENSITY',2], [3, 'STRUCTURAL', 'COMPOUND','ROUGHNESS',0],
@@ -122,7 +118,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -183,18 +179,11 @@ class TestDataFitting(unittest.TestCase):
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
     def test_ChangeSampleParams_variation(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [[0, 'POLYMORPHOUS', 'A', 'Sr'], [1, 'POLYMORPHOUS', 'A', 'La'],
                       [2, 'POLYMORPHOUS', 'A', 'Sr'], [3, 'POLYMORPHOUS', 'Mn', 'Mn2+'],
@@ -210,7 +199,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF, my_script, orbitals)
@@ -282,18 +271,11 @@ class TestDataFitting(unittest.TestCase):
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
     def test_ChangeSampleParams_magnetic(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [[3, 'MAGNETIC', 'Mn', 'Mn2+'], [4, 'MAGNETIC', 'Mn', 'Mn3+'],
                       [5, 'MAGNETIC', 'Mn', 'Mn2+'], [6, 'MAGNETIC', 'Mn', 'Mn3+']]
@@ -307,7 +289,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -349,18 +331,11 @@ class TestDataFitting(unittest.TestCase):
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
 
     def test_ChangeSampleParams_eShift(self):
+        
         # test scattering factors
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['SCATTERING FACTOR', 'STRUCTURAL', 'Sr'], ['SCATTERING FACTOR', 'STRUCTURAL', 'Ti'],
                       ['SCATTERING FACTOR', 'STRUCTURAL', 'O'], ['SCATTERING FACTOR', 'STRUCTURAL', 'La'],
@@ -375,7 +350,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -399,18 +374,11 @@ class TestDataFitting(unittest.TestCase):
             self.assertEqual(sample_new.eShift[key], solutions[key])
 
     def test_ChangeSampleParams_eShift_mag(self):
+
         # test magnetic scattering factors
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['SCATTERING FACTOR', 'MAGNETIC', 'Co'], ['SCATTERING FACTOR', 'MAGNETIC', 'Ni']]
 
@@ -423,7 +391,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -446,18 +414,11 @@ class TestDataFitting(unittest.TestCase):
             self.assertEqual(sample_new.mag_eShift[key], solutions[key])
 
     def test_ChangeSampleParams_orbitals(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['ORBITAL', 'DEXY', 'Mn2'], ['ORBITAL', 'DEXZYZ', 'Mn2'], ['ORBITAL', 'DEX2Y2', 'Mn2'], ['ORBITAL', 'DEZZ', 'Mn2']]
 
@@ -470,7 +431,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -507,18 +468,11 @@ class TestDataFitting(unittest.TestCase):
         self.assertListEqual(orbitals_solution['Mn2'], orbitals_new['Mn2'])
 
     def test_ChangeSampleParams_scaling(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['SCALING FACTOR', '107_799.82_S'], ['SCALING FACTOR', '51-52_640.2_AL_Asymm'],
                       ['SCALING FACTOR', '110_E600.18_Th25.0_LC'], ['SCALING FACTOR', '114-115_E600.18_Th35.0_AC_Asymm'],
@@ -533,7 +487,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -576,19 +530,11 @@ class TestDataFitting(unittest.TestCase):
             self.assertEqual(scaleF_solutions[skey], scaleF_new[skey])
 
     def test_ChangeSampleParams_all(self):
-        # Tests to element fit
-        # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Tests to element fit
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['SCALING FACTOR', 'ALL SCANS'], ['BACKGROUND SHIFT', 'ALL SCANS']]
 
@@ -601,7 +547,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -644,19 +590,11 @@ class TestDataFitting(unittest.TestCase):
             self.assertEqual(scaleF_solutions[skey], scaleF_new[skey])
 
     def test_ChangeSampleParams_shift(self):
-        # Tests to element fit
-        # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Tests to element fit
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
         parameters = [['BACKGROUND SHIFT', '107_799.82_S'], ['BACKGROUND SHIFT', '51-52_640.2_AL_Asymm'],
                       ['BACKGROUND SHIFT', '110_E600.18_Th25.0_LC'],
@@ -672,7 +610,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -715,18 +653,11 @@ class TestDataFitting(unittest.TestCase):
             self.assertEqual(backS_solutions[skey], backS[skey])
 
     def test_ChangeSampleParams_script(self):
+
         # Tests to element fit
-        filename = 'Pim4uc_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            script_name = '/test_data/test_script.txt'
+        sample = ds.ReadSampleHDF5(self.my_path)
 
-        sample = ds.ReadSampleHDF5(my_path)
-
-        data, data_dict, sim_dict = ds.ReadDataHDF5(my_path)
+        data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
         parameters = []
         x = []
 
@@ -737,7 +668,7 @@ class TestDataFitting(unittest.TestCase):
             backS[name] = 0
             scaleF[name] = 1
 
-        my_script, problem, my_error = checkscript(sample, fname=script_name)  # load in the script
+        my_script, problem, my_error = checkscript(sample, fname=self.script_path, testing=True)  # load in the script
         orbitals = {'Mn2': [0, 0, 0, 0]}  # orbitals
 
         sample_new, backS_new, scaleF_new, orbitals_new = changeSampleParams(x, parameters, sample, backS, scaleF,
@@ -761,6 +692,7 @@ class TestDataFitting(unittest.TestCase):
 
         # test orbital
         self.assertListEqual(orbitals['Mn2'], orbitals_new['Mn2'])
+
 
 if __name__ == '__main__':
     unittest.main()

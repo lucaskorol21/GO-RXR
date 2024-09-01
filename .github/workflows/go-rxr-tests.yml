@@ -1,0 +1,50 @@
+# This workflow is designed to set up the necessary Python environment, install dependencies,
+# and run the full suite of non-GUI unit tests for the GO-RXR project. It ensures that the code is 
+# consistently tested on Ubuntu 22.04 with Python 3.10.12. For further details, see:
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: GO-RXR Tests
+
+on:
+  push:
+    branches: ["main", "version-joss-rev"]
+  pull_request:
+    branches: ["main", "version-joss-rev"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip setuptools
+        pip install -r requirements.txt
+
+    - name: Install PyQt5 Dependencies
+      run: |
+        sudo apt-get install -y pyqt5-dev libqt5multimedia5-plugins
+
+    - name: Install Reflectivity Package
+      run: |
+        python setup_reflectivity.py install
+
+    - name: Run tests
+      run: |
+        python -m unittest discover -s TESTS -p "test_data_fitting.py"
+        python -m unittest discover -s TESTS -p "test_data_structure.py"
+        python -m unittest discover -s TESTS -p "test_density.py"
+        python -m unittest discover -s TESTS -p "test_material_model.py"
+        python -m unittest discover -s TESTS -p "test_material_structure.py"
+        python -m unittest discover -s TESTS -p "test_reflectivity.py"

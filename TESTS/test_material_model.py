@@ -9,6 +9,7 @@ sys.path.append(parent_dir)
 import UTILS.material_model as mm
 import numpy as np
 import UTILS.material_structure as ms
+from UTILS import ROOT_DIR
 import unittest
 
 # This test script can be executed by inputting
@@ -16,6 +17,18 @@ import unittest
 # into the terminal
 
 class TestMaterialModel(unittest.TestCase):
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+        self.root_dir = ROOT_DIR
+
+        self.filename1 = 'optical_energy.txt'
+        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1 
+
+        self.filename2 = 'optical_theta.txt'
+        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+
     
     def test_form_factors_E(self):
         form_factors = ['La','Mn','O']
@@ -87,13 +100,8 @@ class TestMaterialModel(unittest.TestCase):
         self.assertTrue(my_sum <1e-7)
 
     def test_MOC(self):
-        filename = 'optical_energy.txt'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        solution = np.loadtxt(my_path)
+        solution = np.loadtxt(self.my_path1)
 
         sample = ms.slab(3)
         sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
@@ -136,13 +144,7 @@ class TestMaterialModel(unittest.TestCase):
 
     def test_magnetic_optical_constant(self):
 
-        filename = 'optical_theta.txt'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        solution = np.loadtxt(my_path)
+        solution = np.loadtxt(self.my_path2)
 
         sample = ms.slab(3)
         sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
@@ -178,13 +180,8 @@ class TestMaterialModel(unittest.TestCase):
         self.assertTrue(total_beta<1e-7)
 
     def test_IoR(self):
-        filename = 'optical_energy.txt'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        solution = np.loadtxt(my_path)
+        solution = np.loadtxt(self.my_path1)
 
         sample = ms.slab(3)
         sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
@@ -220,13 +217,8 @@ class TestMaterialModel(unittest.TestCase):
         self.assertTrue(total < 1e-7)
 
     def test_index_of_refraction(self):
-        filename = 'optical_theta.txt'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        solution = np.loadtxt(my_path)
+        solution = np.loadtxt(self.my_path2)
 
         sample = ms.slab(3)
         sample.addlayer(0, 'SrTiO3', 50, density=[0.028, 0.028, 0.084], roughness=[1.5, 5, 2.5])
@@ -262,6 +254,7 @@ class TestMaterialModel(unittest.TestCase):
 
         self.assertTrue(total_delta < 1e-7)
         self.assertTrue(total_beta < 1e-7)
+
 
 if __name__ == '__main__':
     unittest.main()

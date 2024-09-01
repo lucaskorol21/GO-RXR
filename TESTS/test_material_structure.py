@@ -11,25 +11,38 @@ import numpy as np
 import UTILS.material_structure as ms
 import pickle
 import UTILS.data_structure as ds
+from UTILS import ROOT_DIR
 
 # This test script can be executed by inputting
 #  ->  python -m unittest -v test_material_structure.py
 # into the terminal
 
 class TestMaterialStructure(unittest.TestCase):
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+        self.root_dir = ROOT_DIR
+
+        self.filename1 = 'optical_energy.txt'
+        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1 
+
+        self.filename2 = 'ALS_test.pkl'
+        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+
+        self.filename3 = '7uc_sample_test.h5'
+        self.my_path3 = self.root_dir + '/TESTS/test_data/' + self.filename3
+
+        self.filename4 = 'LSMO_test.h5'
+        self.my_path4 = self.root_dir + '/TESTS/test_data/' + self.filename4
+
+
     def test_adaptive_layer_segmentation(self):
+        
         # Test the adaptive layer segmentation implementation
-        filename = 'optical_energy.txt'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-            path = os.getcwd() + '/test_data/'
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-            path = os.getcwd() + '/test_data/'
+        optical = np.loadtxt(self.my_path1)
 
-        optical = np.loadtxt(my_path)
-
-        with open(path+'ALS_test.pkl', 'rb') as file:
+        with open(self.my_path2, 'rb') as file:
             solution = pickle.load(file)
 
         precision = [1e-1, 1e-2, 1e-5, 1e-10, 1e-20]
@@ -52,7 +65,6 @@ class TestMaterialStructure(unittest.TestCase):
                 my_slabs = [idx for idx in my_slabs]  # transforms numpy array to list
                 compare_list = [idx for idx in solution[prec][i]]  # transforms numpy array to list
                 self.assertListEqual(my_slabs, compare_list)
-
 
     def test_checkstring(self):
         # Testing the function that retrieves the next element an its stoichiometric relation
@@ -87,18 +99,10 @@ class TestMaterialStructure(unittest.TestCase):
             for i,ele in enumerate(formula_keys[idx]):
                 self.assertEqual(formula[ele].stoichiometry,stoichiometry[idx][i])
 
-
-
     def test_get_roughness(self):
+
         # Testing the getRoughness function used in the scrip
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[10, 'A'], [10, 'O'], [11, 'C2'], [11, 'O'], [4, 'A'], [4, 'B'], [4, 'O'], [11, 'all']]
         roughness = [0, 0.5, 3.726885630758733, 2.0653473900870867, 0.0, 0.0, 0.0, 2]
@@ -107,17 +111,10 @@ class TestMaterialStructure(unittest.TestCase):
             sigma = sample.getRoughness(params[0],params[1])
             self.assertEqual(sigma, roughness[idx])
 
-
     def test_set_roughness(self):
+
         # Testing the setRoughness function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         # retrieves initial configuration of the sample definition
         info = []
@@ -147,15 +144,9 @@ class TestMaterialStructure(unittest.TestCase):
                     self.assertEqual(layer[ele], sample.structure[i][ele].roughness)
 
     def test_get_density(self):
+        
         # Testing the setDensity function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[10, 'A'], [10, 'O'], [11, 'C2'], [11, 'O'], [4, 'A'], [4, 'B'], [4, 'O'], [8, 'all']]
         density = [0.0020259688666223116, 0.084, 0.08597982010497454, 0.046124560151674036, 0.028, 0.028, 0.084, 0.028]
@@ -165,15 +156,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(rho, density[idx])
 
     def test_set_density(self):
+
         # Testing the setDensity function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         # retrieves initial configuration of the sample definition
         info = []
@@ -203,15 +188,9 @@ class TestMaterialStructure(unittest.TestCase):
                     self.assertEqual(layer[ele], sample.structure[i][ele].density)
 
     def test_get_thickness(self):
+        
         # Testing the getThickness function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[10, 'A'], [10, 'O'], [11, 'C2'], [11, 'O'], [4, 'A'], [4, 'B'], [4, 'O'], [7, 'all'], [3,'all']]
         thickness = [3.97, 3.97, 10.862294545882191, 3.9972874500963402, 3.97, 3.97, 3.97, 3.97,3.94]
@@ -221,15 +200,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(d, thickness[idx])
 
     def test_set_thickness(self):
+
         # Testing the setDensity function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         # retrieves initial configuration of the sample definition
         info = []
@@ -259,15 +232,9 @@ class TestMaterialStructure(unittest.TestCase):
                     self.assertEqual(layer[ele], sample.structure[i][ele].thickness)
 
     def test_get_totalThickness(self):
+
         # Testing the getCombinedThickness function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[0,1,'A'],[1,2, 'B'],[1,3, 'all'],[1,4,'A'],[1,5,'B'],[1,6, 'O'],[2,3, 'B'],[1,10, 'all'],
                       [5,7, 'A'],[7,10, 'B'],[0,11, 'O']]
@@ -279,13 +246,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(dtot,solutions[i])
 
     def test_set_combinedThickness(self):
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Testing the setCombinedThickness function used in the script
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[1, 2, 'B'], [1, 3, 'all'], [1, 4, 'A'], [1, 5, 'B'], [1, 6, 'O'], [2, 3, 'B'],
                       [1, 10, 'all'],
@@ -303,14 +266,9 @@ class TestMaterialStructure(unittest.TestCase):
         self.assertListEqual(test_list, total_thickness_solutions)
 
     def test_setVariationConstant(self):
-        # Tests setVariationConstant function for script feature
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Tests setVariationConstant function for script feature
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         # layers 1 to 10
         # Ti, Mn2, Mn3
@@ -359,14 +317,9 @@ class TestMaterialStructure(unittest.TestCase):
                 self.assertEqual(sample.structure[params[0]]['B'].poly_ratio[j], solutions[i][key])
 
     def test_setMultiVarConstant(self):
-        # Tests setMultiVarConstant function for script feature
-        filename = 'LSMO_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Tests setMultiVarConstant function for script feature
+        sample = ds.ReadSampleHDF5(self.my_path4)
 
         parameters = [[2, 'B', ['Ti', 'Mn2+'], [0.95, 0]], [3, 'B', ['Ti', 'Mn2+'], [0.44, 0.25]],
                   [4, 'A', ['Sr'], [0.777]], [5, 'B', ['Ti', 'Mn3+'], [0.22, 0.22]],
@@ -388,16 +341,10 @@ class TestMaterialStructure(unittest.TestCase):
             for j, key in enumerate(sample.structure[params[0]][params[1]].polymorph):
                 self.assertEqual(sample.structure[params[0]][params[1]].poly_ratio[j], solutions[i][key])
 
-
     def test_setRatio(self):
-        # Tests setRatio function for script feature
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
 
-        sample = ds.ReadSampleHDF5(my_path)
+        # Tests setRatio function for script feature
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[0, 'B', 'Ti', 'Mn2', 0.5], [1, 'B', 'Ti', 'Mn3', 0.1], [2, 'B', 'Mn3', 'Mn2', 0.9],
                       [3, 'B', 'Mn2', 'Mn3', 0.75], [4, 'B', 'Ti', 'Mn2', 0.55], [5, 'B', 'Mn2', 'Ti', 0.925],
@@ -422,15 +369,9 @@ class TestMaterialStructure(unittest.TestCase):
                 self.assertEqual(sample.structure[params[0]][params[1]].poly_ratio[j], solutions[i][key])
 
     def test_get_magDensity(self):
+
         # Testing the getMagDensity function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         parameters = [[2, 'B','Mn3'], [3, 'B','Mn3'], [4, 'B','Mn3'], [5, 'B','Mn3'], [6, 'B','Mn3'],
                       [7, 'B', 'Mn3'], [8, 'B', 'Mn3'], [9, 'B', 'Mn3'], [10, 'B', 'Mn3']]
@@ -443,15 +384,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(rho, mag_density[idx])
 
     def test_set_magDensity(self):
+
         # Testing the setDensity function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         # retrieves initial configuration of the sample definition
 
@@ -481,17 +416,10 @@ class TestMaterialStructure(unittest.TestCase):
 
             self.assertListEqual(test_list, mag_eval)
 
-
     def test_get_eShift(self):
+
         # Testing the getEshift function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         eShift = {'O': 0, 'C': 0, 'Sr': 0, 'La': -0.1, 'A': 0, 'B': 0, 'Ti': 0, 'Mn2': -0.95, 'Mn3': -0.95}
 
@@ -500,15 +428,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(eShift_func, eShift[key])
 
     def test_set_eShift(self):
+
         # Testing the getEshift function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         eShift_new = {'O': 1.5, 'C': -1, 'Sr': -0.0001, 'La': -1.1, 'A': 0.652, 'B': 2.11, 'Ti': 0.05, 'Mn2': 0, 'Mn3': 0.55}
         eShift = {'O': 0, 'C': 0, 'Sr': 0, 'La': -0.1, 'A': 0, 'B': 0, 'Ti': 0, 'Mn2': -0.95, 'Mn3': -0.95}
@@ -521,15 +443,9 @@ class TestMaterialStructure(unittest.TestCase):
                 self.assertEqual(value, eShift[test_key])
 
     def test_get_eShift_mag(self):
+
         # Testing the getMagEshift function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         mag_eShift = {'Ni': -0.95, 'Co': -0.95}
 
@@ -538,15 +454,9 @@ class TestMaterialStructure(unittest.TestCase):
             self.assertEqual(eShift_func, mag_eShift[key])
 
     def test_set_eShift_mag(self):
+
         # Testing the getMagEshift function used in the script
-
-        filename = '7uc_sample_test.h5'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        sample = ds.ReadSampleHDF5(my_path)
+        sample = ds.ReadSampleHDF5(self.my_path3)
 
         mag_eShift = {'Ni': -0.95, 'Co': -0.95}
         mag_eShift_new = {'Ni': -0.55, 'Co': 1.2}

@@ -14,6 +14,8 @@ import unittest
 importlib.reload(ms)
 import numpy as np
 
+from UTILS import ROOT_DIR
+
 # Define epsilon using np.finfo(float).eps
 EPS = np.sqrt(np.finfo(float).eps)
 
@@ -22,6 +24,36 @@ EPS = np.sqrt(np.finfo(float).eps)
 # into the terminal
 
 class TestDensityProfile(unittest.TestCase):
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+        self.root_dir = ROOT_DIR
+
+        self.filename1 = 'simple_density.pkl'
+        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1
+
+        self.filename2 = 'var_density.pkl'
+        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+
+        self.filename3 = 'surfaceImpurity_density.pkl'
+        self.my_path3 = self.root_dir + '/TESTS/test_data/' + self.filename3
+
+        self.filename4 = 'unitCell_density.pkl'
+        self.my_path4 = self.root_dir + '/TESTS/test_data/' + self.filename4
+
+        self.filename5 = 'linked_density.pkl'
+        self.my_path5 = self.root_dir + '/TESTS/test_data/' + self.filename5
+
+        self.filename6 = 'mag_density.pkl'
+        self.my_path6 = self.root_dir + '/TESTS/test_data/' + self.filename6
+
+        self.filename7 = 'dummy_density.pkl'
+        self.my_path7 = self.root_dir + '/TESTS/test_data/' + self.filename7
+
+        self.filename8 = 'negative_density.pkl'
+        self.my_path8 = self.root_dir + '/TESTS/test_data/' + self.filename8
+
     
     def test_simple_profile(self):
         # Test a simple density profile
@@ -39,22 +71,14 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'simple_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path1, 'rb') as file:
             solution = pickle.load(file)
 
-        # len(loaded_data)
         #Counter(loaded_data)
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
 
         total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
-        print('total', total)
 
         # self.assertEqual(total, 0)  # checks to make sure that the values are correct
         # Assert that the total is close to 0 with an epsilon difference
@@ -78,13 +102,7 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'var_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path2, 'rb') as file:
             solution = pickle.load(file)
 
         # len(loaded_data)
@@ -108,13 +126,7 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'surfaceImpurity_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path3, 'rb') as file:
             solution = pickle.load(file)
 
         # len(loaded_data)
@@ -155,13 +167,7 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'unitCell_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path4, 'rb') as file:
             solution = pickle.load(file)
 
         # len(loaded_data)
@@ -188,16 +194,9 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'linked_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path5, 'rb') as file:
             solution = pickle.load(file)
 
-        # len(loaded_data)
         # Counter(loaded_data)
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
@@ -225,13 +224,7 @@ class TestDensityProfile(unittest.TestCase):
         for key in mag_density:
             test_case['Mag:' + key] = mag_density[key]
 
-        filename = 'mag_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path6, 'rb') as file:
             solution = pickle.load(file)
 
         # len(loaded_data)
@@ -256,16 +249,9 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'dummy_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path7, 'rb') as file:
             solution = pickle.load(file)
 
-        # len(loaded_data)
         # Counter(loaded_data)
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
@@ -289,16 +275,9 @@ class TestDensityProfile(unittest.TestCase):
         test_case = density
         test_case['Thickness'] = thickness
 
-        filename = 'negative_density.pkl'
-        if os.getcwd().split('\\')[-1] == 'Testing':
-            my_path = os.getcwd() + '/test_data/' + filename
-        else:
-            my_path = os.getcwd() + '/test_data/' + filename
-
-        with open(my_path, 'rb') as file:
+        with open(self.my_path8, 'rb') as file:
             solution = pickle.load(file)
 
-        # len(loaded_data)
         # Counter(loaded_data)
         self.assertEqual(len(test_case), len(solution))  # make sure there are the same number of elements
         self.assertEqual(Counter(test_case.keys()), Counter(solution.keys()))  # checks that all keys are the same
@@ -306,6 +285,7 @@ class TestDensityProfile(unittest.TestCase):
         total = sum(sum(abs(test_case[key]-solution[key])) for key in test_case.keys())
 
         self.assertEqual(total,0)  # checks to make sure that the values are correct
+
 
 if __name__ == '__main__':
     unittest.main()
