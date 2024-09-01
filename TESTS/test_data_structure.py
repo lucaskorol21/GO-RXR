@@ -25,9 +25,11 @@ class TestMaterialStructure(unittest.TestCase):
         super().__init__(methodName)
 
         self.root_dir = ROOT_DIR
+
         self.filename1 = 'Pim7uc.all'
-        self.filename2 = 'Pim7uc.pkl'
         self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1
+
+        self.filename2 = 'Pim7uc.pkl'
         self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
 
 

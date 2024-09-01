@@ -7,6 +7,8 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to the system path
 sys.path.append(parent_dir)
 
+from UTILS import ROOT_DIR
+
 def load_tests_from_file(test_file):
     # Load the test suite from the given file
     loader = unittest.TestLoader()
@@ -30,5 +32,6 @@ def discover_and_run_tests(test_dir):
     print(f"Total tests run: {tot_test}")
 
 if __name__ == "__main__":
-    test_dir = "."
+
+    test_dir = ROOT_DIR + '/TESTS'
     discover_and_run_tests(test_dir)
