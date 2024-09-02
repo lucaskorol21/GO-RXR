@@ -22,10 +22,15 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v3
       with:
-        path: . 
+        path: GO-RXR
 
-    - name: Print ROOT_DIR
-      run: echo "ROOT_DIR is $ROOT_DIR"
+    - name: Print working directory
+      run: pwd
+      
+    - name: Print workspace paths
+      run: |
+        echo "github.workspace: ${{ github.workspace }}"
+        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
 
     - name: Set up Python
       uses: actions/setup-python@v4
