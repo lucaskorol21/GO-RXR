@@ -5,13 +5,13 @@
 ## folder
 dist/
 __pycache__/
+**/__pycache__/
 build/
 venv-go-rxr/
 venv-go-rxr-paper/
 venv-gorxr310/
 **/*.h5
 .idea/
-TESTS/__pycache__/
 
 ## Files - temporary files
 setup_new.py
