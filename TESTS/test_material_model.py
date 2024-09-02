@@ -9,7 +9,7 @@ sys.path.append(parent_dir)
 import UTILS.material_model as mm
 import numpy as np
 import UTILS.material_structure as ms
-from UTILS import ROOT_DIR
+from UTILS import TESTS_PATH
 import unittest
 
 # This test script can be executed by inputting
@@ -21,13 +21,13 @@ class TestMaterialModel(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.root_dir = ROOT_DIR
+        self.TESTS_PATH = TESTS_PATH
 
         self.filename1 = 'optical_energy.txt'
-        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1 
+        self.my_path1 = self.TESTS_PATH + '/test_data/' + self.filename1 
 
         self.filename2 = 'optical_theta.txt'
-        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+        self.my_path2 = self.TESTS_PATH + '/test_data/' + self.filename2
 
     
     def test_form_factors_E(self):

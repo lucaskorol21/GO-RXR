@@ -9,7 +9,7 @@ sys.path.append(parent_dir)
 import numpy as np
 import unittest
 from UTILS.data_structure import *
-from UTILS import ROOT_DIR
+from UTILS import TESTS_PATH
 
 
 # Define epsilon using np.finfo(float).eps
@@ -24,17 +24,14 @@ class TestMaterialStructure(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.root_dir = ROOT_DIR
+        self.TESTS_PATH = TESTS_PATH
 
         self.filename1 = 'Pim7uc.all'
-        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1
+        self.my_path1 = self.TESTS_PATH + '/test_data/' + self.filename1
 
         self.filename2 = 'Pim7uc.pkl'
-        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
-
-
-
-    
+        self.my_path2 = self.TESTS_PATH + '/test_data/' + self.filename2
+  
     def test_getTitleInfo(self):
         # testing function that retrieves information from ReMagX data names
         tests = ['1_A_800.0_S', '57_A_515.2_P','42-43_A_55.5_S-P_Asymm', '75_E499.93_Th20.0_S',

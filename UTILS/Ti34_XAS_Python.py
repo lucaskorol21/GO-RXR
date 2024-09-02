@@ -17,12 +17,12 @@ from time import perf_counter
 from UTILS.KK_And_Merge import *
 import copy
 
-# Import ROOT_DIR from the __init__.py file
-from . import ROOT_DIR
+# Import ROOT_PATH from the __init__.py file
+from . import ROOT_PATH
 
 global OpsTi
 
-with open(os.path.join(ROOT_DIR, "DATA/Ti34OpsPython" + '.pkl'), 'rb') as f:
+with open(os.path.join(ROOT_PATH, "DATA/Ti34OpsPython" + '.pkl'), 'rb') as f:
     OpsTi = pickle.load(f)
 
 

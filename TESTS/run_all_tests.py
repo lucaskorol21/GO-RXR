@@ -7,7 +7,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to the system path
 sys.path.append(parent_dir)
 
-from UTILS import ROOT_DIR
+from UTILS import TESTS_PATH
 
 def load_tests_from_file(test_file):
     # Load the test suite from the given file
@@ -33,5 +33,4 @@ def discover_and_run_tests(test_dir):
 
 if __name__ == "__main__":
 
-    test_dir = ROOT_DIR + '/TESTS'
-    discover_and_run_tests(test_dir)
+    discover_and_run_tests(TESTS_PATH)

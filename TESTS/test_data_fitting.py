@@ -12,7 +12,7 @@ from UTILS import (
     material_structure as ms,
     data_structure as ds,
     global_optimization as go,
-    ROOT_DIR,
+    TESTS_PATH,
 )
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
@@ -26,10 +26,17 @@ class TestDataFitting(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.root_dir = ROOT_DIR
+        # parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        # self.TESTS_PATH = os.path.join(parent_dir, 'TESTS')
+
+        # print('listdir', os.listdir(self.TESTS_PATH))
+        # print('listdir', os.listdir(self.TESTS_PATH + '/test_data'))
+
+        self.TESTS_PATH = TESTS_PATH
+
         self.filename = 'Pim4uc_test.h5'
-        self.my_path = self.root_dir + '/TESTS/test_data/' + self.filename
-        self.script_path = self.root_dir + '/TESTS/test_data/test_script.txt'
+        self.my_path = self.TESTS_PATH + '/test_data/' + self.filename
+        self.script_path = self.TESTS_PATH + '/test_data/test_script.txt'
 
     def test_ChangeSampleParams_element(self):
 
@@ -533,6 +540,9 @@ class TestDataFitting(unittest.TestCase):
 
         # Tests to element fit
         sample = ds.ReadSampleHDF5(self.my_path)
+
+        # print('self.my_path', self.my_path)
+        # aux = input('Enter to continue')
 
         data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 

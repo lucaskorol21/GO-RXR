@@ -1,5 +1,11 @@
-on: [push]
-         
+name: Paper Draft - JOSS
+
+on:
+  push:
+    branches: ["main", "version-joss-rev"]
+  pull_request:
+    branches: ["main", "version-joss-rev"]
+
 jobs:
   paper:
     runs-on: ubuntu-latest
