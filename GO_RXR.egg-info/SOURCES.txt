@@ -1,9 +1,0 @@
-LICENSE
-README.md
-setup.cfg
-setup.py
-GO_RXR.egg-info/PKG-INFO
-GO_RXR.egg-info/SOURCES.txt
-GO_RXR.egg-info/dependency_links.txt
-GO_RXR.egg-info/requires.txt
-GO_RXR.egg-info/top_level.txt

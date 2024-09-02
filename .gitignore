@@ -1,0 +1,20 @@
+## file extensions
+**/*.pyc
+.env
+
+## folder
+dist/
+.eggs/*
+__pycache__/
+**/__pycache__/
+/build/*
+venv-go-rxr/
+venv-go-rxr-paper/
+venv-gorxr310/
+**/*.h5
+.idea/
+GO_RXR.egg-info/*
+UNKNOWN.egg-info/*
+
+## Files - temporary files
+

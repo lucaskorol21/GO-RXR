@@ -59,22 +59,26 @@ $ git clone https://github.com/lucaskorol21/GO-RXR.git
 We recommend creating a virtual enviromnment:
 
 ```bash
-$ virtualvenv venv-go-rxr
+$ virtualenv -p python3.10 venv-go-rxr
 ```
 
-Install the python libraries by running the setup file:
+Install the Python libraries using `pip`
 
 ```bash
-$ python setup.py install
+(venv-go-rxr) $ pip install .
 ```
 
-* First run ```$ pip install --upgrade pip setuptools``` if needed.
+This command will handle the installation of all dependencies, including compiling any Cython extensions.
 
 If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
 
+```bash
+(venv-go-rxr) $ pip install -r requirements.txt
+```
+
 #### For `matplotlib`, ensure that you have `Pilow` installed
 ```bash
-$ pip install Pillow
+(venv-go-rxr) $ pip install Pillow
 ```
 
 #### Resolving `PyQt5` Conflicts.
@@ -83,63 +87,19 @@ If you encounter conflicts with the PyQt5 package during installation or usage, 
 
 ```bash
 # Install necessary dependencies
-sudo apt-get install pyqt5-dev libqt5multimedia5-plugins
+$ sudo apt-get install pyqt5-dev libqt5multimedia5-plugins -y
 
 # Remove existing PyQt5 installations from the virtual environment
-sudo rm -f -r /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
+$ sudo rm -f -r /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
 
 # Create a symbolic link from the OS libraries to the virtual environment
-sudo ln -f -s /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
+$ sudo ln -f -s /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/lib/python3.x/site-packages/PyQt5
 ```
 Replace /path/to/your/virtualenv with the path to your virtual environment directory and 3.x with the appropriate Python version (e.g., 3.10, 3.9, etc.). These commands aim to ensure that the global version of PyQt5 matches the one specified in your setup file by using the operating system's libraries and creating a symbolic link accordingly.
 
-#### 3. Install Python reflectivity by running
-```bash
-$ python setup_reflectivity.py install
-```
-
-In case there you found an error related to `'x86_64-linux-gnu-gcc'` permission, use
-```bash
-$ sudo python setup_reflectivity.py install
-```
-or
-```bash
-# Ensure that you have write permissions for the dist directory by running
-$ ls -ld dist/
-
-# If the ownership of the dist directory is incorrect, you can change it using the following command:
-$ sudo chown -R $USER dist/
-
-# Try running the installation command again
-$ sudo python setup_reflectivity.py install
-```
-
-If the issue persists, try the following:
-```bash
-# Remove the build directory
-$ rm -rf build/
-
-# Make sure your user has write permissions for the entire project directory
-$ sudo chown -R $USER .
-
-# Try running the installation command again
-$ python setup_reflectivity.py install
-```
-
-or 
-
-```bash
-# Install Python Development Headers
-$ sudo apt-get update
-$ sudo apt-get install python3.10-dev
-
-# Install your package using setup.py
-$ python setup_reflectivity.py install
-```
-
 ## Windows (using WSL)
 
-For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux. Below are the detailed steps to set up and run GO-RXR on Windows using WSL.
+For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux.
 
 This configuration was tested on Windows 11 Home and Windows 11 Education.
 
@@ -150,7 +110,7 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Enable WSL**:  
      Open a PowerShell terminal as Administrator and run:  
      ```bash
-     wsl --install
+     $ wsl --install
      ```
      Recommended: install Ubuntu 22.04 if available.
 
@@ -166,26 +126,26 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Open Ubuntu Terminal**:  
      Update the package list:  
      ```bash
-     sudo apt update
+     $ sudo apt update
      ```
      
      Upgrade the installed packages:  
      ```bash
-     sudo apt full-upgrade -y
+     $ sudo apt full-upgrade -y
      ```
 3. **Set Up Python Environment**
 
    - **Check/Install Python version**:  
      You may already have Python installed with Ubuntu. Check the version:  
      ```bash
-     python3 --version
+     $ python3 --version
      ```
      Recommended: Python 3.10.12 if available.
 
    - **Install `virtualenv`**:  
      Install the virtual environment tool:  
      ```bash
-     sudo apt install python3-virtualenv -y
+     $ sudo apt install python3-virtualenv -y
      ```
 
 4. **Clone the Repository**
@@ -193,18 +153,18 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Install Git (if not already installed)**:  
      Git should already be installed, but you can install it with:  
      ```bash
-     sudo apt install git -y
+     $ sudo apt install git -y
      ```
 
    - **Clone the `GO-RXR` repository**:  
      Clone the repository using Git:  
      ```bash
-     git clone https://github.com/lucaskorol21/GO-RXR.git
+     $ git clone https://github.com/lucaskorol21/GO-RXR.git
      ```
      
      Navigate to the cloned directory:  
      ```bash
-     cd GO-RXR/
+     $ cd GO-RXR/
      ```
 
 5. **Set Up the Virtual Environment**
@@ -212,13 +172,13 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Create the virtual environment**:  
      Inside the `GO-RXR` directory:  
      ```bash
-     virtualenv venv-go-rxr
+     $ virtualenv venv-go-rxr
      ```
 
    - **Activate the virtual environment**:  
      Activate the virtual environment directory:  
      ```bash
-     source venv-go-rxr/bin/activate
+     (venv-go-rxr) $ source venv-go-rxr/bin/activate
      ```
 
 6. **Install Requirements**
@@ -226,26 +186,26 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Install Python dependencies**:  
      Run the following command to install the required Python packages:  
      ```bash
-     pip install -r requirements.txt
+     (venv-go-rxr) $pip install -r requirements.txt
      ```
 
    - **Install additional dependencies**:  
      Install PyQt5 and its multimedia plugins:  
      ```bash
-     sudo apt-get install pyqt5-dev libqt5multimedia5-plugins -y
+     (venv-go-rxr) $sudo apt-get install pyqt5-dev libqt5multimedia5-plugins -y
      ```
-
+     
    - **Run the `setup_reflectivity.py` script**:  
      Install the package by running:  
      ```bash
-     python setup_reflectivity.py install
+     (venv-go-rxr) $python setup_reflectivity.py install
      ```
 
 7. **Running the Application**
 
    - Go back to the root of the repository and run the GUI:  
      ```bash
-     python GUI_GO.py
+     (venv-go-rxr) $python GUI_GO.py
      ```
 
 #### Resolving `PyQt5` Conflicts.
@@ -261,6 +221,76 @@ Then, got back to the Ubuntu console and run
 ```bash
 python GUI_GO.py
 ```
+
+## Testing
+
+### Automated Testing via GitHub Actions
+
+The non-GUI tests are automatically run on every push and merge to the repository through GitHub Actions. This ensures that any new code changes do not introduce regressions or errors in the core functionality of the software.
+
+### Running Tests Locally
+
+You can also run all tests locally using the test scripts provided in the `TESTS` folder. This includes both GUI and non-GUI tests.
+
+#### 1. Running All Tests
+
+To run all tests at once, you can use the `run_all_tests.py` script in the `TESTS` directory:
+
+```bash
+(venv-go-rxr) $ python TESTS/run_all_tests.py
+```
+
+### Automated Testing via GitHub Actions
+
+The non-GUI tests are automatically run on every push and merge to the repository through GitHub Actions. This ensures that any new code changes do not introduce regressions or errors in the core functionality of the software.
+
+### Running Tests Locally
+
+You can also run all tests locally using the test scripts provided in the `TESTS` folder. This includes both GUI and non-GUI tests.
+
+#### 1. Running All Tests
+
+To run all tests at once, you can use the `run_all_tests.py` script in the `TESTS` directory:
+
+```bash
+(venv-go-rxr) $ python TESTS/run_all_tests.py
+```
+
+This script will execute all the test scripts in the `TESTS` folder.
+
+#### 2. Running Individual Tests
+
+If you wish to run specific tests, you can directly execute the individual test scripts. For example:
+
+- To test data fitting functionalities:
+  ```bash
+  (venv-go-rxr) $ python TESTS/test_data_fitting.py
+  ```
+
+- To test the GUI functionality:
+  ```bash
+  (venv-go-rxr) $ python TESTS/test_GUI.py
+  ```
+
+- To test the reflectivity functions:
+  ```bash
+  (venv-go-rxr) $ python TESTS/test_reflectivity.py
+  ```
+
+### Test Coverage
+
+The tests cover the following components of the GO-RXR software:
+
+- **Data Fitting**: Ensures that the data fitting algorithms work correctly.
+- **Data Structure**: Validates the integrity and correctness of the data structure used within the software.
+- **Density Calculations**: Verifies the density calculations related to material properties.
+- **Material Models**: Tests the material models to ensure they are defined and processed correctly.
+- **Material Structure**: Checks the integrity and correctness of the material structure and its interactions within the software.
+- **Reflectivity Calculations**: Validates the reflectivity calculations that are central to the analysis performed by GO-RXR.
+- **Graphical User Interface (GUI)**: Ensures that the GUI is functioning as expected, including the interaction with user inputs and visual outputs.
+
+Make sure to have the virtual environment activated and all dependencies installed before running the tests.
+
 
 ## Documentation
 

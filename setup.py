@@ -1,37 +1,28 @@
-# # from setuptools import setup, find_packages
+import subprocess
+import sys
 
-# # setup(
-# #     name='GO-RXR',
-# #     version='1.0',
-# #     packages=find_packages(include=['Magnetic_Scattering_Factor', 'Scattering_Factor', 'Testing', 'Tutorial']),
-# #     url='https://github.com/lucaskorol21/GO-RXR',
-# #     author='Lucas Korol',
-# #     author_email='lsk601@usask.ca',
-# #     maintainer='Robert J. Green',
-# #     description='Global Optimization of Resonant X-ray Reflectometry Tool',
-# #     python_requires='>=3.7',
-# #     install_requires=[
-# #         'Cython==3.0.8',
-# #         'numpy==1.26.3',
-# #         'h5py==3.10.0',
-# #         'numba==0.59.0',
-# #         'pyqtgraph==0.13.3',
-# #         'scipy==1.12.0',
-# #         'matplotlib==3.8.1',
-# #         'PyQt5==5.15.2'
-# #     ]
-# # )
-
+try:
+    import numpy
+except ImportError:
+    print("Numpy is not installed. Installing now...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "numpy==1.26.3"])
+    import numpy
 
 try:
     from setuptools import setup, find_packages, Extension
 except ImportError:
-    from distutils.core import setup, Extension
+    print("Setuptools is not installed. Installing now...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools"])
+    from setuptools import setup, find_packages, Extension
 
-import re
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
-import numpy
+try:
+    from Cython.Build import cythonize
+    from Cython.Distutils import build_ext
+except ImportError:
+    print("Cython is not installed. Installing now...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "Cython==3.0.8"])
+    from Cython.Build import cythonize
+    from Cython.Distutils import build_ext
 
 # Include directories for the Cython extensions
 extra_include_dirs = [numpy.get_include()]
@@ -70,7 +61,7 @@ requirements = [
 ]
 
 # Define setup and test requirements
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['Cython>=3.0.8', 'pytest-runner']
 test_requirements = ['pytest>=3', ]
 
 # Setup configuration
