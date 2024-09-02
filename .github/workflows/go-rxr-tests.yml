@@ -41,8 +41,8 @@ jobs:
     #     python setup_reflectivity.py install
 
     - name: Install package
-    run: |
-      pip install .
+      run: |
+        pip install .
 
     - name: Run tests
       run: |
