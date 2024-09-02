@@ -29,6 +29,9 @@ class TestDataFitting(unittest.TestCase):
         parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         self.TESTS_PATH = os.path.join(parent_dir, 'TESTS')
 
+        print('listdir', os.listdir(self.TESTS_PATH))
+        print('listdir', os.listdir(self.TESTS_PATH + '/test_data'))
+
         self.filename = 'Pim4uc_test.h5'
         self.my_path = self.TESTS_PATH + '/test_data/' + self.filename
         self.script_path = self.TESTS_PATH + '/test_data/test_script.txt'
