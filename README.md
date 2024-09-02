@@ -137,16 +137,6 @@ $ sudo apt-get install python3.10-dev
 $ python setup_reflectivity.py install
 ```
 
-
-<!-- ## Windows  (Tested with Python 3.7 32-bit)
-
-1. Download [Python 3.7 (332-bit)](https://www.python.org/downloads/release/python-370/)
-2. Download [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-3. Install the python libraries as instructed above.
-4. If you recieve an error check to make sure that Python 3.7 (32-bit), Cython 0.29.24, and numpy are being used by your project environment.
-5. Updates to Pythonreflectivity are required before recent version of Python and Cython can be used in the setup of GO-RXR. -->
-
-
 ## Windows (using WSL)
 
 For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux. Below are the detailed steps to set up and run GO-RXR on Windows using WSL.
@@ -311,10 +301,4 @@ The GO-RXR software package has been utilized for analyzing the RXR data in the 
 ---
 
 If issues feel free to contact me at lsk601@usask.ca.
-
-
-
-
-# Test workflow trigger
-
 
