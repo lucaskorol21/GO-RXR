@@ -14,7 +14,7 @@ import unittest
 importlib.reload(ms)
 import numpy as np
 
-from UTILS import ROOT_DIR
+from UTILS import TESTS_DIR
 
 # Define epsilon using np.finfo(float).eps
 EPS = np.sqrt(np.finfo(float).eps)
@@ -28,31 +28,31 @@ class TestDensityProfile(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.root_dir = ROOT_DIR
+        self.tests_dir = TESTS_DIR
 
         self.filename1 = 'simple_density.pkl'
-        self.my_path1 = self.root_dir + '/TESTS/test_data/' + self.filename1
+        self.my_path1 = self.tests_dir + '/test_data/' + self.filename1
 
         self.filename2 = 'var_density.pkl'
-        self.my_path2 = self.root_dir + '/TESTS/test_data/' + self.filename2
+        self.my_path2 = self.tests_dir + '/test_data/' + self.filename2
 
         self.filename3 = 'surfaceImpurity_density.pkl'
-        self.my_path3 = self.root_dir + '/TESTS/test_data/' + self.filename3
+        self.my_path3 = self.tests_dir + '/test_data/' + self.filename3
 
         self.filename4 = 'unitCell_density.pkl'
-        self.my_path4 = self.root_dir + '/TESTS/test_data/' + self.filename4
+        self.my_path4 = self.tests_dir + '/test_data/' + self.filename4
 
         self.filename5 = 'linked_density.pkl'
-        self.my_path5 = self.root_dir + '/TESTS/test_data/' + self.filename5
+        self.my_path5 = self.tests_dir + '/test_data/' + self.filename5
 
         self.filename6 = 'mag_density.pkl'
-        self.my_path6 = self.root_dir + '/TESTS/test_data/' + self.filename6
+        self.my_path6 = self.tests_dir + '/test_data/' + self.filename6
 
         self.filename7 = 'dummy_density.pkl'
-        self.my_path7 = self.root_dir + '/TESTS/test_data/' + self.filename7
+        self.my_path7 = self.tests_dir + '/test_data/' + self.filename7
 
         self.filename8 = 'negative_density.pkl'
-        self.my_path8 = self.root_dir + '/TESTS/test_data/' + self.filename8
+        self.my_path8 = self.tests_dir + '/test_data/' + self.filename8
 
     
     def test_simple_profile(self):
