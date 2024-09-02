@@ -31,7 +31,7 @@ class TestDataFitting(unittest.TestCase):
         print('self.TESTS_PATH/..' , os.path.abspath(os.path.join(TESTS_PATH, '..')))
         print('self.TESTS_PATH/../..' , os.path.abspath(os.path.join(TESTS_PATH, '..', '..')))
         # Get the parent directory of the current script's directory
-        parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
         print('parent_dir', parent_dir)
         print('listdir', os.listdir(parent_dir))
         print('listdir/TESTS', os.listdir(os.path.join(parent_dir, 'TESTS')))
@@ -39,7 +39,8 @@ class TestDataFitting(unittest.TestCase):
 
         # aux = input('Enter to continue')
 
-        self.TESTS_PATH = TESTS_PATH
+        parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        self.TESTS_PATH = os.path.join(parent_dir, 'TESTS')
 
         self.filename = 'Pim4uc_test.h5'
         self.my_path = self.TESTS_PATH + '/test_data/' + self.filename
