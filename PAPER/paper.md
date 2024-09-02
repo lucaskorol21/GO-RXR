@@ -43,6 +43,8 @@ The analysis of RXR presents multifaceted challenges, extending beyond computati
 
 # Comparison
 
+To the best of our knowledge, no existing software tool comprehensively addresses the general problem of RXR data analysis across a wide range of materials and conditions. Most of the currently available tools are designed for very specific tasks and cannot be extensively applied to the diverse challenges encountered in RXR studies. For example, tools like GenX [@bjorck2007_genx] and Motofit [@nelson2006_motofit] are widely used for reflectometry but are primarily focused on specific types of reflectivity data analysis, such as neutron or x-ray reflectometry, without the capability to handle the complex, element-specific interactions in RXR. Similarly, more modern tools like Refl1D [@nelson2014_refl1d] and BornAgain [@durniak2015_bornagain] offer powerful features for modeling and fitting specific types of reflectometry data but still lack the flexibility and comprehensive approach needed for the broad range of challenges in RXR analysis.
+
 The development of GO-RXR is a response to the critical need for improved tools to analyze RXR data effectively. GO-RXR distinguishes itself from existing RXR data analysis tools through its comprehensive approach and user-friendly design. GO-RXR offers a graphical user interface (GUI) and intuitive plotting options, facilitating data interpretation and analysis. Furthermore, GO-RXR incorporates state-of-the-art global optimization algorithms, allowing for faster and more accurate data fitting compared to older methods. Its ability to model thin-film materials and customize objective functions makes it a versatile and valuable tool for researchers in the field of material science.
 
 # Functionality
@@ -51,7 +53,7 @@ GO-RXR is available for installation through its GitHub repository, providing us
 
 ## Basic concepts
 
-The primary goal of GO-RXR is to simplify and optimize the data analysis process for resonant x-ray reflectometry. Initially conceived as a command-line tool, it evolved into a GUI-based software with enhanced visualization capabilities. Developed using Python with PyQt5 for the interface, this software integrates the Pythonreflectivity [@pythonreflectivity] open-source package to carry out reflectivity calculations efficiently. GO-RXR has been tested extensively on Ubuntu 22.04 with Python 3.10, ensuring reliable performance on this operating system. After running the GUI_GO.py file, the start screen in \autoref{fig:start-screen} will be displayed
+The primary goal of GO-RXR is to simplify and optimize the data analysis process for resonant x-ray reflectometry. Initially conceived as a command-line tool, it evolved into a GUI-based software with enhanced visualization capabilities. Developed using Python with PyQt5 for the interface, this software integrates the Pythonreflectivity [@pythonreflectivity] open-source package to carry out reflectivity calculations efficiently. GO-RXR has been tested extensively on Ubuntu 22.04 with Python 3.10, ensuring reliable performance on this operating system. After running the GUI_GO.py file, the start screen in \autoref{fig:start-screen} will be displayed.
 
 ![Start screen of GO-RXR. The interface is divided into three main sections: 1) Toolbar, 2) Workspace Navigator, and 3) Workspace Area. \label{fig:start-screen}](../FIGURES/go-rxr-start.png)
 
