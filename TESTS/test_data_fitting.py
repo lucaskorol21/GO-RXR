@@ -541,7 +541,7 @@ class TestDataFitting(unittest.TestCase):
         # Tests to element fit
         sample = ds.ReadSampleHDF5(self.my_path)
 
-        print('self.my_path', self.my_path)
+        # print('self.my_path', self.my_path)
         # aux = input('Enter to continue')
 
         data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
