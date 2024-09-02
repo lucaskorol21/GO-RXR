@@ -21,6 +21,8 @@ jobs:
     steps:
     - name: Check out the code
       uses: actions/checkout@v3
+      with:
+        path: . 
 
     - name: Print ROOT_DIR
       run: echo "ROOT_DIR is $ROOT_DIR"
@@ -46,7 +48,7 @@ jobs:
     - name: Install Reflectivity Package
       run: |
         python setup_reflectivity.py install
-        
+
 
     - name: Run tests
       run: |
