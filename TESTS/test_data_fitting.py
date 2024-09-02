@@ -31,6 +31,10 @@ class TestDataFitting(unittest.TestCase):
         self.my_path = self.root_dir + '/TESTS/test_data/' + self.filename
         self.script_path = self.root_dir + '/TESTS/test_data/test_script.txt'
 
+        print('self.root_dir', self.root_dir)
+        print('self.my_path', self.my_path)
+        print('self.script_path', self.script_path)
+
     def test_ChangeSampleParams_element(self):
 
         # Tests to element fit
@@ -533,6 +537,9 @@ class TestDataFitting(unittest.TestCase):
 
         # Tests to element fit
         sample = ds.ReadSampleHDF5(self.my_path)
+
+        print('self.my_path', self.my_path)
+        # aux = input('Enter to continue')
 
         data, data_dict, sim_dict = ds.ReadDataHDF5(self.my_path)
 
