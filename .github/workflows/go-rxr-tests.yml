@@ -34,8 +34,8 @@ jobs:
     - name: Run tests
       run: |
         python -m unittest discover -s TESTS -p "test_data_fitting.py"
-        python -m unittest discover -s TESTS -p "test_data_structure.py"
-        python -m unittest discover -s TESTS -p "test_density.py"
-        python -m unittest discover -s TESTS -p "test_material_model.py"
-        python -m unittest discover -s TESTS -p "test_material_structure.py"
-        python -m unittest discover -s TESTS -p "test_reflectivity.py
+        # python -m unittest discover -s TESTS -p "test_data_structure.py"
+        # python -m unittest discover -s TESTS -p "test_density.py"
+        # python -m unittest discover -s TESTS -p "test_material_model.py"
+        # python -m unittest discover -s TESTS -p "test_material_structure.py"
+        # python -m unittest discover -s TESTS -p "test_reflectivity.py

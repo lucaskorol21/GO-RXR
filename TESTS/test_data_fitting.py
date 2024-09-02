@@ -26,6 +26,19 @@ class TestDataFitting(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
+
+        print('self.TESTS_PATH', TESTS_PATH)
+        print('self.TESTS_PATH/..' , os.path.abspath(os.path.join(TESTS_PATH, '..')))
+        print('self.TESTS_PATH/../..' , os.path.abspath(os.path.join(TESTS_PATH, '..', '..')))
+        # Get the parent directory of the current script's directory
+        parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        print('parent_dir', parent_dir)
+        print('listdir', os.listdir(parent_dir))
+        print('listdir/TESTS', os.listdir(os.path.join(parent_dir, 'TESTS')))
+        print('listdir/DATA', os.listdir(os.path.join(parent_dir, 'DATA')))
+
+        # aux = input('Enter to continue')
+
         self.TESTS_PATH = TESTS_PATH
 
         self.filename = 'Pim4uc_test.h5'

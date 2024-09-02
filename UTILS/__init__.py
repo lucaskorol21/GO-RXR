@@ -7,9 +7,9 @@ import sys
 CURRENT_PATH = os.getcwd()
 ROOT_PATH = os.path.abspath(CURRENT_PATH)
 
-# Check if ROOT_PATH ends with '/GO-RXR/GO-RXR' and remove the extra 'GO-RXR' if it does
-if ROOT_PATH.endswith('/GO-RXR/GO-RXR'):
-    ROOT_PATH = os.path.dirname(ROOT_PATH)
+# # Check if ROOT_PATH ends with '/GO-RXR/GO-RXR' and remove the extra 'GO-RXR' if it does
+# if ROOT_PATH.endswith('/GO-RXR/GO-RXR'):
+#     ROOT_PATH = os.path.dirname(ROOT_PATH)
 
 while os.path.basename(ROOT_PATH) != 'GO-RXR':
     ROOT_PATH = os.path.dirname(ROOT_PATH)
