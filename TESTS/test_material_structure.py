@@ -11,7 +11,7 @@ import numpy as np
 import UTILS.material_structure as ms
 import pickle
 import UTILS.data_structure as ds
-from UTILS import TESTS_DIR
+from UTILS import TESTS_PATH
 
 # This test script can be executed by inputting
 #  ->  python -m unittest -v test_material_structure.py
@@ -22,19 +22,19 @@ class TestMaterialStructure(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.tests_dir = TESTS_DIR
+        self.TESTS_PATH = TESTS_PATH
 
         self.filename1 = 'optical_energy.txt'
-        self.my_path1 = self.tests_dir + '/test_data/' + self.filename1 
+        self.my_path1 = self.TESTS_PATH + '/test_data/' + self.filename1 
 
         self.filename2 = 'ALS_test.pkl'
-        self.my_path2 = self.tests_dir + '/test_data/' + self.filename2
+        self.my_path2 = self.TESTS_PATH + '/test_data/' + self.filename2
 
         self.filename3 = '7uc_sample_test.h5'
-        self.my_path3 = self.tests_dir + '/test_data/' + self.filename3
+        self.my_path3 = self.TESTS_PATH + '/test_data/' + self.filename3
 
         self.filename4 = 'LSMO_test.h5'
-        self.my_path4 = self.tests_dir + '/test_data/' + self.filename4
+        self.my_path4 = self.TESTS_PATH + '/test_data/' + self.filename4
 
 
     def test_adaptive_layer_segmentation(self):

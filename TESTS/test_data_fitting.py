@@ -12,7 +12,7 @@ from UTILS import (
     material_structure as ms,
     data_structure as ds,
     global_optimization as go,
-    ROOT_DIR, TESTS_DIR,
+    TESTS_PATH,
 )
 from UTILS.global_optimization import changeSampleParams
 from GUI_GO import checkscript
@@ -26,10 +26,11 @@ class TestDataFitting(unittest.TestCase):
     def __init__(self, methodName: str = "runTest") -> None:
         super().__init__(methodName)
 
-        self.tests_dir = TESTS_DIR
+        self.TESTS_PATH = TESTS_PATH
+
         self.filename = 'Pim4uc_test.h5'
-        self.my_path = self.tests_dir + '/test_data/' + self.filename
-        self.script_path = self.tests_dir + '/test_data/test_script.txt'
+        self.my_path = self.TESTS_PATH + '/test_data/' + self.filename
+        self.script_path = self.TESTS_PATH + '/test_data/test_script.txt'
 
     def test_ChangeSampleParams_element(self):
 
