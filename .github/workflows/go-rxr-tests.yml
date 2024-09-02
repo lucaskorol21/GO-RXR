@@ -25,6 +25,9 @@ jobs:
     - name: Set environment variable for root directory
       run: echo "ROOT_DIR=$(pwd)" >> $GITHUB_ENV
 
+    - name: Print ROOT_DIR
+      run: echo "ROOT_DIR is $ROOT_DIR"
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
