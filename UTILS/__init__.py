@@ -3,14 +3,10 @@
 import os
 import sys
 
-# Get the current working directory as the root directory
-CURRENT_DIR = os.getcwd()
-
-ROOT_DIR = os.path.abspath(CURRENT_DIR)
-
+# Get the root directory of the project
+ROOT_DIR = os.getenv("ROOT_DIR", os.getcwd())
 while os.path.basename(ROOT_DIR) != 'GO-RXR':
     ROOT_DIR = os.path.dirname(ROOT_DIR)
-    # Check if we have reached the root of the filesystem
     if ROOT_DIR == os.path.dirname(ROOT_DIR):
         print("Root directory not found")
         break

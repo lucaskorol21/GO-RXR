@@ -22,6 +22,9 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v3
 
+    - name: Set environment variable for root directory
+      run: echo "ROOT_DIR=$(pwd)" >> $GITHUB_ENV
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -45,10 +48,12 @@ jobs:
         pip install .
 
     - name: Run tests
+      # run: |
+        # python -m unittest discover -s TESTS -p "test_data_fitting.py"
+        # python -m unittest discover -s TESTS -p "test_data_structure.py"
+        # python -m unittest discover -s TESTS -p "test_density.py"
+        # python -m unittest discover -s TESTS -p "test_material_model.py"
+        # python -m unittest discover -s TESTS -p "test_material_structure.py"
+        # python -m unittest discover -s TESTS -p "test_reflectivity.py"
       run: |
-        python -m unittest discover -s TESTS -p "test_data_fitting.py"
-        python -m unittest discover -s TESTS -p "test_data_structure.py"
-        python -m unittest discover -s TESTS -p "test_density.py"
-        python -m unittest discover -s TESTS -p "test_material_model.py"
-        python -m unittest discover -s TESTS -p "test_material_structure.py"
-        python -m unittest discover -s TESTS -p "test_reflectivity.py"
+        python -m unittest discover -s TESTS -p "test_*.py"
