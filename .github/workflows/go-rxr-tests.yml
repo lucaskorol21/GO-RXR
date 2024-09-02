@@ -22,11 +22,11 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v3
       with:
-        path: GO-RXR
+        path: ..
 
     - name: Print working directory
       run: pwd
-      
+
     - name: Print workspace paths
       run: |
         echo "github.workspace: ${{ github.workspace }}"
