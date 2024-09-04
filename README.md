@@ -54,36 +54,55 @@ Tested on Ubuntu 22.04
 $ git clone https://github.com/lucaskorol21/GO-RXR.git
 ```
 
-#### 2. Prerequisites (Tested with Python 3.10.14)
+#### 2. Prerequisites and Setup (Tested with Python 3.10.14)
 
-We recommend creating a virtual enviromnment:
+1. **Set Up the Virtual Environment**
 
-```bash
-$ virtualenv -p python3.10 venv-go-rxr
-```
+   - **Create the virtual environment**:  
+     Inside the `GO-RXR` directory:  
+      ```bash
+      $ virtualenv -p python3.10 venv-go-rxr
+      ```
 
-Install the Python libraries using `pip`
+   - **Activate the virtual environment**:  
+     Activate the virtual environment directory:  
+     ```bash
+     (venv-go-rxr) $ source venv-go-rxr/bin/activate
+     ```
 
-```bash
-(venv-go-rxr) $ pip install .
-```
+2. **Install Package Dependencies**
+
+    Install the required Python packages using `pip`:
+
+    ```bash
+    (venv-go-rxr) $ pip install .
+    ```
 
 This command will handle the installation of all dependencies, including compiling any Cython extensions.
 
-If the setup file does not work, then the libraries in the `requirements.txt` file can be installed.
 
-```bash
-(venv-go-rxr) $ pip install -r requirements.txt
-```
 
-#### For `matplotlib`, ensure that you have `Pilow` installed
+### Running the Application
+
+  - Go back to the root of the repository and run the GUI:  
+    ```bash
+    (venv-go-rxr) $ python GUI_GO.py
+    ```
+
+After running the `GUI_GO.py` file, the start screen will be displayed:
+
+![Start screen of GO-RXR. The interface is divided into three main sections: 1) Toolbar, 2) Workspace Navigator, and 3) Workspace Area. \label{fig:start-screen}](FIGURES/go-rxr-start.png)
+
+### Troubleshooting Installation Issues
+
+#### For `matplotlib`, ensure that you have `Pillow` installed
 ```bash
 (venv-go-rxr) $ pip install Pillow
 ```
 
 #### Resolving `PyQt5` Conflicts.
 
-If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be uselful. Try the following steps:
+If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be useful. Try the following steps:
 
 ```bash
 # Install necessary dependencies
@@ -110,7 +129,7 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Enable WSL**:  
      Open a PowerShell terminal as Administrator and run:  
      ```bash
-     $ wsl --install
+      $ wsl --install
      ```
      Recommended: install Ubuntu 22.04 if available.
 
@@ -126,26 +145,27 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Open Ubuntu Terminal**:  
      Update the package list:  
      ```bash
-     $ sudo apt update
+      $ sudo apt update
      ```
      
      Upgrade the installed packages:  
      ```bash
-     $ sudo apt full-upgrade -y
+      $ sudo apt full-upgrade -y
      ```
+
 3. **Set Up Python Environment**
 
    - **Check/Install Python version**:  
      You may already have Python installed with Ubuntu. Check the version:  
      ```bash
-     $ python3 --version
+      $ python3 --version
      ```
      Recommended: Python 3.10.12 if available.
 
    - **Install `virtualenv`**:  
      Install the virtual environment tool:  
      ```bash
-     $ sudo apt install python3-virtualenv -y
+      $ sudo apt install python3-virtualenv -y
      ```
 
 4. **Clone the Repository**
@@ -153,13 +173,13 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Install Git (if not already installed)**:  
      Git should already be installed, but you can install it with:  
      ```bash
-     $ sudo apt install git -y
+      $ sudo apt install git -y
      ```
 
    - **Clone the `GO-RXR` repository**:  
      Clone the repository using Git:  
      ```bash
-     $ git clone https://github.com/lucaskorol21/GO-RXR.git
+      $ git clone https://github.com/lucaskorol21/GO-RXR.git
      ```
      
      Navigate to the cloned directory:  
@@ -172,73 +192,52 @@ This configuration was tested on Windows 11 Home and Windows 11 Education.
    - **Create the virtual environment**:  
      Inside the `GO-RXR` directory:  
      ```bash
-     $ virtualenv venv-go-rxr
+      $ virtualenv venv-go-rxr
      ```
 
    - **Activate the virtual environment**:  
      Activate the virtual environment directory:  
      ```bash
-     (venv-go-rxr) $ source venv-go-rxr/bin/activate
+      (venv-go-rxr) $ source venv-go-rxr/bin/activate
      ```
 
-6. **Install Requirements**
+6. **Install Package Dependencies**
 
-   - **Install Python dependencies**:  
-     Run the following command to install the required Python packages:  
-     ```bash
-     (venv-go-rxr) $pip install -r requirements.txt
-     ```
+  Install the required Python packages using `pip`:
 
-   - **Install additional dependencies**:  
-     Install PyQt5 and its multimedia plugins:  
-     ```bash
-     (venv-go-rxr) $sudo apt-get install pyqt5-dev libqt5multimedia5-plugins -y
-     ```
-     
-   - **Run the `setup_reflectivity.py` script**:  
-     Install the package by running:  
-     ```bash
-     (venv-go-rxr) $python setup_reflectivity.py install
-     ```
+  ```bash
+  (venv-go-rxr) $ pip install .
+  ```
+
+  This command will handle the installation of all dependencies, including compiling any Cython extensions.
 
 7. **Running the Application**
 
    - Go back to the root of the repository and run the GUI:  
      ```bash
-     (venv-go-rxr) $python GUI_GO.py
+     (venv-go-rxr) $ python GUI_GO.py
      ```
 
 #### Resolving `PyQt5` Conflicts.
 
 If you encounter conflicts with the PyQt5 package during installation or usage (issues were noticed on Windows 11 Education) you might need to update the `wsl` version. Try the following steps:
 
-With the Ubuntu terminal open, open a new console and run 
+1. **Update WSL**:  
+   Open a new console and run:
 
-```bash
-wsl --update
-```
-Then, got back to the Ubuntu console and run 
-```bash
-python GUI_GO.py
-```
+    ```bash
+    $ wsl --update
+    ```
+
+2. **Run the GUI**:
+
+    After updating WSL, return to the Ubuntu console and run:
+
+    ```bash
+    (venv-go-rxr) $ python GUI_GO.py
+    ```
 
 ## Testing
-
-### Automated Testing via GitHub Actions
-
-The non-GUI tests are automatically run on every push and merge to the repository through GitHub Actions. This ensures that any new code changes do not introduce regressions or errors in the core functionality of the software.
-
-### Running Tests Locally
-
-You can also run all tests locally using the test scripts provided in the `TESTS` folder. This includes both GUI and non-GUI tests.
-
-#### 1. Running All Tests
-
-To run all tests at once, you can use the `run_all_tests.py` script in the `TESTS` directory:
-
-```bash
-(venv-go-rxr) $ python TESTS/run_all_tests.py
-```
 
 ### Automated Testing via GitHub Actions
 
@@ -330,5 +329,5 @@ The GO-RXR software package has been utilized for analyzing the RXR data in the 
 
 ---
 
-If issues feel free to contact me at lsk601@usask.ca.
+If you encounter any issues, feel free to contact me at lsk601@usask.ca.
 
