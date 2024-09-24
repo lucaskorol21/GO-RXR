@@ -43,7 +43,7 @@
 
 # Getting Started
 
-## Linux (this is the recommended configuration)
+## Linux (Recommended Configuration)
 
 Tested on Ubuntu 22.04
 
@@ -56,13 +56,44 @@ $ git clone https://github.com/lucaskorol21/GO-RXR.git
 
 #### 2. Prerequisites and Setup (Tested with Python 3.10.14)
 
-1. **Set Up the Virtual Environment**
+2.0.  **Ensure Python 3.10 is Installed (Recommended Version)**
+
+    Before setting up the virtual environment, make sure Python 3.10 is installed on your system:
+    ```bash
+    $ python3.10 --version
+    ```
+    
+    If Python 3.10 is installed, you should see an output like ```Python 3.10.x```. If not, follow the steps below to install it.
+
+   - **Install Python 3.10:**
+
+      Run the following commands to install Python 3.10 on Ubuntu:
+        ```bash
+        $ sudo apt update
+        $ sudo apt install python3.10 python3.10-venv python3.10-dev
+        ```
+
+  - **Verify the Installation:**
+
+    ```bash
+    $ python3.10 --version
+    ```   
+
+    This should confirm that Python 3.10 is installed correctly.
+
+2.1. **Set Up the Virtual Environment**
+
+
+   - **Navigate to the `GO-RXR` Directory**:
+    ```bash
+    $ cd GO-RXR
+    ```
 
    - **Create the virtual environment**:  
-     Inside the `GO-RXR` directory:  
-      ```bash
-      $ virtualenv -p python3.10 venv-go-rxr
-      ```
+
+    ```bash
+    $ virtualenv -p python3.10 venv-go-rxr
+    ```
 
    - **Activate the virtual environment**:  
      Activate the virtual environment directory:  
@@ -70,7 +101,7 @@ $ git clone https://github.com/lucaskorol21/GO-RXR.git
      (venv-go-rxr) $ source venv-go-rxr/bin/activate
      ```
 
-2. **Install Package Dependencies**
+2.2. **Install Package Dependencies**
 
     Install the required Python packages using `pip`:
 
