@@ -1,0 +1,88 @@
+Data Analysis Tips
+
+Dummy Variables
+    - The dummy variables have a molar density of 0 AMU and a scattering factor of zero for all energies
+    - The dummy variables include A, D, E, G, J, L, M, Q, R, T, X, and Z
+    - Each layer must be defined with the same number of elements because of the linked roughness implementation
+        - Dummy variables are typically used to ensure that the correct number of 'elements' are defined
+    - Elements can also be repeated in a chemical formula and used as a dummy variable, but not recommended.
+
+Continuous Model
+    - Define substrate: create element variations if necessary (e.g.oxidation states)
+    - Define film: create element variations if necessary (e.g.oxidation states)
+    - Define additional layer at film/substrate interface to model site termination
+    - Define additional layer at surface of film to model site terminations
+    - Define impurity layer at the surface
+        - If there are more than 2 elements in each layer it is recommended to use define carbons
+        - For example, for a system defined with three elements in each layer than the impurity layer can be defined as
+            -> CCO
+            -> XCO (dummy variable)
+
+Unit Cell Model
+- Define the substrate with the generic formula with the materials in the thin-films (e.g. ABO3)
+    - Set the roughness (and linked roughness) to zero for all layers
+    - Set the thickness to the in-plane lattice constant
+    - Define the element variations and their atomic form factors
+        - Using the LaMnO3/SrTiO3 example
+            A -> Sr and La
+            B -> Ti, Mn2+, and Mn3+
+            O -> O
+    - Include the film layers
+    - Include additional layers to model the intermixing at the various interfaces
+
+Theta/Two-Theta Reflectivity Scans
+    - The number of oscillations in the Kiessig fringes are related to the thickness of the film
+        - Large number of oscillations indicate a thick film
+        - Small number of oscillations indiate a thin film
+        - Non-resonant energies are used to determine the total film thickness (plus impurity layer)
+        - Resonant energies are used to determine the element-specific thickness
+    - The roughness dictates the decay at larger momentum values (grazing angles)
+        - A larger roughness will result in a larger decay
+        - A smaller roughness will result in less decay
+    - Always check resonant energy scans to make sure resonance peaks are properly aligned
+        - Apply energy shifts to the form factors if the energy peaks of the simulations do not align with the experimental data
+    - Theta/Two-Theta reflectivity scans are recommended when fitting the crystal structure of the material
+
+Energy Scans
+    - The energy scans for the most part are used to apply energy shifts to the atomic form factors
+    - The energy scans are also used to fit the orbital energies
+    - It is recommended to use the energy scans when refining the electronic structure (e.g.fitting oxidation states)
+
+Asymmetry Curves
+    - The linear asymmetry curves are useful when fitting the orbital energies
+    - The circular asymmetry curves are useful when fitting the magnetic structure
+    - It is recommended to use the asymmetry curves rather than the asymmetry spectra when fitting the magnetic structure
+
+
+Asymmetry Spectrum
+    - The asymmetry spectra are useful to confirm the magnetic structure
+
+Adaptive Layer Segmentation (ALS)
+- A precision value of 1e-6 is recommended for Theta/Two-Theta reflectivity scans (asymmetry curves)
+- A precision value of 1e-8 is recommended for the energy scans (asymmetry spectra)
+
+Boundaries and Weights
+    - Apply boundaries to remove low-quality portion of the dataset from the data fitting
+    - Apply weights to intervals of the dataset to emphasize important features
+        - This is recommended when the global optimization algorithm is unable to capture important features of the data
+
+Data Smoothing
+    - It is recommended to use the spline interpolation data smoothing
+
+
+Data fitting
+    - The recommended global optimization algorithm is the differential evolution algorithm
+
+Total Variation
+    - The total variation measure the agreement in the shape
+    - A weight of 100-1000 is recommended for this feature
+
+Data Fitting Process
+    1. Determine crystal structure
+    2. Apply energy shift
+    3. Determine electronic structure
+    3. Apply energy shifts
+    4. Determine magnetic structure
+    5. Refine model
+    6. Fit oxidation states to energy scans
+    7. If applicable, determine orbital energies

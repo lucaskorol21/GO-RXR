@@ -108,6 +108,10 @@ from scipy.interpolate import interp1d, UnivariateSpline
 from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
 from UTILS.Ti34_XAS_Python import GetTiFormFactor
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 # This global variable is used to stop the data fitting
 global stop
 stop = False
@@ -8441,18 +8445,18 @@ class ReflectometryApp(QMainWindow):
 
         # Help menu
         helpMenu = menuBar.addMenu("&Help")
-        # software license
-        self.license = QAction('License', self)
-        self.license.triggered.connect(self._license)
-        helpMenu.addAction(self.license)
         # user manual
-        self.about = QAction('About', self)
-        self.about.triggered.connect(self._help)
+        self.about = QAction('User Guide', self)
+        self.about.triggered.connect(self._userguide)
         helpMenu.addAction(self.about)
         # data analysis tips
         self.tips = QAction('Tips', self)
         self.tips.triggered.connect(self._tips)
         helpMenu.addAction(self.tips)
+        # software license
+        self.license = QAction('License', self)
+        self.license.triggered.connect(self._license)
+        helpMenu.addAction(self.license)
 
 
     def _loadOrbitals(self):
@@ -9259,7 +9263,6 @@ class ReflectometryApp(QMainWindow):
         license.close()
         # no current implementation
 
-
     def _tips(self):
         license = tipsWidget()
         license.show()
@@ -9267,14 +9270,13 @@ class ReflectometryApp(QMainWindow):
         license.close()
         # no current implementation
 
-    def _help(self):
+    def _userguide(self):
         """
         Purpose: provide user document of how to use application
         """
         from PyQt5.QtGui import QDesktopServices
         from PyQt5.QtCore import QUrl
-
-        file_path = 'GO-RXR_UserGuide_v0.3.1.pdf'
+        file_path = os.path.abspath('DOCS/GO-RXR_UserGuide_v0.3.1.pdf')
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 
@@ -11484,7 +11486,7 @@ class licenseWidget(QDialog):
         self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
         self.scrollable_text_area.setReadOnly(True)
 
-        with open('license.txt', 'r',encoding='ISO-8859-1') as f:
+        with open('LICENSE', 'r',encoding='ISO-8859-1') as f:
             file_contents = f.read()
             self.scrollable_text_area.setText(file_contents)
 
@@ -11525,6 +11527,9 @@ class tipsWidget(QDialog):
         pagelayout.addLayout(vbox)
 
         self.setLayout(pagelayout)
+
+
+
 
 def is_float(string):
     try:
