@@ -1,0 +1,13 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+DATA/GO_RXR.egg-info/PKG-INFO
+DATA/GO_RXR.egg-info/SOURCES.txt
+DATA/GO_RXR.egg-info/dependency_links.txt
+DATA/GO_RXR.egg-info/requires.txt
+DATA/GO_RXR.egg-info/top_level.txt
+DATA/Magnetic_Scattering_Factor/__init__.py
+DATA/Scattering_Factor/__init__.py
+UTILS/Pythonreflectivity.cpp
