@@ -10,8 +10,8 @@ readme = "README.md"
 license = {text = "BSD 3-Clause License"}
 authors = [
     {name = "Lucas Korol", email = "lsk601@usask.ca"},
-    {name = "Robert J. Green", email = "robert.green@usask.ca"}
-    {name = "Jesus P. Curbelo", email = "jesus.curbelo@usask.ca"}
+    {name = "Robert J. Green", email = "robert.green@usask.ca"},
+    {name = "Jesus P. Curbelo", email = "jesus.curbelo@usask.ca"},
     {name = "Raymond J. Spiteri", email = "spiteri@cs.usask.ca"}
 ]
 requires-python = ">=3.10"
