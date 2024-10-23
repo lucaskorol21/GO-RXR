@@ -8402,9 +8402,12 @@ class ReflectometryApp(QMainWindow):
 
         # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
+        self.saveSimulationFile.setEnabled(False) # Disable the "Save Simulation" option initially
         self.saveSimulationFile.triggered.connect(self._saveSimulation)
         fileMenu.addAction(self.saveSimulationFile)
         fileMenu.addSeparator()
+
+        # import a dataset
         self.importDataset = QAction("&Import Dataset", self)
         self.importDataset.triggered.connect(self._importDataSet)
         fileMenu.addAction(self.importDataset)
@@ -8428,6 +8431,8 @@ class ReflectometryApp(QMainWindow):
         # Tools menu
         menuBar.addMenu(fileMenu)
         toolsMenu = menuBar.addMenu("&Tools")
+
+        # Script Tool
         self.script = QAction('Script', self)
         self.script.triggered.connect(self._script)
         toolsMenu.addAction(self.script)
@@ -8788,7 +8793,12 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Improper File Type")
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
+        
+        # Enable the Save Simulation option after loading the workspace
+        self.saveSimulationFile.setEnabled(True)
+
         self.activate_tab_1()
+
 
     def _loadSample(self):
         """
@@ -8940,6 +8950,7 @@ class ReflectometryApp(QMainWindow):
 
 
         self.activate_tab_1()
+    
     def _saveAsFile(self):
         """
         Purpose: Save project worspace to a specified name
@@ -8975,6 +8986,10 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.sample = self.sample
 
             ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
+
+            # Enable the Save Simulation option after saving the workspace
+            self.saveSimulationFile.setEnabled(True)
+
         self.activate_tab_1()
 
     def _saveSimulation(self):
@@ -8998,8 +9013,6 @@ class ReflectometryApp(QMainWindow):
             loadingApp.exec_()
             sim_dict = loadingApp.sim_dict
             loadingApp.close()
-
-
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
