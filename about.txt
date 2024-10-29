@@ -1,0 +1,33 @@
+About GO-RXR
+
+GO-RXR (Global Optimization of Resonant X-ray Reflectometry) is an advanced Python-based software designed to streamline the analysis of resonant x-ray reflectometry (RXR) data. RXR is a sophisticated synchrotron technique used to probe the depth-dependent structure of quantum materials, providing insights into the crystal, electronic, and magnetic structures of thin films and heterostructures. The main challenge in RXR lies in the complexity of data analysis, which requires fitting numerous independent variables and constructing intricate models, making it a highly labor-intensive process.
+
+GO-RXR addresses these challenges by integrating state-of-the-art global optimization algorithms with a user-friendly graphical interface developed in Python and PyQt5. The software simplifies the data analysis process, reducing the expertise barrier and enhancing visualization capabilities for material scientists.
+
+Key Features
+Advanced Optimization Techniques: Incorporates algorithms like Differential Evolution, Simplicial Homology Global Optimization (SHGO), and Dual Annealing to handle the high-dimensionality and complexity of RXR datasets.
+User-Friendly Interface: Developed using PyQt5, the GUI provides intuitive access to all features, including parameter selection, data fitting, and visualization.
+Customization Options: Allows users to apply boundary and weight functions selectively, enhancing the precision of optimization results.
+Total Variation Penalty Term: This feature ensures that the optimization captures both fine details and broader trends in the data, resulting in more accurate models.
+Comprehensive Documentation: The project includes a detailed user manual and tutorials to help users get started quickly.
+Use Cases
+GO-RXR has been successfully applied in various research projects, including the analysis of complex heterostructures such as LaMnO<sub>3</sub>/SrTiO<sub>3</sub>, revealing intricate details about their structural, electronic, and magnetic properties. It has also been instrumental in studies on the electrochemical water-splitting catalyst La<sub>0.7</sub> Sr<sub>0.3</sub> MnO<sub>3</sub>/SrTiO<sub>3</sub> (LSMO/STO).
+
+Publications
+GO-RXR has been utilized in several high-impact publications, including:
+
+Vander Minne et al., "The effect of intrinsic magnetic order on electrochemical water splitting," Applied Physics Reviews (2023).
+Verhage et al., "Morphological and chemical disorder in epitaxial La<sub>0.67</sub>Sr<sub>0.33</sub>MnO<sub>3</sub>," ACS Applied Materials & Interfaces (2023).
+
+Authors and Contributors
+Lucas Korol: Department of Physics & Engineering Physics, University of Saskatchewan.
+Robert J. Green: Department of Physics & Engineering Physics, University of Saskatchewan; Stewart Blusson Quantum Matter Institute, University of British Columbia.
+Jesus P. Curbelo: Department of Computer Science, University of Saskatchewan.
+Raymond J. Spiteri: Department of Computer Science, University of Saskatchewan.
+
+Acknowledgments
+The development of GO-RXR has been supported by the Natural Sciences and Engineering Research Council of Canada (NSERC) Discovery Grant program and the NSERC CREATE to INSPIRE program.
+
+Repository and Documentation
+For more information, source code, and detailed documentation, visit the GO-RXR GitHub repository at: https://github.com/lucaskorol21/GO-RXR/tree/main
+

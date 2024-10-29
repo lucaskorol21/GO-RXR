@@ -1,0 +1,8 @@
+numpy>=1.26
+Cython>=3.0.0
+h5py>=3.10.0
+numba>=0.59.0
+pyqtgraph>=0.13.0
+scipy>=1.12.0
+matplotlib>=3.8.0
+PyQt5>=5.15.0

@@ -108,6 +108,10 @@ from scipy.interpolate import interp1d, UnivariateSpline
 from scipy.fft import fft, fftfreq, fftshift, ifft, ifftshift
 from UTILS.Ti34_XAS_Python import GetTiFormFactor
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 # This global variable is used to stop the data fitting
 global stop
 stop = False
@@ -8398,9 +8402,12 @@ class ReflectometryApp(QMainWindow):
 
         # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
+        self.saveSimulationFile.setEnabled(False) # Disable the "Save Simulation" option initially
         self.saveSimulationFile.triggered.connect(self._saveSimulation)
         fileMenu.addAction(self.saveSimulationFile)
         fileMenu.addSeparator()
+
+        # import a dataset
         self.importDataset = QAction("&Import Dataset", self)
         self.importDataset.triggered.connect(self._importDataSet)
         fileMenu.addAction(self.importDataset)
@@ -8424,6 +8431,8 @@ class ReflectometryApp(QMainWindow):
         # Tools menu
         menuBar.addMenu(fileMenu)
         toolsMenu = menuBar.addMenu("&Tools")
+
+        # Script Tool
         self.script = QAction('Script', self)
         self.script.triggered.connect(self._script)
         toolsMenu.addAction(self.script)
@@ -8441,18 +8450,18 @@ class ReflectometryApp(QMainWindow):
 
         # Help menu
         helpMenu = menuBar.addMenu("&Help")
-        # software license
-        self.license = QAction('License', self)
-        self.license.triggered.connect(self._license)
-        helpMenu.addAction(self.license)
         # user manual
-        self.about = QAction('About', self)
-        self.about.triggered.connect(self._help)
+        self.about = QAction('User Guide', self)
+        self.about.triggered.connect(self._userguide)
         helpMenu.addAction(self.about)
         # data analysis tips
         self.tips = QAction('Tips', self)
         self.tips.triggered.connect(self._tips)
         helpMenu.addAction(self.tips)
+        # software license
+        self.license = QAction('License', self)
+        self.license.triggered.connect(self._license)
+        helpMenu.addAction(self.license)
 
 
     def _loadOrbitals(self):
@@ -8784,7 +8793,12 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setWindowTitle("Improper File Type")
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
+        
+        # Enable the Save Simulation option after loading the workspace
+        self.saveSimulationFile.setEnabled(True)
+
         self.activate_tab_1()
+
 
     def _loadSample(self):
         """
@@ -8936,6 +8950,7 @@ class ReflectometryApp(QMainWindow):
 
 
         self.activate_tab_1()
+    
     def _saveAsFile(self):
         """
         Purpose: Save project worspace to a specified name
@@ -8971,6 +8986,10 @@ class ReflectometryApp(QMainWindow):
             self._reflectivityWidget.sample = self.sample
 
             ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
+
+            # Enable the Save Simulation option after saving the workspace
+            self.saveSimulationFile.setEnabled(True)
+
         self.activate_tab_1()
 
     def _saveSimulation(self):
@@ -8994,8 +9013,6 @@ class ReflectometryApp(QMainWindow):
             loadingApp.exec_()
             sim_dict = loadingApp.sim_dict
             loadingApp.close()
-
-
 
             # takes into account user may exit screen
             if type(sim_dict) is not list:
@@ -9259,7 +9276,6 @@ class ReflectometryApp(QMainWindow):
         license.close()
         # no current implementation
 
-
     def _tips(self):
         license = tipsWidget()
         license.show()
@@ -9267,14 +9283,13 @@ class ReflectometryApp(QMainWindow):
         license.close()
         # no current implementation
 
-    def _help(self):
+    def _userguide(self):
         """
         Purpose: provide user document of how to use application
         """
         from PyQt5.QtGui import QDesktopServices
         from PyQt5.QtCore import QUrl
-
-        file_path = 'GO-RXR_UserGuide_v0.3.1.pdf'
+        file_path = os.path.abspath('DOCS/GO-RXR_UserGuide_v0.3.1.pdf')
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 
@@ -11484,7 +11499,7 @@ class licenseWidget(QDialog):
         self.scrollable_text_area = QTextEdit()  # allowing scrollable capabilities
         self.scrollable_text_area.setReadOnly(True)
 
-        with open('license.txt', 'r',encoding='ISO-8859-1') as f:
+        with open('LICENSE', 'r',encoding='ISO-8859-1') as f:
             file_contents = f.read()
             self.scrollable_text_area.setText(file_contents)
 
@@ -11525,6 +11540,9 @@ class tipsWidget(QDialog):
         pagelayout.addLayout(vbox)
 
         self.setLayout(pagelayout)
+
+
+
 
 def is_float(string):
     try:

@@ -1,0 +1,3 @@
+Magnetic_Scattering_Factor
+Pythonreflectivity
+Scattering_Factor

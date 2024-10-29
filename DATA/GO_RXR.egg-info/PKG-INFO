@@ -1,3 +1,23 @@
+Metadata-Version: 2.1
+Name: GO-RXR
+Version: 1.0
+Summary: GO-RXR: Global Optimization of Resonant X-ray Reflectometry Tool for Analyzing Quantum Materials
+Author: Robert J. Green, Jesus P. Curbelo, Raymond J. Spiteri
+Author-email: Lucas Korol <lsk601@usask.ca>
+License: BSD 3-Clause License
+Project-URL: homepage, https://github.com/lucaskorol21/GO-RXR
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.26
+Requires-Dist: Cython>=3.0.0
+Requires-Dist: h5py>=3.10.0
+Requires-Dist: numba>=0.59.0
+Requires-Dist: pyqtgraph>=0.13.0
+Requires-Dist: scipy>=1.12.0
+Requires-Dist: matplotlib>=3.8.0
+Requires-Dist: PyQt5>=5.15.0
+
 <h1 align="center">
   <a href="https://imgur.com/3ZJbg84"><img src="https://i.imgur.com/3ZJbg84.jpg" title="source: imgur.com" /></a>
 </h1>
