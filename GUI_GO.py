@@ -6514,6 +6514,8 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.blockSignals(False)
 
         # Enable Save Summary Button
+        self.saveSummary.setEnabled(True)
+
 
 
     def _run_global_optimization(self):
@@ -8395,6 +8397,7 @@ class ReflectometryApp(QMainWindow):
 
         # save only the sample information
         self.saveSampleFile = QAction("&Save Sample", self)
+        self.saveSampleFile.setEnabled(False) # Disable the "Save Sample" option initially
         self.saveSampleFile.triggered.connect(self._saveSample)
         fileMenu.addAction(self.saveSampleFile)
 
@@ -8420,11 +8423,12 @@ class ReflectometryApp(QMainWindow):
         fileMenu.addAction(self.loadReMagX)
 
         # save summary of work as a textfile
-
         self.saveSummary = QAction("&Save Summary", self)
+        self.saveSummary.setEnabled(False) # Disable the "Save Summary" option initially
         self.saveSummary.triggered.connect(self._summary)
         fileMenu.addAction(self.saveSummary)
         fileMenu.addSeparator()
+
         # exit the application
         self.exitFile = QAction("&Exit", self)
         self.exitFile.triggered.connect(self._exitApplication)
@@ -8798,8 +8802,12 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
         
-        # Enable the Save Simulation option after loading the workspace
+        # Enable the Save Simulation/Sample options after loading the workspace
         self.saveSimulationFile.setEnabled(True)
+        self.saveSampleFile.setEnabled(True)
+
+        # Disable Save Summary Button
+        self.saveSummary.setEnabled(False)
 
         self.activate_tab_1()
 
@@ -8927,8 +8935,6 @@ class ReflectometryApp(QMainWindow):
 
         filename = self.fname  # retrieve the current file name
 
-        print(f'filename: {filename}')
-
         if not(filename.endswith('demo.h5')):  # makes sure the current workspace is not the demo
             self.sample = self._sampleWidget._createSample()  # retrieve sample info
             self._sampleWidget.sample = self.sample
@@ -8948,6 +8954,9 @@ class ReflectometryApp(QMainWindow):
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
             ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
+
+
+
         else:
             # messageBox = QMessageBox()
             # messageBox.setWindowTitle("Create New File")
@@ -8955,47 +8964,62 @@ class ReflectometryApp(QMainWindow):
             # messageBox.exec()
             self._saveAsFile()
 
+        # Disable Save Summary Button
+        self.saveSummary.setEnabled(False)
 
         self.activate_tab_1()
     
     def _saveAsFile(self):
         """
-        Purpose: Save project worspace to a specified name - called on Save Workspace As
+        Purpose: Save project workspace to a specified name - called on Save Workspace As
         """
-        # create a new file with the inputted
-        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+        # Create a new file with the inputted name
+        filename, _ = QFileDialog.getSaveFileName()  # Retrieves file name from user
         fname = filename.split('/')[-1]
 
-        # checks to make sure filename is in the correct format
+        # Check to make sure filename is in the correct format
         cont = True
         if filename == '' or fname == '':
             cont = False
+        elif fname == 'demo.h5':
+            # Show a warning message if the file name is 'demo.h5'
+            QMessageBox.warning(self, "Invalid File Name", "Please choose a file name other than 'demo.h5'.")
+            cont = False
         elif fname.endswith('.h5'):
-            self.fname = filename  # change the file name that we will be using
+            self.fname = filename  # Change the file name that we will be using
         elif '.' not in fname:
             self.fname = filename + '.h5'
         else:
             cont = False
 
-        if cont and fname != 'demo.h5':  # create the new file
+        if cont:  # Create the new file
             data_dict = self.data_dict
             sim_dict = self.sim_dict
-            # fitting parameter information
-            fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
-                         self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
-                         self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
-                         self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
+            # Fitting parameter information
+            fitParams = [
+                self._reflectivityWidget.sfBsFitParams,
+                self._reflectivityWidget.currentVal,
+                self._sampleWidget.parameterFit,
+                self._sampleWidget.currentVal,
+                self._reflectivityWidget.fit,
+                self._reflectivityWidget.bounds,
+                self._reflectivityWidget.weights,
+                self._goWidget.x,
+                self._goWidget.fun
+            ]
 
-            optParams = self._goWidget.goParameters  # data fitting algorithm information
+            optParams = self._goWidget.goParameters  # Data fitting algorithm information
 
             self.sample = self._sampleWidget._createSample()
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
+            # Save file in HDF5 format
+            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)
 
-            # Enable the Save Simulation option after saving the workspace
+            # Enable the Save Simulation/Sample option after saving the workspace
             self.saveSimulationFile.setEnabled(True)
+            self.saveSampleFile.setEnabled(True)
 
         self.activate_tab_1()
 
