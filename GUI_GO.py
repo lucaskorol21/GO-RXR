@@ -8922,10 +8922,12 @@ class ReflectometryApp(QMainWindow):
 
     def _saveFile(self):
         """
-        Purpose: Save the current project space
+        Purpose: Save the current project space - called on Save Workspace
         """
 
         filename = self.fname  # retrieve the current file name
+
+        print(f'filename: {filename}')
 
         if not(filename.endswith('demo.h5')):  # makes sure the current workspace is not the demo
             self.sample = self._sampleWidget._createSample()  # retrieve sample info
@@ -8958,7 +8960,7 @@ class ReflectometryApp(QMainWindow):
     
     def _saveAsFile(self):
         """
-        Purpose: Save project worspace to a specified name
+        Purpose: Save project worspace to a specified name - called on Save Workspace As
         """
         # create a new file with the inputted
         filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
