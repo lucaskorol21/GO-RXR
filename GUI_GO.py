@@ -6513,6 +6513,8 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.setStyleSheet('background: green')
         self.runButton.blockSignals(False)
 
+        # Enable Save Summary Button
+
 
     def _run_global_optimization(self):
         """
@@ -8375,11 +8377,11 @@ class ReflectometryApp(QMainWindow):
         self.loadSample.triggered.connect(self._loadSample)
         fileMenu.addAction(self.loadSample)
 
-        # load a file
-        self.loadOrbitals = QAction("&Load Orbitals", self)
-        self.loadOrbitals.triggered.connect(self._loadOrbitals)
-        fileMenu.addAction(self.loadOrbitals)
-        fileMenu.addSeparator()
+        # # load a file
+        # self.loadOrbitals = QAction("&Load Orbitals", self)
+        # self.loadOrbitals.triggered.connect(self._loadOrbitals)
+        # fileMenu.addAction(self.loadOrbitals)
+        # fileMenu.addSeparator()
 
         # save current working file
         self.saveFile = QAction("&Save Workspace", self)
@@ -8396,9 +8398,9 @@ class ReflectometryApp(QMainWindow):
         self.saveSampleFile.triggered.connect(self._saveSample)
         fileMenu.addAction(self.saveSampleFile)
 
-        self.saveOrbitals = QAction("&Save Orbitals", self)
-        self.saveOrbitals.triggered.connect(self._saveOrbitals)
-        fileMenu.addAction(self.saveOrbitals)
+        # self.saveOrbitals = QAction("&Save Orbitals", self)
+        # self.saveOrbitals.triggered.connect(self._saveOrbitals)
+        # fileMenu.addAction(self.saveOrbitals)
 
         # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
@@ -8464,56 +8466,58 @@ class ReflectometryApp(QMainWindow):
         helpMenu.addAction(self.license)
 
 
-    def _loadOrbitals(self):
-        """
-        Purpose: Load orbital file
-        """
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+    ##### This should be implemented/updated on Jordan's update - summer 2024
+    # def _loadOrbitals(self):
+    #     """
+    #     Purpose: Load orbital file
+    #     """
+    #     fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
 
-        #fname = self.fname  # used to check file type
-        self._sampleWidget.sf_dict = copy.deepcopy(mm.retrieve_ff())
+    #     #fname = self.fname  # used to check file type
+    #     self._sampleWidget.sf_dict = copy.deepcopy(mm.retrieve_ff())
 
-        if fname.endswith('.pkl'):
-            import pickle
+    #     if fname.endswith('.pkl'):
+    #         import pickle
 
-            # Load the pickled dictionary from the file
-            with open(fname, 'rb') as file:
-                self._sampleWidget.orbitals = pickle.load(file)
+    #         # Load the pickled dictionary from the file
+    #         with open(fname, 'rb') as file:
+    #             self._sampleWidget.orbitals = pickle.load(file)
 
-        else:
-            messageBox = QMessageBox()
-            messageBox.setWindowTitle("Invalid file name")
-            messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
-            messageBox.exec()
+    #     else:
+    #         messageBox = QMessageBox()
+    #         messageBox.setWindowTitle("Invalid file name")
+    #         messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
+    #         messageBox.exec()
 
 
-        self.activate_tab_1()
+    #     self.activate_tab_1()
 
-    def _saveOrbitals(self):
-        """
-        Purpose: Save orbtial file
-        :return:
-        """
-        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
-        fname = filename.split('/')[-1]
+    ##### This should be implemented/updated on Jordan's update - summer 2024
+    # def _saveOrbitals(self):
+    #     """
+    #     Purpose: Save orbtial file
+    #     :return:
+    #     """
+    #     filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+    #     fname = filename.split('/')[-1]
 
-        # checks to make sure filename is in the correct format
-        cont = True
-        if filename == '' or fname == '':
-            cont = False
-        elif fname.endswith('.pkl'):
-            filename = filename  # change the file name that we will be using
-        elif '.' not in fname:
-            filename = filename + '.pkl'
-        else:
-            cont = False
+    #     # checks to make sure filename is in the correct format
+    #     cont = True
+    #     if filename == '' or fname == '':
+    #         cont = False
+    #     elif fname.endswith('.pkl'):
+    #         filename = filename  # change the file name that we will be using
+    #     elif '.' not in fname:
+    #         filename = filename + '.pkl'
+    #     else:
+    #         cont = False
 
-        import pickle
-        if cont:
-            with open(filename, 'wb') as file:
-                pickle.dump(self._sampleWidget.orbitals, file)
+    #     import pickle
+    #     if cont:
+    #         with open(filename, 'wb') as file:
+    #             pickle.dump(self._sampleWidget.orbitals, file)
 
-        self.activate_tab_1()
+    #     self.activate_tab_1()
         
 
     def _newFile(self):
@@ -8943,10 +8947,11 @@ class ReflectometryApp(QMainWindow):
 
             ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
         else:
-            messageBox = QMessageBox()
-            messageBox.setWindowTitle("Create New File")
-            messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
-            messageBox.exec()
+            # messageBox = QMessageBox()
+            # messageBox.setWindowTitle("Create New File")
+            # messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
+            # messageBox.exec()
+            self._saveAsFile()
 
 
         self.activate_tab_1()
