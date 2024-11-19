@@ -8811,6 +8811,53 @@ class ReflectometryApp(QMainWindow):
 
         self.activate_tab_1()
 
+    def notify_field_saved(self, field='workspace', success=True):
+        """
+        Notify the user about the status of saving a given field with a temporary message.
+        :param field: The name of the entity (e.g., 'sample', 'workspace').
+        :param success: Whether the operation succeeded (True) or failed (False).
+        """
+        # Set message and style based on success or failure
+        if success:
+            message_text = f"The {field.lower()} has been successfully saved!"
+            message_style = """
+                QLabel {
+                    background-color: lightgreen; color: black; padding: 10px; border-radius: 5px;
+                }
+            """
+        else:
+            message_text = f"Failed to save the {field.lower()}! Please check your inputs or run the simulation first."
+            message_style = """
+                QLabel {
+                    background-color: orange; color: black; padding: 10px; border-radius: 5px;
+                }
+            """
+
+        # Create and style the QLabel for the message
+        message_label = QLabel(message_text, self)
+        message_label.setStyleSheet(message_style)
+        message_label.setAlignment(Qt.AlignCenter)
+
+        # Set position dynamically based on the parent widget's size
+        if success:
+            width = 450  # Increased width to accommodate longer messages
+        else:
+            width = 600
+        height = 60
+        x = (self.width() - width) // 2
+        y = (self.height() - height) // 2
+        message_label.setGeometry(x, y, width, height)
+        message_label.show()
+
+        # Hide the message after 3 seconds
+        QTimer.singleShot(3000, message_label.deleteLater)
+
+        # Log the action in the terminal
+        if success:
+            print(f"The {field.lower()} has been successfully saved!")
+        else:
+            print(f"The {field.lower()} was not saved successfully! Please, check if you have to run any simulation before.")
+
 
     def _loadSample(self):
         """
@@ -8954,8 +9001,8 @@ class ReflectometryApp(QMainWindow):
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
             ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
-
-
+            
+            self.notify_field_saved(field='workspace')
 
         else:
             # messageBox = QMessageBox()
@@ -8968,6 +9015,8 @@ class ReflectometryApp(QMainWindow):
         self.saveSummary.setEnabled(False)
 
         self.activate_tab_1()
+
+        
     
     def _saveAsFile(self):
         """
@@ -9023,6 +9072,8 @@ class ReflectometryApp(QMainWindow):
 
         self.activate_tab_1()
 
+        self.notify_field_saved(field='workspace')
+
     def _saveSimulation(self):
         """
         Purpose: Calculate and save the simulation to the current file
@@ -9049,6 +9100,10 @@ class ReflectometryApp(QMainWindow):
             if type(sim_dict) is not list:
                 ds.saveSimulationHDF5(self.fname, sim_dict, self.version)
 
+                self.notify_field_saved(field='simulation')
+        else:
+            self.notify_field_saved(field='simulation', success=False)
+
     def _saveSample(self):
         """
         Purpose: Save the sample information from the current project space
@@ -9062,6 +9117,8 @@ class ReflectometryApp(QMainWindow):
         # save the sample information to the file
         ds.WriteSampleHDF5(self.fname, self.sample, self.version)
         self.activate_tab_1()
+
+        self.notify_field_saved(field='sample')
 
     def _importDataSet(self):
         """
@@ -9254,6 +9311,11 @@ class ReflectometryApp(QMainWindow):
                 file.write("localSearch = %s \n\n" % globOpt['dual annealing'][6])
                 file.close()
 
+            self.notify_field_saved(field='summary')
+
+        else:
+            self.notify_field_saved(field='summary', success=False)
+
     def _exitApplication(self):
         # exit the program
         sys.exit()
@@ -9294,9 +9356,6 @@ class ReflectometryApp(QMainWindow):
         self.reflectivity_engine = userinput[0]
         self.temperature = userinput[1]
 
-
-
-
     def _license(self):
         """
         Purpose: demonstrate license if ever obtained
@@ -9323,7 +9382,6 @@ class ReflectometryApp(QMainWindow):
         file_path = os.path.abspath('DOCS/GO-RXR_UserGuide_v0.3.1.pdf')
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
-
 
     def activate_tab_1(self):
         # sample workspace
