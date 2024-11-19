@@ -16,4 +16,5 @@ GO_RXR.egg-info/*
 UNKNOWN.egg-info/*
 
 ## Files - temporary files
+*.h5
 

@@ -6513,6 +6513,10 @@ class GlobalOptimizationWidget(QWidget):
         self.runButton.setStyleSheet('background: green')
         self.runButton.blockSignals(False)
 
+        # Enable Save Summary Button
+        self.saveSummary.setEnabled(True)
+
+
 
     def _run_global_optimization(self):
         """
@@ -8375,11 +8379,11 @@ class ReflectometryApp(QMainWindow):
         self.loadSample.triggered.connect(self._loadSample)
         fileMenu.addAction(self.loadSample)
 
-        # load a file
-        self.loadOrbitals = QAction("&Load Orbitals", self)
-        self.loadOrbitals.triggered.connect(self._loadOrbitals)
-        fileMenu.addAction(self.loadOrbitals)
-        fileMenu.addSeparator()
+        # # load a file
+        # self.loadOrbitals = QAction("&Load Orbitals", self)
+        # self.loadOrbitals.triggered.connect(self._loadOrbitals)
+        # fileMenu.addAction(self.loadOrbitals)
+        # fileMenu.addSeparator()
 
         # save current working file
         self.saveFile = QAction("&Save Workspace", self)
@@ -8393,12 +8397,13 @@ class ReflectometryApp(QMainWindow):
 
         # save only the sample information
         self.saveSampleFile = QAction("&Save Sample", self)
+        self.saveSampleFile.setEnabled(False) # Disable the "Save Sample" option initially
         self.saveSampleFile.triggered.connect(self._saveSample)
         fileMenu.addAction(self.saveSampleFile)
 
-        self.saveOrbitals = QAction("&Save Orbitals", self)
-        self.saveOrbitals.triggered.connect(self._saveOrbitals)
-        fileMenu.addAction(self.saveOrbitals)
+        # self.saveOrbitals = QAction("&Save Orbitals", self)
+        # self.saveOrbitals.triggered.connect(self._saveOrbitals)
+        # fileMenu.addAction(self.saveOrbitals)
 
         # save the simulation
         self.saveSimulationFile = QAction("&Save Simulation", self)
@@ -8418,11 +8423,12 @@ class ReflectometryApp(QMainWindow):
         fileMenu.addAction(self.loadReMagX)
 
         # save summary of work as a textfile
-
         self.saveSummary = QAction("&Save Summary", self)
+        self.saveSummary.setEnabled(False) # Disable the "Save Summary" option initially
         self.saveSummary.triggered.connect(self._summary)
         fileMenu.addAction(self.saveSummary)
         fileMenu.addSeparator()
+
         # exit the application
         self.exitFile = QAction("&Exit", self)
         self.exitFile.triggered.connect(self._exitApplication)
@@ -8464,56 +8470,58 @@ class ReflectometryApp(QMainWindow):
         helpMenu.addAction(self.license)
 
 
-    def _loadOrbitals(self):
-        """
-        Purpose: Load orbital file
-        """
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
+    ##### This should be implemented/updated on Jordan's update - summer 2024
+    # def _loadOrbitals(self):
+    #     """
+    #     Purpose: Load orbital file
+    #     """
+    #     fname, _ = QFileDialog.getOpenFileName(self, 'Open File')  # retrieve file name
 
-        #fname = self.fname  # used to check file type
-        self._sampleWidget.sf_dict = copy.deepcopy(mm.retrieve_ff())
+    #     #fname = self.fname  # used to check file type
+    #     self._sampleWidget.sf_dict = copy.deepcopy(mm.retrieve_ff())
 
-        if fname.endswith('.pkl'):
-            import pickle
+    #     if fname.endswith('.pkl'):
+    #         import pickle
 
-            # Load the pickled dictionary from the file
-            with open(fname, 'rb') as file:
-                self._sampleWidget.orbitals = pickle.load(file)
+    #         # Load the pickled dictionary from the file
+    #         with open(fname, 'rb') as file:
+    #             self._sampleWidget.orbitals = pickle.load(file)
 
-        else:
-            messageBox = QMessageBox()
-            messageBox.setWindowTitle("Invalid file name")
-            messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
-            messageBox.exec()
+    #     else:
+    #         messageBox = QMessageBox()
+    #         messageBox.setWindowTitle("Invalid file name")
+    #         messageBox.setText("Selected file name or path is not valid. Please select a valid file name.")
+    #         messageBox.exec()
 
 
-        self.activate_tab_1()
+    #     self.activate_tab_1()
 
-    def _saveOrbitals(self):
-        """
-        Purpose: Save orbtial file
-        :return:
-        """
-        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
-        fname = filename.split('/')[-1]
+    ##### This should be implemented/updated on Jordan's update - summer 2024
+    # def _saveOrbitals(self):
+    #     """
+    #     Purpose: Save orbtial file
+    #     :return:
+    #     """
+    #     filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+    #     fname = filename.split('/')[-1]
 
-        # checks to make sure filename is in the correct format
-        cont = True
-        if filename == '' or fname == '':
-            cont = False
-        elif fname.endswith('.pkl'):
-            filename = filename  # change the file name that we will be using
-        elif '.' not in fname:
-            filename = filename + '.pkl'
-        else:
-            cont = False
+    #     # checks to make sure filename is in the correct format
+    #     cont = True
+    #     if filename == '' or fname == '':
+    #         cont = False
+    #     elif fname.endswith('.pkl'):
+    #         filename = filename  # change the file name that we will be using
+    #     elif '.' not in fname:
+    #         filename = filename + '.pkl'
+    #     else:
+    #         cont = False
 
-        import pickle
-        if cont:
-            with open(filename, 'wb') as file:
-                pickle.dump(self._sampleWidget.orbitals, file)
+    #     import pickle
+    #     if cont:
+    #         with open(filename, 'wb') as file:
+    #             pickle.dump(self._sampleWidget.orbitals, file)
 
-        self.activate_tab_1()
+    #     self.activate_tab_1()
         
 
     def _newFile(self):
@@ -8794,10 +8802,61 @@ class ReflectometryApp(QMainWindow):
                 messageBox.setText("File type not supported by the application. Workspace file must be an HDF5 file type. The HDF5 architecture can be found in the user manual. ")
                 messageBox.exec()
         
-        # Enable the Save Simulation option after loading the workspace
+        # Enable the Save Simulation/Sample options after loading the workspace
         self.saveSimulationFile.setEnabled(True)
+        self.saveSampleFile.setEnabled(True)
+
+        # Disable Save Summary Button
+        self.saveSummary.setEnabled(False)
 
         self.activate_tab_1()
+
+    def notify_field_saved(self, field='workspace', success=True):
+        """
+        Notify the user about the status of saving a given field with a temporary message.
+        :param field: The name of the entity (e.g., 'sample', 'workspace').
+        :param success: Whether the operation succeeded (True) or failed (False).
+        """
+        # Set message and style based on success or failure
+        if success:
+            message_text = f"The {field.lower()} has been successfully saved!"
+            message_style = """
+                QLabel {
+                    background-color: lightgreen; color: black; padding: 10px; border-radius: 5px;
+                }
+            """
+        else:
+            message_text = f"Failed to save the {field.lower()}! Please check your inputs or run the simulation first."
+            message_style = """
+                QLabel {
+                    background-color: orange; color: black; padding: 10px; border-radius: 5px;
+                }
+            """
+
+        # Create and style the QLabel for the message
+        message_label = QLabel(message_text, self)
+        message_label.setStyleSheet(message_style)
+        message_label.setAlignment(Qt.AlignCenter)
+
+        # Set position dynamically based on the parent widget's size
+        if success:
+            width = 450  # Increased width to accommodate longer messages
+        else:
+            width = 600
+        height = 60
+        x = (self.width() - width) // 2
+        y = (self.height() - height) // 2
+        message_label.setGeometry(x, y, width, height)
+        message_label.show()
+
+        # Hide the message after 3 seconds
+        QTimer.singleShot(3000, message_label.deleteLater)
+
+        # Log the action in the terminal
+        if success:
+            print(f"The {field.lower()} has been successfully saved!")
+        else:
+            print(f"The {field.lower()} was not saved successfully! Please, check if you have to run any simulation before.")
 
 
     def _loadSample(self):
@@ -8918,7 +8977,7 @@ class ReflectometryApp(QMainWindow):
 
     def _saveFile(self):
         """
-        Purpose: Save the current project space
+        Purpose: Save the current project space - called on Save Workspace
         """
 
         filename = self.fname  # retrieve the current file name
@@ -8942,55 +9001,78 @@ class ReflectometryApp(QMainWindow):
             optParams = self._goWidget.goParameters  # retrieve data fitting algorithm parameters
 
             ds.saveFileHDF5(filename, self.sample, data_dict, fitParams, optParams, self.version)  # save the information
-        else:
-            messageBox = QMessageBox()
-            messageBox.setWindowTitle("Create New File")
-            messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
-            messageBox.exec()
+            
+            self.notify_field_saved(field='workspace')
 
+        else:
+            # messageBox = QMessageBox()
+            # messageBox.setWindowTitle("Create New File")
+            # messageBox.setText("User cannot save work to current file. Please save workspace with a new file name.")
+            # messageBox.exec()
+            self._saveAsFile()
+
+        # Disable Save Summary Button
+        self.saveSummary.setEnabled(False)
 
         self.activate_tab_1()
+
+        
     
     def _saveAsFile(self):
         """
-        Purpose: Save project worspace to a specified name
+        Purpose: Save project workspace to a specified name - called on Save Workspace As
         """
-        # create a new file with the inputted
-        filename, _ = QFileDialog.getSaveFileName()  # retrieves file name from user
+        # Create a new file with the inputted name
+        filename, _ = QFileDialog.getSaveFileName()  # Retrieves file name from user
         fname = filename.split('/')[-1]
 
-        # checks to make sure filename is in the correct format
+        # Check to make sure filename is in the correct format
         cont = True
         if filename == '' or fname == '':
             cont = False
+        elif fname == 'demo.h5':
+            # Show a warning message if the file name is 'demo.h5'
+            QMessageBox.warning(self, "Invalid File Name", "Please choose a file name other than 'demo.h5'.")
+            cont = False
         elif fname.endswith('.h5'):
-            self.fname = filename  # change the file name that we will be using
+            self.fname = filename  # Change the file name that we will be using
         elif '.' not in fname:
             self.fname = filename + '.h5'
         else:
             cont = False
 
-        if cont and fname != 'demo.h5':  # create the new file
+        if cont:  # Create the new file
             data_dict = self.data_dict
             sim_dict = self.sim_dict
-            # fitting parameter information
-            fitParams = [self._reflectivityWidget.sfBsFitParams, self._reflectivityWidget.currentVal,
-                         self._sampleWidget.parameterFit, self._sampleWidget.currentVal,
-                         self._reflectivityWidget.fit, self._reflectivityWidget.bounds,
-                         self._reflectivityWidget.weights, self._goWidget.x, self._goWidget.fun]
+            # Fitting parameter information
+            fitParams = [
+                self._reflectivityWidget.sfBsFitParams,
+                self._reflectivityWidget.currentVal,
+                self._sampleWidget.parameterFit,
+                self._sampleWidget.currentVal,
+                self._reflectivityWidget.fit,
+                self._reflectivityWidget.bounds,
+                self._reflectivityWidget.weights,
+                self._goWidget.x,
+                self._goWidget.fun
+            ]
 
-            optParams = self._goWidget.goParameters  # data fitting algorithm information
+            optParams = self._goWidget.goParameters  # Data fitting algorithm information
 
             self.sample = self._sampleWidget._createSample()
             self._sampleWidget.sample = self.sample
             self._reflectivityWidget.sample = self.sample
 
-            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)  # saving
+            # Save file in HDF5 format
+            ds.saveAsFileHDF5(self.fname, self.sample, data_dict, sim_dict, fitParams, optParams, self.version)
 
-            # Enable the Save Simulation option after saving the workspace
+            # Enable the Save Simulation/Sample option after saving the workspace
             self.saveSimulationFile.setEnabled(True)
+            self.saveSampleFile.setEnabled(True)
 
         self.activate_tab_1()
+
+        self.notify_field_saved(field='workspace')
 
     def _saveSimulation(self):
         """
@@ -9018,6 +9100,10 @@ class ReflectometryApp(QMainWindow):
             if type(sim_dict) is not list:
                 ds.saveSimulationHDF5(self.fname, sim_dict, self.version)
 
+                self.notify_field_saved(field='simulation')
+        else:
+            self.notify_field_saved(field='simulation', success=False)
+
     def _saveSample(self):
         """
         Purpose: Save the sample information from the current project space
@@ -9031,6 +9117,8 @@ class ReflectometryApp(QMainWindow):
         # save the sample information to the file
         ds.WriteSampleHDF5(self.fname, self.sample, self.version)
         self.activate_tab_1()
+
+        self.notify_field_saved(field='sample')
 
     def _importDataSet(self):
         """
@@ -9223,6 +9311,11 @@ class ReflectometryApp(QMainWindow):
                 file.write("localSearch = %s \n\n" % globOpt['dual annealing'][6])
                 file.close()
 
+            self.notify_field_saved(field='summary')
+
+        else:
+            self.notify_field_saved(field='summary', success=False)
+
     def _exitApplication(self):
         # exit the program
         sys.exit()
@@ -9263,9 +9356,6 @@ class ReflectometryApp(QMainWindow):
         self.reflectivity_engine = userinput[0]
         self.temperature = userinput[1]
 
-
-
-
     def _license(self):
         """
         Purpose: demonstrate license if ever obtained
@@ -9292,7 +9382,6 @@ class ReflectometryApp(QMainWindow):
         file_path = os.path.abspath('DOCS/GO-RXR_UserGuide_v0.3.1.pdf')
 
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
-
 
     def activate_tab_1(self):
         # sample workspace

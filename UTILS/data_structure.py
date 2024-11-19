@@ -886,8 +886,6 @@ def newFileHDF5(fname, sample, version):
         :return:
         """
 
-
-
     f = h5py.File(fname, 'a')  # create fname hdf5 file
 
     # clears the data file if it already exists
@@ -905,7 +903,6 @@ def newFileHDF5(fname, sample, version):
 
     scattering_factor = sample.eShift
     mag_scattering_factor = sample.mag_eShift
-
 
     dsLayer = 0
     for my_layer in sample.structure:
