@@ -45,7 +45,7 @@
 
 ## Linux (Recommended Configuration)
 
-Tested on Ubuntu 22.04
+Tested on 22.04
 
 ### Installation
 
@@ -58,20 +58,21 @@ $ git clone https://github.com/lucaskorol21/GO-RXR.git
 
 2.0.  **Ensure Python 3.10 is Installed (Recommended Version)**
 
-    Before setting up the virtual environment, make sure Python 3.10 is installed on your system:
-    ```bash
-    $ python3.10 --version
-    ```
+  Before setting up the virtual environment, make sure Python 3.10 is installed on your system:
+
+  ```bash
+  $ python3.10 --version
+  ```
     
-    If Python 3.10 is installed, you should see an output like ```Python 3.10.x```. If not, follow the steps below to install it.
+  If Python 3.10 is installed, you should see an output like ```Python 3.10.x```. If not, follow the steps below to install it.
 
-   - **Install Python 3.10:**
+  - **Install Python 3.10:**
 
-      Run the following commands to install Python 3.10 on Ubuntu:
-        ```bash
-        $ sudo apt update
-        $ sudo apt install python3.10 python3.10-venv python3.10-dev
-        ```
+    Run the following commands to install Python 3.10 on Ubuntu:
+      ```bash
+      $ sudo apt update
+      $ sudo apt install python3.10 python3.10-venv python3.10-dev
+      ```
 
   - **Verify the Installation:**
 
@@ -79,59 +80,161 @@ $ git clone https://github.com/lucaskorol21/GO-RXR.git
     $ python3.10 --version
     ```   
 
-    This should confirm that Python 3.10 is installed correctly.
+  This should confirm that Python 3.10 is installed correctly.
 
 2.1. **Set Up the Virtual Environment**
 
 
-   - **Navigate to the `GO-RXR` Directory**:
+  - **Navigate to the `GO-RXR` Directory**:
     ```bash
     $ cd GO-RXR
     ```
 
    - **Create the virtual environment**:  
 
-    ```bash
-    $ virtualenv -p python3.10 venv-go-rxr
-    ```
+      ```bash
+      $ python3.10 -m venv venv-go-rxr
+      ```
 
    - **Activate the virtual environment**:  
-     Activate the virtual environment directory:  
+
      ```bash
      (venv-go-rxr) $ source venv-go-rxr/bin/activate
      ```
 
 2.2. **Install Package Dependencies**
 
-    Install the required Python packages using `pip`:
+  Install the required Python packages using `pip`:
 
-    ```bash
-    (venv-go-rxr) $ pip install .
-    ```
+  ```bash
+  (venv-go-rxr) $ pip install .
+  ```
 
 This command will handle the installation of all dependencies, including compiling any Cython extensions.
 
-
-
 ### Running the Application
 
-  - Go back to the root of the repository and run the GUI:  
-    ```bash
-    (venv-go-rxr) $ python GUI_GO.py
-    ```
+Go back to the root of the repository and run the GUI:  
+
+```bash
+(venv-go-rxr) $ python GUI_GO.py
+  ```
 
 After running the `GUI_GO.py` file, the start screen will be displayed:
 
 ![Start screen of GO-RXR. The interface is divided into three main sections: 1) Toolbar, 2) Workspace Navigator, and 3) Workspace Area. \label{fig:start-screen}](FIGURES/go-rxr-start.png)
 
-### Troubleshooting Installation Issues
+## Windows (using WSL)
 
-#### For `matplotlib`, ensure that you have `Pillow` installed
+For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux.
+
+This configuration was tested on Windows 11 Home and Windows 11 Education.
+
+### Steps to Set Up and Run GO-RXR on Windows Using WSL
+
+1. **Install WSL and Ubuntu**
+
+    - Open a PowerShell terminal as Administrator and run:  
+      ```bash
+      $ wsl --install
+      ```
+    - Recommended: install Ubuntu 22.04 or 24.04 if available.
+    - Restart your computer after installation. 
+    - Open the Ubuntu application (available in the Start Menu), and follow the prompts to create a UNIX username and password.
+
+2. **Update and Upgrade Ubuntu**
+
+   - Open the Ubuntu terminal and run:  
+     ```bash
+      $ sudo apt update && sudo apt full-upgrade -y
+     ```
+
+3. **Set Up Python Environment**
+
+   - Verify if Python 3.10 is installed: 
+     ```bash
+      $ python3 --version
+     ```
+     Recommended: Python 3.10.12 if available.
+
+    - If Python 3.10 is not installed, you can install it as follows
+      ```bash
+        $ sudo apt install python3.10
+      ```
+
+
+4. **Clone the Repository**
+
+   - Git should already be installed, but you can install it with:  
+     ```bash
+      $ sudo apt install git -y
+     ```
+
+   - Clone the `GO-RXR` repository:  
+     ```bash
+      $ git clone https://github.com/lucaskorol21/GO-RXR.git
+     ```
+     
+    - Navigate to the cloned directory:  
+      ```bash
+      $ cd GO-RXR/
+      ```
+
+5. **Set Up the Virtual Environment**
+
+   - Create the virtual environment using Python 3.10 (inside the `GO-RXR` directory):  
+     ```bash
+      $ python3.10 -m venv venv-go-rxr
+     ```
+
+   - Activate the virtual environment:  
+     ```bash
+      (venv-go-rxr) $ source venv-go-rxr/bin/activate
+     ```
+
+6. **Install Package Dependencies**
+
+    - Install the required Python packages using `pip`:
+
+      ```bash
+        (venv-go-rxr) $ pip install .
+      ```
+
+      This command will handle the installation of all dependencies, including compiling any Cython extensions.
+
+7. **Running the Application**
+
+   - Go back to the root of the repository and run the GUI:  
+     ```bash
+     (venv-go-rxr) $ python GUI_GO.py
+     ```
+
+## Advanced Installation Notes and Known Issues
+
+This section provides additional details for less common configurations and troubleshooting.
+
+### Ubuntu 24.04
+
+- Installation can be completed successfully after adding the ```deadsnakes PPA``` to install Python 3.10
+
+    ```bash
+      sudo add-apt-repository ppa:deadsnakes/ppa
+      sudo apt-get update
+      sudo apt-get install python3.10
+    ```
+
+### WSL on ARM64
+
+- The installation instructions may not work on a WSL ARM64 Windows machine due to issues with installing ```PyQt5```.
+- Attempting to install ```PyQt6``` and updating ```GUI_GO.py``` may result in errors related to graphics instantiation in WSL.
+- WSL on ARM64 is a niche configuration; we recommend using a native Linux installation or an AMD64 system.
+
+### For `matplotlib`, ensure that you have `Pillow` installed
 ```bash
 (venv-go-rxr) $ pip install Pillow
 ```
 
-#### Resolving `PyQt5` Conflicts.
+#### Resolving `PyQt5` Conflicts - Ubuntu.
 
 If you encounter conflicts with the PyQt5 package during installation or usage, [this discussion](https://stackoverflow.com/questions/74997556/problem-with-pyqt5-in-ubuntu-22-04-not-fount-zdapvm) might be useful. Try the following steps:
 
@@ -147,109 +250,8 @@ $ sudo ln -f -s /usr/lib/python3/dist-packages/PyQt5 /path/to/your/virtualenv/li
 ```
 Replace /path/to/your/virtualenv with the path to your virtual environment directory and 3.x with the appropriate Python version (e.g., 3.10, 3.9, etc.). These commands aim to ensure that the global version of PyQt5 matches the one specified in your setup file by using the operating system's libraries and creating a symbolic link accordingly.
 
-## Windows (using WSL)
 
-For Windows users, we recommend using Windows Subsystem for Linux (WSL) to run GO-RXR. WSL allows you to run a full Linux distribution alongside your Windows installation without the need for a virtual machine or dual-boot setup. This method provides a more consistent and reliable environment, especially for projects like GO-RXR that are designed to work seamlessly on Linux.
-
-This configuration was tested on Windows 11 Home and Windows 11 Education.
-
-### Steps to Set Up and Run GO-RXR on Windows Using WSL
-
-1. **Install WSL and Ubuntu**
-
-   - **Enable WSL**:  
-     Open a PowerShell terminal as Administrator and run:  
-     ```bash
-      $ wsl --install
-     ```
-     Recommended: install Ubuntu 22.04 if available.
-
-   - **Restart your computer**:  
-     After the installation, restart your computer.
-
-   - **Set up Ubuntu**:  
-     After restarting, open the Ubuntu application (you should find it in the Start Menu).  
-     Follow the prompts to create a new UNIX username and password.
-
-2. **Update and Upgrade Ubuntu**
-
-   - **Open Ubuntu Terminal**:  
-     Update the package list:  
-     ```bash
-      $ sudo apt update
-     ```
-     
-     Upgrade the installed packages:  
-     ```bash
-      $ sudo apt full-upgrade -y
-     ```
-
-3. **Set Up Python Environment**
-
-   - **Check/Install Python version**:  
-     You may already have Python installed with Ubuntu. Check the version:  
-     ```bash
-      $ python3 --version
-     ```
-     Recommended: Python 3.10.12 if available.
-
-   - **Install `virtualenv`**:  
-     Install the virtual environment tool:  
-     ```bash
-      $ sudo apt install python3-virtualenv -y
-     ```
-
-4. **Clone the Repository**
-
-   - **Install Git (if not already installed)**:  
-     Git should already be installed, but you can install it with:  
-     ```bash
-      $ sudo apt install git -y
-     ```
-
-   - **Clone the `GO-RXR` repository**:  
-     Clone the repository using Git:  
-     ```bash
-      $ git clone https://github.com/lucaskorol21/GO-RXR.git
-     ```
-     
-     Navigate to the cloned directory:  
-     ```bash
-     $ cd GO-RXR/
-     ```
-
-5. **Set Up the Virtual Environment**
-
-   - **Create the virtual environment**:  
-     Inside the `GO-RXR` directory:  
-     ```bash
-      $ virtualenv venv-go-rxr
-     ```
-
-   - **Activate the virtual environment**:  
-     Activate the virtual environment directory:  
-     ```bash
-      (venv-go-rxr) $ source venv-go-rxr/bin/activate
-     ```
-
-6. **Install Package Dependencies**
-
-  Install the required Python packages using `pip`:
-
-  ```bash
-  (venv-go-rxr) $ pip install .
-  ```
-
-  This command will handle the installation of all dependencies, including compiling any Cython extensions.
-
-7. **Running the Application**
-
-   - Go back to the root of the repository and run the GUI:  
-     ```bash
-     (venv-go-rxr) $ python GUI_GO.py
-     ```
-
-#### Resolving `PyQt5` Conflicts.
+#### Resolving `PyQt5` Conflicts - WSL.
 
 If you encounter conflicts with the PyQt5 package during installation or usage (issues were noticed on Windows 11 Education) you might need to update the `wsl` version. Try the following steps:
 
