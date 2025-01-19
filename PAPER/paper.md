@@ -7,16 +7,16 @@ tags:
   - thin film heterostructure
 authors:
   - name: Lucas Korol
-    orchid: 0009-0007-1329-6065
+    orcid: 0009-0007-1329-6065
     affiliation: "1"
   - name: Robert J. Green
-    orchid: 0000-0003-1849-1576
+    orcid: 0000-0003-1849-1576
     affiliation: "1, 3"
   - name: Jesus P. Curbelo
-    orchid: 0000-0003-2417-071X
+    orcid: 0000-0003-2417-071X
     affiliation: "2"
   - name: Raymond J. Spiteri
-    orchid: 0000-0002-3513-6237
+    orcid: 0000-0002-3513-6237
     affiliation: "2"
 affiliations:
   - name: Department of Physics & Engineering Physics, University of Saskatchewan, Saskatoon, Canada S7N 5E2
